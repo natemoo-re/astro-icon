@@ -1,3 +1,1 @@
-# Astro Icon
-
-WIP!
+./packages/core/README.md

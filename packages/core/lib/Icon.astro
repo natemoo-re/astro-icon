@@ -1,0 +1,9 @@
+---
+import load from './utils.ts';
+export { Props } from './Props.ts';
+
+const { name, title, optimize = true, class: className, ...inputProps } = Astro.props;
+const { innerHTML, props } = await load(name, { ...inputProps, class: className }, optimize);
+---
+
+<svg {...props} astro-icon={name}>{title ? (<title>{title}</title>) : ''}{innerHTML}</svg>

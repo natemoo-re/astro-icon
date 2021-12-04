@@ -1,0 +1,34 @@
+{
+  "name": "root",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "yarn workspaces run build"
+  },
+  "workspaces": [
+    "packages/*",
+    "demo"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natemoo-re/astro-icon.git"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/natemoo-re/astro-icon/issues"
+  },
+  "homepage": "https://github.com/natemoo-re/astro-icon#readme",
+  "volta": {
+    "node": "16.13.0",
+    "yarn": "1.22.17"
+  },
+  "dependencies": {
+    "@changesets/cli": "^2.18.1",
+    "@changesets/changelog-github": "^0.4.2"
+  },
+  "devDependencies": {
+    "prettier": "^2.5.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "astro-icon",
+  "version": "0.1.0",
+  "type": "module",
+  "author": {
+    "name": "Nate Moore",
+    "email": "nate@natemoo.re",
+    "url": "https://twitter.com/n_moore"
+  },
+  "main": "./index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natemoo-re/astro-icon.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "astro",
+    "icon",
+    "svg",
+    "svgo"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/natemoo-re/astro-icon/issues"
+  },
+  "homepage": "https://github.com/natemoo-re/astro-icon#readme",
+  "dependencies": {
+    "svgo": "^2.8.0"
+  }
+}

@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    paths-ignore:
+      - '.vscode/**'
+
+# Automatically cancel in-progress actions on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Lint can run in parallel with Build.
+  # We also run `yarn install` with the `--prefer-offline` flag to speed things up.
+   # Lint can run in parallel with Build.
+  # We also run `yarn install` with the `--prefer-offline` flag to speed things up.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          cache: 'yarn'
+
+      - name: Install NPM Dependencies
+        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines
+        env:
+          CI: true
+      
+      - name: Status
+        run: git status
+
+      # Lint autofix cannot run on forks, so just skip those! See https://github.com/wearerequired/lint-action/issues/13
+      - name: Lint (External)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != github.repository_owner }}
+        run: yarn lint
+        
+      # Otherwise, run lint autofixer
+      - name: Lint
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.owner.login == github.repository_owner }}
+        uses: wearerequired/lint-action@v1.10.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          prettier: true
+          auto_fix: true
+          git_name: GitHub Action
+          git_email: github-action@users.noreply.github.com
+          commit_message: 'chore(lint): ${linter} fix'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          neutral_check_on_warning: true
+
+  smoke:
+    name: 'Smoke Test: ${{ matrix.target }}'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [demo]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          cache: 'yarn'
+
+      - name: Install NPM Dependencies
+        run: yarn install --frozen-lockfile --ignore-engines --registry https://registry.npmjs.org --network-timeout 300000
+        env:
+          CI: true
+
+      - name: Build
+        run: yarn build
+        working-directory: ${{ matrix.target }}
+
+  # Changelog can only run _after_ Build and Test.
+  # We download all `dist/` artifacts from GitHub to skip the build process.
+  changelog:
+    name: Changelog PR or Release
+    if: ${{ github.ref_name == 'main' }}
+    needs: [lint, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
+      
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: yarn changeset publish
+          commit: 'chore: release'
+          title: 'chore: release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

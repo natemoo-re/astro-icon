@@ -1,5 +1,5 @@
 {
-  "name": "@example/minimal",
+  "name": "demo",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -9,9 +9,7 @@
     "preview": "astro preview"
   },
   "devDependencies": {
-    "astro": "^0.21.10"
-  },
-  "dependencies": {
-    "svgo": "^2.8.0"
+    "astro": "^0.21.10",
+    "astro-icon": "0.1.0"
   }
 }

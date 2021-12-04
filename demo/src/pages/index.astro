@@ -1,5 +1,5 @@
 ---
-import Icon from '../components/Icon.astro';
+import Icon from 'astro-icon';
 ---
 
 <html lang="en">
@@ -9,15 +9,20 @@ import Icon from '../components/Icon.astro';
 	<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 	<meta name="viewport" content="width=device-width" />
 	<title>Welcome to Astro</title>
-	<style>
-		/* scoped CSS styles go here: */
-		/* h1 { ... } */
+	<style lang="css">
+		[astro-icon] {
+			color: blue;
+		}
+		[astro-icon="adjustment"] {
+			color: red;
+		}
 	</style>
 </head>
 
 <body>
-	<h1>Welcome to <a href="https://astro.build/">Astro</a></h1>
+	<h1>Welcome to Astro Icon!</h1>
 	<Icon size={24} name="adjustment" />
+	<Icon size={24} name="annotation" />
 </body>
 
 </html>
