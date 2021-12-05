@@ -1,5 +1,5 @@
 ---
-import { Icon } from 'astro-icon';
+import { Sprite, SpriteSheet } from 'astro-icon';
 ---
 
 <html lang="en">
@@ -22,9 +22,12 @@ import { Icon } from 'astro-icon';
 <body>
 	<h1>Welcome to Astro Icon!</h1>
 	
-	<!-- This will inline your SVG directly -->
-	<Icon size={24} name="adjustment" />
-	<Icon size={24} name="annotation" />
+	<!-- This leverages the `<use />` SVG feature -->
+    <Sprite size={24} name="adjustment" />
+	<Sprite size={24} name="annotation" />
+	
+	<!-- Make sure you include the <SpriteSheet /> component! -->
+	<SpriteSheet />
 </body>
 
 </html>

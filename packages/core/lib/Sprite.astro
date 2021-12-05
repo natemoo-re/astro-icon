@@ -1,0 +1,13 @@
+---
+import { normalizeProps } from './utils.ts';
+export { Props } from './Props.ts';
+
+const { name, title, class: className, x, y, ...inputProps } = Astro.props;
+const props = normalizeProps(inputProps);
+const href = `#astro-icon--${name}`;
+---
+
+<svg {...props} class={className} astro-icon={name}>
+    {title ? (<title>{title}</title>) : ''}
+    <use {...{ 'xlink:href': href, width: props.width, height: props.height, x, y }}  />
+</svg>

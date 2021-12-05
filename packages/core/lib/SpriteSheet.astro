@@ -1,0 +1,23 @@
+---
+import load from './utils.ts';
+import { Optimize } from './Props.ts';
+
+export interface Props {
+    optimize?: Optimize;
+}
+
+const { optimize = true, style, ...props } = Astro.props;
+const files = Object.keys(await import.meta.glob('/src/icons/**/*.svg'));
+const icons = await Promise.all(files.map(file => {
+    const name = file.replace('/src/icons/', '').replace('.svg', '');
+    return load(name, {}, optimize).then(res => ({ ...res, name }));
+}));
+---
+
+<svg style={`display: none; ${style ?? ''}`.trim()} {...{ 'aria-hidden': true, ...props }} astro-icon-spritesheet>
+    {icons.map(icon => (
+        <symbol {...icon.props} id={`astro-icon--${icon.name}`}>
+            {icon.innerHTML}
+        </symbol>
+    ))}
+</svg>

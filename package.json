@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "yarn workspaces run build"
+    "lint": "prettier \"**/*.{js,ts,md,json}\""
   },
   "workspaces": [
     "packages/*",

@@ -92,6 +92,14 @@ export function preprocess(contents: string, { optimize }) {
   }
 }
 
+export function normalizeProps(inputProps: Props) {
+  const size = inputProps.size ?? "1em";
+  delete inputProps.size;
+  const width = toAttributeSize(inputProps.width ?? size);
+  const height = toAttributeSize(inputProps.height ?? size);
+  return { ...inputProps, width, height };
+}
+
 const toAttributeSize = (size: string | number) =>
   String(size).replace(/(?<=[0-9])x$/, "em");
 
@@ -125,13 +133,9 @@ export default async function load(
     throw new Error(`Unable to parse "${filepath}"!`);
   }
 
-  const size = inputProps.size ?? "1em";
-  delete inputProps.size;
-  const width = toAttributeSize(inputProps.width ?? size);
-  const height = toAttributeSize(inputProps.height ?? size);
-
+  
   return {
     innerHTML,
-    props: { ...defaultProps, ...inputProps, width, height },
+    props: { ...defaultProps, ...normalizeProps(inputProps) }
   };
 }
