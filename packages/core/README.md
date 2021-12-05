@@ -20,11 +20,25 @@ yarn add astro-icon
 
 ```astro
 ---
-import Icon from 'astro-icon';
+import { Icon } from 'astro-icon';
 ---
 
 <!-- Loads the SVG in `/src/icons/filename.svg` -->
 <Icon name="filename" />
+```
+
+5. Alternatively, if you need to reuse icons multiple times across a page, you can use the `Sprite` and `SpriteSheet` components. These leverage [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use) internally.
+
+```astro
+---
+import { Sprite, SpriteSheet } from 'astro-icon';
+---
+
+<!-- Uses the sprite from `/src/icons/filename.svg` -->
+<Sprite name="filename" />
+
+<!-- Required ONCE per page, creates `<symbol>` for each icon -->
+<SpriteSheet />
 ```
 
 ## Styling
@@ -33,7 +47,7 @@ Styling your `astro-icon` is straightforward. Any styles can be targeted to the 
 
 ```astro
 ---
-import Icon from 'astro-icon';
+import { Icon } from 'astro-icon';
 ---
 
 <style lang="css">
