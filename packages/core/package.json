@@ -1,16 +1,19 @@
 {
   "name": "astro-icon",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": [
+    "lib",
+    "index.ts"
+  ],
   "author": {
     "name": "Nate Moore",
     "email": "nate@natemoo.re",
     "url": "https://twitter.com/n_moore"
   },
-  "main": "./index.ts",
-  "dirs": [
-    "lib"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/natemoo-re/astro-icon.git",
