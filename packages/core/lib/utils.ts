@@ -124,7 +124,9 @@ export default async function load(
     }
     svg = contents;
   } catch (e) {
-    throw new Error(`[astro-icon] Unable to load "${filepath}". Does the file exist?`);
+    throw new Error(
+      `[astro-icon] Unable to load "${filepath}". Does the file exist?`
+    );
   }
 
   const { innerHTML, defaultProps } = preprocess(svg, { optimize });
