@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.3.0
+
+### Minor Changes
+
+- [`62559e0`](https://github.com/natemoo-re/astro-icon/commit/62559e09db40482ab2fc6b4fdc001a6e38e9b7ad) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Improve SpriteSheet component by automatically including only referenced icon files
+
 ## 0.2.2
 
 ### Patch Changes
