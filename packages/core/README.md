@@ -14,9 +14,20 @@ npm i astro-icon
 yarn add astro-icon
 ```
 
-2. Create a directory inside of `src/` named `icons/`.
-3. Add each desired icon as an individual `.svg` file to `src/icons/`
-4. Reference a specific icon file using the `name` prop.
+2. Add the following to your `astro.config.mjs` file. See [Issue #2](https://github.com/natemoo-re/astro-icon/issues/2).
+```js
+export default {
+  vite: {
+    ssr: {
+      external: ['svgo']
+    }
+  }
+}
+```
+
+3. Create a directory inside of `src/` named `icons/`.
+4. Add each desired icon as an individual `.svg` file to `src/icons/`
+5. Reference a specific icon file using the `name` prop.
 
 ```astro
 ---
@@ -27,7 +38,7 @@ import { Icon } from 'astro-icon';
 <Icon name="filename" />
 ```
 
-5. Alternatively, if you need to reuse icons multiple times across a page, you can use the `Sprite` and `SpriteSheet` components. These leverage [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use) internally.
+6. Alternatively, if you need to reuse icons multiple times across a page, you can use the `Sprite` and `SpriteSheet` components. These leverage [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use) internally.
 
 ```astro
 ---
