@@ -133,9 +133,8 @@ export default async function load(
     throw new Error(`Unable to parse "${filepath}"!`);
   }
 
-  
   return {
     innerHTML,
-    props: { ...defaultProps, ...normalizeProps(inputProps) }
+    props: { ...defaultProps, ...normalizeProps(inputProps) },
   };
 }
