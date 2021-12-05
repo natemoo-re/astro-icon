@@ -21,6 +21,13 @@ import { Sprite, SpriteSheet } from 'astro-icon';
 
 <body>
 	<h1>Welcome to Astro Icon!</h1>
+
+	<p>The <code>SpriteSheet</code> component will create a spritesheet using every SVG file inside of <code>src/icons/</code>. It should be included once per page.</p>
+
+	<p>Individual icons can be referenced using the <code>Sprite</code> component. Internally, this uses <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use"><code>&lt;use></code></a> element.</p>
+
+	<p>Alternatively, see <a href="/">the Icon method</a>.</p>
+	
 	
 	<!-- This leverages the `<use />` SVG feature -->
     <Sprite size={24} name="adjustment" />

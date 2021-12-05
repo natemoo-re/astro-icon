@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "yarn workspace demo run dev",
     "lint": "prettier \"**/*.{js,ts,md,json}\""
   },
   "workspaces": [
