@@ -65,9 +65,13 @@ import { Icon } from 'astro-icon';
 <style lang="css">
     [astro-icon] {
         color: blue;
+        /* OR */
+        fill: blue;
     }
     [astro-icon="annotation"] {
         color: red;
+        /* OR */
+        fill: red;
     }
 </style>
 
