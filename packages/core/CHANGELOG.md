@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.2.2
+
+### Patch Changes
+
+- [`e201b6e`](https://github.com/natemoo-re/astro-icon/commit/e201b6e997c6b1cb25de2cc7d72524df0a816a55) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Improve documentation
+
 ## 0.2.1
 
 ### Patch Changes
