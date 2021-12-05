@@ -15,14 +15,15 @@ yarn add astro-icon
 ```
 
 2. Add the following to your `astro.config.mjs` file. See [Issue #2](https://github.com/natemoo-re/astro-icon/issues/2).
+
 ```js
 export default {
   vite: {
     ssr: {
-      external: ['svgo']
-    }
-  }
-}
+      external: ["svgo"],
+    },
+  },
+};
 ```
 
 3. Create a directory inside of `src/` named `icons/`.
