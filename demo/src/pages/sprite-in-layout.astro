@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/base.astro';
+import { Sprite } from 'astro-icon';
+---
+
+<style lang="css">
+	[astro-icon] {
+		color: blue;
+	}
+	[astro-icon="annotation"] {
+		color: red;
+	}
+</style>
+
+<Base>
+	<h1>Welcome to Astro Icon!</h1>
+
+	<p>The <code>SpriteSheet</code> component can be included in your Layout component, and it will still work!</p>
+
+	<p>Individual icons can be referenced using the <code>Sprite</code> component. Internally, this uses <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use"><code>&lt;use></code></a> element.</p>
+
+	<p>Alternatively, see <a href="/">the Icon method</a>.</p>
+	
+	<!-- This leverages the `<use />` SVG feature -->
+    <Sprite size={24} name="annotation" />
+	<Sprite size={24} name="adjustment" />
+    <Sprite size={24} name="adjustment" />
+    <Sprite size={24} name="adjustment" />
+</Base>
+

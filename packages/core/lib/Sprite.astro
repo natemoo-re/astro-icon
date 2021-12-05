@@ -1,10 +1,13 @@
 ---
 import { normalizeProps } from './utils.ts';
+import { trackSprite } from './context.ts';
 export { Props } from './Props.ts';
 
 const { name, title, class: className, x, y, ...inputProps } = Astro.props;
 const props = normalizeProps(inputProps);
-const href = `#astro-icon--${name}`;
+const href = `#astroicon:${name}`;
+// @ts-ignore
+trackSprite($$result, name);
 ---
 
 <svg {...props} class={className} astro-icon={name}>

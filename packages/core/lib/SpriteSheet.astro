@@ -1,5 +1,6 @@
 ---
 import load from './utils.ts';
+import { getUsedSprites } from './context.ts';
 import { Optimize } from './Props.ts';
 
 export interface Props {
@@ -7,16 +8,16 @@ export interface Props {
 }
 
 const { optimize = true, style, ...props } = Astro.props;
-const files = Object.keys(await import.meta.glob('/src/icons/**/*.svg'));
-const icons = await Promise.all(files.map(file => {
-    const name = file.replace('/src/icons/', '').replace('.svg', '');
+// @ts-ignore
+const names = getUsedSprites($$result);
+const icons = await Promise.all(names.map(name => {
     return load(name, {}, optimize).then(res => ({ ...res, name }));
 }));
 ---
 
 <svg style={`display: none; ${style ?? ''}`.trim()} {...{ 'aria-hidden': true, ...props }} astro-icon-spritesheet>
     {icons.map(icon => (
-        <symbol {...icon.props} id={`astro-icon--${icon.name}`}>
+        <symbol {...icon.props} id={`astroicon:${icon.name}`}>
             {icon.innerHTML}
         </symbol>
     ))}
