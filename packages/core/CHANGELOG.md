@@ -1,5 +1,13 @@
 # astro-icon
 
+## 0.4.0
+
+### Minor Changes
+
+- [#7](https://github.com/natemoo-re/astro-icon/pull/7) [`3715ead`](https://github.com/natemoo-re/astro-icon/commit/3715ead35e090650d1ffe4af0493dcc3863c1255) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Add support for custom icon packs from local or remote sources.
+
+  Add built-in icon packs powered by [Iconify](https://iconify.design/)! You can search for supported on icons on [Icônes](https://icones.js.org/).
+
 ## 0.3.0
 
 ### Minor Changes
