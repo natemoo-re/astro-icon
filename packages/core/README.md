@@ -26,12 +26,11 @@ export default {
 
 ## Icon Packs
 
-`astro-icon` automatically includes all of the most common icon packs, powered by [Iconify](https://iconify.design/)! 
+`astro-icon` automatically includes all of the most common icon packs, powered by [Iconify](https://iconify.design/)!
 
 To browse supported icons, we recommend [Icônes](https://icones.js.org/).
 
 ### Usage
-
 
 **Icon** will inline the SVG directly in your HTML.
 
@@ -124,11 +123,11 @@ export default createIconPack({
 If you have custom constraints, you can always create the resolver yourself. Export a `default` function that resolves the `name` argument to an SVG string.
 
 ```ts
-import { loadMyPackSvg } from 'my-pack';
+import { loadMyPackSvg } from "my-pack";
 export default async (name: string): Promise<string> => {
   const svgString = await loadMyPackSvg(name);
   return svgString;
-}
+};
 ```
 
 ## Styling
@@ -160,7 +159,6 @@ import { Icon } from 'astro-icon';
 ## Props
 
 `<Icon>` and `<Sprite>` share the same interface.
-
 
 The `name` prop references a specific icon. It is required.
 
