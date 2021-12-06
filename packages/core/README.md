@@ -2,9 +2,7 @@
 
 A straight-forward `Icon` component for [Astro](https://astro.build).
 
-`astro-icon` will automatically optimize icons with [`svgo`](https://github.com/svg/svgo) and inline them directly into your HTML—no extra build step, no spritesheet complexity, no cross-browser concerns! See ["A Pretty Good SVG Icon System"](https://css-tricks.com/pretty-good-svg-icon-system/#just-include-the-icons-inline) from CSS Tricks.
-
-## Usage
+## Setup
 
 1. Install `astro-icon`.
 
@@ -26,9 +24,58 @@ export default {
 };
 ```
 
-3. Create a directory inside of `src/` named `icons/`.
-4. Add each desired icon as an individual `.svg` file to `src/icons/`
-5. Reference a specific icon file using the `name` prop.
+## Icon Packs
+
+`astro-icon` automatically includes all of the most common icon packs, powered by [Iconify](https://iconify.design/)!
+
+To browse supported icons, we recommend [Icônes](https://icones.js.org/).
+
+### Usage
+
+**Icon** will inline the SVG directly in your HTML.
+
+```astro
+---
+import { Icon } from 'astro-icon'
+---
+
+<!-- Automatically fetches and inlines Material Design Icon's "account" SVG -->
+<Icon pack="mdi" name="account" />
+
+<!-- Equivalent shorthand -->
+<Icon name="mdi:account" />
+```
+
+**Sprite** will reference the SVG from a spritesheet via [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use).
+
+```astro
+---
+import { Sprite, Spritesheet } from 'astro-icon'
+---
+
+<!-- Automatically fetches and inlines Material Design Icon's "account" SVG -->
+<Sprite pack="mdi" name="account" />
+
+<!-- Equivalent shorthand -->
+<Sprite name="mdi:account" />
+
+<!-- Required ONCE per page, creates `<symbol>` for each icon -->
+<Spritesheet />
+```
+
+You may also create [Local Icon Packs](#local-icon-packs).
+
+## Local Icons
+
+By default, `astro-icon` supports custom local `svg` icons. They are optimized with [`svgo`](https://github.com/svg/svgo) automatically with no extra build step. See ["A Pretty Good SVG Icon System"](https://css-tricks.com/pretty-good-svg-icon-system/#just-include-the-icons-inline) from CSS Tricks.
+
+### Usage
+
+1. Create a directory inside of `src/` named `icons/`.
+2. Add each desired icon as an individual `.svg` file to `src/icons/`
+3. Reference a specific icon file using the `name` prop.
+
+**Icon** will inline the SVG directly in your HTML.
 
 ```astro
 ---
@@ -39,7 +86,7 @@ import { Icon } from 'astro-icon';
 <Icon name="filename" />
 ```
 
-6. Alternatively, if you need to reuse icons multiple times across a page, you can use the `Sprite` and `SpriteSheet` components. These leverage [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use) internally.
+**Sprite** will reference the SVG from a spritesheet via [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use).
 
 ```astro
 ---
@@ -50,7 +97,37 @@ import { Sprite, SpriteSheet } from 'astro-icon';
 <Sprite name="filename" />
 
 <!-- Required ONCE per page, creates `<symbol>` for each icon -->
-<SpriteSheet />
+<Spritesheet />
+```
+
+## Local Icon Packs
+
+`astro-icon` supports custom local icon packs. These are also referenced with the `pack` and/or `name` props.
+
+1. Create a directory inside of `src/` named `icons/`.
+2. Create a JS/TS file with your `pack` name inside of that directory, eg `src/icons/my-pack.ts`
+3. Use the `createIconPack` utility to handle most common situations.
+
+```ts
+import { createIconPack } from "astro-icon";
+
+// Resolves `heroicons` dependency and reads SVG files from the `heroicons/outline` directory
+export default createIconPack({ package: "heroicons", dir: "outline" });
+
+// Resolves `name` from a remote server, like GitHub!
+export default createIconPack({
+  url: "https://raw.githubusercontent.com/radix-ui/icons/master/packages/radix-icons/icons/",
+});
+```
+
+If you have custom constraints, you can always create the resolver yourself. Export a `default` function that resolves the `name` argument to an SVG string.
+
+```ts
+import { loadMyPackSvg } from "my-pack";
+export default async (name: string): Promise<string> => {
+  const svgString = await loadMyPackSvg(name);
+  return svgString;
+};
 ```
 
 ## Styling
@@ -81,10 +158,12 @@ import { Icon } from 'astro-icon';
 
 ## Props
 
-`<Icon>` requires the `name` prop to reference a specific icon.
+`<Icon>` and `<Sprite>` share the same interface.
 
-`<Icon>` optionally accepts the `optimize` prop as a boolean. Defaults to `true`. In the future it will control `svgo` options.
+The `name` prop references a specific icon. It is required.
 
-`<Icon>` also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
+The `optimize` prop is a boolean. Defaults to `true`. In the future it will control `svgo` options.
+
+Both components also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
 
 See the [`Props.ts`](./lib/Props.ts) file for more details.

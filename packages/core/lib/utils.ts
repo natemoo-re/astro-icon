@@ -1,4 +1,5 @@
 import { Props, Optimize } from "./Props";
+import getFromService from "./resolver";
 import { optimize as optimizeSVGNative } from "svgo";
 
 // Adapted from https://github.com/developit/htmlParser
@@ -112,21 +113,62 @@ export default async function load(
     throw new Error("<Icon> requires a name!");
   }
 
-  const filepath = `/src/icons/${name}.svg`;
-
   let svg = "";
-  try {
-    const { default: contents } = await import(`${filepath}?raw`);
+  let filepath = "";
+  if (name.includes(":")) {
+    const [pack, ..._name] = name.split(":");
+    name = _name.join(":");
+    // Note: omit ending to use default resolution
+    filepath = `/src/icons/${pack}`;
+    let get;
+    try {
+      const mod = await import(`${filepath}`);
+      if (typeof mod.default !== "function") {
+        throw new Error(
+          `[astro-icon] "${filepath}" did not export a default function!`
+        );
+      }
+      get = mod.default;
+    } catch (e) {
+      // Do nothing, local pack is not required
+    }
+    if (typeof get === "undefined") {
+      get = getFromService.bind(null, pack);
+    }
+    const contents = await get(name);
+    if (!contents) {
+      throw new Error(
+        `<Icon pack="${pack}" name="${name}" /> did not return an icon!`
+      );
+    }
     if (!/<svg/gim.test(contents)) {
       throw new Error(
-        `Unable to process "${filepath}" because it is not an SVG!`
+        `Unable to process "<Icon pack="${pack}" name="${name}" />" because an SVG string was not returned!
+
+Recieved the following content:
+${contents}`
       );
     }
     svg = contents;
-  } catch (e) {
-    throw new Error(
-      `[astro-icon] Unable to load "${filepath}". Does the file exist?`
-    );
+  } else {
+    filepath = `/src/icons/${name}.svg`;
+
+    try {
+      const { default: contents } = await import(`${filepath}?raw`);
+      if (!/<svg/gim.test(contents)) {
+        throw new Error(
+          `Unable to process "${filepath}" because it is not an SVG!
+
+Recieved the following content:
+${contents}`
+        );
+      }
+      svg = contents;
+    } catch (e) {
+      throw new Error(
+        `[astro-icon] Unable to load "${filepath}". Does the file exist?`
+      );
+    }
   }
 
   const { innerHTML, defaultProps } = preprocess(svg, { optimize });

@@ -8,13 +8,16 @@ import { Icon } from 'astro-icon';
 	<meta charset="utf-8" />
 	<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 	<meta name="viewport" content="width=device-width" />
-	<title>Welcome to Astro</title>
+	<title>Astro Icon</title>
 	<style lang="css">
 		[astro-icon] {
 			color: blue;
 		}
 		[astro-icon="annotation"] {
 			color: red;
+		}
+		[astro-icon="folder"] {
+			color: green;
 		}
 	</style>
 </head>
@@ -26,9 +29,36 @@ import { Icon } from 'astro-icon';
 
 	<p>Alternatively, see <a href="/sprite">the Sprite method</a>.</p>
 	
-	<!-- This will inline your SVG directly -->
-	<Icon size={24} name="adjustment" />
-	<Icon size={24} name="annotation" />
+	<article>
+		<h2>Local</h2>
+		<!-- This will inline your SVG directly -->
+		<Icon size={24} name="adjustment" />
+		<Icon size={24} name="annotation" />
+	</article>
+
+	<article>
+		<h2>Custom remote source</h2>
+		<!-- Pull your icon from a custom remote source -->
+	<Icon size={24} pack="radix" name="github-logo" />
+	</article>
+	
+	<article>
+		<h2>Local dependencies</h2>
+		<!-- Pull your icon from a local dependency -->
+		<Icon size={24} pack="heroicons" name="arrow-sm-up" />
+		<Icon size={24} pack="heroicons" name="arrow-sm-right" />
+		<Icon size={24} pack="heroicons" name="arrow-sm-down" />
+		<Icon size={24} pack="heroicons" name="arrow-sm-left" />
+	</article>
+
+	<article>
+		<h2>Automatic icons from service</h2>
+		<p>If you can find it on <a href="https://icones.js.org/">Icones</a>, you can render it here!</a></p>
+		<!-- Pull your icon from the default remote service -->
+		<Sprite size={64} pack="ic" name="baseline-account-box" />
+		<Sprite size={64} name="fe:building" />
+		<Sprite size={64} name="ri:aliens-fill" />
+	</article>
 </body>
 
 </html>

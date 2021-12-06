@@ -1,4 +1,5 @@
 ---
+import { SPRITESHEET_NAMESPACE } from './constants';
 import load from './utils.ts';
 import { getUsedSprites } from './context.ts';
 import { Optimize } from './Props.ts';
@@ -17,7 +18,7 @@ const icons = await Promise.all(names.map(name => {
 
 <svg style={`display: none; ${style ?? ''}`.trim()} {...{ 'aria-hidden': true, ...props }} astro-icon-spritesheet>
     {icons.map(icon => (
-        <symbol {...icon.props} id={`astroicon:${icon.name}`}>
+        <symbol {...icon.props} id={`${SPRITESHEET_NAMESPACE}:${icon.name}`}>
             {icon.innerHTML}
         </symbol>
     ))}

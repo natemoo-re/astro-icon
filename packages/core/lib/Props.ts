@@ -307,6 +307,7 @@ export type Optimize = boolean | OptimizeOptions;
 
 export interface Props extends HTMLAttributes {
   name: string;
+  pack?: string;
   optimize?: Optimize;
   fill?: string;
   "fill-opacity"?: number | string;
