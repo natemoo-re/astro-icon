@@ -1,0 +1,28 @@
+{
+  "name": "service",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "author": {
+    "name": "Nate Moore",
+    "email": "nate@natemoo.re",
+    "url": "https://twitter.com/n_moore"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natemoo-re/astro-icon.git",
+    "directory": "packages/service"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/natemoo-re/astro-icon/issues"
+  },
+  "homepage": "https://github.com/natemoo-re/astro-icon#readme",
+  "dependencies": {
+    "@iconify/json": "^1.1.439",
+    "@iconify/json-tools": "^1.0.10"
+  },
+  "devDependencies": {
+    "@vercel/node": "^1.12.1"
+  }
+}
