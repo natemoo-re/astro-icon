@@ -2,7 +2,10 @@
 import load from './utils.ts';
 export { Props } from './Props.ts';
 
-const { name, title, optimize = true, class: className, ...inputProps } = Astro.props;
+let { name, pack, title, optimize = true, class: className, ...inputProps } = Astro.props;
+if (pack) {
+    name = `${pack}:${name}`;
+}
 const { innerHTML, props } = await load(name, { ...inputProps, class: className }, optimize);
 ---
 

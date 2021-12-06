@@ -113,25 +113,35 @@ export default async function load(
   }
 
   let svg = "";
-  if (inputProps.pack) {
-    const pack = inputProps.pack;
-    delete inputProps.pack;
+  if (name.includes(':')) {
+    const [pack, ..._name] = name.split(':');
+    name = _name.join(':');
     // Note: omit ending to use default resolution
     const filepath = `/src/icons/${pack}`;
+    let get;
     try {
-      const { default: get } = await import(`${filepath}`);
-      const contents = await get(name);
-      if (!/<svg/gim.test(contents)) {
-        throw new Error(
-          `Unable to process "<Icon pack="${pack}" name="${name}" />" because an SVG string was not returned!`
-        );
-      }
-      svg = contents;
+      const { default: exportedFn } = await import(`${filepath}`);
+      get = exportedFn
     } catch {
       throw new Error(
         `[astro-icon] Unable to load "${filepath}". Does the file exist?`
       );
     }
+    if (typeof get === 'undefined') {
+      throw new Error(
+        `[astro-icon] "${filepath}" did not export a default function`
+      );
+    }
+    const contents = await get(name);
+    if (!/<svg/gim.test(contents)) {
+      throw new Error(
+        `Unable to process "<Icon pack="${pack}" name="${name}" />" because an SVG string was not returned!
+
+Recieved the following content:
+${contents}`
+      );
+    }
+    svg = contents;
   } else {
     const filepath = `/src/icons/${name}.svg`;
 
@@ -139,7 +149,10 @@ export default async function load(
       const { default: contents } = await import(`${filepath}?raw`);
       if (!/<svg/gim.test(contents)) {
         throw new Error(
-          `Unable to process "${filepath}" because it is not an SVG!`
+          `Unable to process "${filepath}" because it is not an SVG!
+
+Recieved the following content:
+${contents}`
         );
       }
       svg = contents;
