@@ -1,4 +1,5 @@
 import { Props, Optimize } from "./Props";
+import getFromService from './resolver';
 import { optimize as optimizeSVGNative } from "svgo";
 
 // Adapted from https://github.com/developit/htmlParser
@@ -113,26 +114,33 @@ export default async function load(
   }
 
   let svg = "";
+  let filepath = "";
   if (name.includes(":")) {
     const [pack, ..._name] = name.split(":");
     name = _name.join(":");
     // Note: omit ending to use default resolution
-    const filepath = `/src/icons/${pack}`;
+    filepath = `/src/icons/${pack}`;
     let get;
     try {
-      const { default: exportedFn } = await import(`${filepath}`);
-      get = exportedFn;
-    } catch {
-      throw new Error(
-        `[astro-icon] Unable to load "${filepath}". Does the file exist?`
-      );
+      const mod = await import(`${filepath}`);
+      if (typeof mod.default !== 'function') {
+        throw new Error(
+          `[astro-icon] "${filepath}" did not export a default function!`
+        );
+      }
+      get = mod.default;
+    } catch (e) {
+      // Do nothing, local pack is not required
     }
     if (typeof get === "undefined") {
-      throw new Error(
-        `[astro-icon] "${filepath}" did not export a default function`
-      );
+      get = getFromService.bind(null, pack);
     }
     const contents = await get(name);
+    if (!contents) {
+      throw new Error(
+        `<Icon pack="${pack}" name="${name}" /> did not return an icon!`
+      );
+    }
     if (!/<svg/gim.test(contents)) {
       throw new Error(
         `Unable to process "<Icon pack="${pack}" name="${name}" />" because an SVG string was not returned!
@@ -143,7 +151,7 @@ ${contents}`
     }
     svg = contents;
   } else {
-    const filepath = `/src/icons/${name}.svg`;
+    filepath = `/src/icons/${name}.svg`;
 
     try {
       const { default: contents } = await import(`${filepath}?raw`);

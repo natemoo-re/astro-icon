@@ -1,4 +1,5 @@
 ---
+import { SPRITESHEET_NAMESPACE } from './constants';
 import { normalizeProps } from './utils.ts';
 import { trackSprite } from './context.ts';
 export { Props } from './Props.ts';
@@ -8,7 +9,7 @@ const props = normalizeProps(inputProps);
 if (pack) {
     name = `${pack}:${name}`;
 }
-const href = `#ai:${name}`;
+const href = `#${SPRITESHEET_NAMESPACE}:${name}`;
 // @ts-ignore
 trackSprite($$result, name);
 ---

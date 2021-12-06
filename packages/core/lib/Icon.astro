@@ -6,7 +6,16 @@ let { name, pack, title, optimize = true, class: className, ...inputProps } = As
 if (pack) {
     name = `${pack}:${name}`;
 }
-const { innerHTML, props } = await load(name, { ...inputProps, class: className }, optimize);
+
+let innerHTML = '';
+let props = {};
+try {
+    const svg = await load(name, { ...inputProps, class: className }, optimize);
+    innerHTML = svg.innerHTML;
+    props = svg.props;
+} catch (e) {
+    console.error(e);
+}
 ---
 
 <svg {...props} astro-icon={name}>{title ? (<title>{title}</title>) : ''}{innerHTML}</svg>

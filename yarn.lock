@@ -585,11 +585,6 @@
     globby "^11.0.0"
     read-yaml-file "^1.1.0"
 
-"@modulz/radix-icons@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@modulz/radix-icons/-/radix-icons-4.0.0.tgz#628a7826a4569dd2e3331e266d8d2e26c7d6753c"
-  integrity sha512-d79T4cYvMGMocVC/q1WiMO578FPFfUoxmXIkduc8cUQAPDr7thuEV5HrCHhqqqkoVaYD0QPct180ilcNUyGPrg==
-
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
