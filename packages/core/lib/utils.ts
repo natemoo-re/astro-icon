@@ -112,21 +112,42 @@ export default async function load(
     throw new Error("<Icon> requires a name!");
   }
 
-  const filepath = `/src/icons/${name}.svg`;
-
   let svg = "";
-  try {
-    const { default: contents } = await import(`${filepath}?raw`);
-    if (!/<svg/gim.test(contents)) {
+  if (inputProps.pack) {
+    const pack = inputProps.pack;
+    delete inputProps.pack;
+    // Note: omit ending to use default resolution
+    const filepath = `/src/icons/${pack}`;
+    try {
+      const { default: get } = await import(`${filepath}`);
+      const contents = await get(name);
+      if (!/<svg/gim.test(contents)) {
+        throw new Error(
+          `Unable to process "<Icon pack="${pack}" name="${name}" />" because an SVG string was not returned!`
+        );
+      }
+      svg = contents;
+    } catch {
       throw new Error(
-        `Unable to process "${filepath}" because it is not an SVG!`
+        `[astro-icon] Unable to load "${filepath}". Does the file exist?`
       );
     }
-    svg = contents;
-  } catch (e) {
-    throw new Error(
-      `[astro-icon] Unable to load "${filepath}". Does the file exist?`
-    );
+  } else {
+    const filepath = `/src/icons/${name}.svg`;
+
+    try {
+      const { default: contents } = await import(`${filepath}?raw`);
+      if (!/<svg/gim.test(contents)) {
+        throw new Error(
+          `Unable to process "${filepath}" because it is not an SVG!`
+        );
+      }
+      svg = contents;
+    } catch (e) {
+      throw new Error(
+        `[astro-icon] Unable to load "${filepath}". Does the file exist?`
+      );
+    }
   }
 
   const { innerHTML, defaultProps } = preprocess(svg, { optimize });

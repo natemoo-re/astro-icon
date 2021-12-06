@@ -11,5 +11,8 @@
   "devDependencies": {
     "astro": "^0.21.10",
     "astro-icon": "0.3.0"
+  },
+  "dependencies": {
+    "heroicons": "^1.0.5"
   }
 }
