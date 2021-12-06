@@ -113,21 +113,21 @@ export default async function load(
   }
 
   let svg = "";
-  if (name.includes(':')) {
-    const [pack, ..._name] = name.split(':');
-    name = _name.join(':');
+  if (name.includes(":")) {
+    const [pack, ..._name] = name.split(":");
+    name = _name.join(":");
     // Note: omit ending to use default resolution
     const filepath = `/src/icons/${pack}`;
     let get;
     try {
       const { default: exportedFn } = await import(`${filepath}`);
-      get = exportedFn
+      get = exportedFn;
     } catch {
       throw new Error(
         `[astro-icon] Unable to load "${filepath}". Does the file exist?`
       );
     }
-    if (typeof get === 'undefined') {
+    if (typeof get === "undefined") {
       throw new Error(
         `[astro-icon] "${filepath}" did not export a default function`
       );

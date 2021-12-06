@@ -1,3 +1,5 @@
-import { createIconPack } from 'astro-icon';
+import { createIconPack } from "astro-icon";
 
-export default createIconPack({ url: 'https://raw.githubusercontent.com/radix-ui/icons/master/packages/radix-icons/icons/' });
+export default createIconPack({
+  url: "https://raw.githubusercontent.com/radix-ui/icons/master/packages/radix-icons/icons/",
+});
