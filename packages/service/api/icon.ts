@@ -1,7 +1,10 @@
 import { VercelApiHandler } from "@vercel/node";
 import { Collection, SVG } from "@iconify/json-tools";
 
-const packAliases = new Map([["logo", "fa-brands"], ["radix", "radix-icons"]]);
+const packAliases = new Map([
+  ["logo", "fa-brands"],
+  ["radix", "radix-icons"],
+]);
 
 const handler: VercelApiHandler = async (req, res) => {
   let { pack, name } = req.query;
