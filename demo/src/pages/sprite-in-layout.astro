@@ -24,7 +24,14 @@ import { Sprite } from 'astro-icon';
 	<!-- This leverages the `<use />` SVG feature -->
     <Sprite size={24} name="annotation" />
 	<Sprite size={24} name="adjustment" />
-    <Sprite size={24} name="adjustment" />
-    <Sprite size={24} name="adjustment" />
+	
+	<!-- Pull your icon from a remote source -->
+	<Sprite size={24} pack="radix" name="github-logo" />
+
+	<!-- Pull your icon from a local dependency -->
+	<Sprite size={24} pack="heroicons" name="arrow-sm-up" />
+	<Sprite size={24} pack="heroicons" name="arrow-sm-right" />
+	<Sprite size={24} pack="heroicons" name="arrow-sm-down" />
+	<Sprite size={24} pack="heroicons" name="arrow-sm-left" />
 </Base>
 
