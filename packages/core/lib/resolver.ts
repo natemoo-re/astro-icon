@@ -20,8 +20,8 @@ export default async function get(pack: string, name: string) {
   if (!res.ok) {
     throw new Error(await res.text());
   }
-  const contentType = res.headers.get('Content-Type');
-  if (!contentType.includes('svg')) {
+  const contentType = res.headers.get("Content-Type");
+  if (!contentType.includes("svg")) {
     throw new Error(`[astro-icon] Unable to load "${name}" because it did not resolve to an SVG!
 
 Recieved the following "Content-Type":

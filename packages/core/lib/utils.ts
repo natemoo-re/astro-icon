@@ -1,5 +1,5 @@
 import { Props, Optimize } from "./Props";
-import getFromService from './resolver';
+import getFromService from "./resolver";
 import { optimize as optimizeSVGNative } from "svgo";
 
 // Adapted from https://github.com/developit/htmlParser
@@ -123,7 +123,7 @@ export default async function load(
     let get;
     try {
       const mod = await import(`${filepath}`);
-      if (typeof mod.default !== 'function') {
+      if (typeof mod.default !== "function") {
         throw new Error(
           `[astro-icon] "${filepath}" did not export a default function!`
         );
