@@ -1,9 +1,9 @@
 {
-    "rewrites": [
-        { "source": "/", "destination": "/api/icon" },
-        { "source": "/:pack", "destination": "/api/icon" },
-        { "source": "/:pack/:name", "destination": "/api/icon" }
-    ],
-    "cleanUrls": true,
-    "trailingSlash": false
+  "rewrites": [
+    { "source": "/", "destination": "/api/icon" },
+    { "source": "/:pack", "destination": "/api/icon" },
+    { "source": "/:pack/:name", "destination": "/api/icon" }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
 }
