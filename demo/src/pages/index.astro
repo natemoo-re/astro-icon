@@ -16,6 +16,9 @@ import { Icon } from 'astro-icon';
 		[astro-icon="annotation"] {
 			color: red;
 		}
+		[astro-icon="folder"] {
+			color: green;
+		}
 	</style>
 </head>
 
@@ -29,6 +32,7 @@ import { Icon } from 'astro-icon';
 	<!-- This will inline your SVG directly -->
 	<Icon size={24} name="adjustment" />
 	<Icon size={24} name="annotation" />
+	<Icon size={24} pack="heroicons" name="folder" />
 </body>
 
 </html>
