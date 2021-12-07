@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 const baseURL = "https://api.astroicon.dev/v1/";
 const requests = new Map();
 const fetchCache = new Map();

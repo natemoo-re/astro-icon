@@ -3554,7 +3554,7 @@ node-fetch@^2.5.0:
   dependencies:
     whatwg-url "^5.0.0"
 
-node-fetch@^3.0.0:
+node-fetch@^3.0.0, node-fetch@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-3.1.0.tgz#714f4922dc270239487654eaeeab86b8206cb52e"
   integrity sha512-QU0WbIfMUjd5+MUzQOYhenAazakV7Irh1SGkWCsRzBwvm4fAhzEUaHMJ6QLP7gWT6WO9/oH2zhKMMGMuIrDyKw==

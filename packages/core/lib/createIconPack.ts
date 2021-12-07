@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 import { promises as fs } from "fs";
 import { fileURLToPath, pathToFileURL } from "url";
 import { createRequire } from "module";
