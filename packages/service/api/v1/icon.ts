@@ -8,11 +8,11 @@ const packAliases = new Map([
 ]);
 
 const handler: VercelApiHandler = async (req, res) => {
-  const reqOrigin = req.headers['origin'];
-  const reqEtag = req.headers['if-none-match']
-  res.setHeader("Access-Control-Allow-Origin", reqOrigin || '*');
-  res.setHeader("Cache-Control", "s-maxage=59, stale-while-revalidate=299")
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  const reqOrigin = req.headers["origin"];
+  const reqEtag = req.headers["if-none-match"];
+  res.setHeader("Access-Control-Allow-Origin", reqOrigin || "*");
+  res.setHeader("Cache-Control", "s-maxage=59, stale-while-revalidate=299");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   let { pack, name } = req.query;
   if (!pack) {
     res.status(400).send(`Bad Request: No "pack" query param detected`);
