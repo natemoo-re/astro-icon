@@ -1,4 +1,4 @@
-import { SPRITESHEET_NAMESPACE } from './constants';
+import { SPRITESHEET_NAMESPACE } from "./constants";
 import { Props, Optimize } from "./Props";
 import getFromService from "./resolver";
 import { optimize as optimizeSVGNative } from "svgo";
@@ -21,7 +21,11 @@ const splitAttrs = (str) => {
   return res;
 };
 
-function optimizeSvg(contents: string, name: string, options: Optimize): string {
+function optimizeSvg(
+  contents: string,
+  name: string,
+  options: Optimize
+): string {
   return optimizeSVGNative(contents, {
     plugins: [
       "removeDoctype",
@@ -33,7 +37,10 @@ function optimizeSvg(contents: string, name: string, options: Optimize): string 
       "cleanupAttrs",
       "minifyStyles",
       "convertStyleToAttrs",
-      { name: 'cleanupIDs', params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` } },
+      {
+        name: "cleanupIDs",
+        params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` },
+      },
       "removeRasterImages",
       "removeUselessDefs",
       "cleanupNumericValues",
