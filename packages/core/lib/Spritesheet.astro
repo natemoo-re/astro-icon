@@ -1,6 +1,6 @@
 ---
 import { SPRITESHEET_NAMESPACE } from './constants';
-import load from './utils.ts';
+import load, { fallback } from './utils.ts';
 import { getUsedSprites } from './context.ts';
 import { Optimize } from './Props.ts';
 
@@ -10,9 +10,11 @@ export interface Props {
 
 const { optimize = true, style, ...props } = Astro.props;
 // @ts-ignore
-const names = getUsedSprites($$result);
+const names = await getUsedSprites($$result);
 const icons = await Promise.all(names.map(name => {
-    return load(name, {}, optimize).then(res => ({ ...res, name }));
+    return load(name, {}, optimize)
+        .then(res => ({ ...res, name }))
+        .catch(() => ({ ...fallback, name }));
 }));
 ---
 

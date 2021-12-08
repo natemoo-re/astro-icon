@@ -1,5 +1,5 @@
 ---
-import { Sprite, Spritesheet } from 'astro-icon';
+import { Sprite } from 'astro-icon';
 ---
 
 <html lang="en">
@@ -20,48 +20,49 @@ import { Sprite, Spritesheet } from 'astro-icon';
 </head>
 
 <body>
-	<h1>Welcome to Astro Icon!</h1>
+	<!-- Make sure you include the <Sprite.Provider /> component! -->
+	<Sprite.Provider>
+		<h1>Welcome to Astro Icon!</h1>
 
-	<p>The <code>SpriteSheet</code> component will create an optimized spritesheet including only referenced SVG files inside of <code>src/icons/</code>. It should be included once per page, at the end of <code>body</code>.</p>
+		<p>The <code>SpriteSheet</code> component will create an optimized spritesheet including only referenced SVG files inside of <code>src/icons/</code>. It should be included once per page, at the end of <code>body</code>.</p>
 
-	<aside><p>Tip! <code>SpriteSheet</code> can be included in <a href="/sprite-in-layout">a Layout component</a> for ease of use!</p></aside>
+		<aside><p>Tip! <code>SpriteSheet</code> can be included in <a href="/sprite-in-layout">a Layout component</a> for ease of use!</p></aside>
 
-	<p>Individual icons can be referenced using the <code>Sprite</code> component. Internally, this uses <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use"><code>&lt;use></code></a> element.</p>
+		<p>Individual icons can be referenced using the <code>Sprite</code> component. Internally, this uses <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use"><code>&lt;use></code></a> element.</p>
 
-	<p>Alternatively, see <a href="/">the Icon method</a>.</p>
+		<p>Alternatively, see <a href="/">the Icon method</a>.</p>
 
-	<article>
-		<h2>Local</h2>
-		<!-- This will inline your SVG directly -->
-		<Sprite size={24} name="adjustment" />
-		<Sprite size={24} name="annotation" />
-	</article>
+		<article>
+			<h2>Local</h2>
+			<!-- This will inline your SVG directly -->
+			<Sprite size={24} name="adjustment" />
+			<Sprite size={24} name="annotation" />
+		</article>
 
-	<article>
-		<h2>Custom remote source</h2>
-		<!-- Pull your icon from a custom remote source -->
-		<Sprite size={24} pack="radix" name="github-logo" />
-	</article>
-	
-	<article>
-		<h2>Local dependencies</h2>
-		<!-- Pull your icon from a local dependency -->
-		<Sprite size={24} pack="heroicons" name="arrow-sm-up" />
-		<Sprite size={24} pack="heroicons" name="arrow-sm-right" />
-		<Sprite size={24} pack="heroicons" name="arrow-sm-down" />
-		<Sprite size={24} pack="heroicons" name="arrow-sm-left" />
-	</article>
+		<article>
+			<h2>Custom remote source</h2>
+			<!-- Pull your icon from a custom remote source -->
+			<Sprite size={24} pack="radix" name="github-logo" />
+		</article>
+		
+		<article>
+			<h2>Local dependencies</h2>
+			<!-- Pull your icon from a local dependency -->
+			<Sprite size={24} pack="heroicons" name="arrow-sm-up" />
+			<Sprite size={24} pack="heroicons" name="arrow-sm-right" />
+			<Sprite size={24} pack="heroicons" name="arrow-sm-down" />
+			<Sprite size={24} pack="heroicons" name="arrow-sm-left" />
+		</article>
 
-	<article>
-		<h2>Automatic icons from service</h2>
-		<p>If you can find it on <a href="https://icones.js.org/">Icones</a>, you can render it here!</a></p>
-		<!-- Pull your icon from the default remote service -->
-		<Sprite size={64} pack="ic" name="baseline-account-box" />
-		<Sprite size={64} name="fe:building" />
-		<Sprite size={64} name="ri:aliens-fill" />
-	</article>
-	<!-- Make sure you include the <SpriteSheet /> component! -->
-	<Spritesheet />
+		<article>
+			<h2>Automatic icons from service</h2>
+			<p>If you can find it on <a href="https://icones.js.org/">Icones</a>, you can render it here!</a></p>
+			<!-- Pull your icon from the default remote service -->
+			<Sprite size={64} pack="ic" name="baseline-account-box" />
+			<Sprite size={64} name="fe:building" />
+			<Sprite size={64} name="ri:aliens-fill" />
+		</article>
+	</Sprite.Provider>
 </body>
 
 </html>

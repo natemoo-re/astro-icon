@@ -50,17 +50,19 @@ import { Icon } from 'astro-icon'
 
 ```astro
 ---
-import { Sprite, Spritesheet } from 'astro-icon'
+import { Sprite } from 'astro-icon'
 ---
 
-<!-- Automatically fetches and inlines Material Design Icon's "account" SVG -->
-<Sprite pack="mdi" name="account" />
+<!-- Required ONCE per page as a parent of any <Sprite> components! Creates `<symbol>` for each icon -->
+<!-- Can also be included in your Layout component! -->
+<Sprite.Provider>
+  <!-- Automatically fetches and inlines Material Design Icon's "account" SVG -->
+  <Sprite pack="mdi" name="account" />
 
-<!-- Equivalent shorthand -->
-<Sprite name="mdi:account" />
+  <!-- Equivalent shorthand -->
+  <Sprite name="mdi:account" />
 
-<!-- Required ONCE per page, creates `<symbol>` for each icon -->
-<Spritesheet />
+</Sprite.Provider>
 ```
 
 You may also create [Local Icon Packs](#local-icon-packs).
@@ -90,14 +92,15 @@ import { Icon } from 'astro-icon';
 
 ```astro
 ---
-import { Sprite, SpriteSheet } from 'astro-icon';
+import { Sprite } from 'astro-icon';
 ---
 
-<!-- Uses the sprite from `/src/icons/filename.svg` -->
-<Sprite name="filename" />
-
-<!-- Required ONCE per page, creates `<symbol>` for each icon -->
-<Spritesheet />
+<!-- Required ONCE per page as a parent of any <Sprite> components! Creates `<symbol>` for each icon -->
+<!-- Can also be included in your Layout component! -->
+<Sprite.Provider>
+  <!-- Uses the sprite from `/src/icons/filename.svg` -->
+  <Sprite name="filename" />
+</Sprite.Provider>
 ```
 
 ## Local Icon Packs

@@ -1,5 +1,5 @@
 ---
-import { Spritesheet } from 'astro-icon';
+import { Sprite } from 'astro-icon';
 ---
 
 <html lang="en">
@@ -12,10 +12,9 @@ import { Spritesheet } from 'astro-icon';
 </head>
 
 <body>
-	<slot />
-
-	<!-- Make sure you include the <SpriteSheet /> component! -->
-	<Spritesheet />
+	<Sprite.Provider>
+		<slot />
+	</Sprite.Provider>
 </body>
 
 </html>

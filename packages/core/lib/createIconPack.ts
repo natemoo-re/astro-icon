@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { promises as fs } from "fs";
+import { statSync, promises as fs } from "fs";
 import { fileURLToPath, pathToFileURL } from "url";
 import { createRequire } from "module";
 
@@ -19,12 +19,14 @@ export default function createIconPack({
   if (pkg) {
     const baseUrl = pathToFileURL(require.resolve(`${pkg}/package.json`));
     return async (name: string) => {
+      const path = fileURLToPath(
+        new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
+      );
+      if (!exists(path)) {
+        throw new Error(`[astro-icon] Unable to load "${path}"! Does the file exist?"`)
+      }
       const svg = await fs
-        .readFile(
-          fileURLToPath(
-            new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
-          )
-        )
+        .readFile(path)
         .then((res) => res.toString());
       return svg;
     };
@@ -38,9 +40,21 @@ export default function createIconPack({
       if (fetchCache.has(url)) {
         return fetchCache.get(url);
       }
-      const svg = await fetch(url).then((res) => res.text());
+      const res = await fetch(url);
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Failed to fetch "${url}"!\n${body}`);
+      }
+      const svg = await res.text();
       fetchCache.set(url, svg);
       return svg;
     };
   }
+}
+
+const exists = (path: string): boolean => {
+  try {
+    return statSync(path).isFile()
+  } catch (e) {}
+  return false;
 }

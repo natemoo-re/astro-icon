@@ -1,19 +1,22 @@
 ---
-import load from './utils.ts';
+import load, { fallback, normalizeProps } from './utils.ts';
 export { Props } from './Props.ts';
 
 let { name, pack, title, optimize = true, class: className, ...inputProps } = Astro.props;
+let props = {};
 if (pack) {
     name = `${pack}:${name}`;
 }
 
 let innerHTML = '';
-let props = {};
 try {
     const svg = await load(name, { ...inputProps, class: className }, optimize);
     innerHTML = svg.innerHTML;
     props = svg.props;
 } catch (e) {
+    innerHTML = fallback.innerHTML;
+    props = { ...fallback.props, ...normalizeProps(inputProps) };
+    title = `Failed to load "${name}"!`
     console.error(e);
 }
 ---

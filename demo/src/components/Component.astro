@@ -1,0 +1,17 @@
+---
+import DeepComponent from './DeepComponent.astro';
+import { Sprite } from 'astro-icon'
+
+await new Promise(res => setTimeout(res, 1000));
+---
+
+<article>
+    <h2>Local dependencies</h2>
+    <!-- Pull your icon from a local dependency -->
+    <Sprite size={24} pack="heroicons" name="arrow-sm-up" />
+    <Sprite size={24} pack="heroicons" name="arrow-sm-right" />
+    <Sprite size={24} pack="heroicons" name="arrow-sm-down" />
+    <Sprite size={24} pack="heroicons" name="arrow-sm-left" />
+</article>
+
+<DeepComponent />
