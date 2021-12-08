@@ -20,7 +20,7 @@ const splitAttrs = (str) => {
   return res;
 };
 
-function optimizeSvg(contents: string, options: Optimize): string {
+function optimizeSvg(contents: string, name: string, options: Optimize): string {
   return optimizeSVGNative(contents, {
     plugins: [
       "removeDoctype",
@@ -32,7 +32,7 @@ function optimizeSvg(contents: string, options: Optimize): string {
       "cleanupAttrs",
       "minifyStyles",
       "convertStyleToAttrs",
-      "cleanupIDs",
+      { name: 'cleanupIDs', params: { prefix: `astroicon:${name}` } },
       "removeRasterImages",
       "removeUselessDefs",
       "cleanupNumericValues",
@@ -66,12 +66,12 @@ function optimizeSvg(contents: string, options: Optimize): string {
 }
 
 const preprocessCache = new Map();
-export function preprocess(contents: string, { optimize }) {
+export function preprocess(contents: string, name: string, { optimize }) {
   if (preprocessCache.has(contents)) {
     return preprocessCache.get(contents);
   }
   if (optimize) {
-    contents = optimizeSvg(contents, optimize);
+    contents = optimizeSvg(contents, name, optimize);
   }
   domParserTokenizer.lastIndex = 0;
   let result = contents;
@@ -121,6 +121,7 @@ export default async function load(
   inputProps: Props,
   optimize: Optimize
 ) {
+  const key = name;
   if (!name) {
     throw new Error("<Icon> requires a name!");
   }
@@ -183,7 +184,7 @@ ${contents}`
     }
   }
 
-  const { innerHTML, defaultProps } = preprocess(svg, { optimize });
+  const { innerHTML, defaultProps } = preprocess(svg, key, { optimize });
 
   if (!innerHTML.trim()) {
     throw new Error(`Unable to parse "${filepath}"!`);
