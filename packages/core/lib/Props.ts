@@ -1,3 +1,6 @@
+import { Optimize } from './OptimizeOptions';
+export * from './OptimizeOptions';
+
 // Adapted from https://github.com/astro-community/icons
 // All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
 export interface AriaAttributes {
@@ -301,9 +304,6 @@ export interface HTMLAttributes extends AriaAttributes {
   title?: string;
   translate?: "yes" | "no";
 }
-
-export interface OptimizeOptions {}
-export type Optimize = boolean | OptimizeOptions;
 
 export interface Props extends HTMLAttributes {
   name: string;

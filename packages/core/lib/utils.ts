@@ -21,54 +21,58 @@ const splitAttrs = (str) => {
   return res;
 };
 
-function optimizeSvg(
-  contents: string,
-  name: string,
-  options: Optimize
-): string {
+const defaultPlugins = [
+  "removeDoctype",
+  "removeXMLProcInst",
+  "removeComments",
+  "removeMetadata",
+  "removeXMLNS",
+  "removeEditorsNSData",
+  "cleanupAttrs",
+  "minifyStyles",
+  "convertStyleToAttrs",
+  "removeRasterImages",
+  "removeUselessDefs",
+  "cleanupNumericValues",
+  "cleanupListOfValues",
+  "convertColors",
+  "removeUnknownsAndDefaults",
+  "removeNonInheritableGroupAttrs",
+  "removeUselessStrokeAndFill",
+  "removeViewBox",
+  "cleanupEnableBackground",
+  "removeHiddenElems",
+  "removeEmptyText",
+  "convertShapeToPath",
+  "moveElemsAttrsToGroup",
+  "moveGroupAttrsToElems",
+  "collapseGroups",
+  "convertPathData",
+  "convertTransform",
+  "removeEmptyAttrs",
+  "removeEmptyContainers",
+  "mergePaths",
+  "removeUnusedNS",
+  "sortAttrs",
+  "removeTitle",
+  "removeDesc",
+  "removeDimensions",
+  "removeStyleElement",
+  "removeScriptElement",
+];
+
+function optimizeSvg(contents: string, name: string, options: Optimize): string {
+  if (options === false) {
+    return contents;
+  }
+  // const userPlugins = typeof options === 'boolean' ? [] : Object.entries(options);
+  // const plugins = options === true ? defaultPlugins : defaultPlugins.map((key) => {
+  //   return userPlugins[key] ? key : null
+  // })
   return optimizeSVGNative(contents, {
     plugins: [
-      "removeDoctype",
-      "removeXMLProcInst",
-      "removeComments",
-      "removeMetadata",
-      "removeXMLNS",
-      "removeEditorsNSData",
-      "cleanupAttrs",
-      "minifyStyles",
-      "convertStyleToAttrs",
-      {
-        name: "cleanupIDs",
-        params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` },
-      },
-      "removeRasterImages",
-      "removeUselessDefs",
-      "cleanupNumericValues",
-      "cleanupListOfValues",
-      "convertColors",
-      "removeUnknownsAndDefaults",
-      "removeNonInheritableGroupAttrs",
-      "removeUselessStrokeAndFill",
-      "removeViewBox",
-      "cleanupEnableBackground",
-      "removeHiddenElems",
-      "removeEmptyText",
-      "convertShapeToPath",
-      "moveElemsAttrsToGroup",
-      "moveGroupAttrsToElems",
-      "collapseGroups",
-      "convertPathData",
-      "convertTransform",
-      "removeEmptyAttrs",
-      "removeEmptyContainers",
-      "mergePaths",
-      "removeUnusedNS",
-      "sortAttrs",
-      "removeTitle",
-      "removeDesc",
-      "removeDimensions",
-      "removeStyleElement",
-      "removeScriptElement",
+      ...defaultPlugins,
+      { name: 'cleanupIDs', params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` } },
     ],
   }).data;
 }
