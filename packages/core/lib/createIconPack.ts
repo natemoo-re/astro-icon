@@ -1,4 +1,3 @@
-import fetch from "node-fetch";
 import { statSync, promises as fs } from "fs";
 import { fileURLToPath, pathToFileURL } from "url";
 import { createRequire } from "module";
