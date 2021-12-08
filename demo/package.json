@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "astro": "^0.21.10",
-    "astro-icon": "0.5.0"
+    "astro-icon": "0.5.1"
   },
   "dependencies": {
     "heroicons": "^1.0.5"
