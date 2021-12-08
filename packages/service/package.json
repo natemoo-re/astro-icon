@@ -20,7 +20,8 @@
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "dependencies": {
     "@iconify/json": "^1.1.439",
-    "@iconify/json-tools": "^1.0.10"
+    "@iconify/json-tools": "^1.0.10",
+    "etag": "^1.8.1"
   },
   "devDependencies": {
     "@vercel/node": "^1.12.1"

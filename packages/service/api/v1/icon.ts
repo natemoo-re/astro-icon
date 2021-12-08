@@ -1,5 +1,6 @@
 import { VercelApiHandler } from "@vercel/node";
 import { Collection, SVG } from "@iconify/json-tools";
+import etag from 'etag';
 
 const packAliases = new Map([
   ["logo", "fa-brands"],
@@ -7,7 +8,9 @@ const packAliases = new Map([
 ]);
 
 const handler: VercelApiHandler = async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   let { pack, name } = req.query;
   if (!pack) {
     res.status(400).send(`Bad Request: No "pack" query param detected`);
@@ -56,6 +59,7 @@ const handler: VercelApiHandler = async (req, res) => {
     return;
   }
   const svg = new SVG(data).getSVG({});
+  res.setHeader('ETag', etag(svg))
   res.setHeader("Content-Type", "image/svg+xml");
   res.status(200).send(svg);
 };
