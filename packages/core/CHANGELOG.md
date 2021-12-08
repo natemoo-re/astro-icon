@@ -1,5 +1,32 @@
 # astro-icon
 
+## 0.5.0
+
+### Minor Changes
+
+- [`e61559b`](https://github.com/natemoo-re/astro-icon/commit/e61559be5b530d0cc1e3479490ff23fd06158ef5) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Adds `<Sprite.Provider>` component. This will render `<Spritesheet>` internally, after all `<Sprite>` components have been rendered, solving a race condition.
+
+  Deprecates `<Spritesheet>`, to be replaced with `<Sprite.Provider>` component.
+
+  **Migrating from `<Spritesheet>` to `<Sprite.Provider>`**
+
+  - Remove `Spritesheet` component.
+  - Wrap your site content in `<Sprite.Provider>`. This also works inside of a layout component!
+
+  ```diff
+   ---
+  - import { Sprite, Spritesheet } from 'astro-icon';
+  + import { Sprite } from 'astro-icon';
+   ---
+
+   <body>
+  +  <Sprite.Provider>
+       <Sprite name="icon" />
+  -    <Spritesheet />
+  +  </Sprite.Provider>
+   </body>
+  ```
+
 ## 0.4.0
 
 ### Minor Changes
