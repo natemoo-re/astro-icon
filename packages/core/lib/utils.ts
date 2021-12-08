@@ -1,7 +1,7 @@
 import { SPRITESHEET_NAMESPACE } from "./constants";
 import { Props, Optimize } from "./Props";
 import getFromService from "./resolver";
-import { optimize as optimizeSVGNative } from "svgo";
+import { optimize as optimizeWithSVGO } from "svgo";
 
 // Adapted from https://github.com/developit/htmlParser
 const splitAttrsTokenizer = /([a-z0-9_\:\-]*)\s*?=\s*?(['"]?)(.*?)\2\s+/gim;
@@ -73,7 +73,7 @@ function optimizeSvg(
   // const plugins = options === true ? defaultPlugins : defaultPlugins.map((key) => {
   //   return userPlugins[key] ? key : null
   // })
-  return optimizeSVGNative(contents, {
+  return optimizeWithSVGO(contents, {
     plugins: [
       ...defaultPlugins,
       {
