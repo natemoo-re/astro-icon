@@ -61,7 +61,11 @@ const defaultPlugins = [
   "removeScriptElement",
 ];
 
-function optimizeSvg(contents: string, name: string, options: Optimize): string {
+function optimizeSvg(
+  contents: string,
+  name: string,
+  options: Optimize
+): string {
   if (options === false) {
     return contents;
   }
@@ -72,7 +76,10 @@ function optimizeSvg(contents: string, name: string, options: Optimize): string 
   return optimizeSVGNative(contents, {
     plugins: [
       ...defaultPlugins,
-      { name: 'cleanupIDs', params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` } },
+      {
+        name: "cleanupIDs",
+        params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` },
+      },
     ],
   }).data;
 }
