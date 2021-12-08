@@ -14,6 +14,10 @@ try {
     innerHTML = svg.innerHTML;
     props = svg.props;
 } catch (e) {
+    if (import.meta.env.MODE === 'production') {
+        throw new Error(`[astro-icon] Unable to load icon "${name}"!
+${e}`)
+    }
     innerHTML = fallback.innerHTML;
     props = { ...fallback.props, ...normalizeProps(inputProps) };
     title = `Failed to load "${name}"!`

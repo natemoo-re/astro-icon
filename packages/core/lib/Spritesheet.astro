@@ -14,7 +14,13 @@ const names = await getUsedSprites($$result);
 const icons = await Promise.all(names.map(name => {
     return load(name, {}, optimize)
         .then(res => ({ ...res, name }))
-        .catch(() => ({ ...fallback, name }));
+        .catch((e) => {
+                if (import.meta.env.MODE === 'production') {
+        throw new Error(`[astro-icon] Unable to load icon "${name}"!
+${e}`);
+                }
+                return { ...fallback, name }
+        });
 }));
 ---
 
