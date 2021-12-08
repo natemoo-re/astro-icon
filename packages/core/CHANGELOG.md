@@ -1,5 +1,13 @@
 # astro-icon
 
+## 0.5.1
+
+### Patch Changes
+
+- [`0217a71`](https://github.com/natemoo-re/astro-icon/commit/0217a716c7278e30a04de45f72e7a3cce5c65180) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Automatically prefix IDs using SVGO
+
+* [`330e465`](https://github.com/natemoo-re/astro-icon/commit/330e4654e160bcea8affd672e67afe69c2919cb2) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fail builds when icons cannot be fetched
+
 ## 0.5.0
 
 ### Minor Changes
