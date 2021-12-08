@@ -8,9 +8,11 @@ const packAliases = new Map([
 ]);
 
 const handler: VercelApiHandler = async (req, res) => {
-  const origin = req.headers.origin;
-  res.setHeader("Access-Control-Allow-Origin", origin || "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  const reqOrigin = req.headers['origin'];
+  const reqEtag = req.headers['if-none-match']
+  res.setHeader("Access-Control-Allow-Origin", reqOrigin || '*');
+  res.setHeader("Cache-Control", "s-maxage=59, stale-while-revalidate=299")
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   let { pack, name } = req.query;
   if (!pack) {
     res.status(400).send(`Bad Request: No "pack" query param detected`);
@@ -49,7 +51,14 @@ const handler: VercelApiHandler = async (req, res) => {
   if (!name) {
     const icons = collection.getIcons();
     res.setHeader("Content-Type", "application/json");
-    res.status(200).send(JSON.stringify(Object.keys(icons.icons)));
+    const body = JSON.stringify(Object.keys(icons.icons));
+    const resEtag = etag(body);
+    if (reqEtag === resEtag) {
+      res.status(304).end();
+    } else {
+      res.setHeader("ETag", resEtag);
+      res.status(200).send(body);
+    }
     return;
   }
 
@@ -59,9 +68,14 @@ const handler: VercelApiHandler = async (req, res) => {
     return;
   }
   const svg = new SVG(data).getSVG({});
-  res.setHeader("ETag", etag(svg));
-  res.setHeader("Content-Type", "image/svg+xml");
-  res.status(200).send(svg);
+  const resEtag = etag(svg);
+  if (reqEtag === resEtag) {
+    res.status(304).end();
+  } else {
+    res.setHeader("ETag", resEtag);
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.status(200).send(svg);
+  }
 };
 
 export default handler;
