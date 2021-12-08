@@ -7,6 +7,7 @@ const packAliases = new Map([
 ]);
 
 const handler: VercelApiHandler = async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
   let { pack, name } = req.query;
   if (!pack) {
     res.status(400).send(`Bad Request: No "pack" query param detected`);
@@ -55,7 +56,6 @@ const handler: VercelApiHandler = async (req, res) => {
     return;
   }
   const svg = new SVG(data).getSVG({});
-
   res.setHeader("Content-Type", "image/svg+xml");
   res.status(200).send(svg);
 };
