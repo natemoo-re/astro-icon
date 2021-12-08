@@ -22,11 +22,11 @@ export default function createIconPack({
         new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
       );
       if (!exists(path)) {
-        throw new Error(`[astro-icon] Unable to load "${path}"! Does the file exist?"`)
+        throw new Error(
+          `[astro-icon] Unable to load "${path}"! Does the file exist?"`
+        );
       }
-      const svg = await fs
-        .readFile(path)
-        .then((res) => res.toString());
+      const svg = await fs.readFile(path).then((res) => res.toString());
       return svg;
     };
   }
@@ -53,7 +53,7 @@ export default function createIconPack({
 
 const exists = (path: string): boolean => {
   try {
-    return statSync(path).isFile()
+    return statSync(path).isFile();
   } catch (e) {}
   return false;
-}
+};

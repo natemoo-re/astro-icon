@@ -16,7 +16,7 @@ Deprecates `<Spritesheet>`, to be replaced with `<Sprite.Provider>` component.
 - import { Sprite, Spritesheet } from 'astro-icon';
 + import { Sprite } from 'astro-icon';
  ---
- 
+
  <body>
 +  <Sprite.Provider>
      <Sprite name="icon" />

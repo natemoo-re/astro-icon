@@ -105,9 +105,16 @@ const toAttributeSize = (size: string | number) =>
   String(size).replace(/(?<=[0-9])x$/, "em");
 
 export const fallback = {
-  innerHTML: '<rect width="24" height="24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />',
-  props: { xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", "aria-hidden": "true" },
-}
+  innerHTML:
+    '<rect width="24" height="24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />',
+  props: {
+    xmlns: "http://www.w3.org/2000/svg",
+    fill: "none",
+    viewBox: "0 0 24 24",
+    stroke: "currentColor",
+    "aria-hidden": "true",
+  },
+};
 
 export default async function load(
   name: string,
