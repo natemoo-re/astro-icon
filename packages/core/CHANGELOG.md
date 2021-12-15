@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.5.2
+
+### Patch Changes
+
+- [#16](https://github.com/natemoo-re/astro-icon/pull/16) [`9ff5e7d`](https://github.com/natemoo-re/astro-icon/commit/9ff5e7d50ec94e2e0b9552c14b2bcd243fb2c48a) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fix parallelism issue when fetching icons from the Icon service in a map
+
 ## 0.5.1
 
 ### Patch Changes
