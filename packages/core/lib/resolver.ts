@@ -29,7 +29,7 @@ ${contentType}`);
     fetchCache.set(url, svg);
     requests.delete(url);
     return svg;
-  }
+  };
   let promise = request();
   requests.set(url, promise);
   return await promise;
