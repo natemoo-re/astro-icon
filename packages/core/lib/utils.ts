@@ -102,10 +102,12 @@ export function preprocess(contents: string, name: string, { optimize }) {
 }
 
 export function normalizeProps(inputProps: Props) {
-  const size = inputProps.size ?? "1em";
+  const size = inputProps.size;
   delete inputProps.size;
-  const width = toAttributeSize(inputProps.width ?? size);
-  const height = toAttributeSize(inputProps.height ?? size);
+  const w = inputProps.width ?? size;
+  const h = inputProps.height ?? size;
+  const width = w ? toAttributeSize(w) : undefined;
+  const height = h ? toAttributeSize(h) : undefined;
   return { ...inputProps, width, height };
 }
 
