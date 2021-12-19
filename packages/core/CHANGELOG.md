@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.5.3
+
+### Patch Changes
+
+- [`d998134`](https://github.com/natemoo-re/astro-icon/commit/d99813407e9bb0c043a7ff8d499031b667dfd894) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fix issue with default `size` prop.
+
 ## 0.5.2
 
 ### Patch Changes
