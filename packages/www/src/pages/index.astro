@@ -1,6 +1,6 @@
 ---
 import Head from '../components/Head.astro';
-import { Icon, Sprite } from 'astro-icon';
+import { Icon } from 'astro-icon';
 ---
 <html lang="en">
 
@@ -15,20 +15,35 @@ import { Icon, Sprite } from 'astro-icon';
 </head>
 
 <body>
-	<h1>
-        <Icon name="logo" size="48" aria-hidden="true" />
-        <span>Astro Icon</span>
-    </h1>
-    <Sprite.Provider>
-        <main>
-            <article>
-                <Sprite pack="pixelarticons" name="image" size="32" />
-            </article>
-            <footer>
-                <p>Github <Sprite pack="pixelarticons" name="external-link" size="16" /></p>
-            </footer>
-        </main>
-    </Sprite.Provider>
+    <header>
+        <nav>
+            <ul role="list">
+                <li>
+                    <h1>
+                        <Icon name="logo" size="36" aria-hidden="true" />
+                        <span>Astro Icon</span>
+                    </h1>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article>
+
+        <h2>Icons made easy, powered by Astro.</h2>
+
+        <p>SVG is the perfect format for icons&mdash;so why don&rsquo;t our tools make them easier to use?
+        Introducing <code>astro-icon</code> !</p>
+
+        <p>
+            <a href="https://github.com/natemoo-re/astro-icon">
+                <span>Read the docs on GitHub</span>
+                <Icon pack="pixelarticons" name="external-link" size={24} />
+            </a>
+        </p>
+
+        </article>
+    </main>
 </body>
 
 </html>

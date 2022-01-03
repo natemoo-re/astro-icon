@@ -26,11 +26,18 @@
   font-style: normal;
 }
 
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
 :root {
   --font-sans: "PP NeueBit", system-ui, sans-serif;
   --font-serif: "PP Mondwest", serif;
   font-family: var(--font-sans);
   font-size: 16px;
+  line-height: 1.2;
   color-scheme: light;
 }
 
@@ -38,19 +45,52 @@ body {
   margin: 2rem 1rem;
 }
 
+a {
+  color: #4c6ef5;
+  display: inline-flex;
+  align-items: center;
+}
+a > svg {
+  margin-left: 0.25rem;
+}
+a:is(:hover, :focus) {
+  color: #364fc7;
+}
+a:visited {
+  color: #6741d9;
+}
+article {
+  padding: 2rem 0;
+}
+article > * + * {
+  margin-top: 1em;
+}
+article h3 {
+  margin-bottom: -0.5em;
+}
+
+:is(h1, h2, h3, h4, h5, h6) {
+  line-height: 1;
+}
+
 h1 {
   display: flex;
   align-items: center;
-  justify-content: center;
   font-family: var(--font-serif);
-  font-size: 4rem;
+  font-size: 3rem;
   font-weight: bold;
   margin: 0 auto;
+  padding: 0 2rem;
   padding-bottom: 1rem;
-  max-width: 60rem;
+  max-width: 40rem;
   text-align: center;
   border-bottom: 2px solid black;
 }
+
+:where(ul[role="list"]) {
+  list-style: none;
+}
+
 h1 > span {
   margin-bottom: -0.33rem;
   margin-left: 1rem;
@@ -61,10 +101,26 @@ main {
   display: grid;
   gap: 2rem;
   margin: 0 auto;
-  max-width: 42rem;
+  max-width: 36rem;
 }
 
-h3 {
-  font-size: 1.25rem;
-  margin: 3rem 0 1.5rem;
+code {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 0.85em;
+  padding: 0 0.125em;
+  margin: 0 calc(0.125em / -2);
+  border: 1px solid black;
+}
+
+pre {
+  background: black;
+  color: white;
+  padding: 1rem 2rem;
+  margin-left: -2rem;
+  margin-right: -2rem;
+}
+
+pre > code {
+  border: none;
 }

@@ -1,11 +1,7 @@
 {
   "redirects": [
     {
-      "source": "",
-      "destination": "https://github.com/natemoo-re/astro-icon"
-    },
-    {
-      "source": "/:path*",
+      "source": "/github",
       "destination": "https://github.com/natemoo-re/astro-icon"
     }
   ],
