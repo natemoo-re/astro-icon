@@ -1,0 +1,5 @@
+{
+    "redirects": [
+        { "source": "/", "destination": "https://github.com/natemoo-re/astro-icon" }
+    ]
+}
