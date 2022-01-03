@@ -1,0 +1,34 @@
+---
+import Head from '../components/Head.astro';
+import { Icon, Sprite } from 'astro-icon';
+---
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<Head />
+	<meta name="viewport" content="width=device-width" />
+	<meta name="color-scheme" content="dark light" />
+	<meta name="theme-color" content="hsl(206,12%,96%)">
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+	<h1>
+        <Icon name="logo" size="48" aria-hidden="true" />
+        <span>Astro Icon</span>
+    </h1>
+    <Sprite.Provider>
+        <main>
+            <article>
+                <Sprite pack="pixelarticons" name="image" size="32" />
+            </article>
+            <footer>
+                <p>Github <Sprite pack="pixelarticons" name="external-link" size="16" /></p>
+            </footer>
+        </main>
+    </Sprite.Provider>
+</body>
+
+</html>

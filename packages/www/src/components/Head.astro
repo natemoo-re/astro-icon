@@ -1,0 +1,33 @@
+---
+export interface Props {
+	title?: string
+	description?: string
+	image?: string
+	url?: string
+	pathname?: string
+}
+
+const {
+	title = 'Astro Icon',
+	description = 'The perfect SVG icon system—powered by Astro',
+	image,
+	url = 'https://astroicon.dev',
+	pathname,
+} = Astro.props
+
+const imageUrl = `${url}/social/${image || 'default.png'}`;
+const path = pathname || Astro.site.pathname;
+const ogUrl = `${url}${path}`
+---
+
+<title>{title}</title>
+
+<meta name="description" content={description} />
+
+<meta property="og:url" content={ogUrl} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={imageUrl} />
+
+<meta name="twitter:site" content="@n_moore" />
+<meta name="twitter:card" content="summary_large_image" />
