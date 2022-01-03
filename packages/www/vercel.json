@@ -1,10 +1,10 @@
 {
-  "redirects": [
+  "redirects": [    
     {
-      "source": "/:path*",
+      "source": "/:path",
       "destination": "https://github.com/natemoo-re/astro-icon"
     }
   ],
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": true
 }
