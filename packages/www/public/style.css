@@ -1,70 +1,70 @@
 @font-face {
-    font-family: 'PP Mondwest';
-    src: url('fonts/PPMondwest-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
+  font-family: "PP Mondwest";
+  src: url("fonts/PPMondwest-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'PP Mondwest';
-    src: url('fonts/PPMondwest-Bold.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
+  font-family: "PP Mondwest";
+  src: url("fonts/PPMondwest-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'PP NeueBit';
-    src: url('fonts/PPNeueBit-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
+  font-family: "PP NeueBit";
+  src: url("fonts/PPNeueBit-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: 'PP NeueBit';
-    src: url('fonts/PPNeueBit-Bold.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
+  font-family: "PP NeueBit";
+  src: url("fonts/PPNeueBit-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
 }
 
 :root {
-	--font-sans: 'PP NeueBit', system-ui, sans-serif;
-	--font-serif: 'PP Mondwest', serif;
-	font-family: var(--font-sans);
-	font-size: 16px;
-	color-scheme: light;
+  --font-sans: "PP NeueBit", system-ui, sans-serif;
+  --font-serif: "PP Mondwest", serif;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color-scheme: light;
 }
 
 body {
-	margin: 2rem 1rem;
+  margin: 2rem 1rem;
 }
 
 h1 {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-family: var(--font-serif);
-	font-size: 4rem;
-	font-weight: bold;
-	margin: 0 auto;
-	padding-bottom: 1rem;
-	max-width: 60rem;
-	text-align: center;
-	border-bottom: 2px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 4rem;
+  font-weight: bold;
+  margin: 0 auto;
+  padding-bottom: 1rem;
+  max-width: 60rem;
+  text-align: center;
+  border-bottom: 2px solid black;
 }
 h1 > span {
-	margin-bottom: -0.33rem;
-	margin-left: 1rem;
+  margin-bottom: -0.33rem;
+  margin-left: 1rem;
 }
 
 main {
-	font-size: 2rem;
-	display: grid;
-	gap: 2rem;
-	margin: 0 auto;
-	max-width: 42rem;
+  font-size: 2rem;
+  display: grid;
+  gap: 2rem;
+  margin: 0 auto;
+  max-width: 42rem;
 }
 
 h3 {
-	font-size: 1.25rem;
-	margin: 3rem 0 1.5rem;
+  font-size: 1.25rem;
+  margin: 3rem 0 1.5rem;
 }

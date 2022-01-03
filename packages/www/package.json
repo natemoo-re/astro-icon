@@ -1,16 +1,16 @@
 {
-    "name": "www",
-    "version": "0.0.0",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "start": "astro dev",
-        "dev": "astro dev",
-        "build": "astro build",
-        "preview": "astro preview"
-    },
-    "dependencies": {
-        "astro": "^0.22.3",
-        "astro-icon": "0.5.3"
-    }
+  "name": "www",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "astro dev",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^0.22.3",
+    "astro-icon": "0.5.3"
+  }
 }
