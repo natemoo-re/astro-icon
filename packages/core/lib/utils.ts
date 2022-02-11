@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { SPRITESHEET_NAMESPACE } from "./constants";
 import { Props, Optimize } from "./Props";
 import getFromService from "./resolver";
@@ -145,7 +146,13 @@ export default async function load(
     filepath = `/src/icons/${pack}`;
     let get;
     try {
-      const mod = await import(`${filepath}`);
+      const files = import.meta.globEager(`/src/icons/*`);
+
+      if(!(filepath in files)) {
+        throw new Error(`Could not find the file "${filepath}"`);
+      }
+
+      const mod = files[filepath];
       if (typeof mod.default !== "function") {
         throw new Error(
           `[astro-icon] "${filepath}" did not export a default function!`
@@ -177,7 +184,17 @@ ${contents}`
     filepath = `/src/icons/${name}.svg`;
 
     try {
-      const { default: contents } = await import(`${filepath}?raw`);
+      const files = import.meta.globEager(`/src/icons/*.svg`, {
+        assert: {
+          type: 'raw'
+        }
+      });
+
+      if(!(filepath in files)) {
+        throw new Error(`Could not find the file "${filepath}"`);
+      }
+
+      const contents = files[filepath];
       if (!/<svg/gim.test(contents)) {
         throw new Error(
           `Unable to process "${filepath}" because it is not an SVG!
