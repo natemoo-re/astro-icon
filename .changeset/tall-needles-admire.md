@@ -8,11 +8,11 @@
 
 - The `createIconPack` export has been moved from `astro-icon` to `astro-icon/pack`.
 
-    You will likely see a Vite error that `createIconPack` is not defined until you update your import statement.
+  You will likely see a Vite error that `createIconPack` is not defined until you update your import statement.
 
-    ```diff
-    - import { createIconPack } from "astro-icon";
-    + import { createIconPack } from "astro-icon/pack";
+  ```diff
+  - import { createIconPack } from "astro-icon";
+  + import { createIconPack } from "astro-icon/pack";
 
-    export default createIconPack({ package: "heroicons", dir: "outline" })
-    ```
+  export default createIconPack({ package: "heroicons", dir: "outline" })
+  ```
