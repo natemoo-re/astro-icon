@@ -27,5 +27,5 @@ export {
   Spritesheet,
   SpriteSheet,
   SpriteProvider,
-  Sprite,
+  Sprite
 };

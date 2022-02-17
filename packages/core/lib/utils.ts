@@ -6,10 +6,9 @@ import { optimize as optimizeSVGNative } from "svgo";
 
 // Adapted from https://github.com/developit/htmlParser
 const splitAttrsTokenizer = /([a-z0-9_\:\-]*)\s*?=\s*?(['"]?)(.*?)\2\s+/gim;
-const domParserTokenizer =
-  /(?:<(\/?)([a-zA-Z][a-zA-Z0-9\:]*)(?:\s([^>]*?))?((?:\s*\/)?)>|(<\!\-\-)([\s\S]*?)(\-\->)|(<\!\[CDATA\[)([\s\S]*?)(\]\]>))/gm;
+const domParserTokenizer = /(?:<(\/?)([a-zA-Z][a-zA-Z0-9\:]*)(?:\s([^>]*?))?((?:\s*\/)?)>|(<\!\-\-)([\s\S]*?)(\-\->)|(<\!\[CDATA\[)([\s\S]*?)(\]\]>))/gm;
 
-const splitAttrs = (str) => {
+const splitAttrs = str => {
   let res = {};
   let token;
   if (str) {
@@ -40,7 +39,7 @@ function optimizeSvg(
       "convertStyleToAttrs",
       {
         name: "cleanupIDs",
-        params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` },
+        params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` }
       },
       "removeRasterImages",
       "removeUselessDefs",
@@ -69,8 +68,8 @@ function optimizeSvg(
       "removeDesc",
       "removeDimensions",
       "removeStyleElement",
-      "removeScriptElement",
-    ],
+      "removeScriptElement"
+    ]
   }).data;
 }
 
@@ -123,8 +122,8 @@ export const fallback = {
     fill: "none",
     viewBox: "0 0 24 24",
     stroke: "currentColor",
-    "aria-hidden": "true",
-  },
+    "aria-hidden": "true"
+  }
 };
 
 export default async function load(
@@ -150,7 +149,7 @@ export default async function load(
         `/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}`
       );
       const keys = Object.fromEntries(
-        Object.keys(files).map((key) => [key.replace(/\.[cm]?[jt]s$/, ""), key])
+        Object.keys(files).map(key => [key.replace(/\.[cm]?[jt]s$/, ""), key])
       );
 
       if (!(filepath in keys)) {
@@ -191,8 +190,8 @@ ${contents}`
     try {
       const files = import.meta.globEager(`/src/icons/**/*.svg`, {
         assert: {
-          type: "raw",
-        },
+          type: "raw"
+        }
       });
 
       if (!(filepath in files)) {
@@ -224,6 +223,6 @@ ${contents}`
 
   return {
     innerHTML,
-    props: { ...defaultProps, ...normalizeProps(inputProps) },
+    props: { ...defaultProps, ...normalizeProps(inputProps) }
   };
 }
