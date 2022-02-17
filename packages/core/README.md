@@ -169,4 +169,4 @@ The `optimize` prop is a boolean. Defaults to `true`. In the future it will cont
 
 Both components also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
 
-See the [`Props.ts`](./lib/Props.ts) file for more details.
+See the [`Props.ts`](./packages/core/lib/Props.ts) file for more details.
