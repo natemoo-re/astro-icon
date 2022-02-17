@@ -28,7 +28,7 @@ export default {
 
 `astro-icon` automatically includes all of the most common icon packs, powered by [Iconify](https://iconify.design/)!
 
-To browse supported icons, we recommend [Icônes](https://icones.js.org/).
+To browse supported icons, check the official [Icon Sets reference](https://icon-sets.iconify.design/) or visit [Icônes](https://icones.js.org/).
 
 ### Usage
 
