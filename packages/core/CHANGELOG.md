@@ -1,5 +1,26 @@
 # astro-icon
 
+## 0.6.0
+
+### Minor Changes
+
+- [#26](https://github.com/natemoo-re/astro-icon/pull/26) [`21bfa28`](https://github.com/natemoo-re/astro-icon/commit/21bfa288c6c3606f5797a22350d8018cd7589a0a) Thanks [@matthewp](https://github.com/matthewp)! - `astro-icon` is now compatible with Astro's `--experimental-static-build` flag
+
+* [#26](https://github.com/natemoo-re/astro-icon/pull/26) [`21bfa28`](https://github.com/natemoo-re/astro-icon/commit/21bfa288c6c3606f5797a22350d8018cd7589a0a) Thanks [@matthewp](https://github.com/matthewp)! - # Breaking Changes
+
+  - `astro-icon@0.6.0` is compatible with `astro@0.23.x` and up, but will no longer work in lower versions.
+
+  - The `createIconPack` export has been moved from `astro-icon` to `astro-icon/pack`.
+
+    You will likely see a Vite error that `createIconPack` is not defined until you update your import statement.
+
+    ```diff
+    - import { createIconPack } from "astro-icon";
+    + import { createIconPack } from "astro-icon/pack";
+
+    export default createIconPack({ package: "heroicons", dir: "outline" })
+    ```
+
 ## 0.5.3
 
 ### Patch Changes
