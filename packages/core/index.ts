@@ -1,8 +1,6 @@
 import Icon from "./lib/Icon.astro";
 import SpriteProvider from "./lib/SpriteProvider.astro";
 import SpriteComponent from "./lib/Sprite.astro";
-import createIconPack from "./lib/createIconPack.ts";
-
 import Sheet from "./lib/Spritesheet.astro";
 
 const deprecate = (component: any, message: string) => {
@@ -29,6 +27,5 @@ export {
   Spritesheet,
   SpriteSheet,
   SpriteProvider,
-  Sprite,
-  createIconPack,
+  Sprite
 };

@@ -1,8 +1,6 @@
 import { statSync, promises as fs } from "fs";
 import { fileURLToPath, pathToFileURL } from "url";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
+import resolvePackage from "resolve-pkg";
 
 export interface CreateIconPackOptions {
   package?: string;
@@ -10,14 +8,14 @@ export interface CreateIconPackOptions {
   url?: string;
 }
 
-export default function createIconPack({
+export function createIconPack({
   package: pkg,
   dir,
   url,
 }: CreateIconPackOptions) {
   if (pkg) {
-    const baseUrl = pathToFileURL(require.resolve(`${pkg}/package.json`));
     return async (name: string) => {
+      const baseUrl = new URL(pathToFileURL(resolvePackage(pkg)) + "/");
       const path = fileURLToPath(
         new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
       );

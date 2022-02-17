@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
+    "dev": "astro dev --experimental-static-build",
+    "start": "astro dev --experimental-static-build",
+    "build": "astro build --experimental-static-build",
     "preview": "astro preview"
   },
   "devDependencies": {
-    "astro": "^0.21.10",
+    "astro": "^0.23.0-next.4",
     "astro-icon": "0.5.3"
   },
   "dependencies": {

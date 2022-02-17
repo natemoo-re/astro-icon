@@ -3,7 +3,8 @@
   "version": "0.5.3",
   "type": "module",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./pack": "./lib/createIconPack.ts"
   },
   "files": [
     "lib",
@@ -32,6 +33,7 @@
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "dependencies": {
     "node-fetch": "^3.1.0",
+    "resolve-pkg": "^2.0.0",
     "svgo": "^2.8.0"
   }
 }

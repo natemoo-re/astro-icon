@@ -25,4 +25,4 @@ ${e}`)
 }
 ---
 
-<svg {...props} astro-icon={name}>{title ? (<title>{title}</title>) : ''}{innerHTML}</svg>
+<svg {...props} astro-icon={name} set:html={(title ? `<title>${title}</title>` : '') + innerHTML} />
