@@ -25,9 +25,5 @@ ${e}`);
 ---
 
 <svg style={`display: none; ${style ?? ''}`.trim()} {...{ 'aria-hidden': true, ...props }} astro-icon-spritesheet>
-    {icons.map(icon => (
-        <symbol {...icon.props} id={`${SPRITESHEET_NAMESPACE}:${icon.name}`}>
-            {icon.innerHTML}
-        </symbol>
-    ))}
+    {icons.map(icon => (<symbol {...icon.props} id={`${SPRITESHEET_NAMESPACE}:${icon.name}`} set:html={icon.innerHTML} />))}
 </svg>

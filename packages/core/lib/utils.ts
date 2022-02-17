@@ -146,13 +146,14 @@ export default async function load(
     filepath = `/src/icons/${pack}`;
     let get;
     try {
-      const files = import.meta.globEager(`/src/icons/*`);
+      const files = import.meta.globEager(`/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}`);
+      const keys = Object.fromEntries(Object.keys(files).map(key => [key.replace(/\.[cm]?[jt]s$/, ''), key]))
 
-      if(!(filepath in files)) {
+      if (!(filepath in keys)) {
         throw new Error(`Could not find the file "${filepath}"`);
       }
 
-      const mod = files[filepath];
+      const mod = files[keys[filepath]];
       if (typeof mod.default !== "function") {
         throw new Error(
           `[astro-icon] "${filepath}" did not export a default function!`
@@ -184,7 +185,7 @@ ${contents}`
     filepath = `/src/icons/${name}.svg`;
 
     try {
-      const files = import.meta.globEager(`/src/icons/*.svg`, {
+      const files = import.meta.globEager(`/src/icons/**/*.svg`, {
         assert: {
           type: 'raw'
         }
