@@ -18,9 +18,9 @@ yarn add astro-icon
 export default {
   vite: {
     ssr: {
-      external: ["svgo"]
-    }
-  }
+      external: ["svgo"],
+    },
+  },
 };
 ```
 
@@ -119,8 +119,7 @@ export default createIconPack({ package: "heroicons", dir: "outline" });
 
 // Resolves `name` from a remote server, like GitHub!
 export default createIconPack({
-  url:
-    "https://raw.githubusercontent.com/radix-ui/icons/master/packages/radix-icons/icons/"
+  url: "https://raw.githubusercontent.com/radix-ui/icons/master/packages/radix-icons/icons/",
 });
 ```
 

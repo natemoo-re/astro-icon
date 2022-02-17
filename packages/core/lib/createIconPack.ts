@@ -11,7 +11,7 @@ export interface CreateIconPackOptions {
 export function createIconPack({
   package: pkg,
   dir,
-  url
+  url,
 }: CreateIconPackOptions) {
   if (pkg) {
     return async (name: string) => {
@@ -24,7 +24,7 @@ export function createIconPack({
           `[astro-icon] Unable to load "${path}"! Does the file exist?"`
         );
       }
-      const svg = await fs.readFile(path).then(res => res.toString());
+      const svg = await fs.readFile(path).then((res) => res.toString());
       return svg;
     };
   }

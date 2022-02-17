@@ -5,7 +5,7 @@ export function trackSprite(result: any, name: string) {
     result[AstroIcon]["sprites"].add(name);
   } else {
     result[AstroIcon] = {
-      sprites: new Set([name])
+      sprites: new Set([name]),
     };
   }
 }
