@@ -1,1 +1,1 @@
-export * from './lib/createIconPack';
+export * from "./lib/createIconPack";

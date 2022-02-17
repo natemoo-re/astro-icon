@@ -146,8 +146,12 @@ export default async function load(
     filepath = `/src/icons/${pack}`;
     let get;
     try {
-      const files = import.meta.globEager(`/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}`);
-      const keys = Object.fromEntries(Object.keys(files).map(key => [key.replace(/\.[cm]?[jt]s$/, ''), key]))
+      const files = import.meta.globEager(
+        `/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}`
+      );
+      const keys = Object.fromEntries(
+        Object.keys(files).map((key) => [key.replace(/\.[cm]?[jt]s$/, ""), key])
+      );
 
       if (!(filepath in keys)) {
         throw new Error(`Could not find the file "${filepath}"`);
@@ -187,11 +191,11 @@ ${contents}`
     try {
       const files = import.meta.globEager(`/src/icons/**/*.svg`, {
         assert: {
-          type: 'raw'
-        }
+          type: "raw",
+        },
       });
 
-      if(!(filepath in files)) {
+      if (!(filepath in files)) {
         throw new Error(`Could not find the file "${filepath}"`);
       }
 
