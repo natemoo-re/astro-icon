@@ -15,6 +15,16 @@
     "email": "nate@natemoo.re",
     "url": "https://twitter.com/n_moore"
   },
+  "keywords": [
+    "astro",
+    "astro-component",
+    "image",
+    "images",
+    "icon",
+    "icons",
+    "iconify",
+    "optimization"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/natemoo-re/astro-icon.git",
