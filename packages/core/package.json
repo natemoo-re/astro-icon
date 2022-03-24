@@ -1,6 +1,6 @@
 {
   "name": "astro-icon",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "exports": {
     ".": "./index.ts",
@@ -17,25 +17,15 @@
   },
   "keywords": [
     "astro",
-    "astro-component",
-    "image",
-    "images",
     "icon",
-    "icons",
-    "iconify",
-    "optimization"
+    "svg",
+    "svgo"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/natemoo-re/astro-icon.git",
     "directory": "packages/core"
   },
-  "keywords": [
-    "astro",
-    "icon",
-    "svg",
-    "svgo"
-  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/natemoo-re/astro-icon/issues"
