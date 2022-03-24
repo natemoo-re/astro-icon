@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.6.1
+
+### Patch Changes
+
+- [#30](https://github.com/natemoo-re/astro-icon/pull/30) [`940539b`](https://github.com/natemoo-re/astro-icon/commit/940539bf81ad205c9ca02082c1f5e2526570acfe) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Update package.json to include Astro keywords
+
 ## 0.6.0
 
 ### Minor Changes
