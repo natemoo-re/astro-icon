@@ -1,5 +1,15 @@
 # astro-icon
 
+## 0.7.0
+
+### Minor Changes
+
+- [#32](https://github.com/natemoo-re/astro-icon/pull/32) [`4cfc1ba`](https://github.com/natemoo-re/astro-icon/commit/4cfc1badfb5978829c1dfeb5b56491238a3a8e74) Thanks [@tony-sull](https://github.com/tony-sull)! - Removes the deprecation warning for assert in import.meta.globEager
+
+### Patch Changes
+
+- [`3b29d89`](https://github.com/natemoo-re/astro-icon/commit/3b29d893bbb385c8e6e8fa51b421fefa17b050ac) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Improve warning when no sprites are found rather than throwing an error
+
 ## 0.6.1
 
 ### Patch Changes
