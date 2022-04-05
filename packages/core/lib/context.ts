@@ -20,5 +20,5 @@ export async function getUsedSprites(result: any) {
     console.log(`[astro-icon] No sprites found while rendering "${pathname}"`);
     warned.add(pathname);
   }
-  return []
+  return [];
 }
