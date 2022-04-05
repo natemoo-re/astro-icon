@@ -1,8 +1,8 @@
 ---
 import Spritesheet from './Spritesheet.astro'
+
+const content = await Astro.slots.render('default');
 ---
 
-<Fragment>
-    <slot />
-    <Spritesheet />
-</Fragment>
+<Fragment set:html={content} />
+<Spritesheet />
