@@ -10,11 +10,15 @@ export function trackSprite(result: any, name: string) {
   }
 }
 
+const warned = new Set();
 export async function getUsedSprites(result: any) {
   if (typeof result[AstroIcon] !== "undefined") {
     return Array.from(result[AstroIcon]["sprites"]);
   }
-  throw new Error(
-    `[astro-icon] <SpriteSheet> should be the very last child of the page's <body>!\nIs it currently placed before any <Sprite> components?`
-  );
+  const pathname = result._metadata.pathname;
+  if (!warned.has(pathname)) {
+    console.log(`[astro-icon] No sprites found while rendering "${pathname}"`);
+    warned.add(pathname);
+  }
+  return []
 }
