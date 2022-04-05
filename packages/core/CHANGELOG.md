@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.7.1
+
+### Patch Changes
+
+- [`147001e`](https://github.com/natemoo-re/astro-icon/commit/147001eb2db7e6cbb8d0433be56fb86f79cf3a42) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fix `Sprite` component for Astro v1.0.0
+
 ## 0.7.0
 
 ### Minor Changes
