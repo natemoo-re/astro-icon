@@ -17,9 +17,13 @@
   },
   "keywords": [
     "astro",
+    "astro-component",
+    "image",
+    "images",
     "icon",
-    "svg",
-    "svgo"
+    "icons",
+    "iconify",
+    "optimization"
   ],
   "repository": {
     "type": "git",
