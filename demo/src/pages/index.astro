@@ -28,7 +28,7 @@ import { Icon } from 'astro-icon';
 	<p>The <code>Icon</code> component will optimize and inline any SVG file inside of <code>src/icons/</code></p>
 
 	<p>Alternatively, see <a href="/sprite">the Sprite method</a>.</p>
-	
+
 	<article>
 		<h2>Local</h2>
 		<!-- This will inline your SVG directly -->
@@ -39,9 +39,15 @@ import { Icon } from 'astro-icon';
 	<article>
 		<h2>Custom remote source</h2>
 		<!-- Pull your icon from a custom remote source -->
-	<Icon size={24} pack="radix" name="github-logo" />
+		<Icon size={24} pack="radix" name="github-logo" />
 	</article>
-	
+
+	<article>
+		<h2>Custom SVG resolver</h2>
+		<!-- Pull your icon from a custom remote source -->
+		<Icon size={24} pack="custom" name="circle" />
+	</article>
+
 	<article>
 		<h2>Local dependencies</h2>
 		<!-- Pull your icon from a local dependency -->

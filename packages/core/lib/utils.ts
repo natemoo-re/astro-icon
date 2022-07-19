@@ -170,7 +170,7 @@ export default async function load(
     if (typeof get === "undefined") {
       get = getFromService.bind(null, pack);
     }
-    const contents = await get(name);
+    const contents = await get(name, inputProps);
     if (!contents) {
       throw new Error(
         `<Icon pack="${pack}" name="${name}" /> did not return an icon!`
