@@ -1,6 +1,6 @@
 {
   "name": "astro-icon",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "type": "module",
   "exports": {
     ".": "./index.ts",
