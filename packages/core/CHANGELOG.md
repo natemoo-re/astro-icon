@@ -1,5 +1,11 @@
 # astro-icon
 
+## 0.7.3
+
+### Patch Changes
+
+- [#46](https://github.com/natemoo-re/astro-icon/pull/46) [`31b6eae`](https://github.com/natemoo-re/astro-icon/commit/31b6eaef63d229586933c5081e551c9b688360fb) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Another Vite 3 fix
+
 ## 0.7.2
 
 ### Patch Changes
