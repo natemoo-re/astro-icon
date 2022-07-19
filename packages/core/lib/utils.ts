@@ -147,7 +147,7 @@ export default async function load(
     let get;
     try {
       const files = import.meta.globEager(
-        `/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}`
+        '/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}'
       );
       const keys = Object.fromEntries(
         Object.keys(files).map((key) => [key.replace(/\.[cm]?[jt]s$/, ""), key])
