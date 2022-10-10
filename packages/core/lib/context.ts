@@ -1,6 +1,17 @@
+import type { SSRResult } from 'astro/dist/types/@types/astro'
 const AstroIcon = Symbol("AstroIcon");
 
-export function trackSprite(result: any, name: string) {
+interface AstroIconSSRResult extends SSRResult {
+  [AstroIcon]: {
+    sprites: Set<string>
+  },
+}
+
+declare global {
+  var $$result: AstroIconSSRResult
+}
+
+export function trackSprite(result: AstroIconSSRResult, name: string) {
   if (typeof result[AstroIcon] !== "undefined") {
     result[AstroIcon]["sprites"].add(name);
   } else {
@@ -11,7 +22,7 @@ export function trackSprite(result: any, name: string) {
 }
 
 const warned = new Set();
-export async function getUsedSprites(result: any) {
+export async function getUsedSprites(result: AstroIconSSRResult) {
   if (typeof result[AstroIcon] !== "undefined") {
     return Array.from(result[AstroIcon]["sprites"]);
   }
