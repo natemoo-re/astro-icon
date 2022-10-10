@@ -1,5 +1,5 @@
-import { statSync, promises as fs } from "fs";
-import { fileURLToPath, pathToFileURL } from "url";
+import { statSync, promises as fs } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import resolvePackage from "resolve-pkg";
 
 export interface CreateIconPackOptions {
