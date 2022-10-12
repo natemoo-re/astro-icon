@@ -2,9 +2,7 @@
 
 A straight-forward `Icon` component for [Astro](https://astro.build).
 
-## Setup
-
-1. Install `astro-icon`.
+## Install `astro-icon`.
 
 ```bash
 npm i astro-icon
@@ -12,17 +10,6 @@ npm i astro-icon
 yarn add astro-icon
 ```
 
-2. Add the following to your `astro.config.mjs` file. See [Issue #2](https://github.com/natemoo-re/astro-icon/issues/2).
-
-```js
-export default {
-  vite: {
-    ssr: {
-      external: ["svgo"],
-    },
-  },
-};
-```
 
 ## Icon Packs
 
