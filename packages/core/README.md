@@ -10,7 +10,6 @@ npm i astro-icon
 yarn add astro-icon
 ```
 
-
 ## Icon Packs
 
 `astro-icon` automatically includes all of the most common icon packs, powered by [Iconify](https://iconify.design/)!
