@@ -10,8 +10,7 @@ if (pack) {
     name = `${pack}:${name}`;
 }
 const href = `#${SPRITESHEET_NAMESPACE}:${name}`;
-// @ts-ignore
-trackSprite($$result, name);
+trackSprite(Astro.request, name);
 ---
 
 <svg {...props} class={className} astro-icon={name}>
