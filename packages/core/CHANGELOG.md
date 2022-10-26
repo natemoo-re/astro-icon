@@ -1,5 +1,21 @@
 # astro-icon
 
+## 0.8.0
+
+### Minor Changes
+
+- [#42](https://github.com/natemoo-re/astro-icon/pull/42) [`ae0a7f7`](https://github.com/natemoo-re/astro-icon/commit/ae0a7f72358dee39a133663423b499e4525c06cb) Thanks [@germanz](https://github.com/germanz)! - Pass props to custom resolvers
+
+### Patch Changes
+
+- [#56](https://github.com/natemoo-re/astro-icon/pull/56) [`60c7304`](https://github.com/natemoo-re/astro-icon/commit/60c7304368a7ca88fa2190bc8bfac5e8229e0f50) Thanks [@dwightjack](https://github.com/dwightjack)! - Fix Chrome not rendering icons using SVG gradients
+
+* [#64](https://github.com/natemoo-re/astro-icon/pull/64) [`2c75a4a`](https://github.com/natemoo-re/astro-icon/commit/2c75a4a6bc675492bee96aeac89c05f610f28831) Thanks [@stramel](https://github.com/stramel)! - Update Sprite context to track usages using `Astro.request`
+
+- [#61](https://github.com/natemoo-re/astro-icon/pull/61) [`41b0b76`](https://github.com/natemoo-re/astro-icon/commit/41b0b769a736420cbe2fe1ece44c71f16bcd0281) Thanks [@jasikpark](https://github.com/jasikpark)! - Update README to drop SVGO workaround recommendation
+
+* [#59](https://github.com/natemoo-re/astro-icon/pull/59) [`1a5ff6b`](https://github.com/natemoo-re/astro-icon/commit/1a5ff6bf59460ba1dc13b33339748c8d86891102) Thanks [@stramel](https://github.com/stramel)! - Use `node:` prefix on standard node dependencies
+
 ## 0.7.3
 
 ### Patch Changes
