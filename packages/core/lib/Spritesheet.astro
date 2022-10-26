@@ -9,8 +9,7 @@ export interface Props {
 }
 
 const { optimize = true, style, ...props } = Astro.props;
-// @ts-ignore
-const names = await getUsedSprites($$result);
+const names: string[] = await getUsedSprites(Astro.request);
 const icons = await Promise.all(names.map(name => {
     return load(name, {}, optimize)
         .then(res => ({ ...res, name }))

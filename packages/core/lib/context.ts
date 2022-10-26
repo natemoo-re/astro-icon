@@ -1,24 +1,27 @@
-const AstroIcon = Symbol("AstroIcon");
+interface AstroRequest extends Request {}
 
-export function trackSprite(result: any, name: string) {
-  if (typeof result[AstroIcon] !== "undefined") {
-    result[AstroIcon]["sprites"].add(name);
+const sprites = new WeakMap<AstroRequest, Set<string>>()
+
+export function trackSprite(request: AstroRequest, name: string): void {
+  let currentSet = sprites.get(request)
+  if (!currentSet) {
+    currentSet = new Set([name])
   } else {
-    result[AstroIcon] = {
-      sprites: new Set([name]),
-    };
+    currentSet.add(name)
   }
+  sprites.set(request, currentSet)
 }
 
 const warned = new Set();
-export async function getUsedSprites(result: any) {
-  if (typeof result[AstroIcon] !== "undefined") {
-    return Array.from(result[AstroIcon]["sprites"]);
+export async function getUsedSprites(request: AstroRequest): Promise<string[]> {
+  const currentSet = sprites.get(request)
+  if (currentSet) {
+    return Array.from(currentSet)
   }
-  const pathname = result._metadata.pathname;
-  if (!warned.has(pathname)) {
+  if (!warned.has(request)) {
+    const {pathname} = new URL(request.url)
     console.log(`[astro-icon] No sprites found while rendering "${pathname}"`);
-    warned.add(pathname);
+    warned.add(request);
   }
   return [];
 }
