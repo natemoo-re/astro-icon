@@ -38,8 +38,9 @@ function optimizeSvg(
       "cleanupAttrs",
       "minifyStyles",
       "convertStyleToAttrs",
+      "cleanupIds",
       {
-        name: "cleanupIDs",
+        name: "prefixIds",
         params: { prefix: `${SPRITESHEET_NAMESPACE}:${name}` },
       },
       "removeRasterImages",
