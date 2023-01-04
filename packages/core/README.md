@@ -1,5 +1,5 @@
-# Astro Icon
-
+# Fork of Astro Icon
+THIS IS A FORK OF THE ORIGINAL [ASTRO ICON COMPONENT](https://github.com/natemoo-re/astro-icon)
 A straight-forward `Icon` component for [Astro](https://astro.build).
 
 ## Install `astro-icon`.
