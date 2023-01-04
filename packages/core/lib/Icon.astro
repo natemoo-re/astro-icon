@@ -2,7 +2,7 @@
 import load, { fallback, normalizeProps } from './utils.ts';
 export { Props } from './Props.ts';
 
-let { name, pack, title, optimize = true, class: className, ...inputProps } = Astro.props;
+let { name, pack, title, optimize = true, customFill, class: className, ...inputProps } = Astro.props;
 let props = {};
 if (pack) {
     name = `${pack}:${name}`;
@@ -22,6 +22,14 @@ ${e}`)
     props = { ...fallback.props, ...normalizeProps(inputProps) };
     title = `Failed to load "${name}"!`
     console.error(e);
+}
+
+// remove the text "currentColor" from innerHTML
+// replace "" with `${customFill}` in innerHTML if customFill is defined
+if (customFill != undefined) {
+    innerHTML = innerHTML.replace("currentColor", '');
+
+    innerHTML = innerHTML.replace('""', `"${customFill}"`);
 }
 ---
 

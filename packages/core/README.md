@@ -155,4 +155,26 @@ The `optimize` prop is a boolean. Defaults to `true`. In the future it will cont
 
 Both components also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
 
+The `customFill` prop takes a string and is not required. If you want to pass a custom `fill` color to the `<path>` element in the `<svg>`, you can use the `customFill` prop. This can be useful for icons that have multiple colors or gradients.
+```astro
+---
+import { Icon } from "astro-icon";
+---
+<!-- You can pass in anything that the normal fill attribute would accept -->
+<Icon customFill="#1DA1F2" class="bigIcon" pack="mdi" name="twitter" />
+<!-- To do a gradient, you have to include another svg element with the gradient and reference that is the Icons customFill -->
+<Icon customFill="url('#rg')" class="bigIcon" pack="mdi" name="instagram" />
+<!-- The gradient svg for the example -->
+<svg width="0" height="0">
+	<radialGradient id="rg" r="150%" cx="30%" cy="107%">
+		<stop stop-color="#fdf497" offset="0"></stop>
+		<stop stop-color="#fdf497" offset="0.05"></stop>
+		<stop stop-color="#fd5949" offset="0.45"></stop>
+		<stop stop-color="#d6249f" offset="0.6"></stop>
+		<stop stop-color="#285AEB" offset="0.9"></stop>
+	</radialGradient>
+</svg>
+
+```
+
 See the [`Props.ts`](./packages/core/lib/Props.ts) file for more details.
