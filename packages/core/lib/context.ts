@@ -20,7 +20,9 @@ export async function getUsedSprites(request: AstroRequest): Promise<string[]> {
   }
   if (!warned.has(request)) {
     const { pathname } = new URL(request.url);
-    console.log(`[astro-icon] No sprites found while rendering "${pathname}"`);
+    console.debug(
+      `[astro-icon] No sprites found while rendering "${pathname}"`
+    );
     warned.add(request);
   }
   return [];
