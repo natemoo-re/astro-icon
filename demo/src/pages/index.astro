@@ -1,70 +1,63 @@
 ---
-import { Icon } from 'astro-icon';
+import { Icon } from "astro-icon/components";
+
+const icon = "adjustment";
 ---
 
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Astro Icon</title>
+    <style lang="css">
+      [data-icon] {
+        color: blue;
+      }
+      [data-icon="annotation"] {
+        color: red;
+      }
+      [data-icon="deno"] {
+        color: green;
+      }
+    </style>
+  </head>
 
-<head>
-	<meta charset="utf-8" />
-	<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-	<meta name="viewport" content="width=device-width" />
-	<title>Astro Icon</title>
-	<style lang="css">
-		[astro-icon] {
-			color: blue;
-		}
-		[astro-icon="annotation"] {
-			color: red;
-		}
-		[astro-icon="folder"] {
-			color: green;
-		}
-	</style>
-</head>
+  <body>
+    <h1>Welcome to Astro Icon!</h1>
 
-<body>
-	<h1>Welcome to Astro Icon!</h1>
+    <p>
+      The <code>Icon</code> component will optimize and inline any SVG file inside
+      of <code>src/icons/</code>
+    </p>
 
-	<p>The <code>Icon</code> component will optimize and inline any SVG file inside of <code>src/icons/</code></p>
+    <article>
+      <h2>Local</h2>
+      <!-- This will inline your SVG directly -->
+      <Icon size={24} name="adjustment" />
+      <Icon size={24} name={icon} />
+      <Icon size={24} name={icon} />
+      <Icon size={24} name="annotation" />
+      <Icon size={24} name="annotation" />
+      <Icon size={24} name="annotation" />
+      <Icon size={24} name="deno" />
+      <Icon name="deno" />
+      <Icon name="deno" />
+    </article>
 
-	<p>Alternatively, see <a href="/sprite">the Sprite method</a>.</p>
+    <article>
+      <h2>Automatic icons from service</h2>
+      <p>
+        If you can find it on <a href="https://icones.js.org/">Icones</a>, you
+        can render it here!
+      </p>
+    </article>
+    <!-- Pull your icon from the default remote service -->
+    <Icon size={32} name="ic:baseline-account-box" />
+    <Icon size={64} name="ic:baseline-account-box" />
+    <Icon size={80} name="ic:baseline-account-box" />
 
-	<article>
-		<h2>Local</h2>
-		<!-- This will inline your SVG directly -->
-		<Icon size={24} name="adjustment" />
-		<Icon size={24} name="annotation" />
-	</article>
-
-	<article>
-		<h2>Custom remote source</h2>
-		<!-- Pull your icon from a custom remote source -->
-		<Icon size={24} pack="radix" name="github-logo" />
-	</article>
-
-	<article>
-		<h2>Custom SVG resolver</h2>
-		<!-- Pull your icon from a custom remote source -->
-		<Icon size={24} pack="custom" name="circle" />
-	</article>
-
-	<article>
-		<h2>Local dependencies</h2>
-		<!-- Pull your icon from a local dependency -->
-		<Icon size={24} pack="heroicons" name="arrow-sm-up" />
-		<Icon size={24} pack="heroicons" name="arrow-sm-right" />
-		<Icon size={24} pack="heroicons" name="arrow-sm-down" />
-		<Icon size={24} pack="heroicons" name="arrow-sm-left" />
-	</article>
-
-	<article>
-		<h2>Automatic icons from service</h2>
-		<p>If you can find it on <a href="https://icones.js.org/">Icones</a>, you can render it here!</a></p>
-		<!-- Pull your icon from the default remote service -->
-		<Icon size={64} pack="ic" name="baseline-account-box" />
-		<Icon size={64} name="fe:building" />
-		<Icon size={64} name="ri:aliens-fill" />
-	</article>
-</body>
-
+    <Icon size={64} name="fe:building" />
+    <Icon size={64} name="ri:aliens-fill" />
+  </body>
 </html>
