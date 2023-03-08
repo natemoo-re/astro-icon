@@ -1,15 +1,17 @@
 {
   "name": "astro-icon",
-  "version": "0.8.2",
+  "version": "0.0.0",
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./pack": "./lib/createIconPack.ts"
+    ".": {
+      "types": "./integration.d.ts",
+      "default": "./integration.mjs"
+    },
+    "./components": {
+      "types": "./components.d.ts",
+      "default": "./components.mjs"
+    }
   },
-  "files": [
-    "lib",
-    "index.ts"
-  ],
   "author": {
     "name": "Nate Moore",
     "email": "nate@natemoo.re",
@@ -17,6 +19,7 @@
   },
   "keywords": [
     "astro",
+    "astro-integration",
     "astro-component",
     "image",
     "images",
@@ -36,7 +39,12 @@
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "dependencies": {
-    "resolve-pkg": "^2.0.0",
-    "svgo": "^2.8.0"
+    "@iconify/json": "^2.2.32",
+    "@iconify/tools": "^2.2.6",
+    "@iconify/types": "^2.0.0",
+    "@iconify/utils": "^2.1.4"
+  },
+  "devDependencies": {
+    "astro": "^2.1.0"
   }
 }

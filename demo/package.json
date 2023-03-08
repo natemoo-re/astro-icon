@@ -9,10 +9,7 @@
     "preview": "astro preview"
   },
   "devDependencies": {
-    "astro": "^3.6.4",
-    "astro-icon": "0.8.2"
-  },
-  "dependencies": {
-    "heroicons": "^1.0.5"
+    "astro": "^2.1.0",
+    "astro-icon": "workspace:*"
   }
 }

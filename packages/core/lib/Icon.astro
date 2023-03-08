@@ -1,28 +1,90 @@
 ---
-import load, { fallback, normalizeProps } from './utils.ts';
-export { Props } from './Props.ts';
+// @ts-expect-error
+import icons, { config } from "virtual:astro-icon";
+import { getIconData, iconToSVG } from "@iconify/utils";
+import { cache } from "./cache.js";
 
-let { name, pack, title, optimize = true, class: className, ...inputProps } = Astro.props;
-let props = {};
-if (pack) {
-    name = `${pack}:${name}`;
+interface Props {
+  name: string;
+  title?: string;
+  size?: number;
+  width?: number;
+  height?: number;
 }
 
-let innerHTML = '';
-try {
-    const svg = await load(name, { ...inputProps, class: className }, optimize);
-    innerHTML = svg.innerHTML;
-    props = svg.props;
-} catch (e) {
-    if (import.meta.env.MODE === 'production') {
-        throw new Error(`[astro-icon] Unable to load icon "${name}"!
-${e}`)
+const req = Astro.request;
+const { name = "", title, ...props } = Astro.props;
+const map = cache.get(req) ?? new Map();
+const i = map.get(name) ?? 0;
+map.set(name, i + 1);
+cache.set(req, map);
+
+const includeSymbol = i === 0;
+
+let [set, icon] = name.split(":");
+
+const collection = icons.find((collection) => {
+  if (icon === undefined) {
+    return set in collection.icons;
+  }
+  return collection.prefix === set;
+});
+
+if (!collection) {
+  const err: any = new Error(`Unable to locate "${name}" icon!`);
+
+  if (import.meta.env.DEV) {
+    const { include = {} } = config;
+    const sets = Object.keys(include);
+    if (set && icon) {
+      if (!sets.includes(set)) {
+        err.hint = `It looks like the "${set}" set is not included in your configuration.\n\nDo you need to add the "${set}" set?`;
+      }
+    } else {
+      if (sets.length === 1) {
+        err.hint = `The "${sets[0]}" set does not include a "${set}" icon.\n\nDid you forget to include the icon or make a typo?`;
+      } else {
+        err.hint = `None of your icon sets ("${sets.join(
+          `" | "`
+        )}") include a "${set}" icon.\n\nDid you forget to include this icon in your configuration?`;
+      }
     }
-    innerHTML = fallback.innerHTML;
-    props = { ...fallback.props, ...normalizeProps(inputProps) };
-    title = `Failed to load "${name}"!`
-    console.error(e);
+  }
+
+  throw err;
 }
+
+const iconData = getIconData(collection, icon ?? set);
+if (!iconData) {
+  const err: any = new Error(`Unable to locate "${name}" icon!`);
+
+  if (import.meta.env.DEV) {
+    const { include = {} } = config;
+    const [maybeStar] = include[set];
+    if (maybeStar === "*") {
+      err.hint = `The "${set}" set does not include an icon named "${icon}".\n\nIs this a typo? Is the "@iconify/json" dependency out of date?`;
+    } else {
+      err.hint = `The "${set}" set is not configured to include an icon named "${icon}".\n\nDo you need to add it to your configuration?`;
+    }
+  }
+
+  throw err;
+}
+
+const id = `ai:${collection.prefix}:${icon ?? set}`;
+
+if (props.size) {
+  props.width = props.size;
+  props.height = props.size;
+  delete props.size;
+}
+const renderData = iconToSVG(iconData);
+const normalizedProps = { ...renderData.attributes, ...props };
+const normalizedBody = renderData.body;
 ---
 
-<svg {...props} astro-icon={name} set:html={(title ? `<title>${title}</title>` : '') + innerHTML} />
+<svg {...normalizedProps} data-icon={name}>
+  {title && <title>{title}</title>}
+  {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
+  <use xlink:href={`#${id}`}></use>
+</svg>
