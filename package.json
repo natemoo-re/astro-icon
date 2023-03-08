@@ -8,10 +8,6 @@
     "dev": "yarn workspace demo run dev",
     "lint": "prettier \"**/*.{js,ts,md,json}\""
   },
-  "workspaces": [
-    "packages/*",
-    "demo"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/natemoo-re/astro-icon.git"
@@ -23,7 +19,7 @@
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "volta": {
-    "node": "16.13.0",
+    "node": "16.19.1",
     "yarn": "1.22.17"
   },
   "dependencies": {

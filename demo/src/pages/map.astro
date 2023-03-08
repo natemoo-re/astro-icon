@@ -1,31 +1,29 @@
 ---
-import { Icon } from 'astro-icon';
+import { Icon } from "astro-icon/components";
 ---
 
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Astro Icon</title>
+    <style lang="css">
+      [data-icon] {
+        color: blue;
+      }
+      [data-icon="annotation"] {
+        color: red;
+      }
+      [data-icon="bi:stars"] {
+        color: green;
+      }
+    </style>
+  </head>
 
-<head>
-	<meta charset="utf-8" />
-	<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-	<meta name="viewport" content="width=device-width" />
-	<title>Astro Icon</title>
-	<style lang="css">
-		[astro-icon] {
-			color: blue;
-		}
-		[astro-icon="annotation"] {
-			color: red;
-		}
-		[astro-icon="folder"] {
-			color: green;
-		}
-	</style>
-</head>
+  <body>
+    <h1>Welcome to Astro Icon!</h1>
 
-<body>
-	<h1>Welcome to Astro Icon!</h1>
-
-    {[1,2,3].map(() => <Icon name="bi:stars" /> )}
-</body>
-
+    {[1, 2, 3].map(() => <Icon name="bi:stars" />)}
+  </body>
 </html>
