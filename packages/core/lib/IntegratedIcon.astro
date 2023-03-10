@@ -1,0 +1,7 @@
+---
+import Icon, { IconProps } from "./Icon.astro";
+import icons, { config } from "virtual:astro-icon";
+interface Props extends IconProps {}
+---
+
+<Icon icons={icons} config={config} {...Astro.props} />

@@ -1,18 +1,24 @@
 ---
-import icons, { config } from "virtual:astro-icon";
+import type { AstroIconCollection, AstroIconOptions } from "virtual:astro-icon";
 import { getIconData, iconToSVG } from "@iconify/utils";
 import { cache } from "./cache.js";
 
-interface Props {
+export interface IconProps {
   name: import("astro-icon").Icon;
   title?: string;
   size?: number;
   width?: number;
   height?: number;
 }
+export interface MetaProps {
+  icons: AstroIconCollection;
+  config?: AstroIconOptions;
+}
+
+interface Props extends IconProps, MetaProps {}
 
 const req = Astro.request;
-const { name = "", title, ...props } = Astro.props;
+const { icons, config, name = "", title, ...props } = Astro.props;
 const map = cache.get(req) ?? new Map();
 const i = map.get(name) ?? 0;
 map.set(name, i + 1);
