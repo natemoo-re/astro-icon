@@ -1,5 +1,5 @@
 import { getIcons } from "@iconify/utils";
-import { lookupCollections, loadCollection, locate } from "@iconify/json";
+import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import {
   importDirectory,
   cleanupSVG,
@@ -30,15 +30,15 @@ async function getVitePlugin({ include = {} }, { command, root }) {
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
-  let collections = [];
-  const possibleCollections = Object.keys(await lookupCollections());
-  const invalidCollections = Object.keys(include).filter(name => !possibleCollections.includes(name));
-  for (const invalidCollection of invalidCollections) {
-    console.error(`[astro-icon] "${invalidCollection}" does not appear to be a valid iconify collection!`);
-  }
+  // let collections = [];
+  // const possibleCollections = Object.keys(await lookupCollections());
+  // const invalidCollections = Object.keys(include).filter(name => !possibleCollections.includes(name));
+  // for (const invalidCollection of invalidCollections) {
+  //   console.error(`[astro-icon] "${invalidCollection}" does not appear to be a valid iconify collection!`);
+  // }
   const fullCollections = await Promise.all(
-    Object.keys(include).filter(name => possibleCollections.includes(name)).map((collection) => 
-      loadCollection(locate(collection)).then((value) => [collection, value])
+    Object.keys(include).map((collection) =>
+      loadCollectionFromFS(collection).then((value) => [collection, value])
     )
   );
   collections = fullCollections.map(([name, icons]) => {
@@ -99,9 +99,8 @@ async function getVitePlugin({ include = {} }, { command, root }) {
 
         export default ${JSON.stringify(
           collections
-        )};\nexport const config = ${
-          command === "dev" ? JSON.stringify({ include }) : "undefined"
-        }`;
+        )};\nexport const config = ${command === "dev" ? JSON.stringify({ include }) : "undefined"
+          }`;
       }
     },
   };
@@ -109,13 +108,13 @@ async function getVitePlugin({ include = {} }, { command, root }) {
 
 function normalizeColors(svg) {
   return parseColors(svg, {
-      defaultColor: "currentColor",
-      callback: (_, colorStr, color) => {
-        return !color || isEmptyColor(color) || isWhite(color)
-          ? colorStr
-          : "currentColor";
-      },
-    });
+    defaultColor: "currentColor",
+    callback: (_, colorStr, color) => {
+      return !color || isEmptyColor(color) || isWhite(color)
+        ? colorStr
+        : "currentColor";
+    },
+  });
 }
 
 async function isMonochrome(svg) {
