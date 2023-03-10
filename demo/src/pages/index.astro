@@ -1,7 +1,7 @@
 ---
-import { Icon } from "astro-icon/components";
+import { Icon } from "astro-icon/standalone";
 
-const icon = "adjustment";
+const icon = "local:adjustment";
 ---
 
 <html lang="en">
@@ -14,10 +14,10 @@ const icon = "adjustment";
       [data-icon] {
         color: blue;
       }
-      [data-icon="annotation"] {
+      [data-icon="local:annotation"] {
         color: red;
       }
-      [data-icon="deno"] {
+      [data-icon="local:deno"] {
         color: green;
       }
     </style>
@@ -34,15 +34,15 @@ const icon = "adjustment";
     <article>
       <h2>Local</h2>
       <!-- This will inline your SVG directly -->
-      <Icon size={24} name="adjustment" />
+      <Icon size={24} name="local:adjustment" />
       <Icon size={24} name={icon} />
       <Icon size={24} name={icon} />
       <Icon size={24} name="ic:baseline-directions-run" />
-      <Icon size={24} name="annotation" />
-      <Icon size={24} name="annotation" />
-      <Icon size={24} name="deno" />
-      <Icon name="deno" />
-      <Icon name="deno" />
+      <Icon size={24} name="local:annotation" />
+      <Icon size={24} name="local:annotation" />
+      <Icon size={24} name="local:deno" />
+      <Icon name="local:deno" />
+      <Icon name="local:deno" />
     </article>
 
     <article>

@@ -3,7 +3,7 @@ import { cleanupSVG, importDirectory, isEmptyColor, parseColors, runSVGO } from 
 
 /**
  * Load a icon set from "src/icons"
- * @returns {Promise<import("@iconify/tools").IconSet>} the icon set
+ * @returns {Promise<import("@iconify/types").IconifyJSON>} the icon set
  */
 export async function loadLocalCollection() {
   const local = await importDirectory("src/icons", {
@@ -40,7 +40,7 @@ export async function loadLocalCollection() {
     // Update icon
     local.fromSVG(name, svg);
   });
-  return local
+  return local.export()
 }
 
 function normalizeColors(svg) {

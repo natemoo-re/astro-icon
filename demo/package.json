@@ -11,5 +11,8 @@
   "devDependencies": {
     "astro": "^2.1.0",
     "astro-icon": "workspace:*"
+  },
+  "dependencies": {
+    "@iconify/json": "^1.1.461"
   }
 }

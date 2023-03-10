@@ -15,23 +15,22 @@ importers:
 
   demo:
     specifiers:
-      '@iconify/json': ^2.2.32
+      '@iconify/json': ^1.1.461
       astro: ^2.1.0
       astro-icon: workspace:*
+    dependencies:
+      '@iconify/json': 1.1.461
     devDependencies:
-      '@iconify/json': 2.2.32
       astro: 2.1.0
       astro-icon: link:../packages/core
 
   packages/core:
     specifiers:
-      '@iconify/json': ^2.2.32
       '@iconify/tools': ^2.2.6
       '@iconify/types': ^2.0.0
       '@iconify/utils': ^2.1.4
       astro: ^2.1.0
     dependencies:
-      '@iconify/json': 2.2.32
       '@iconify/tools': 2.2.6
       '@iconify/types': 2.0.0
       '@iconify/utils': 2.1.4
@@ -885,12 +884,6 @@ packages:
     resolution: {integrity: sha512-9Y41Tk9s3LDt4WI20XySNhNX6qTJ/WOBeE3O2iyoV9LJ6gFEDjp0uTPzfRU9NUx7D6VkvQ/htJEuRe9LmyMqUA==}
     dev: false
 
-  /@iconify/json/2.2.32:
-    resolution: {integrity: sha512-303XU9iOVQxihO0a11S9x/cQgrlgQk3j4TwT5lCfx4kxomHL00mswTPrnUGZXM5VOTbLOM+7LdpdCnay7NAJnw==}
-    dependencies:
-      '@iconify/types': 2.0.0
-      pathe: 1.1.0
-
   /@iconify/tools/2.2.6:
     resolution: {integrity: sha512-Qw6kuexTySYNzdbUC56DyS4p+cwbzQ0e1ohenhJpwVLpa702n58yRMZyLbRa21fVXwfstIx9pWd0dF/MU96UOQ==}
     dependencies:
@@ -913,6 +906,7 @@ packages:
 
   /@iconify/types/2.0.0:
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
+    dev: false
 
   /@iconify/utils/2.1.4:
     resolution: {integrity: sha512-7vzsYIvxv5Hng0MNEtSSnyMBD/+zqnORqmKiYsSgpMBGSz1r93URgBZHPYCZ1/gpoaVstYW4/SVLGCMJBNMCLQ==}
@@ -4066,6 +4060,7 @@ packages:
 
   /pathe/1.1.0:
     resolution: {integrity: sha512-ODbEPR0KKHqECXW1GoxdDb+AZvULmXjVPy4rt+pGo2+TnjJTIPJQSVS6N63n8T2Ip+syHhbn52OewKicV0373w==}
+    dev: false
 
   /pend/1.2.0:
     resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}

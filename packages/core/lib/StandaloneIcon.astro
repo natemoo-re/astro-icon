@@ -1,0 +1,12 @@
+---
+import Icon, { IconProps } from "./Icon.astro";
+import { icons, loadCollection } from "./standaloneCollections";
+interface Props extends Omit<IconProps, "name"> {
+  name: `${string}:${string}`;
+}
+const [set] = Astro.props.name.split(":");
+
+await loadCollection(set);
+---
+
+<Icon icons={icons} config={{ include: {} }} {...Astro.props} />

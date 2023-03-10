@@ -10,6 +10,10 @@
     "./components": {
       "types": "./components.d.ts",
       "default": "./components.mjs"
+    },
+    "./standalone": {
+      "types": "./standalone.d.ts",
+      "default": "./standalone.mjs"
     }
   },
   "author": {

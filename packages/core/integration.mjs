@@ -59,8 +59,7 @@ async function getVitePlugin({ include = {} }, { command, root }) {
     },
     async load(id) {
       if (id === resolvedVirtualModuleId) {
-        const local = await loadLocalCollection()
-        collections["local"] = local.export()
+        collections["local"] = await loadLocalCollection()
         await writeFile(new URL('./.astro/icon.d.ts', root), `declare module 'astro-icon' {
           type Icon = ${Object.values(collections).map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === 'local' ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("")};
         }`)
