@@ -68,18 +68,23 @@ if (!collection) {
 
   throw err;
 }
+console.log("1");
 
 const iconData = getIconData(collection, iconName ?? setName);
 if (!iconData) {
   const err: any = new Error(`Unable to locate "${name}" icon!`);
+  console.log("2");
 
   if (import.meta.env.DEV) {
-    const { include = {} } = config;
-    const [maybeStar] = include[setName];
-    if (maybeStar === "*") {
-      err.hint = `The "${setName}" set does not include an icon named "${iconName}".\n\nIs this a typo? Is the "@iconify/json" dependency out of date?`;
-    } else {
-      err.hint = `The "${setName}" set is not configured to include an icon named "${iconName}".\n\nDo you need to add it to your configuration?`;
+    const include = config?.include ?? {};
+    if (setName in include) {
+      const [maybeStar] = include[setName];
+
+      if (maybeStar === "*") {
+        err.hint = `The "${setName}" set does not include an icon named "${iconName}".\n\nIs this a typo? Is the "@iconify/json" dependency out of date?`;
+      } else {
+        err.hint = `The "${setName}" set is not configured to include an icon named "${iconName}".\n\nDo you need to add it to your configuration?`;
+      }
     }
   }
 
