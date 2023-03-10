@@ -20,15 +20,24 @@ cache.set(req, map);
 
 const includeSymbol = i === 0;
 
-let [set, icon] = name.split(":");
+let [setName, iconName] = name.split(":");
 
-// TODO: prioritize local icons
-const collection = Object.values(icons).find((collection) => {
-  if (icon === undefined) {
-    return set in collection.icons;
+if (iconName === undefined) {
+  // here `set` is actually the name of the icon
+  if (setName in icons["local"].icons) {
+    iconName = setName;
+    setName = "local";
   }
-  return collection.prefix === set;
-});
+  for (const [prefix, collection] of Object.entries(icons)) {
+    if (setName in collection.icons) {
+      iconName = setName;
+      setName = prefix;
+      break;
+    }
+  }
+}
+
+const collection = icons[setName];
 
 if (!collection) {
   const err: any = new Error(`Unable to locate "${name}" icon!`);
@@ -36,17 +45,17 @@ if (!collection) {
   if (import.meta.env.DEV) {
     const { include = {} } = config;
     const sets = Object.keys(include);
-    if (set && icon) {
-      if (!sets.includes(set)) {
-        err.hint = `It looks like the "${set}" set is not included in your configuration.\n\nDo you need to add the "${set}" set?`;
+    if (setName && iconName) {
+      if (!sets.includes(setName)) {
+        err.hint = `It looks like the "${setName}" set is not included in your configuration.\n\nDo you need to add the "${setName}" set?`;
       }
     } else {
       if (sets.length === 1) {
-        err.hint = `The "${sets[0]}" set does not include a "${set}" icon.\n\nDid you forget to include the icon or make a typo?`;
+        err.hint = `The "${sets[0]}" set does not include a "${setName}" icon.\n\nDid you forget to include the icon or make a typo?`;
       } else {
         err.hint = `None of your icon sets ("${sets.join(
           `" | "`
-        )}") include a "${set}" icon.\n\nDid you forget to include this icon in your configuration?`;
+        )}") include a "${setName}" icon.\n\nDid you forget to include this icon in your configuration?`;
       }
     }
   }
@@ -54,24 +63,24 @@ if (!collection) {
   throw err;
 }
 
-const iconData = getIconData(collection, icon ?? set);
+const iconData = getIconData(collection, iconName ?? setName);
 if (!iconData) {
   const err: any = new Error(`Unable to locate "${name}" icon!`);
 
   if (import.meta.env.DEV) {
     const { include = {} } = config;
-    const [maybeStar] = include[set];
+    const [maybeStar] = include[setName];
     if (maybeStar === "*") {
-      err.hint = `The "${set}" set does not include an icon named "${icon}".\n\nIs this a typo? Is the "@iconify/json" dependency out of date?`;
+      err.hint = `The "${setName}" set does not include an icon named "${iconName}".\n\nIs this a typo? Is the "@iconify/json" dependency out of date?`;
     } else {
-      err.hint = `The "${set}" set is not configured to include an icon named "${icon}".\n\nDo you need to add it to your configuration?`;
+      err.hint = `The "${setName}" set is not configured to include an icon named "${iconName}".\n\nDo you need to add it to your configuration?`;
     }
   }
 
   throw err;
 }
 
-const id = `ai:${collection.prefix}:${icon ?? set}`;
+const id = `ai:${collection.prefix}:${iconName ?? setName}`;
 
 if (props.size) {
   props.width = props.size;
