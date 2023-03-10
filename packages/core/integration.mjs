@@ -1,12 +1,6 @@
 import { getIcons } from "@iconify/utils";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
-import {
-  importDirectory,
-  cleanupSVG,
-  runSVGO,
-  parseColors,
-  isEmptyColor,
-} from "@iconify/tools";
+import { loadLocalCollection } from "./lib/load.mjs";
 import { writeFile } from "node:fs/promises";
 
 /** @returns {import('astro').AstroIntegration} */
@@ -65,40 +59,7 @@ async function getVitePlugin({ include = {} }, { command, root }) {
     },
     async load(id) {
       if (id === resolvedVirtualModuleId) {
-        const local = await importDirectory("src/icons", {
-          prefix: "local",
-        });
-
-        await local.forEach(async (name, type) => {
-          if (type !== "icon") {
-            return;
-          }
-
-          const svg = local.toSVG(name);
-          if (!svg) {
-            // Invalid icon
-            local.remove(name);
-            return;
-          }
-
-          try {
-            await cleanupSVG(svg);
-
-            if (await isMonochrome(svg)) {
-              await normalizeColors(svg);
-            }
-
-            runSVGO(svg);
-          } catch (err) {
-            // Invalid icon
-            console.error(`Error parsing ${name}:`, err);
-            local.remove(name);
-            return;
-          }
-
-          // Update icon
-          local.fromSVG(name, svg);
-        });
+        const local = await loadLocalCollection()
         collections["local"] = local.export()
         await writeFile(new URL('./.astro/icon.d.ts', root), `declare module 'astro-icon' {
           type Icon = ${Object.values(collections).map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === 'local' ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("")};
@@ -115,40 +76,3 @@ async function getVitePlugin({ include = {} }, { command, root }) {
   };
 }
 
-function normalizeColors(svg) {
-  return parseColors(svg, {
-    defaultColor: "currentColor",
-    callback: (_, colorStr, color) => {
-      return !color || isEmptyColor(color) || isWhite(color)
-        ? colorStr
-        : "currentColor";
-    },
-  });
-}
-
-async function isMonochrome(svg) {
-  let monochrome = true;
-  await parseColors(svg, {
-    defaultColor: "currentColor",
-    callback: (_, colorStr, color) => {
-      if (!monochrome) return colorStr;
-      monochrome = !color || isEmptyColor(color) || isWhite(color) || isBlack(color);
-      return colorStr;
-    },
-  });
-
-  return monochrome;
-}
-
-function isBlack(color) {
-  switch (color.type) {
-    case 'rgb': return color.r === 0 && color.r === color.g && color.g === color.b;
-  }
-  return false;
-}
-function isWhite(color) {
-  switch (color.type) {
-    case 'rgb': return color.r === 255 && color.r === color.g && color.g === color.b;
-  }
-  return false;
-}
