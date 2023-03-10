@@ -1,5 +1,4 @@
 ---
-// @ts-expect-error
 import icons, { config } from "virtual:astro-icon";
 import { getIconData, iconToSVG } from "@iconify/utils";
 import { cache } from "./cache.js";
@@ -23,7 +22,8 @@ const includeSymbol = i === 0;
 
 let [set, icon] = name.split(":");
 
-const collection = icons.find((collection) => {
+// TODO: prioritize local icons
+const collection = Object.values(icons).find((collection) => {
   if (icon === undefined) {
     return set in collection.icons;
   }

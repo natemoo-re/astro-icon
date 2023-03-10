@@ -41,11 +41,20 @@ async function getVitePlugin({ include = {} }, { command, root }) {
       loadCollectionFromFS(collection).then((value) => [collection, value])
     )
   );
-  collections = fullCollections.map(([name, icons]) => {
+
+  /** @type {import("./integration").AstroIconCollection} */
+  const collections = {}
+  for (const [name, collection] of fullCollections) {
     const reduced = include[name];
-    if (reduced.length === 1 && reduced[0] === "*") return icons;
-    return getIcons(icons, reduced);
-  });
+    // include all icons in the collection
+    if (reduced.length === 1 && reduced[0] === '*' && collection) {
+      collections[name] = collection;
+    }
+    const reducedCollection = getIcons(collection, reduced)
+    if (reducedCollection) {
+      collections[name] = reducedCollection;
+    }
+  }
 
   return {
     name: "astro-icon",
@@ -90,10 +99,10 @@ async function getVitePlugin({ include = {} }, { command, root }) {
           // Update icon
           local.fromSVG(name, svg);
         });
-        collections.unshift(local.export())
+        collections["local"] = local.export()
         await writeFile(new URL('./.astro/icon.d.ts', root), `declare module 'astro-icon' {
-	type Icon = ${collections.map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === 'local' ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("")};
-}`)
+          type Icon = ${Object.values(collections).map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === 'local' ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("")};
+        }`)
 
         return `import.meta.glob('/src/icons/**/*.svg');
 
