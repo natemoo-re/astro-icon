@@ -20,7 +20,7 @@ export default function icon(opts = {}) {
 }
 
 /** @returns {import('vite').Plugin} */
-async function getVitePlugin({ include = {} }, { command, root }) {
+async function getVitePlugin({ include = {}, allowStandalone = false }, { command, root }) {
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
@@ -56,6 +56,11 @@ async function getVitePlugin({ include = {} }, { command, root }) {
       if (id === virtualModuleId) {
         return resolvedVirtualModuleId;
       }
+    },
+    config(config) {
+      config.define ??= {}
+      if (!allowStandalone)
+        config.define["globalThis.__ASTRO_ICON_NO_STANDALONE"] = "true"
     },
     async load(id) {
       if (id === resolvedVirtualModuleId) {

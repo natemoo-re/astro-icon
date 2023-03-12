@@ -1,6 +1,21 @@
 ---
 import Icon, { IconProps } from "./Icon.astro";
-import icons, { config } from "virtual:astro-icon";
+var virtual: typeof import("virtual:astro-icon");
+try {
+    virtual = await import("virtual:astro-icon");
+} catch (_) {
+    const err = new Error("Unable to load icons from plugin");
+    if (import.meta.env.DEV) {
+        err.hint =
+            "Is the 'astro-icon' integration disabled?\n\nDid you meant to import 'astro-icon/standalone' instead of 'astro-icon/components'";
+    }
+
+    throw err;
+}
+const { default: icons, config } = virtual;
+
+console.error(config);
+
 interface Props extends IconProps {}
 ---
 

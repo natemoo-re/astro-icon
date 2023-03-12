@@ -10,7 +10,8 @@ export default defineConfig({
                 fe: ['*'],
                 ri: ['*'],
                 bi: ['*'],
-            }
+            },
+            allowStandalone: true,
         })
     ]
 });

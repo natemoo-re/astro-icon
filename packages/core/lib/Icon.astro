@@ -46,7 +46,7 @@ if (iconName === undefined) {
 const collection = icons[setName];
 
 if (!collection) {
-  const err: any = new Error(`Unable to locate "${name}" icon!`);
+  const err = new Error(`Unable to locate "${name}" icon!`);
 
   if (import.meta.env.DEV) {
     const { include = {} } = config;
@@ -68,12 +68,10 @@ if (!collection) {
 
   throw err;
 }
-console.log("1");
 
 const iconData = getIconData(collection, iconName ?? setName);
 if (!iconData) {
-  const err: any = new Error(`Unable to locate "${name}" icon!`);
-  console.log("2");
+  const err = new Error(`Unable to locate "${name}" icon!`);
 
   if (import.meta.env.DEV) {
     const include = config?.include ?? {};
