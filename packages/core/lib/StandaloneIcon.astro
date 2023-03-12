@@ -1,7 +1,6 @@
 ---
 import Icon, { IconProps } from "./Icon.astro";
 import { icons, loadCollection } from "./standaloneCollections";
-console.log(globalThis);
 if (globalThis.__ASTRO_ICON_NO_STANDALONE) {
   const err = new Error("Using standalone icon with integration enabled");
   err.hint =

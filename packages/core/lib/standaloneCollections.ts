@@ -6,7 +6,6 @@ icons["local"] = await loadLocalCollection()
 
 export async function loadCollection(name: string) {
     if (!name) {
-        console.info("what the hell")
         return
     }
     if (name in icons) return
