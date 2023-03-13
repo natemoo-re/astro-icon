@@ -15,11 +15,17 @@ importers:
 
   demo:
     specifiers:
-      '@iconify/json': ^1.1.461
+      '@iconify-json/bi': ^1.1.15
+      '@iconify-json/fe': ^1.1.6
+      '@iconify-json/ic': ^1.1.13
+      '@iconify-json/ri': ^1.1.5
       astro: ^2.1.0
       astro-icon: workspace:*
     dependencies:
-      '@iconify/json': 1.1.461
+      '@iconify-json/bi': 1.1.15
+      '@iconify-json/fe': 1.1.6
+      '@iconify-json/ic': 1.1.13
+      '@iconify-json/ri': 1.1.5
     devDependencies:
       astro: 2.1.0
       astro-icon: link:../packages/core
@@ -874,6 +880,30 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@iconify-json/bi/1.1.15:
+    resolution: {integrity: sha512-NsbDeTVIYwgPLyAT0UgzuaCl79V65Z+M319BjbdEwdnbDGuaYgmAMBJUIWrnBEVoEg7rtouAuvaZRb3nIYIRcA==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: false
+
+  /@iconify-json/fe/1.1.6:
+    resolution: {integrity: sha512-plBJDCJuruDvO5Wva2qwW/TxdD0GW2V62tHec5bm1sn7Y7e13O7J9tOBue/FbOdH2YJon2KvEBpaE+XTPDPOOw==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: false
+
+  /@iconify-json/ic/1.1.13:
+    resolution: {integrity: sha512-5i5zal/VRwTrs99iMTnG1Zu97bgX9Mkiu9TzR1U1rHBylUnBW+HkOweoQVEPgQITGG024/lNbZxU+3Aa2xuDww==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: false
+
+  /@iconify-json/ri/1.1.5:
+    resolution: {integrity: sha512-OrxKcKFHanTSPmU5esvSn5YfpNgjwJJ+6rkK1I1pIRCPXfuvmlTJGUjf+L5ZQHUiMWLQz+M2bqXx8iBUtW35Gg==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: false
 
   /@iconify/json-tools/1.0.10:
     resolution: {integrity: sha512-LFelJDOLZ6JHlmlAkgrvmcu4hpNPB91KYcr4f60D/exzU1eNOb4/KCVHIydGHIQFaOacIOD+Xy+B7P1z812cZg==}

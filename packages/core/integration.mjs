@@ -39,6 +39,8 @@ async function getVitePlugin({ include = {}, allowStandalone = false }, { comman
   /** @type {import("./integration").AstroIconCollection} */
   const collections = {}
   for (const [name, collection] of fullCollections) {
+    if (!collection) continue
+
     const reduced = include[name];
     // include all icons in the collection
     if (reduced.length === 1 && reduced[0] === '*' && collection) {

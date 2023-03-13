@@ -13,6 +13,9 @@
     "astro-icon": "workspace:*"
   },
   "dependencies": {
-    "@iconify/json": "^1.1.461"
+    "@iconify-json/bi": "^1.1.15",
+    "@iconify-json/fe": "^1.1.6",
+    "@iconify-json/ic": "^1.1.13",
+    "@iconify-json/ri": "^1.1.5"
   }
 }

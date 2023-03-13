@@ -19,4 +19,4 @@ const [set] = Astro.props.name.split(":");
 await loadCollection(set);
 ---
 
-<Icon icons={icons} config={{ include: {} }} {...Astro.props} />
+<Icon icons={icons} config={undefined} {...Astro.props} />
