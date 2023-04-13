@@ -307,6 +307,7 @@ export type Optimize = boolean | OptimizeOptions;
 
 export interface Props extends HTMLAttributes {
   name: string;
+  path: "assets" | "public" | undefined;
   pack?: string;
   optimize?: Optimize;
   fill?: string;

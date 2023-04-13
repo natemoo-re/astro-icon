@@ -59,9 +59,17 @@ By default, `astro-icon` supports custom local `svg` icons. They are optimized w
 
 ### Usage
 
-1. Create a directory inside of `src/` named `icons/`.
-2. Add each desired icon as an individual `.svg` file to `src/icons/`
+You can choose between three folders to host your local icons and select which one you want to use with the __*"path"*__ prop. __*This prop only works on "Icon" component.*__
+
+1. By default if you don't pass the __*"path"*__ prop the default directory is `src/icons/`.
+2. With `path="public"` the directory where to store our local icons is `/public/icons`. 
+3. With `path="assets"` the directory where to store our local icons is `/src/assets/icons/`.
+  
+Then the procedure would be the following:
+1. Create the directory you are going to use.
+2. Add each desired icon as an individual `.svg` file to your selected folder.
 3. Reference a specific icon file using the `name` prop.
+4. Reference your local icon folder with `path` prop.
 
 **Icon** will inline the SVG directly in your HTML.
 
@@ -72,6 +80,12 @@ import { Icon } from 'astro-icon';
 
 <!-- Loads the SVG in `/src/icons/filename.svg` -->
 <Icon name="filename" />
+
+<!-- Loads the SVG in `/public/icons/filename.svg` -->
+<Icon name="filename" path="public" />
+
+<!-- Loads the SVG in `/src/assets/icons/filename.svg` -->
+<Icon name="filename" path="assets" />
 ```
 
 **Sprite** will reference the SVG from a spritesheet via [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use).
@@ -84,6 +98,7 @@ import { Sprite } from 'astro-icon';
 <!-- Required ONCE per page as a parent of any <Sprite> components! Creates `<symbol>` for each icon -->
 <!-- Can also be included in your Layout component! -->
 <Sprite.Provider>
+  <!-- Sprites only accepts the default path -->
   <!-- Uses the sprite from `/src/icons/filename.svg` -->
   <Sprite name="filename" />
 </Sprite.Provider>

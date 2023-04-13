@@ -1,13 +1,47 @@
 /// <reference types="vite/client" />
-import { SPRITESHEET_NAMESPACE } from "./constants";
-import { Props, Optimize } from "./Props";
-import getFromService from "./resolver";
 import { optimize as optimizeSVGNative } from "svgo";
+import { Optimize, Props } from "./Props";
+import { SPRITESHEET_NAMESPACE } from "./constants";
+import getFromService from "./resolver";
 
 // Adapted from https://github.com/developit/htmlParser
 const splitAttrsTokenizer = /([a-z0-9_\:\-]*)\s*?=\s*?(['"]?)(.*?)\2\s+/gim;
 const domParserTokenizer =
   /(?:<(\/?)([a-zA-Z][a-zA-Z0-9\:]*)(?:\s([^>]*?))?((?:\s*\/)?)>|(<\!\-\-)([\s\S]*?)(\-\->)|(<\!\[CDATA\[)([\s\S]*?)(\]\]>))/gm;
+
+const selectedIconFolder = ({
+  path,
+  name,
+}: {
+  path?: string;
+  name: string;
+}) => {
+  let iconpath;
+  let svgFiles;
+
+  switch (path) {
+    case "assets":
+      iconpath = `/src/assets/icons/${name}.svg`;
+      svgFiles = import.meta.globEager("/src/assets/icons/**/*.svg", {
+        as: "raw",
+      });
+      break;
+    case "public":
+      iconpath = `/public/icons/${name}.svg`;
+      svgFiles = import.meta.globEager("/public/icons/**/*.svg", {
+        as: "raw",
+      });
+      break;
+    default:
+      iconpath = `/src/icons/${name}.svg`;
+      svgFiles = import.meta.globEager("/src/icons/**/*.svg", {
+        as: "raw",
+      });
+      break;
+  }
+
+  return { iconpath, svgFiles };
+};
 
 const splitAttrs = (str) => {
   let res = {};
@@ -130,7 +164,8 @@ export const fallback = {
 export default async function load(
   name: string,
   inputProps: Props,
-  optimize: Optimize
+  optimize: Optimize,
+  path?: string
 ) {
   const key = name;
   if (!name) {
@@ -139,28 +174,34 @@ export default async function load(
 
   let svg = "";
   let filepath = "";
+
   if (name.includes(":")) {
     const [pack, ..._name] = name.split(":");
     name = _name.join(":");
     // Note: omit ending to use default resolution
-    filepath = `/src/icons/${pack}`;
+    const iconpath = `/src/icons/${pack}`;
     let get;
+
     try {
-      const files = import.meta.globEager(
+      const svgFiles = import.meta.globEager(
         "/src/icons/**/*.{js,ts,cjs,mjc,cts,mts}"
       );
+
       const keys = Object.fromEntries(
-        Object.keys(files).map((key) => [key.replace(/\.[cm]?[jt]s$/, ""), key])
+        Object.keys(svgFiles).map((key) => [
+          key.replace(/\.[cm]?[jt]s$/, ""),
+          key,
+        ])
       );
 
-      if (!(filepath in keys)) {
-        throw new Error(`Could not find the file "${filepath}"`);
+      if (!(iconpath in keys)) {
+        throw new Error(`Could not find the file "${iconpath}"`);
       }
 
-      const mod = files[keys[filepath]];
+      const mod = svgFiles[keys[iconpath]];
       if (typeof mod.default !== "function") {
         throw new Error(
-          `[astro-icon] "${filepath}" did not export a default function!`
+          `[astro-icon] "${iconpath}" did not export a default function!`
         );
       }
       get = mod.default;
@@ -186,19 +227,18 @@ ${contents}`
     }
     svg = contents;
   } else {
-    filepath = `/src/icons/${name}.svg`;
-
     try {
-      const files = import.meta.globEager("/src/icons/**/*.svg", { as: "raw" });
+      const { svgFiles, iconpath } = selectedIconFolder({ name, path });
+      filepath = iconpath;
 
-      if (!(filepath in files)) {
-        throw new Error(`Could not find the file "${filepath}"`);
+      if (!(iconpath in svgFiles)) {
+        throw new Error(`Could not find the file "${iconpath}"`);
       }
 
-      const contents = files[filepath];
+      const contents = svgFiles[iconpath];
       if (!/<svg/gim.test(contents)) {
         throw new Error(
-          `Unable to process "${filepath}" because it is not an SVG!
+          `Unable to process "${iconpath}" because it is not an SVG!
 
 Recieved the following content:
 ${contents}`
