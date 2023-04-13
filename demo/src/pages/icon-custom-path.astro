@@ -1,0 +1,48 @@
+---
+import { Icon } from "astro-icon";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Astro Icon</title>
+    <style lang="css">
+      [astro-icon] {
+        color: blue;
+      }
+      [astro-icon="heartbeat"] {
+        color: red;
+      }
+      [astro-icon="handshake-24-filled"] {
+        color: green;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Welcome to Astro Icon!</h1>
+
+    <!-- ICONS FROM DEFAULT PATH -->
+    <article>
+      <h2>Icon with default path ("/src/icons/")</h2>
+      <!-- Pull your icon from a custom remote source -->
+      <Icon size={24} name="adjustment" />
+    </article>
+
+    <!-- ICONS FROM CUSTOM PATH => ASSETS -->
+    <article>
+      <h2>Icon with custom path ("/src/assets/icons/")</h2>
+      <!-- Prop path="assets" => "/src/assets/icons/" -->
+      <Icon size={36} name="heartbeat" path="assets" />
+    </article>
+
+    <!-- ICONS FROM CUSTOM PATH => PUBLIC -->
+    <article>
+      <h2>Icon with custom path ("/public/icons/")</h2>
+      <!-- Prop path="public" => "/public/icons/" -->
+      <Icon size={48} name="handshake-24-filled" path="public" />
+    </article>
+  </body>
+</html>
