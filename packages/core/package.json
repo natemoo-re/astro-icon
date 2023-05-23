@@ -4,13 +4,20 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./integration.d.ts",
-      "default": "./integration.mjs"
+      "types": "./dist/integration.d.mts",
+      "default": "./dist/integration.mjs"
     },
     "./components": {
-      "types": "./components.d.ts",
-      "default": "./components.mjs"
+      "types": "./dist/components.d.mts",
+      "default": "./dist/components.mjs"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc --watch"
   },
   "author": {
     "name": "Nate Moore",
@@ -45,6 +52,9 @@
     "@iconify/utils": "^2.1.4"
   },
   "devDependencies": {
-    "astro": "^2.1.0"
+    "@types/node": "^16.11.7",
+    "astro": "^2.1.0",
+    "typescript": "^5.0.4",
+    "vite": "^4.3.8"
   }
 }
