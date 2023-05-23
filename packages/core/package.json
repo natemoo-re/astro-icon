@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/integration.d.mts",
+      "types": "./dist/integration.d.ts",
       "default": "./dist/integration.mjs"
     },
     "./components": {
@@ -52,6 +52,7 @@
     "@iconify/utils": "^2.1.4"
   },
   "devDependencies": {
+    "@astrojs/ts-plugin": "^1.0.6",
     "@types/node": "^16.11.7",
     "astro": "^2.5.0",
     "typescript": "^5.0.4",

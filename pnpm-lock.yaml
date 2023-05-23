@@ -12,7 +12,7 @@ importers:
         version: 2.26.0
     devDependencies:
       prettier:
-        specifier: ^2.5.0
+        specifier: ^2.8.4
         version: 2.8.4
 
   demo:
@@ -49,6 +49,9 @@ importers:
         specifier: ^2.1.4
         version: 2.1.4
     devDependencies:
+      '@astrojs/ts-plugin':
+        specifier: ^1.0.6
+        version: 1.0.6
       '@types/node':
         specifier: ^16.11.7
         version: 16.11.7
@@ -179,6 +182,13 @@ packages:
       which-pm-runs: 1.1.0
     transitivePeerDependencies:
       - supports-color
+    dev: true
+
+  /@astrojs/ts-plugin@1.0.6:
+    resolution: {integrity: sha512-1fx9Dtfowklhphva/PeijdDoYvUBPYwkCk7dqk04xAjwmv6tWrrsU8xZMfQ1JWUtT2RnciaSagggP6w0PFb1Ig==}
+    dependencies:
+      '@astrojs/compiler': 1.4.2
+      '@jridgewell/trace-mapping': 0.3.17
     dev: true
 
   /@astrojs/webapi@2.1.1:

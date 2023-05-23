@@ -1,8 +1,9 @@
 ---
 import icons, { config } from "virtual:astro-icon";
 import { getIconData, iconToSVG } from "@iconify/utils";
-import { cache } from "./cache.js";
-import type { Icon } from 'astro-icon';
+import { cache } from "./cache.mjs";
+// @ts-expect-error - generated on startup
+import type { Icon } from "astro-icon";
 
 interface Props {
   name: Icon;
@@ -23,7 +24,7 @@ const includeSymbol = i === 0;
 
 let [setName, iconName] = name.split(":");
 
-const collection = iconName ? icons[setName] : icons['local']
+const collection = iconName ? icons[setName] : icons["local"];
 
 if (!collection) {
   const err = new Error(`Unable to locate "${name}" icon!`);

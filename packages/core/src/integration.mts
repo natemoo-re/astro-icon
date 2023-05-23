@@ -1,10 +1,9 @@
 import { writeFile } from "node:fs/promises";
-import createLocalCollection from './createLocalCollection.js'
+import createLocalCollection from './createLocalCollection.mjs'
 import loadIconifyCollections from './loadIconifyCollections.mjs'
 import type { AstroConfig, AstroIntegration } from 'astro'
 import type { Plugin } from 'vite'
-import type { IconifyJSON } from "@iconify/types";
-import type { IntegrationOptions } from "./types.d.mts";
+import type { IntegrationOptions, IconCollection } from "../typings/integrationOptions.d.ts";
 
 export default function createIntegration(opts: IntegrationOptions = {}): AstroIntegration {
   return {
@@ -53,8 +52,8 @@ async function getVitePlugin({ include = {}, iconDir = 'src/icons' }: Integratio
   };
 }
 
-async function generateIconTypeDefinitions(collections: IconifyJSON[], rootDir: URL, defaultPack = 'local') {
+async function generateIconTypeDefinitions(collections: IconCollection[], rootDir: URL, defaultPack = 'local') {
   await writeFile(new URL('./.astro/icon.d.ts', rootDir), `declare module 'astro-icon' {
-    type Icon = ${collections.length > 0 ? collections.map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === defaultPack ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("") : 'never'};
+    export type Icon = ${collections.length > 0 ? collections.map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === defaultPack ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("") : 'never'};\n
   }`)
 }

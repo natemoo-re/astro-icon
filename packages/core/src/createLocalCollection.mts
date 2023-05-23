@@ -6,13 +6,11 @@ import {
   parseColors,
   runSVGO,
 } from "@iconify/tools";
-import type { SVG } from '@iconify/tools'
-import type { IconifyJSON } from "@iconify/types";
-import type { Color } from "@iconify/utils/lib/colors/types";
+import type { IconCollection } from "../typings/integrationOptions.d.ts";
+import type { SVG, Color, SVGOOptions } from '../typings/iconify.d.ts'
 
-type SVGOOptions = Parameters<typeof runSVGO>[1]
 
-export default async function createLocalCollection(dir: string, options?: SVGOOptions): Promise<IconifyJSON> {
+export default async function createLocalCollection(dir: string, options?: SVGOOptions): Promise<IconCollection> {
   // Import icons
   const local = await importDirectory(dir, {
     prefix: "local",
