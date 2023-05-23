@@ -1,11 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"],
+  "include": ["src", "lib/loadIconifyCollections.ts"],
   "compilerOptions": {
     "allowJs": true,
     "module": "ES2022",
     "outDir": "./dist",
     "target": "ES2021",
+    "moduleResolution": "node"
   },
   // NEW: Options for file/directory watching
   "watchOptions": {
