@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { getIcons } from "@iconify/utils";
 import { lookupCollections, loadCollection, locate } from "@iconify/json";
 import {
@@ -6,11 +7,18 @@ import {
   runSVGO,
   parseColors,
   isEmptyColor,
+  SVG,
 } from "@iconify/tools";
-import { writeFile } from "node:fs/promises";
+import type { Color } from "@iconify/utils/lib/colors/types";
+import type { AstroConfig, AstroIntegration } from 'astro'
+import type { Plugin } from 'vite'
+import type { IconifyJSON } from "@iconify/types";
 
-/** @returns {import('astro').AstroIntegration} */
-export default function icon(opts = {}) {
+type IntegrationOptions = {
+  include?: Record<string, ['*'] | string[]>
+}
+
+export default function createIntegration(opts: IntegrationOptions = {}): AstroIntegration {
   return {
     name: "astro-icon",
     hooks: {
@@ -25,12 +33,15 @@ export default function icon(opts = {}) {
   };
 }
 
-/** @returns {import('vite').Plugin} */
-async function getVitePlugin({ include = {} }, { command, root }) {
+type AstroConfigIntegration = {
+  command: string
+} & Pick<AstroConfig, 'output' | 'root'>
+
+async function getVitePlugin({ include = {} }: IntegrationOptions, { command, root }: AstroConfigIntegration): Promise<Plugin> {
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
-  let collections = [];
+  let collections: (IconifyJSON)[] = [];
   const possibleCollections = Object.keys(await lookupCollections());
   const invalidCollections = Object.keys(include).filter(name => !possibleCollections.includes(name));
   for (const invalidCollection of invalidCollections) {
@@ -38,14 +49,14 @@ async function getVitePlugin({ include = {} }, { command, root }) {
   }
   const fullCollections = await Promise.all(
     Object.keys(include).filter(name => possibleCollections.includes(name)).map((collection) => 
-      loadCollection(locate(collection)).then((value) => [collection, value])
+      loadCollection(locate(collection)).then((value) => [collection, value] as const)
     )
   );
   collections = fullCollections.map(([name, icons]) => {
     const reduced = include[name];
     if (reduced.length === 1 && reduced[0] === "*") return icons;
     return getIcons(icons, reduced);
-  });
+  }).filter((collection) => collection !== null) as IconifyJSON[]
 
   return {
     name: "astro-icon",
@@ -54,7 +65,7 @@ async function getVitePlugin({ include = {} }, { command, root }) {
         return resolvedVirtualModuleId;
       }
     },
-    async load(id) {
+    async load(id, options) {
       if (id === resolvedVirtualModuleId) {
         const local = await importDirectory("src/icons", {
           prefix: "local",
@@ -107,8 +118,8 @@ async function getVitePlugin({ include = {} }, { command, root }) {
   };
 }
 
-function normalizeColors(svg) {
-  return parseColors(svg, {
+async function normalizeColors(svg: SVG): Promise<void> {
+  await parseColors(svg, {
       defaultColor: "currentColor",
       callback: (_, colorStr, color) => {
         return !color || isEmptyColor(color) || isWhite(color)
@@ -118,7 +129,7 @@ function normalizeColors(svg) {
     });
 }
 
-async function isMonochrome(svg) {
+async function isMonochrome(svg: SVG): Promise<boolean> {
   let monochrome = true;
   await parseColors(svg, {
     defaultColor: "currentColor",
@@ -132,13 +143,13 @@ async function isMonochrome(svg) {
   return monochrome;
 }
 
-function isBlack(color) {
+function isBlack(color: Color): boolean {
   switch (color.type) {
     case 'rgb': return color.r === 0 && color.r === color.g && color.g === color.b;
   }
   return false;
 }
-function isWhite(color) {
+function isWhite(color: Color): boolean {
   switch (color.type) {
     case 'rgb': return color.r === 255 && color.r === color.g && color.g === color.b;
   }
