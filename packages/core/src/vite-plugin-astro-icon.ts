@@ -1,26 +1,11 @@
-import { writeFile } from "node:fs/promises";
-import createLocalCollection from './createLocalCollection.mjs'
-import loadIconifyCollections from './loadIconifyCollections.mjs'
-import type { AstroConfig, AstroIntegration } from 'astro'
-import type { Plugin } from 'vite'
-import type { IntegrationOptions, IconCollection } from "../typings/integrationOptions.d.ts";
+import type { AstroConfig } from 'astro';
+import { mkdir, stat, writeFile } from "node:fs/promises";
+import type { IconCollection } from "virtual:astro-icon";
+import type { Plugin } from 'vite';
+import type { IntegrationOptions } from "./integration";
+import { loadIconifyCollections, loadLocalCollection } from "./loaders";
 
-export default function createIntegration(opts: IntegrationOptions = {}): AstroIntegration {
-  return {
-    name: "astro-icon",
-    hooks: {
-      async "astro:config:setup"({ updateConfig, command, config }) {
-        updateConfig({
-          vite: {
-            plugins: [await getVitePlugin(opts, { root: config.root })],
-          },
-        });
-      },
-    },
-  };
-}
-
-async function getVitePlugin({ include = {}, iconDir = 'src/icons' }: IntegrationOptions, { root }: Pick<AstroConfig, 'root'>): Promise<Plugin> {
+export async function createPlugin({ include = {}, iconDir = 'src/icons' }: IntegrationOptions, { root }: Pick<AstroConfig, 'root'>): Promise<Plugin> {
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
@@ -38,8 +23,8 @@ async function getVitePlugin({ include = {}, iconDir = 'src/icons' }: Integratio
       if (id === resolvedVirtualModuleId) {
 
         // Create local collection
-        const local = await createLocalCollection(iconDir)
-        collections['local'] = (local)
+        const local = await loadLocalCollection(iconDir)
+        collections['local'] = local
 
         await generateIconTypeDefinitions(Object.values(collections), root);
 
@@ -53,7 +38,16 @@ async function getVitePlugin({ include = {}, iconDir = 'src/icons' }: Integratio
 }
 
 async function generateIconTypeDefinitions(collections: IconCollection[], rootDir: URL, defaultPack = 'local') {
+  await ensureDir(new URL('./.astro', rootDir));
   await writeFile(new URL('./.astro/icon.d.ts', rootDir), `declare module 'astro-icon' {
     export type Icon = ${collections.length > 0 ? collections.map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === defaultPack ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("") : 'never'};\n
   }`)
+}
+
+async function ensureDir(path: URL): Promise<void> {
+  try {
+    await stat(path)
+  } catch (_) {
+    await mkdir(path)
+  }
 }

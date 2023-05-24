@@ -140,6 +140,10 @@ import { Icon } from 'astro-icon/components';
 <Icon name="annotation" /> <!-- will be red -->
 ```
 
+### Using with Frameworks
+
+Astro Icon can be used with other frameworks utilizing the [`slot` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). You can read more about how to use Slots in Astro here. [Passing Children to Framework Components](https://docs.astro.build/en/core-concepts/framework-components/#passing-children-to-framework-components)
+
 ## Configuration
 
 ### Configuring the Integration

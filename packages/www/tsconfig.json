@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src", "typings"],
+  "compilerOptions": {
+    "allowJs": true,
+    "module": "ES2022",
+    "outDir": "./dist",
+    "target": "ES2021",
+    "jsx": "preserve",
+    "moduleResolution": "node16",
+    "plugins": [
+      {
+        "name": "@astrojs/ts-plugin"
+      },
+    ],
+  },
+}

@@ -1,12 +1,13 @@
 import { getIcons } from '@iconify/utils';
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
-import type { IntegrationOptions, AstroIconCollectionMap, IconCollection } from '../typings/integrationOptions.js';
-import type { AutoInstall } from '../typings/iconify.js';
+import type { AstroIconCollectionMap, IconCollection } from 'virtual:astro-icon';
+import type { AutoInstall } from '../../typings/iconify';
+import type { IntegrationOptions } from '../integration';
 
 export default async function loadIconifyCollections(include: IntegrationOptions['include'] = {}): Promise<AstroIconCollectionMap> {
     const possibleCollections = await Promise.all(
         Object.keys(include).map((collectionName) => 
-            loadIconifyCollection(collectionName).then((possibleCollection) => [collectionName, possibleCollection] as const)
+        loadCollection(collectionName).then((possibleCollection) => [collectionName, possibleCollection] as const)
         )
     )
 
@@ -37,7 +38,7 @@ export default async function loadIconifyCollections(include: IntegrationOptions
     return collections
 }
 
-export async function loadIconifyCollection(name: string, autoInstall?: AutoInstall): Promise<IconCollection | void> {
+export async function loadCollection(name: string, autoInstall?: AutoInstall): Promise<IconCollection | void> {
     if (!name) return
     
     return loadCollectionFromFS(name, autoInstall)
