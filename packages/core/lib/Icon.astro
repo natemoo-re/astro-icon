@@ -52,7 +52,7 @@ if (!collection) {
 
 const iconData = getIconData(collection, iconName ?? setName);
 if (!iconData) {
-  const err: any = new Error(`Unable to locate "${name}" icon!`);
+  const err = new Error(`Unable to locate "${name}" icon!`);
 
   if (import.meta.env.DEV) {
     const { include = {} } = config;

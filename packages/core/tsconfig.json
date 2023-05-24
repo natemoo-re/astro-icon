@@ -6,7 +6,6 @@
     "module": "ES2022",
     "outDir": "./dist",
     "target": "ES2021",
-    "moduleResolution": "node",
     "jsx": "preserve",
     "plugins": [
       {
