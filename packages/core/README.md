@@ -188,6 +188,22 @@ export default defineConfig({
 })
 ```
 
+#### config.attribute
+
+If you want to use a different attribute for the icon name instead of the default `astro-icon`, specify that attribute using `config.attribute`
+
+```js ins={2}
+import { defineConfig } from 'astro/config';
+import icon from 'astro-icon';
+
+export default defineConfig({
+  // ...
+  integrations: [icon({
+    attribute: 'data-icon'
+  })],
+})
+```
+
 ## Examples
 
 TODO: Examples

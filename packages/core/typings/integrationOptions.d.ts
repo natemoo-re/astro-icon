@@ -6,6 +6,10 @@ export type IntegrationOptions = {
    * @default "src/icons"
    */
   iconDir?: string
+  /**
+   * @default 'astro-icon'
+   */
+  attribute?: string
 };
 
 
