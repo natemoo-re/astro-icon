@@ -1,4 +1,4 @@
-import type { IconifyJSON } from "./iconify";
+import type { IconifyJSON, SVGOOptions } from "./iconify";
 
 export type IntegrationOptions = {
   include?: Record<string, ['*'] | string[]>
@@ -6,6 +6,10 @@ export type IntegrationOptions = {
    * @default "src/icons"
    */
   iconDir?: string
+  /**
+   * @default { plugins: ['preset-default'] }
+   */
+  svgoOptions?: SVGOOptions
 };
 
 
