@@ -8,6 +8,7 @@ import {
 } from "@iconify/tools";
 import type { IconCollection } from "virtual:astro-icon";
 import type { SVG, Color, SVGOOptions } from '../../typings/iconify.js'
+import type { IconifyInfo } from "@iconify/types";
 
 
 export default async function createLocalCollection(dir: string, options: SVGOOptions = { plugins: ['preset-default'] }): Promise<IconCollection> {
@@ -54,7 +55,6 @@ export default async function createLocalCollection(dir: string, options: SVGOOp
     // Update icon
     local.fromSVG(name, svg);
   });
-
   return local.export(true);
 }
 
