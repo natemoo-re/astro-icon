@@ -1,17 +1,16 @@
 import { getIcons } from '@iconify/utils';
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
-import type { IconifyJSON } from '@iconify/types';
-import type { IntegrationOptions } from './types.mjs';
-import type { AutoInstall } from '@iconify/utils/lib/loader/types.js';
+import type { IntegrationOptions, AstroIconCollectionMap, IconCollection } from '../typings/integrationOptions.js';
+import type { AutoInstall } from '../typings/iconify.js';
 
-export default async function loadIconifyCollections(include: IntegrationOptions['include'] = {}): Promise<Record<string, IconifyJSON>> {
+export default async function loadIconifyCollections(include: IntegrationOptions['include'] = {}): Promise<AstroIconCollectionMap> {
     const possibleCollections = await Promise.all(
         Object.keys(include).map((collectionName) => 
             loadIconifyCollection(collectionName).then((possibleCollection) => [collectionName, possibleCollection] as const)
         )
     )
 
-    const collections = possibleCollections.reduce<Record<string, IconifyJSON>>((acc, [name, collection]) => {
+    const collections = possibleCollections.reduce<AstroIconCollectionMap>((acc, [name, collection]) => {
         if (!collection) {
             console.error(`[astro-icon] "${name}" does not appear to be a valid iconify collection!`);
             return acc;
@@ -38,7 +37,7 @@ export default async function loadIconifyCollections(include: IntegrationOptions
     return collections
 }
 
-export async function loadIconifyCollection(name: string, autoInstall?: AutoInstall): Promise<IconifyJSON | void> {
+export async function loadIconifyCollection(name: string, autoInstall?: AutoInstall): Promise<IconCollection | void> {
     if (!name) return
     
     return loadCollectionFromFS(name, autoInstall)

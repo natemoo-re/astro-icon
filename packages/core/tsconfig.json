@@ -1,12 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src", "lib/loadIconifyCollections.ts"],
+  "include": ["src", "typings"],
   "compilerOptions": {
     "allowJs": true,
     "module": "ES2022",
     "outDir": "./dist",
     "target": "ES2021",
-    "moduleResolution": "node"
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "@astrojs/ts-plugin"
+      },
+    ],
   },
   // NEW: Options for file/directory watching
   "watchOptions": {
