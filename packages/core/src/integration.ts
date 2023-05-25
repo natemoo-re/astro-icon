@@ -22,7 +22,7 @@ export default function createIntegration(opts: IntegrationOptions = {}): AstroI
   return {
     name: "astro-icon",
     hooks: {
-      async "astro:config:setup"({ updateConfig, command, config }) {
+      async "astro:config:setup"({ updateConfig, config }) {
         updateConfig({
           vite: {
             plugins: [await createPlugin(opts, { root: config.root })],
