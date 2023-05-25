@@ -1,5 +1,8 @@
 import { VercelApiHandler } from "@vercel/node";
-import { Collection, SVG } from "@iconify/json-tools";
+import {} from '@iconify/utils'
+import { lookupCollection } from '@iconify/json'
+import { getIconData, iconToSVG, iconToHTML, replaceIDs } from '@iconify/utils'
+import type { IconifyJSON } from '@iconify/types'
 import etag from "etag";
 
 const packAliases = new Map([
@@ -37,21 +40,24 @@ const handler: VercelApiHandler = async (req, res) => {
     name = parts.join(":");
   }
 
-  if (packAliases.has(pack)) {
-    pack = packAliases.get(pack);
+  const packAlias = packAliases.get(pack)
+  if (packAlias) {
+    pack = packAlias;
   }
 
-  let collection = new Collection();
-  if (!collection.loadIconifyCollection(pack)) {
+  let collection: IconifyJSON
+  try {
+    collection = await lookupCollection(pack)
+  } catch (ex) {
     // TODO: fuzzy match to provide more helpful error?
     res.status(404).send(`Not Found: pack "${pack}"`);
     return;
   }
 
   if (!name) {
-    const icons = collection.getIcons();
+    const {icons} = collection;
     res.setHeader("Content-Type", "application/json");
-    const body = JSON.stringify(Object.keys(icons.icons));
+    const body = JSON.stringify(Object.keys(icons));
     const resEtag = etag(body);
     if (reqEtag === resEtag) {
       res.status(304).end();
@@ -62,12 +68,13 @@ const handler: VercelApiHandler = async (req, res) => {
     return;
   }
 
-  const data = collection.getIconData(name);
+  const data = getIconData(collection, name);
   if (!data) {
     res.status(404).send(`Not Found: "${name}" in pack "${pack}"`);
     return;
   }
-  const svg = new SVG(data).getSVG({});
+  const renderData = iconToSVG(data);
+  const svg = iconToHTML(replaceIDs(renderData.body), renderData.attributes);
   const resEtag = etag(svg);
   if (reqEtag === resEtag) {
     res.status(304).end();
