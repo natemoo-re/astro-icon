@@ -1,7 +1,7 @@
-import { lookupCollection } from '@iconify/json'
-import { getIconData, iconToSVG, iconToHTML, replaceIDs } from '@iconify/utils'
+import { lookupCollection } from "@iconify/json";
+import { getIconData, iconToSVG, iconToHTML, replaceIDs } from "@iconify/utils";
 import etag from "etag";
-import type { IconifyJSON } from '@iconify/types'
+import type { IconifyJSON } from "@iconify/types";
 import type { VercelApiHandler } from "@vercel/node";
 
 const packAliases = new Map([
@@ -39,14 +39,14 @@ const handler: VercelApiHandler = async (req, res) => {
     name = parts.join(":");
   }
 
-  const packAlias = packAliases.get(pack)
+  const packAlias = packAliases.get(pack);
   if (packAlias) {
     pack = packAlias;
   }
 
-  let collection: IconifyJSON
+  let collection: IconifyJSON;
   try {
-    collection = await lookupCollection(pack)
+    collection = await lookupCollection(pack);
   } catch (ex) {
     // TODO: fuzzy match to provide more helpful error?
     res.status(404).send(`Not Found: pack "${pack}"`);
@@ -54,7 +54,7 @@ const handler: VercelApiHandler = async (req, res) => {
   }
 
   if (!name) {
-    const {icons} = collection;
+    const { icons } = collection;
     res.setHeader("Content-Type", "application/json");
     const body = JSON.stringify(Object.keys(icons));
     const resEtag = etag(body);
