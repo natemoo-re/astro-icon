@@ -2,19 +2,17 @@
   "name": "astro-icon",
   "version": "0.0.0",
   "type": "module",
+  "types": "./dist/integration.d.ts",
   "exports": {
     ".": {
       "types": "./dist/integration.d.ts",
-      "default": "./dist/integration.mjs"
+      "default": "./dist/integration.js"
     },
-    "./components": {
-      "types": "./dist/components.d.mts",
-      "default": "./dist/components.mjs"
-    }
+    "./components": "./components/index.js"
   },
   "files": [
-    "dist",
-    "lib"
+    "components",
+    "dist"
   ],
   "scripts": {
     "build": "tsc",
