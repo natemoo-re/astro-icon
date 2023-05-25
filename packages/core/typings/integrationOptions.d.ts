@@ -7,6 +7,10 @@ export type IntegrationOptions = {
    */
   iconDir?: string
   /**
+   * @default 'astro-icon'
+   */
+  attribute?: string
+  /**
    * @default { plugins: ['preset-default'] }
    */
   svgoOptions?: SVGOOptions

@@ -75,11 +75,16 @@ if (props.size) {
   delete props.size;
 }
 const renderData = iconToSVG(iconData);
-const normalizedProps = { ...renderData.attributes, ...props };
+const attribute = config.attribute || "astro-icon";
+const normalizedProps = {
+  ...renderData.attributes,
+  ...props,
+  [attribute]: name,
+};
 const normalizedBody = renderData.body;
 ---
 
-<svg {...normalizedProps} data-icon={name}>
+<svg {...normalizedProps}>
   {title && <title>{title}</title>}
   {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
   <use xlink:href={`#${id}`}></use>

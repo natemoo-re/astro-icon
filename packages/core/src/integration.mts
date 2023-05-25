@@ -20,7 +20,7 @@ export default function createIntegration(opts: IntegrationOptions = {}): AstroI
   };
 }
 
-async function getVitePlugin({ include = {}, iconDir = 'src/icons', svgoOptions }: IntegrationOptions, { root }: Pick<AstroConfig, 'root'>): Promise<Plugin> {
+async function getVitePlugin({ include = {}, iconDir = 'src/icons', attribute, svgoOptions }: IntegrationOptions, { root }: Pick<AstroConfig, 'root'>): Promise<Plugin> {
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
@@ -46,7 +46,7 @@ async function getVitePlugin({ include = {}, iconDir = 'src/icons', svgoOptions 
         return `import.meta.glob('/src/icons/**/*.svg');
 
         export default ${JSON.stringify(collections)};\n
-        export const config = ${JSON.stringify({ include })}`
+        export const config = ${JSON.stringify({ include, attribute })}`
       }
     },
   };
