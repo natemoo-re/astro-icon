@@ -26,6 +26,6 @@
   },
   "devDependencies": {
     "@iconify/types": "^2.0.0",
-    "@vercel/node": "^1.12.1"
+    "@vercel/node": "^2.14.3"
   }
 }
