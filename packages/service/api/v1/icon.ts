@@ -1,5 +1,4 @@
 import { VercelApiHandler } from "@vercel/node";
-import {} from '@iconify/utils'
 import { lookupCollection } from '@iconify/json'
 import { getIconData, iconToSVG, iconToHTML, replaceIDs } from '@iconify/utils'
 import type { IconifyJSON } from '@iconify/types'
