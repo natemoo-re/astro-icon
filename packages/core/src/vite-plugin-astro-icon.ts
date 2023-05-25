@@ -3,7 +3,8 @@ import { mkdir, stat, writeFile } from "node:fs/promises";
 import type { IconCollection } from "virtual:astro-icon";
 import type { Plugin } from 'vite';
 import type { IntegrationOptions } from "./integration";
-import { loadIconifyCollections, loadLocalCollection } from "./loaders";
+import loadLocalCollection from "./loaders/loadLocalCollection";
+import loadIconifyCollections from "./loaders/loadIconifyCollections";
 
 export async function createPlugin({ include = {}, iconDir = 'src/icons', attribute }: IntegrationOptions, { root }: Pick<AstroConfig, 'root'>): Promise<Plugin> {
   const virtualModuleId = "virtual:astro-icon";
