@@ -1,6 +1,6 @@
 import { mkdir, stat, writeFile } from "node:fs/promises";
-import loadLocalCollection from "./loaders/loadLocalCollection";
-import loadIconifyCollections from "./loaders/loadIconifyCollections";
+import loadLocalCollection from "./loaders/loadLocalCollection.js";
+import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
 export async function createPlugin({ include = {}, iconDir = 'src/icons', attribute }, { root }) {
     const virtualModuleId = "virtual:astro-icon";
     const resolvedVirtualModuleId = "\0" + virtualModuleId;
