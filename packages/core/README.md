@@ -39,7 +39,7 @@ If you run into any issues, [feel free to report them to us on GitHub](https://g
 
 ## Manual Install
 
-First, install the `@astrojs/partytown` package using your package manager. If you're using npm or aren't sure, run this in the terminal:
+First, install the `astro-icon` package using your package manager. If you're using npm or aren't sure, run this in the terminal:
 
 ```sh
 npm install astro-icon
