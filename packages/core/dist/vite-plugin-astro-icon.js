@@ -19,11 +19,8 @@ export async function createPlugin({ include = {}, iconDir = 'src/icons', attrib
                 // Create local collection
                 try {
                     const local = await loadLocalCollection(iconDir);
-                    // Only regenerate during load if we have local icons
-                    if (Object.keys(local.icons).length > 0) {
-                        collections['local'] = local;
-                        await generateIconTypeDefinitions(Object.values(collections), root);
-                    }
+                    collections['local'] = local;
+                    await generateIconTypeDefinitions(Object.values(collections), root);
                 }
                 catch (ex) { }
                 return `import.meta.glob('/src/icons/**/*.svg');
