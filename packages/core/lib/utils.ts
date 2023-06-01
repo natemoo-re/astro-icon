@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { SPRITESHEET_NAMESPACE } from "./constants";
 import { Props, Optimize } from "./Props";
 import getFromService from "./resolver";
