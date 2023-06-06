@@ -196,36 +196,36 @@ export default defineConfig({
 If you want to change the `svgo` options instead of using the defaults, specify the options using `config.svgoOptions`. Read more about the available [`svgo` options here](https://github.com/svg/svgo#configuration)
 
 ```js ins={2}
-import { defineConfig } from 'astro/config';
-import icon from 'astro-icon';
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
 
 export default defineConfig({
   // ...
-  integrations: [icon({
-    svgoOptions: {
-      multipass: true,
-      plugins: [
-        {
-          name: 'preset-default',
-          params: {
-            overrides: {
-              // customize default plugin options
-              inlineStyles: {
-                onlyMatchedOnce: false,
-              },
+  integrations: [
+    icon({
+      svgoOptions: {
+        multipass: true,
+        plugins: [
+          {
+            name: "preset-default",
+            params: {
+              overrides: {
+                // customize default plugin options
+                inlineStyles: {
+                  onlyMatchedOnce: false,
+                },
 
-              // or disable plugins
-              removeDoctype: false,
+                // or disable plugins
+                removeDoctype: false,
+              },
             },
           },
-        },
-      ],
-    }
-  })],
-})
+        ],
+      },
+    }),
+  ],
+});
 ```
-
-
 
 ## Examples
 

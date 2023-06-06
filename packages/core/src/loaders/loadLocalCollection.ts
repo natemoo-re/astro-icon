@@ -8,7 +8,10 @@ import {
 import type { IconCollection } from "virtual:astro-icon";
 import type { SVG, Color, SVGOOptions } from "../../typings/iconify.js";
 
-export default async function createLocalCollection(dir: string, options: SVGOOptions = { plugins: ['preset-default'] }): Promise<IconCollection> {
+export default async function createLocalCollection(
+  dir: string,
+  options: SVGOOptions = { plugins: ["preset-default"] }
+): Promise<IconCollection> {
   // Import icons
   const local = await importDirectory(dir, {
     prefix: "local",
@@ -33,7 +36,7 @@ export default async function createLocalCollection(dir: string, options: SVGOOp
     try {
       // Clean up icon code
       cleanupSVG(svg, { keepTitles: true });
-      
+
       // Validate if Icon is monotone
       if (await isMonochrome(svg)) {
         // If so, convert to use currentColor
