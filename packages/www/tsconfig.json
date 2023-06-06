@@ -8,6 +8,7 @@
     "target": "ES2021",
     "jsx": "preserve",
     "moduleResolution": "node16",
+    "baseUrl": "./",
     "plugins": [
       {
         "name": "@astrojs/ts-plugin"

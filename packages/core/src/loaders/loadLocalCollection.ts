@@ -5,8 +5,8 @@ import {
   parseColors,
   runSVGO,
 } from "@iconify/tools";
-import type { IconCollection } from "virtual:astro-icon";
-import type { SVG, Color, SVGOOptions } from "../../typings/iconify.js";
+import type { IconCollection } from '../../typings/integration';
+import type { SVG, Color, SVGOOptions } from "../../typings/iconify";
 
 export default async function createLocalCollection(
   dir: string,

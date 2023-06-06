@@ -6,7 +6,8 @@
     "module": "ES2022",
     "outDir": "./dist",
     "target": "ES2021",
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "baseUrl": "./"
   },
   // NEW: Options for file/directory watching
   "watchOptions": {
