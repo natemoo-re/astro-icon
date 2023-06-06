@@ -1,15 +1,17 @@
-import type { AstroIntegration } from 'astro'
+import type { AstroIntegration } from "astro";
 import { createPlugin } from "./vite-plugin-astro-icon.js";
 
 export type IntegrationOptions = {
-  include?: Record<string, ['*'] | string[]>
+  include?: Record<string, ["*"] | string[]>;
   /**
    * @default "src/icons"
    */
-  iconDir?: string
+  iconDir?: string;
 };
 
-export default function createIntegration(opts: IntegrationOptions = {}): AstroIntegration {
+export default function createIntegration(
+  opts: IntegrationOptions = {}
+): AstroIntegration {
   return {
     name: "astro-icon",
     hooks: {
@@ -23,4 +25,3 @@ export default function createIntegration(opts: IntegrationOptions = {}): AstroI
     },
   };
 }
-

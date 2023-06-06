@@ -22,7 +22,7 @@ Possibly coming soon!
 <!--
 
 The `astro add` command-line tool automates the installation for you. Run one of the following commands in a new terminal window. (If you aren't sure which package manager you're using, run the first command.) Then, follow the prompts, and type "y" in the terminal (meaning "yes") for each one.
-  
+
 ```sh
 # Using NPM
 npx astro add icon
@@ -31,7 +31,7 @@ yarn astro add icon
 # Using PNPM
 pnpm astro add icon
 ```
-  
+
 If you run into any issues, [feel free to report them to us on GitHub](https://github.com/withastro/astro/issues) and try the manual installation steps below.
 
 -->
@@ -49,13 +49,13 @@ Then, apply this integration to your `astro.config.*` file using the `integratio
 **`astro.config.mjs`**
 
 ```js ins={2} "icon()"
-import { defineConfig } from 'astro/config';
-import icon from 'astro-icon';
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
 
 export default defineConfig({
   // ...
   integrations: [icon()],
-})
+});
 ```
 
 ## Usage
@@ -156,19 +156,21 @@ If you want to use icon sets from Iconify, specify that set's name using this in
 **`astro.config.mjs`**
 
 ```js ins={2}
-import { defineConfig } from 'astro/config';
-import icon from 'astro-icon';
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
 
 export default defineConfig({
   // ...
-  integrations: [icon({
-    include: {
-      mdi: ['*'], // Loads entire Material Design Icon set
-      // or
-      mdi: ['account'], // Only loads the Material Design Icon's "account" SVG
-    }
-  })],
-})
+  integrations: [
+    icon({
+      include: {
+        mdi: ["*"], // Loads entire Material Design Icon set
+        // or
+        mdi: ["account"], // Only loads the Material Design Icon's "account" SVG
+      },
+    }),
+  ],
+});
 ```
 
 #### config.iconDir
@@ -176,15 +178,17 @@ export default defineConfig({
 If you want to use a different custom svg icon directory instead of the default `src/icons/`, specify that file path using `config.iconDir`
 
 ```js ins={2}
-import { defineConfig } from 'astro/config';
-import icon from 'astro-icon';
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
 
 export default defineConfig({
   // ...
-  integrations: [icon({
-    iconDir: 'src/images/icons'
-  })],
-})
+  integrations: [
+    icon({
+      iconDir: "src/images/icons",
+    }),
+  ],
+});
 ```
 
 ## Examples

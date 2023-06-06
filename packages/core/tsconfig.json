@@ -10,8 +10,8 @@
     "plugins": [
       {
         "name": "@astrojs/ts-plugin"
-      },
-    ],
+      }
+    ]
   },
   // NEW: Options for file/directory watching
   "watchOptions": {

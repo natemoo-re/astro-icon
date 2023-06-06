@@ -1,4 +1,3 @@
-
 import {
   cleanupSVG,
   importDirectory,
@@ -7,10 +6,12 @@ import {
   runSVGO,
 } from "@iconify/tools";
 import type { IconCollection } from "virtual:astro-icon";
-import type { SVG, Color, SVGOOptions } from '../../typings/iconify.js'
+import type { SVG, Color, SVGOOptions } from "../../typings/iconify.js";
 
-
-export default async function createLocalCollection(dir: string, options?: SVGOOptions): Promise<IconCollection> {
+export default async function createLocalCollection(
+  dir: string,
+  options?: SVGOOptions
+): Promise<IconCollection> {
   // Import icons
   const local = await importDirectory(dir, {
     prefix: "local",
@@ -57,13 +58,13 @@ export default async function createLocalCollection(dir: string, options?: SVGOO
 
 async function convertToCurrentColor(svg: SVG): Promise<void> {
   await parseColors(svg, {
-      defaultColor: "currentColor",
-      callback: (_, colorStr, color) => {
-        return color === null || isEmptyColor(color) || isWhite(color)
-          ? colorStr
-          : "currentColor";
-      },
-    });
+    defaultColor: "currentColor",
+    callback: (_, colorStr, color) => {
+      return color === null || isEmptyColor(color) || isWhite(color)
+        ? colorStr
+        : "currentColor";
+    },
+  });
 }
 
 async function isMonochrome(svg: SVG): Promise<boolean> {
@@ -72,7 +73,8 @@ async function isMonochrome(svg: SVG): Promise<boolean> {
     defaultColor: "currentColor",
     callback: (_, colorStr, color) => {
       if (!monochrome) return colorStr;
-      monochrome = !color || isEmptyColor(color) || isWhite(color) || isBlack(color);
+      monochrome =
+        !color || isEmptyColor(color) || isWhite(color) || isBlack(color);
       return colorStr;
     },
   });
@@ -82,14 +84,16 @@ async function isMonochrome(svg: SVG): Promise<boolean> {
 
 function isBlack(color: Color): boolean {
   switch (color.type) {
-    case 'rgb': return color.r === 0 && color.r === color.g && color.g === color.b;
+    case "rgb":
+      return color.r === 0 && color.r === color.g && color.g === color.b;
   }
   return false;
 }
 
 function isWhite(color: Color): boolean {
   switch (color.type) {
-    case 'rgb': return color.r === 255 && color.r === color.g && color.g === color.b;
+    case "rgb":
+      return color.r === 255 && color.r === color.g && color.g === color.b;
   }
   return false;
 }
