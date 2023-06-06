@@ -1,5 +1,13 @@
 # astro-icon
 
+## 0.8.1
+
+### Patch Changes
+
+- [#106](https://github.com/natemoo-re/astro-icon/pull/106) [`23c032b`](https://github.com/natemoo-re/astro-icon/commit/23c032b41e462107b83c5ce1960f2c5098e2d174) Thanks [@stramel](https://github.com/stramel)! - docs: better docs on Icon Packs, styling, and fallback icon
+
+* [#109](https://github.com/natemoo-re/astro-icon/pull/109) [`4e5f0a9`](https://github.com/natemoo-re/astro-icon/commit/4e5f0a942af7e5515a901e91a2bcd2fc477fcd76) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Remove `vite/client` reference
+
 ## 0.8.0
 
 ### Minor Changes
