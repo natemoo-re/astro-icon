@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter www run build",
-    "dev": "pnpm --filter demo run dev",
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r run dev",
     "lint": "prettier \"**/*.{js,ts,md,json}\"",
     "version": "changeset version && pnpm install --no-frozen-lockfile --lockfile-only"
   },
