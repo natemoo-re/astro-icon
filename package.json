@@ -21,10 +21,10 @@
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "packageManager": "pnpm@8.11.0",
   "dependencies": {
-    "@changesets/cli": "^2.18.1",
-    "@changesets/changelog-github": "^0.4.2"
+    "@changesets/changelog-github": "^0.4.2",
+    "@changesets/cli": "^2.18.1"
   },
   "devDependencies": {
-    "prettier": "^2.5.0"
+    "prettier": "^2.8.4"
   }
 }
