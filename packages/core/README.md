@@ -13,10 +13,9 @@ This **[Astro integration][astro-integration]** provides a straight-forward `Ico
 
 ## Why Astro Icon
 
-
 ## Installation
 
-## Quick Install
+### Quick Install
 
 Possibly coming soon!
 
@@ -37,7 +36,7 @@ If you run into any issues, [feel free to report them to us on GitHub](https://g
 
 -->
 
-## Manual Install
+### Manual Install
 
 First, install the `@astrojs/partytown` package using your package manager. If you're using npm or aren't sure, run this in the terminal:
 
