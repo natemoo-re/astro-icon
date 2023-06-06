@@ -81,7 +81,31 @@ import { Icon } from 'astro-icon/components';
 
 ## Iconify Icons
 
-TODO:
+Astro Icon also supports Iconify out-of-the-box with minimal configuration. To use an icon set from Iconify follow the instructions below: 
+
+1. Find an Icon Set to use on the [Iconify Icon Sets website](https://icon-sets.iconify.design/)
+2. Install the package (eg. `npm i -D @iconify-json/mdi`)
+3. Add an entry to the `astro.config.mjs` file
+
+**`astro.config.mjs`**
+
+```js ins={2}
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
+
+export default defineConfig({
+  // ...
+  integrations: [
+    icon({
+      include: {
+        mdi: ["*"], // Loads entire Material Design Icon set
+      },
+    }),
+  ],
+});
+```
+
+4. Reference a specific icon using the `name` prop with  (eg. `mdi:account`)
 
 ```astro
 ---
@@ -97,7 +121,7 @@ import { Icon } from 'astro-icon/components'
 The `Icon` component allows these custom properties:
 
 ```ts
-interface Props {
+interface Props extends HTMLAttributes<'svg'> {
   /**
    * References a specific Icon
    */
@@ -234,9 +258,9 @@ export default defineConfig({
 
 TODO: Examples
 
-## Migrating from v0
+## Migrating to v1
 
-TODO: Migrating from v0
+TODO:
 
 - sprite
 - icon packs
