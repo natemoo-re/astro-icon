@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm -r run build",
+    "build": "pnpm --filter astro-icon --filter www run build",
     "dev": "pnpm -r run dev",
     "lint": "prettier \"**/*.{js,ts,md,json}\""
   },
