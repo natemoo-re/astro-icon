@@ -18,14 +18,11 @@
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "dependencies": {
-    "@iconify/json": "^2.2.69",
-    "@iconify/tools": "^3.0.1",
-    "@iconify/utils": "^2.1.5",
+    "@iconify/json": "^1.1.461",
+    "@iconify/json-tools": "^1.0.10",
     "etag": "^1.8.1"
   },
   "devDependencies": {
-    "@iconify/types": "^2.0.0",
-    "@types/etag": "^1.8.1",
-    "@vercel/node": "^2.14.3"
+    "@vercel/node": "^1.12.1"
   }
 }
