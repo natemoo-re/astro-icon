@@ -1,17 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src", "typings"],
+  "include": ["src", "typings", "components"],
   "compilerOptions": {
     "allowJs": true,
     "module": "ES2022",
     "outDir": "./dist",
     "target": "ES2021",
-    "jsx": "preserve",
-    "plugins": [
-      {
-        "name": "@astrojs/ts-plugin"
-      }
-    ]
+    "jsx": "preserve"
   },
   // NEW: Options for file/directory watching
   "watchOptions": {
