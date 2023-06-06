@@ -15,7 +15,7 @@ This **[Astro integration][astro-integration]** provides a straight-forward `Ico
 
 ## Installation
 
-## Quick Install
+### Quick Install
 
 Possibly coming soon!
 
@@ -36,7 +36,7 @@ If you run into any issues, [feel free to report them to us on GitHub](https://g
 
 -->
 
-## Manual Install
+### Manual Install
 
 First, install the `astro-icon` package using your package manager. If you're using npm or aren't sure, run this in the terminal:
 
@@ -138,6 +138,10 @@ import { Icon } from 'astro-icon/components';
 <Icon name="adjustment" /> <!-- will be blue -->
 <Icon name="annotation" /> <!-- will be red -->
 ```
+
+### Using with Frameworks
+
+Astro Icon can be used with other frameworks utilizing the [`slot` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). You can read more about how to use Slots in Astro here. [Passing Children to Framework Components](https://docs.astro.build/en/core-concepts/framework-components/#passing-children-to-framework-components)
 
 ## Configuration
 
