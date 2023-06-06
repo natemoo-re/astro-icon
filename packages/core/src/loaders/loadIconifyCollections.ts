@@ -41,7 +41,9 @@ export default async function loadIconifyCollections(
           `[astro-icon] "${name}" failed to load the specified icons!`
         );
         return acc;
-      } else if (Object.keys(reducedCollection.icons).length !== requestedIcons.length) {
+      } else if (
+        Object.keys(reducedCollection.icons).length !== requestedIcons.length
+      ) {
         console.error(
           `[astro-icon] "${name}" failed to load at least one of the specified icons! Verify the icon names are included in the icon collection.`
         );
