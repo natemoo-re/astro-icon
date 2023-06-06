@@ -5,7 +5,7 @@
     "allowJs": true,
     "module": "ES2022",
     "outDir": "./dist",
-    "target": "ES2021",
+    "target": "ES2021"
   },
   // NEW: Options for file/directory watching
   "watchOptions": {
