@@ -1,6 +1,6 @@
 ---
 import Head from '../components/Head.astro';
-import { Icon } from 'astro-icon';
+import { Icon } from 'astro-icon/components';
 ---
 <html lang="en">
 
@@ -10,8 +10,8 @@ import { Icon } from 'astro-icon';
 	<meta name="viewport" content="width=device-width" />
 	<meta name="color-scheme" content="dark light" />
 	<meta name="theme-color" content="hsl(206,12%,96%)">
-	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-	<link rel="stylesheet" href="/style.css" />
+	<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}/favicon.svg`} />
+	<link rel="stylesheet" href={`${import.meta.env.BASE_URL}/style.css`} />
 </head>
 
 <body>
@@ -38,7 +38,7 @@ import { Icon } from 'astro-icon';
         <p>
             <a href="https://github.com/natemoo-re/astro-icon#readme">
                 <span>Read the docs on GitHub</span>
-                <Icon pack="pixelarticons" name="external-link" size={24} />
+                <Icon name="pixelarticons:external-link" size={24} />
             </a>
         </p>
 

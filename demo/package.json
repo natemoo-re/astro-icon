@@ -15,7 +15,7 @@
     "@iconify-json/ri": "^1.1.5"
   },
   "devDependencies": {
-    "astro": "^2.1.0",
+    "astro": "^2.5.0",
     "astro-icon": "workspace:*"
   }
 }
