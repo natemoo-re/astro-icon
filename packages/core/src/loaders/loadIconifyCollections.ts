@@ -3,9 +3,9 @@ import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import type {
   AstroIconCollectionMap,
   IconCollection,
-} from "virtual:astro-icon";
+  IntegrationOptions,
+} from "../../typings/integration";
 import type { AutoInstall } from "../../typings/iconify";
-import type { IntegrationOptions } from "../integration";
 
 export default async function loadIconifyCollections(
   include: IntegrationOptions["include"] = {}
