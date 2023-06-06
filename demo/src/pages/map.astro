@@ -7,13 +7,13 @@ import Base from "../layouts/base.astro";
   <h1>Welcome to Astro Icon!</h1>
 
   {Array.from({ length: 5 }).map(() => <Icon name="ic:outline-star" />)}
-
-  <style lang="css">
-    [data-icon="ic:outline-star"] {
-      color: goldenrod;
-    }
-    [data-icon="ic:outline-star"]:last-of-type {
-      color: lightgray;
-    }
-  </style>
 </Base>
+
+<style lang="css">
+  [data-icon="ic:outline-star"] {
+    color: goldenrod;
+  }
+  [data-icon="ic:outline-star"]:last-of-type {
+    color: lightgray;
+  }
+</style>

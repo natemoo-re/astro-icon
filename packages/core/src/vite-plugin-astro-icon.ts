@@ -1,9 +1,12 @@
 import type { AstroConfig } from "astro";
 import { mkdir, stat, writeFile } from "node:fs/promises";
-import type { IconCollection } from "virtual:astro-icon";
 import type { Plugin } from "vite";
-import type { IntegrationOptions } from "./integration";
-import { loadIconifyCollections, loadLocalCollection } from "./loaders";
+import type {
+  IconCollection,
+  IntegrationOptions,
+} from "../typings/integration";
+import loadLocalCollection from "./loaders/loadLocalCollection.js";
+import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
 
 export async function createPlugin(
   { include = {}, iconDir = "src/icons" }: IntegrationOptions,
@@ -14,6 +17,7 @@ export async function createPlugin(
 
   // Load provided Iconify collections
   const collections = await loadIconifyCollections(include);
+  await generateIconTypeDefinitions(Object.values(collections), root);
 
   return {
     name: "astro-icon",
@@ -27,7 +31,6 @@ export async function createPlugin(
         // Create local collection
         const local = await loadLocalCollection(iconDir);
         collections["local"] = local;
-
         await generateIconTypeDefinitions(Object.values(collections), root);
 
         return `import.meta.glob('/src/icons/**/*.svg');
@@ -43,7 +46,7 @@ async function generateIconTypeDefinitions(
   collections: IconCollection[],
   rootDir: URL,
   defaultPack = "local"
-) {
+): Promise<void> {
   await ensureDir(new URL("./.astro", rootDir));
   await writeFile(
     new URL("./.astro/icon.d.ts", rootDir),
