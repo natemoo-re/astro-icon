@@ -94,16 +94,24 @@ import { Sprite } from 'astro-icon';
 `astro-icon` supports custom local icon packs. These are also referenced with the `pack` and/or `name` props.
 
 1. Create a directory inside of `src/` named `icons/`.
-2. Create a JS/TS file with your `pack` name inside of that directory, eg `src/icons/my-pack.ts`
-3. Use the `createIconPack` utility to handle most common situations.
+2. Inside that directory, create a JS/TS file with your `pack` name inside of that directory, eg `src/icons/my-pack.ts`
+3. Export a `default` function that takes an icon name and returns a svg string. Utilize the `createIconPack` utility to handle most common situations.
 
-```ts
-import { createIconPack } from "astro-icon";
+If using a package from NPM, eg. `heroicons`, the icon pack file would resemble the following:
+
+```js
+import { createIconPack } from "astro-icon/pack";
 
 // Resolves `heroicons` dependency and reads SVG files from the `heroicons/outline` directory
 export default createIconPack({ package: "heroicons", dir: "outline" });
+```
 
-// Resolves `name` from a remote server, like GitHub!
+If using an icon set from a remote server, the icon pack file would resemble the following:
+
+```js
+import { createIconPack } from "astro-icon/pack";
+
+// Resolves `name` from a remote server, like GitHub! Notice that the `dir` option is not required
 export default createIconPack({
   url: "https://raw.githubusercontent.com/radix-ui/icons/master/packages/radix-icons/icons/",
 });
@@ -113,6 +121,7 @@ If you have custom constraints, you can always create the resolver yourself. Exp
 
 ```ts
 import { loadMyPackSvg } from "my-pack";
+
 export default async (name: string): Promise<string> => {
   const svgString = await loadMyPackSvg(name);
   return svgString;
@@ -143,6 +152,9 @@ import { Icon } from 'astro-icon';
 
 <Icon name="adjustment" /> <!-- will be blue -->
 <Icon name="annotation" /> <!-- will be red -->
+
+<!-- Example using Tailwind to apply color -->
+<Icon name="annotation" class="text-red-500" /> <!-- will be red-500 -->
 ```
 
 ## Props
@@ -156,3 +168,9 @@ The `optimize` prop is a boolean. Defaults to `true`. In the future it will cont
 Both components also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
 
 See the [`Props.ts`](./packages/core/lib/Props.ts) file for more details.
+
+## Troubleshooting
+
+### Icon not found
+
+When an icon is not found, `Icon` uses a fallback icon of a black box. This is likely either a typo on the `name` prop or a missing svg file in the `src/icons` folder.
