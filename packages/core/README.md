@@ -81,7 +81,7 @@ import { Icon } from 'astro-icon/components';
 
 ## Iconify Icons
 
-Astro Icon also supports Iconify out-of-the-box with minimal configuration. To use an icon set from Iconify follow the instructions below: 
+Astro Icon also supports Iconify out-of-the-box with minimal configuration. To use an icon set from Iconify follow the instructions below:
 
 1. Find an Icon Set to use on the [Iconify Icon Sets website](https://icon-sets.iconify.design/)
 2. Install the package (eg. `npm i -D @iconify-json/mdi`)
@@ -105,7 +105,7 @@ export default defineConfig({
 });
 ```
 
-4. Reference a specific icon using the `name` prop with  (eg. `mdi:account`)
+4. Reference a specific icon using the `name` prop with (eg. `mdi:account`)
 
 ```astro
 ---
@@ -121,7 +121,7 @@ import { Icon } from 'astro-icon/components'
 The `Icon` component allows these custom properties:
 
 ```ts
-interface Props extends HTMLAttributes<'svg'> {
+interface Props extends HTMLAttributes<"svg"> {
   /**
    * References a specific Icon
    */
