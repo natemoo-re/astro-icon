@@ -1,22 +1,10 @@
 import { writeFile } from "node:fs/promises";
-import { getIcons } from "@iconify/utils";
-import { lookupCollections, loadCollection, locate } from "@iconify/json";
-import {
-  importDirectory,
-  cleanupSVG,
-  runSVGO,
-  parseColors,
-  isEmptyColor,
-  SVG,
-} from "@iconify/tools";
-import type { Color } from "@iconify/utils/lib/colors/types";
+import createLocalCollection from './createLocalCollection.js'
+import loadIconifyCollections from './loadIconifyCollections.mjs'
 import type { AstroConfig, AstroIntegration } from 'astro'
 import type { Plugin } from 'vite'
 import type { IconifyJSON } from "@iconify/types";
-
-type IntegrationOptions = {
-  include?: Record<string, ['*'] | string[]>
-}
+import type { IntegrationOptions } from "./types.d.mts";
 
 export default function createIntegration(opts: IntegrationOptions = {}): AstroIntegration {
   return {
@@ -25,7 +13,7 @@ export default function createIntegration(opts: IntegrationOptions = {}): AstroI
       async "astro:config:setup"({ updateConfig, command, config }) {
         updateConfig({
           vite: {
-            plugins: [await getVitePlugin(opts, { command, output: config.output, root: config.root })],
+            plugins: [await getVitePlugin(opts, { root: config.root })],
           },
         });
       },
@@ -33,30 +21,12 @@ export default function createIntegration(opts: IntegrationOptions = {}): AstroI
   };
 }
 
-type AstroConfigIntegration = {
-  command: string
-} & Pick<AstroConfig, 'output' | 'root'>
-
-async function getVitePlugin({ include = {} }: IntegrationOptions, { command, root }: AstroConfigIntegration): Promise<Plugin> {
+async function getVitePlugin({ include = {}, iconDir = 'src/icons' }: IntegrationOptions, { root }: Pick<AstroConfig, 'root'>): Promise<Plugin> {
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
-  let collections: (IconifyJSON)[] = [];
-  const possibleCollections = Object.keys(await lookupCollections());
-  const invalidCollections = Object.keys(include).filter(name => !possibleCollections.includes(name));
-  for (const invalidCollection of invalidCollections) {
-    console.error(`[astro-icon] "${invalidCollection}" does not appear to be a valid iconify collection!`);
-  }
-  const fullCollections = await Promise.all(
-    Object.keys(include).filter(name => possibleCollections.includes(name)).map((collection) => 
-      loadCollection(locate(collection)).then((value) => [collection, value] as const)
-    )
-  );
-  collections = fullCollections.map(([name, icons]) => {
-    const reduced = include[name];
-    if (reduced.length === 1 && reduced[0] === "*") return icons;
-    return getIcons(icons, reduced);
-  }).filter((collection) => collection !== null) as IconifyJSON[]
+  // Load provided Iconify collections
+  const collections = await loadIconifyCollections(include);
 
   return {
     name: "astro-icon",
@@ -65,93 +35,26 @@ async function getVitePlugin({ include = {} }: IntegrationOptions, { command, ro
         return resolvedVirtualModuleId;
       }
     },
-    async load(id, options) {
+    async load(id) {
       if (id === resolvedVirtualModuleId) {
-        const local = await importDirectory("src/icons", {
-          prefix: "local",
-        });
 
-        await local.forEach(async (name, type) => {
-          if (type !== "icon") {
-            return;
-          }
+        // Create local collection
+        const local = await createLocalCollection(iconDir)
+        collections['local'] = (local)
 
-          const svg = local.toSVG(name);
-          if (!svg) {
-            // Invalid icon
-            local.remove(name);
-            return;
-          }
-
-          try {
-            await cleanupSVG(svg);
-
-            if (await isMonochrome(svg)) {
-              await normalizeColors(svg);
-            }
-
-            runSVGO(svg);
-          } catch (err) {
-            // Invalid icon
-            console.error(`Error parsing ${name}:`, err);
-            local.remove(name);
-            return;
-          }
-
-          // Update icon
-          local.fromSVG(name, svg);
-        });
-        collections.unshift(local.export())
-        await writeFile(new URL('./.astro/icon.d.ts', root), `declare module 'astro-icon' {
-	type Icon = ${collections.map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === 'local' ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("")};
-}`)
+        await generateIconTypeDefinitions(Object.values(collections), root);
 
         return `import.meta.glob('/src/icons/**/*.svg');
 
-        export default ${JSON.stringify(
-          collections
-        )};\nexport const config = ${
-          command === "dev" ? JSON.stringify({ include }) : "undefined"
-        }`;
+        export default ${JSON.stringify(collections)};\n
+        export const config = ${JSON.stringify({ include })}`
       }
     },
   };
 }
 
-async function normalizeColors(svg: SVG): Promise<void> {
-  await parseColors(svg, {
-      defaultColor: "currentColor",
-      callback: (_, colorStr, color) => {
-        return !color || isEmptyColor(color) || isWhite(color)
-          ? colorStr
-          : "currentColor";
-      },
-    });
-}
-
-async function isMonochrome(svg: SVG): Promise<boolean> {
-  let monochrome = true;
-  await parseColors(svg, {
-    defaultColor: "currentColor",
-    callback: (_, colorStr, color) => {
-      if (!monochrome) return colorStr;
-      monochrome = !color || isEmptyColor(color) || isWhite(color) || isBlack(color);
-      return colorStr;
-    },
-  });
-
-  return monochrome;
-}
-
-function isBlack(color: Color): boolean {
-  switch (color.type) {
-    case 'rgb': return color.r === 0 && color.r === color.g && color.g === color.b;
-  }
-  return false;
-}
-function isWhite(color: Color): boolean {
-  switch (color.type) {
-    case 'rgb': return color.r === 255 && color.r === color.g && color.g === color.b;
-  }
-  return false;
+async function generateIconTypeDefinitions(collections: IconifyJSON[], rootDir: URL, defaultPack = 'local') {
+  await writeFile(new URL('./.astro/icon.d.ts', rootDir), `declare module 'astro-icon' {
+    type Icon = ${collections.length > 0 ? collections.map(collection => Object.keys(collection.icons).map(icon => `\n\t\t| "${collection.prefix === defaultPack ? '' : `${collection.prefix}:`}${icon}"`)).flat(1).join("") : 'never'};
+  }`)
 }
