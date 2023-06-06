@@ -1,7 +1,11 @@
 import { getIcons } from "@iconify/utils";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
-import type { AstroIconCollectionMap, IconCollection, IntegrationOptions } from '../../typings/integration';
-import type { AutoInstall } from '../../typings/iconify';
+import type {
+  AstroIconCollectionMap,
+  IconCollection,
+  IntegrationOptions,
+} from "../../typings/integration";
+import type { AutoInstall } from "../../typings/iconify";
 
 export default async function loadIconifyCollections(
   include: IntegrationOptions["include"] = {}

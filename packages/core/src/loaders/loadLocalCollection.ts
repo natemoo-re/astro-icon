@@ -5,7 +5,7 @@ import {
   parseColors,
   runSVGO,
 } from "@iconify/tools";
-import type { IconCollection } from '../../typings/integration';
+import type { IconCollection } from "../../typings/integration";
 import type { SVG, Color, SVGOOptions } from "../../typings/iconify";
 
 export default async function createLocalCollection(

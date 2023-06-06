@@ -1,7 +1,10 @@
 import type { AstroConfig } from "astro";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import type { Plugin } from "vite";
-import type { IconCollection, IntegrationOptions } from '../typings/integration';
+import type {
+  IconCollection,
+  IntegrationOptions,
+} from "../typings/integration";
 import loadLocalCollection from "./loaders/loadLocalCollection.js";
 import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
 

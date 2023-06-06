@@ -1,5 +1,5 @@
 import type { AstroIntegration } from "astro";
-import type { IntegrationOptions } from '../typings/integration';
+import type { IntegrationOptions } from "../typings/integration";
 import { createPlugin } from "./vite-plugin-astro-icon.js";
 
 export default function createIntegration(
