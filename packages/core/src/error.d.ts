@@ -1,3 +1,0 @@
-interface Error {
-  hint?: string;
-}
