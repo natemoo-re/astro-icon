@@ -1,7 +1,7 @@
-import { AstroIntegration } from 'astro';
+import { AstroIntegration } from "astro";
 
 export interface AstroIconOptions {
-    include: Record<string, ['*'] | string[]>
+  include: Record<string, ["*"] | string[]>;
 }
 
 export type Icon = string;
