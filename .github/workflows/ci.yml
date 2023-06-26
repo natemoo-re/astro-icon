@@ -89,7 +89,7 @@ jobs:
         run: pnpm install
 
       - name: Build
-        run: yarn build
+        run: pnpm build
         working-directory: ${{ matrix.target }}
 
   # Changelog can only run _after_ Build and Test.
@@ -126,7 +126,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: yarn changeset publish
+          publish: pnpm changeset publish
           commit: 'chore: release'
           title: 'chore: release'
         env:
