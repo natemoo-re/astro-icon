@@ -16,9 +16,14 @@ export async function createPlugin({ include = {}, iconDir = "src/icons" }, { ro
         },
         async load(id) {
             if (id === resolvedVirtualModuleId) {
-                // Create local collection
-                const local = await loadLocalCollection(iconDir);
-                collections["local"] = local;
+                try {
+                    // Attempt to create local collection
+                    const local = await loadLocalCollection(iconDir);
+                    collections["local"] = local;
+                }
+                catch (ex) {
+                    console.warn('Unable to load local collection. Ensure you have your `iconDir` configured properly.');
+                }
                 await generateIconTypeDefinitions(Object.values(collections), root);
                 return `import.meta.glob('/src/icons/**/*.svg');
 
