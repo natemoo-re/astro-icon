@@ -1,13 +1,13 @@
 # astro-icon
 
-This **[Astro integration][astro-integration]** provides a straight-forward `Icon` component for [Astro](https://astro.build).
+This **[Astro integration](https://docs.astro.build/en/guides/integrations-guide/)** provides a straight-forward `Icon` component for [Astro](https://astro.build).
 
 - <strong>[Why Astro Icon](#why-astro-icon)</strong>
 - <strong>[Installation](#installation)</strong>
 - <strong>[Usage](#usage)</strong>
 - <strong>[Configuration](#configuration)</strong>
 - <strong>[Examples](#examples)</strong>
-- <strong>[Migrating from v0](#migrating-from-v0)</strong>
+- <strong>[Migrating to v1](#migrating-to-v1)</strong>
 - <strong>[Contributing](#contributing)</strong>
 - <strong>[Changelog](#changelog)</strong>
 
@@ -139,7 +139,7 @@ See the [`Props.ts`](./packages/core/lib/Props.ts) file for more details.
 
 ### Styling
 
-Styling your `astro-icon` is straightforward. Any styles can be targeted to the `[astro-icon]` attribute selector. If you want to target a specific icon, you may target it by name using `[astro-icon="filename"]`.
+Styling your `astro-icon` is straightforward. Any styles can be targeted to the `[data-icon]` attribute selector. If you want to target a specific icon, you may target it by name using `[data-icon="filename"]`.
 
 ```astro
 ---
@@ -147,12 +147,12 @@ import { Icon } from 'astro-icon/components';
 ---
 
 <style lang="css">
-    [astro-icon] {
+    [data-icon] {
         color: blue;
         /* OR */
         fill: blue;
     }
-    [astro-icon="annotation"] {
+    [data-icon="annotation"] {
         color: red;
         /* OR */
         fill: red;
