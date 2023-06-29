@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'v1'
   pull_request:
     paths-ignore:
       - '.vscode/**'
@@ -96,7 +97,6 @@ jobs:
   # We download all `dist/` artifacts from GitHub to skip the build process.
   changelog:
     name: Changelog PR or Release
-    if: ${{ github.ref_name == 'main' }}
     needs: [lint, smoke]
     runs-on: ubuntu-latest
     strategy:
