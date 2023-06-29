@@ -7,8 +7,5 @@
     "service": "0.1.0",
     "www": "0.0.8"
   },
-  "changesets": [
-    "plenty-turtles-exist",
-    "seven-buttons-perform"
-  ]
+  "changesets": ["plenty-turtles-exist", "seven-buttons-perform"]
 }
