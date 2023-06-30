@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.0.0-next.2
+
+### Patch Changes
+
+- [#123](https://github.com/natemoo-re/astro-icon/pull/123) [`0e2baed`](https://github.com/natemoo-re/astro-icon/commit/0e2baede77b534409c15eb09658f1cde3e8ec697) Thanks [@stramel](https://github.com/stramel)! - move warning about local directory to on use
+
 ## 1.0.0-next.1
 
 ### Patch Changes
