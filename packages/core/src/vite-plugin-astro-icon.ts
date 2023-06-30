@@ -33,9 +33,7 @@ export async function createPlugin(
           const local = await loadLocalCollection(iconDir);
           collections["local"] = local;
         } catch (ex) {
-          console.warn(
-            "Unable to load local collection. Ensure you have your `iconDir` configured properly."
-          );
+          // Failed to load the local collection
         }
         await generateIconTypeDefinitions(Object.values(collections), root);
 

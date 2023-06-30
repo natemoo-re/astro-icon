@@ -42,6 +42,16 @@ if (!iconName) {
   iconName = setName;
   setName = "local";
 
+  // Check if the local icon set exists
+  if (!icons[setName]) {
+    const err = new Error('Unable to load the "local" icon set!');
+    if (import.meta.env.DEV) {
+      err.hint =
+        'It looks like the "local" set was not loaded.\n\nDid you forget to create the icon directory or to update your config?';
+    }
+    throw err;
+  }
+
   // Check if the icon is missing from the local collection
   if (!(iconName in icons[setName].icons)) {
     const err = new Error(`Unable to locate "${name}" icon!`);
