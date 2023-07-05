@@ -17,24 +17,18 @@ This **[Astro integration](https://docs.astro.build/en/guides/integrations-guide
 
 ### Quick Install
 
-Possibly coming soon!
-
-<!--
-
 The `astro add` command-line tool automates the installation for you. Run one of the following commands in a new terminal window. (If you aren't sure which package manager you're using, run the first command.) Then, follow the prompts, and type "y" in the terminal (meaning "yes") for each one.
 
 ```sh
 # Using NPM
-npx astro add icon
+npx astro add astro-icon
 # Using Yarn
-yarn astro add icon
+yarn astro add astro-icon
 # Using PNPM
-pnpm astro add icon
+pnpm astro add astro-icon
 ```
 
 If you run into any issues, [feel free to report them to us on GitHub](https://github.com/withastro/astro/issues) and try the manual installation steps below.
-
--->
 
 ### Manual Install
 
