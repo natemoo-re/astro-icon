@@ -16,8 +16,8 @@ export async function createPlugin(
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
   // Load collections
-  const collections = await loadCollections({ include, iconDir }, { root })
-  
+  const collections = await loadCollections({ include, iconDir }, { root });
+
   return {
     name: "astro-icon",
     resolveId(id) {
@@ -27,15 +27,23 @@ export async function createPlugin(
     },
     async load(id) {
       if (id === resolvedVirtualModuleId) {
-        return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
+        return `export default ${JSON.stringify(
+          collections
+        )};\nexport const config = ${JSON.stringify({ include })}`;
       }
     },
   };
 }
 
-async function loadCollections({ include, iconDir }: Required<Pick<IntegrationOptions, 'include' | 'iconDir'>>, { root }: Pick<AstroConfig, "root">) {
+async function loadCollections(
+  {
+    include,
+    iconDir,
+  }: Required<Pick<IntegrationOptions, "include" | "iconDir">>,
+  { root }: Pick<AstroConfig, "root">
+) {
   const collections = await loadIconifyCollections(include);
-  
+
   try {
     // Attempt to create local collection
     const local = await loadLocalCollection(iconDir);
@@ -43,10 +51,10 @@ async function loadCollections({ include, iconDir }: Required<Pick<IntegrationOp
   } catch (ex) {
     // Failed to load the local collection
   }
-  
+
   await generateIconTypeDefinitions(Object.values(collections), root);
-  
-  return collections
+
+  return collections;
 }
 
 async function generateIconTypeDefinitions(
@@ -86,4 +94,3 @@ async function ensureDir(path: URL): Promise<void> {
     await mkdir(path);
   }
 }
-
