@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.0.0-next.3
+
+### Patch Changes
+
+- [#130](https://github.com/natemoo-re/astro-icon/pull/130) [`b95a199`](https://github.com/natemoo-re/astro-icon/commit/b95a1997077e4cd54ac2365056fef6caac46168e) Thanks [@stramel](https://github.com/stramel)! - fix: type generation for local collection
+
 ## 1.0.0-next.2
 
 ### Patch Changes

@@ -8,6 +8,7 @@
     "www": "0.0.8"
   },
   "changesets": [
+    "dull-turkeys-love",
     "fuzzy-beers-count",
     "plenty-turtles-exist",
     "seven-buttons-perform"
