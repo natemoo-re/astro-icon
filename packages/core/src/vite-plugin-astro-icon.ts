@@ -15,9 +15,8 @@ export async function createPlugin(
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
-  // Load provided Iconify collections
-  const collections = await loadIconifyCollections(include);
-  await generateIconTypeDefinitions(Object.values(collections), root);
+  // Load collections
+  const collections = await loadCollections({ include, iconDir }, { root });
 
   return {
     name: "astro-icon",
@@ -28,22 +27,34 @@ export async function createPlugin(
     },
     async load(id) {
       if (id === resolvedVirtualModuleId) {
-        try {
-          // Attempt to create local collection
-          const local = await loadLocalCollection(iconDir);
-          collections["local"] = local;
-        } catch (ex) {
-          // Failed to load the local collection
-        }
-        await generateIconTypeDefinitions(Object.values(collections), root);
-
-        return `import.meta.glob('/src/icons/**/*.svg');
-
-        export default ${JSON.stringify(collections)};\n
-        export const config = ${JSON.stringify({ include })}`;
+        return `export default ${JSON.stringify(
+          collections
+        )};\nexport const config = ${JSON.stringify({ include })}`;
       }
     },
   };
+}
+
+async function loadCollections(
+  {
+    include,
+    iconDir,
+  }: Required<Pick<IntegrationOptions, "include" | "iconDir">>,
+  { root }: Pick<AstroConfig, "root">
+) {
+  const collections = await loadIconifyCollections(include);
+
+  try {
+    // Attempt to create local collection
+    const local = await loadLocalCollection(iconDir);
+    collections["local"] = local;
+  } catch (ex) {
+    // Failed to load the local collection
+  }
+
+  await generateIconTypeDefinitions(Object.values(collections), root);
+
+  return collections;
 }
 
 async function generateIconTypeDefinitions(
@@ -71,7 +82,7 @@ async function generateIconTypeDefinitions(
             .flat(1)
             .join("")
         : "never"
-    };\n
+    };
   }`
   );
 }
