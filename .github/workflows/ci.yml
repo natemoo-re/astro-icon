@@ -89,6 +89,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Check
+        run: pnpm run check
+        working-directory: ${{ matrix.target }}
+
       - name: Build
         run: pnpm build
         working-directory: ${{ matrix.target }}
