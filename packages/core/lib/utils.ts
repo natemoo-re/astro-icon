@@ -1,5 +1,5 @@
 import { SPRITESHEET_NAMESPACE } from "./constants";
-import { Props, Optimize } from "./Props";
+import { type Props, type Optimize } from "./Props";
 import getFromService from "./resolver";
 import { optimize as optimizeSVGNative } from "svgo";
 
