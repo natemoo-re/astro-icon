@@ -9,7 +9,7 @@ import loadLocalCollection from "./loaders/loadLocalCollection.js";
 import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
 
 export async function createPlugin(
-  { include = {}, iconDir = "src/icons" }: IntegrationOptions,
+  { include = {}, iconDir = "src/icons", svgoOptions }: IntegrationOptions,
   { root }: Pick<AstroConfig, "root">
 ): Promise<Plugin> {
   const virtualModuleId = "virtual:astro-icon";
@@ -30,7 +30,7 @@ export async function createPlugin(
       if (id === resolvedVirtualModuleId) {
         try {
           // Attempt to create local collection
-          const local = await loadLocalCollection(iconDir);
+          const local = await loadLocalCollection(iconDir, svgoOptions);
           collections["local"] = local;
         } catch (ex) {
           // Failed to load the local collection
