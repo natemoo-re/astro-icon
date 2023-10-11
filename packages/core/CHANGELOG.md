@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.0.0-next.3
+
+### Patch Changes
+
+- [#129](https://github.com/natemoo-re/astro-icon/pull/129) [`d445ed9`](https://github.com/natemoo-re/astro-icon/commit/d445ed9825d8cd351effdda5ab76dbca3fa055b2) Thanks [@stramel](https://github.com/stramel)! - fix: correctly pass SVGO Options
+
 ## 1.0.0-next.2
 
 ### Patch Changes
