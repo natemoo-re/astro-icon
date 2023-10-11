@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "astro dev",
     "dev": "astro dev",
+    "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^1.0.0-beta.2",
-    "astro-icon": "0.8.1"
+    "@iconify-json/pixelarticons": "^1.1.6"
+  },
+  "devDependencies": {
+    "astro": "^2.5.0",
+    "astro-icon": "workspace:*"
   }
 }

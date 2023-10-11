@@ -1,49 +1,52 @@
 ---
-import Head from '../components/Head.astro';
-import { Icon } from 'astro-icon';
+import Head from "../components/Head.astro";
+import { Icon } from "astro-icon/components";
 ---
+
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <Head />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="hsl(206,12%,96%)" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href={`${import.meta.env.BASE_URL}favicon.svg`}
+    />
+    <link rel="stylesheet" href={`${import.meta.env.BASE_URL}style.css`} />
+  </head>
 
-<head>
-	<meta charset="utf-8" />
-	<Head />
-	<meta name="viewport" content="width=device-width" />
-	<meta name="color-scheme" content="dark light" />
-	<meta name="theme-color" content="hsl(206,12%,96%)">
-	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-	<link rel="stylesheet" href="/style.css" />
-</head>
-
-<body>
+  <body>
     <header>
-        <nav>
-            <ul role="list">
-                <li>
-                    <h1>
-                        <Icon name="logo" size="36" aria-hidden="true" />
-                        <span>Astro Icon</span>
-                    </h1>
-                </li>
-            </ul>
-        </nav>
+      <nav>
+        <ul role="list">
+          <li>
+            <h1>
+              <Icon name="logo" size={36} aria-hidden="true" />
+              <span>Astro Icon</span>
+            </h1>
+          </li>
+        </ul>
+      </nav>
     </header>
     <main>
-        <article>
-
+      <article>
         <h2>Icons made easy, powered by Astro.</h2>
 
-        <p>SVG is the perfect format for icons&mdash;so why don&rsquo;t our tools make them easier to use?
-        Introducing <code>astro-icon</code> !</p>
-
         <p>
-            <a href="https://github.com/natemoo-re/astro-icon#readme">
-                <span>Read the docs on GitHub</span>
-                <Icon pack="pixelarticons" name="external-link" size={24} />
-            </a>
+          SVG is the perfect format for icons&mdash;so why don&rsquo;t our tools
+          make them easier to use? Introducing <code>astro-icon</code> !
         </p>
 
-        </article>
+        <p>
+          <a href="https://github.com/natemoo-re/astro-icon#readme">
+            <span>Read the docs on GitHub</span>
+            <Icon name="pixelarticons:external-link" size={24} />
+          </a>
+        </p>
+      </article>
     </main>
-</body>
-
+  </body>
 </html>

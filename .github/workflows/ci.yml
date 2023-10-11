@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'v1'
   pull_request:
     paths-ignore:
       - '.vscode/**'
@@ -19,34 +20,34 @@ defaults:
 
 jobs:
   # Lint can run in parallel with Build.
-  # We also run `yarn install` with the `--prefer-offline` flag to speed things up.
-   # Lint can run in parallel with Build.
-  # We also run `yarn install` with the `--prefer-offline` flag to speed things up.
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
-          node-version: 16
-          cache: 'yarn'
+          version: 8
 
-      - name: Install NPM Dependencies
-        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines
-        env:
-          CI: true
-      
-      - name: Status
-        run: git status
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
 
       # Lint autofix cannot run on forks, so just skip those! See https://github.com/wearerequired/lint-action/issues/13
       - name: Lint (External)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != github.repository_owner }}
-        run: yarn lint
+        run: pnpm run lint
         
       # Otherwise, run lint autofixer
       - name: Lint
@@ -69,55 +70,66 @@ jobs:
     strategy:
       matrix:
         target: [demo]
+        node-version: [18]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
-          node-version: 16
-          cache: 'yarn'
-          registry-url: 'https://registry.npmjs.org'
+          version: 8
 
-      - name: Install NPM Dependencies
-        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines --registry https://registry.npmjs.org --network-timeout 300000
-        env:
-          CI: true
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Build
-        run: yarn build
+        run: pnpm build
         working-directory: ${{ matrix.target }}
 
   # Changelog can only run _after_ Build and Test.
   # We download all `dist/` artifacts from GitHub to skip the build process.
   changelog:
     name: Changelog PR or Release
-    if: ${{ github.ref_name == 'main' }}
     needs: [lint, smoke]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
-      - uses: actions/checkout@v2
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
-          node-version: 16
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'yarn'
+          version: 8
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install NPM Dependencies
-        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines --registry https://registry.npmjs.org --network-timeout 300000
-        env:
-          CI: true
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
 
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: yarn changeset publish
+          publish: pnpm changeset publish
           commit: 'chore: release'
           title: 'chore: release'
         env:

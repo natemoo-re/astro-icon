@@ -1,0 +1,15 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "demo": "0.0.1",
+    "astro-icon": "0.8.1",
+    "service": "0.1.0",
+    "www": "0.0.8"
+  },
+  "changesets": [
+    "fuzzy-beers-count",
+    "plenty-turtles-exist",
+    "seven-buttons-perform"
+  ]
+}
