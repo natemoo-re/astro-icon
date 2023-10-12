@@ -16,7 +16,10 @@ export async function createPlugin(
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
 
   // Load collections
-  const collections = await loadCollections({ include, iconDir, svgoOptions }, { root });
+  const collections = await loadCollections(
+    { include, iconDir, svgoOptions },
+    { root }
+  );
 
   return {
     name: "astro-icon",
