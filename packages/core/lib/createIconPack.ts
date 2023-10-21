@@ -1,4 +1,4 @@
-import * as fs from "node:fs";
+import * as fs from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import resolvePackage from "resolve-pkg";
 
@@ -20,7 +20,7 @@ export function createIconPack({
         new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
       );
       try {
-        const svg = fs.readFileSync(path, "utf8");
+        const svg = await fs.readFile(path, "utf8");
         return svg;
       } catch {
         throw new Error(
