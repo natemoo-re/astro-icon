@@ -1,4 +1,4 @@
-import { statSync, promises as fs } from "node:fs";
+import * as fs from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import resolvePackage from "resolve-pkg";
 
@@ -19,13 +19,14 @@ export function createIconPack({
       const path = fileURLToPath(
         new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
       );
-      if (!exists(path)) {
+      try {
+        const svg = fs.readFileSync(path, "utf8");
+        return svg;
+      } catch {
         throw new Error(
           `[astro-icon] Unable to load "${path}"! Does the file exist?"`
         );
       }
-      const svg = await fs.readFile(path).then((res) => res.toString());
-      return svg;
     };
   }
 
@@ -48,10 +49,3 @@ export function createIconPack({
     };
   }
 }
-
-const exists = (path: string): boolean => {
-  try {
-    return statSync(path).isFile();
-  } catch (e) {}
-  return false;
-};
