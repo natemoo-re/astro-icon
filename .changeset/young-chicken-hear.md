@@ -2,4 +2,4 @@
 "astro-icon": patch
 ---
 
-perf(createIconPack): improve local icon resolution
+Improves the performance for `createIconPack`'s local icon resolution
