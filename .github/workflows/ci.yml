@@ -22,22 +22,13 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'pnpm'
-
-      - uses: pnpm/action-setup@v2
-
-      - name: Install Dependencies
-        run: pnpm install --prefer-offline --frozen-lockfile
-      
-      - name: Status
-        run: git status
+      - run: pnpm install --prefer-offline --frozen-lockfile
 
       # Lint autofix cannot run on forks, so just skip those! See https://github.com/wearerequired/lint-action/issues/13
       - name: Lint (External)
@@ -66,23 +57,14 @@ jobs:
       matrix:
         target: [demo]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
-
-      - uses: pnpm/action-setup@v2
-
-      - name: Install Dependencies
-        run: pnpm install --prefer-offline --frozen-lockfile
-
-      - name: Build
-        run: pnpm build
+      - run: pnpm install --prefer-offline --frozen-lockfile
+      - run: pnpm build
         working-directory: ${{ matrix.target }}
 
   # Changelog can only run _after_ Build and Test.
@@ -94,21 +76,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
           registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - uses: pnpm/action-setup@v2
-
-      - name: Install Dependencies
-        run: pnpm install --prefer-offline --frozen-lockfile
-
+      - run: pnpm install --prefer-offline --frozen-lockfile
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
