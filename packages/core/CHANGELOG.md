@@ -1,5 +1,17 @@
 # astro-icon
 
+## 0.8.2
+
+### Patch Changes
+
+- [#153](https://github.com/natemoo-re/astro-icon/pull/153) [`3664cac3633330c3d19c8e1eb6ffa5c6b8848091`](https://github.com/natemoo-re/astro-icon/commit/3664cac3633330c3d19c8e1eb6ffa5c6b8848091) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes incompatability with Vite 5 by removing a deprecated method
+
+- [#148](https://github.com/natemoo-re/astro-icon/pull/148) [`d176a7da3b7332d459ec97c0af1667b6be9057fa`](https://github.com/natemoo-re/astro-icon/commit/d176a7da3b7332d459ec97c0af1667b6be9057fa) Thanks [@kripod](https://github.com/kripod)! - Fixes an edge case with `createIconPack` when a module cannot be resolved
+
+- [#141](https://github.com/natemoo-re/astro-icon/pull/141) [`832ac0523905f658cebd537d65c67b391d7c9b52`](https://github.com/natemoo-re/astro-icon/commit/832ac0523905f658cebd537d65c67b391d7c9b52) Thanks [@liruifengv](https://github.com/liruifengv)! - fix type import
+
+- [#149](https://github.com/natemoo-re/astro-icon/pull/149) [`f5640282120e4eaa947c695e02587604f3f8b1a6`](https://github.com/natemoo-re/astro-icon/commit/f5640282120e4eaa947c695e02587604f3f8b1a6) Thanks [@kripod](https://github.com/kripod)! - Improves the performance for `createIconPack`'s local icon resolution
+
 ## 0.8.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # www
 
+## 0.0.9
+
+### Patch Changes
+
+- Updated dependencies [[`3664cac3633330c3d19c8e1eb6ffa5c6b8848091`](https://github.com/natemoo-re/astro-icon/commit/3664cac3633330c3d19c8e1eb6ffa5c6b8848091), [`d176a7da3b7332d459ec97c0af1667b6be9057fa`](https://github.com/natemoo-re/astro-icon/commit/d176a7da3b7332d459ec97c0af1667b6be9057fa), [`832ac0523905f658cebd537d65c67b391d7c9b52`](https://github.com/natemoo-re/astro-icon/commit/832ac0523905f658cebd537d65c67b391d7c9b52), [`f5640282120e4eaa947c695e02587604f3f8b1a6`](https://github.com/natemoo-re/astro-icon/commit/f5640282120e4eaa947c695e02587604f3f8b1a6)]:
+  - astro-icon@0.8.2
+
 ## 0.0.8
 
 ### Patch Changes
