@@ -89,7 +89,7 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm run publish
+          version: pnpm run version
           commit: 'chore: release'
           title: 'chore: release'
         env:
