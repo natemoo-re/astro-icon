@@ -15,7 +15,14 @@ export function createIconPack({
 }: CreateIconPackOptions) {
   if (pkg) {
     return async (name: string) => {
-      const baseUrl = new URL(pathToFileURL(resolvePackage(pkg)) + "/");
+      const pkgPath = resolvePackage(pkg);
+      if (!pkgPath) {
+        throw new Error(
+          `[astro-icon] Unable to resolve "${pkgPath}"! Is the package installed?"`
+        );
+      }
+
+      const baseUrl = new URL(pathToFileURL(pkgPath) + "/");
       const path = fileURLToPath(
         new URL(dir ? `${dir}/${name}.svg` : `${name}.svg`, baseUrl)
       );
