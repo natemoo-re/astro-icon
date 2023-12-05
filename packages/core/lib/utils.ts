@@ -189,7 +189,10 @@ ${contents}`
     filepath = `/src/icons/${name}.svg`;
 
     try {
-      const files = import.meta.glob("/src/icons/**/*.svg", { eager: true, as: "raw" });
+      const files = import.meta.glob("/src/icons/**/*.svg", {
+        eager: true,
+        as: "raw",
+      });
 
       if (!(filepath in files)) {
         throw new Error(`Could not find the file "${filepath}"`);
