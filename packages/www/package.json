@@ -10,7 +10,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^1.0.0-beta.2",
+    "astro": "^3.6.4",
     "astro-icon": "0.8.1"
   }
 }

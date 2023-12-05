@@ -18,27 +18,23 @@ defaults:
     shell: bash
 
 jobs:
-  # Lint can run in parallel with Build.
-  # We also run `yarn install` with the `--prefer-offline` flag to speed things up.
-   # Lint can run in parallel with Build.
-  # We also run `yarn install` with the `--prefer-offline` flag to speed things up.
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
-          cache: 'yarn'
+          node-version: 18
+          cache: 'pnpm'
 
-      - name: Install NPM Dependencies
-        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines
-        env:
-          CI: true
+      - uses: pnpm/action-setup@v2
+
+      - name: Install Dependencies
+        run: pnpm install --prefer-offline --frozen-lockfile
       
       - name: Status
         run: git status
@@ -46,7 +42,7 @@ jobs:
       # Lint autofix cannot run on forks, so just skip those! See https://github.com/wearerequired/lint-action/issues/13
       - name: Lint (External)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != github.repository_owner }}
-        run: yarn lint
+        run: pnpm run lint
         
       # Otherwise, run lint autofixer
       - name: Lint
@@ -71,22 +67,22 @@ jobs:
         target: [demo]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
-          cache: 'yarn'
+          node-version: 18
+          cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install NPM Dependencies
-        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines --registry https://registry.npmjs.org --network-timeout 300000
-        env:
-          CI: true
+      - uses: pnpm/action-setup@v2
+
+      - name: Install Dependencies
+        run: pnpm install --prefer-offline --frozen-lockfile
 
       - name: Build
-        run: yarn build
+        run: pnpm build
         working-directory: ${{ matrix.target }}
 
   # Changelog can only run _after_ Build and Test.
@@ -97,27 +93,27 @@ jobs:
     needs: [lint, smoke]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
           registry-url: 'https://registry.npmjs.org'
-          cache: 'yarn'
+          cache: 'pnpm'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install NPM Dependencies
-        run: yarn install --prefer-offline --frozen-lockfile --ignore-engines --registry https://registry.npmjs.org --network-timeout 300000
-        env:
-          CI: true
+      - uses: pnpm/action-setup@v2
+
+      - name: Install Dependencies
+        run: pnpm install --prefer-offline --frozen-lockfile
 
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: yarn changeset publish
+          publish: pnpm changeset publish
           commit: 'chore: release'
           title: 'chore: release'
         env:
