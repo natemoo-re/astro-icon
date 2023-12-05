@@ -6,7 +6,8 @@
   "scripts": {
     "build": "pnpm --filter www run build",
     "dev": "pnpm --filter demo run dev",
-    "lint": "prettier \"**/*.{js,ts,md,json}\""
+    "lint": "prettier \"**/*.{js,ts,md,json}\"",
+    "publish": "changeset publish && pnpm install --no-frozen-lockfile --lockfile-only"
   },
   "repository": {
     "type": "git",
