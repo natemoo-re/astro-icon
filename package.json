@@ -18,10 +18,6 @@
     "url": "https://github.com/natemoo-re/astro-icon/issues"
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
-  "volta": {
-    "node": "16.13.0",
-    "yarn": "1.22.17"
-  },
   "packageManager": "pnpm@8.11.0",
   "dependencies": {
     "@changesets/cli": "^2.18.1",
