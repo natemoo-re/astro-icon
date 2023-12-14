@@ -13,7 +13,7 @@ const href = `#${SPRITESHEET_NAMESPACE}:${name}`;
 trackSprite(Astro.request, name);
 ---
 
-<svg {...props} class={className} astro-icon={name}>
+<svg {...props} class={className}>
     {title ? (<title>{title}</title>) : ''}
     <use {...{ 'xlink:href': href, width: props.width, height: props.height, x, y }}  />
 </svg>
