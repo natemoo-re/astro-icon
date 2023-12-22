@@ -79,6 +79,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: pnpm install --prefer-offline --frozen-lockfile
+      - run: pnpm --filter astro-icon run build
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
