@@ -25,6 +25,6 @@
     "@changesets/cli": "^2.18.1"
   },
   "devDependencies": {
-    "prettier": "^2.8.4"
+    "prettier": "^3.1.1"
   }
 }

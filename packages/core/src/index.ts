@@ -3,7 +3,7 @@ import { createPlugin } from "./vite-plugin-astro-icon.js";
 import type { AstroIntegration } from "astro";
 
 export default function createIntegration(
-  opts: IntegrationOptions = {}
+  opts: IntegrationOptions = {},
 ): AstroIntegration {
   return {
     name: "astro-icon",

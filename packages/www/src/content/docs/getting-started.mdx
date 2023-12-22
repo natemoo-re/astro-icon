@@ -1,0 +1,153 @@
+---
+title: Getting Started
+description: Learn how to add Astro Icon to your existing Astro project.
+next: 
+  link: /guides/customization/
+  label: Customizing Icons
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Astro Icon is a straightforward icon system for the [Astro](https://astro.build) framework.
+This guide assumes that you have an existing Astro project.
+
+See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if you are starting a brand new project.
+
+## Installation
+
+### Quick Install
+
+The `astro add` command-line tool automates the installation for you. Run one of the following commands in a new terminal window. (If you aren't sure which package manager you're using, run the first command.) Then, follow the prompts, and type "y" in the terminal (meaning "yes") for each one.
+
+<Tabs>
+<TabItem label="npm">
+
+```sh
+npx astro add astro-icon
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm astro add astro-icon
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn astro add astro-icon
+```
+
+</TabItem>
+
+</Tabs>
+
+If you run into any issues, [feel free to report them to us on GitHub](https://github.com/natemoo-re/astro-icon/issues) and try the manual installation steps below.
+
+### Manual Install
+
+First, install the `astro-icon` package using your package manager. Run one of the following commands in the terminal:
+
+<Tabs>
+<TabItem label="npm">
+
+```sh
+npm install astro-icon
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm add astro-icon
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add astro-icon
+```
+
+</TabItem>
+
+</Tabs>
+
+Then, apply this integration to your `astro.config.*` file using the `integrations` property:
+
+```diff title="astro.config.mjs" lang="js" ins="icon()"
+import { defineConfig } from "astro/config";
++ import icon from "astro-icon";
+
+export default defineConfig({
+  integrations: [icon()],
+});
+```
+
+### Add Icons
+
+Add new icons to your site by creating `.svg` files in `/src/icons/`.
+Use sub-folders to organize your files and create multiple sets of icons.
+
+Icons in the `/src/icons/` directory can be automatically referenced by their slug, for example:
+
+```astro mark="/src/icons/logo.svg" mark="logo" mark="/src/icons/logos/astro.svg" mark="logos/astro"
+---
+import { Icon } from 'astro-icon/components'
+---
+
+<!-- Embed the contents of the `/src/icons/logo.svg` file -->
+<Icon name="logo" />
+
+<!-- Embed the contents of the `/src/icons/logos/astro.svg` file -->
+<Icon name="logos/astro" />
+```
+
+
+### Next steps
+
+- **Configure:** Learn about additional icon options in [“Customizing Icons”](/guides/customization/).
+- **Components:** Understand the built-in `Icon` component in the [“Components”](/guides/components/) guide.
+- **Deploy:** Before you publish your project, refer to the [“Server Rendering”](/guides/server-rendering/) guide.
+
+## Updating Astro Icon
+
+Astro Icon is a third-party Astro integration, which are not yet supported by `@astrojs/upgrade`. Instead, you can upgrade `astro-icon` by running the following command in your terminal:
+
+<Tabs>
+<TabItem label="npm">
+
+```sh
+npm install astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add astro-icon@latest
+```
+
+</TabItem>
+</Tabs>
+
+See the [Astro Icon changelog](https://github.com/natemoo-re/astro-icon/blob/main/packages/core/CHANGELOG.md) for a full list of the changes made in each release.
+
+## Troubleshooting Astro Icon
+
+Use the [Customizing Icons](/guides/customization/) guide and [project configuration](/reference/configuration/) reference pages to ensure that Astro Icon is configured and functioning properly.
+See the guides in the sidebar for help with additional topics.
+
+If your answer cannot be found in these docs, please visit the [full Astro Docs](https://docs.astro.build) for complete Astro documentation.
+Your question may be answered by understanding how Astro works in general.
+
+You can also check for any known [Astro Icon issues on GitHub](https://github.com/natemoo-re/astro-icon/issues). Although this is not an official Astro package, we encourage you to join the [Astro Discord](https://astro.build/chat/) and chat with the active, friendly Astro community!

@@ -1,0 +1,23 @@
+---
+title: Deployment
+description: Learn how to optimize your deployments with Astro Icon.
+---
+
+Astro Icon supports every deployment method that Astro supports. Refer to the official [Deploy your Astro Site](https://docs.astro.build/en/guides/deploy/) guide for specific instructions.
+
+## Rendering Modes
+
+Astro projects support multiple [Rendering Modes](https://docs.astro.build/en/core-concepts/rendering-modes/), pages, routes, and API endpoints can be either [pre-rendered at build time](https://docs.astro.build/en/core-concepts/rendering-modes/#pre-rendered) or [rendered on demand by a server](https://docs.astro.build/en/core-concepts/rendering-modes/#on-demand-rendered) when a route is requested.
+
+### Pre-rendered
+
+Astro projects that are entirely pre-rendered do not need any special configuration to use Astro Icon.
+
+### On-demand rendered
+
+Astro projects that have [enabled on-demand server rendering](https://docs.astro.build/en/guides/server-side-rendering/#enable-on-demand-server-rendering) should take special when using Astro Icon.
+
+By default, all `@iconify-json/*` packages will be bundled into your server code, potentially bloating your server JavaScript bundles.
+
+For complete control over the size of your bundle, it is **highly recommended** to [configure the `include` option](/reference/configuration#include) to enable only your required icons.
+

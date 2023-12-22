@@ -1,0 +1,45 @@
+---
+title: CSS & Styling
+description: Learn how to style your icons with custom CSS.
+---
+
+You can style your icons with custom CSS.
+
+## Custom CSS styles
+
+Customize the styles applied to every icon by using the `[data-icon]` attribute selector.
+
+```astro mark="Icon" mark="[data-icon]"
+<Icon name="twitter" />
+<Icon name="mastodon" />
+<Icon name="threads" />
+
+<style>
+[data-icon] {
+    font-size: 2rem;
+    color: var(--brand-color);
+}
+</style>
+```
+
+Customize the styles applied to a single icon by using the `[data-icon="name"]` attribute selector.
+
+```astro mark="Icon" mark="logo" mark="[data-icon=\"logo\"]"
+<Icon name="logo" />
+
+<style>
+[data-icon="logo"] {
+    font-size: 2rem;
+    color: var(--brand-color);
+}
+</style>
+```
+
+## Tailwind CSS
+
+Tailwind CSS support in Astro projects is provided by the [Astro Tailwind integration](https://docs.astro.build/en/guides/integrations-guide/tailwind/).
+The `Icon` component automatically passes the `class` prop through to the underlying `svg` element.
+
+```astro mark="class=\"text-xl text-emerald-700\""
+<Icon name="logo" class="text-xl text-emerald-700" />
+```
