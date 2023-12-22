@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter www run build",
-    "dev": "pnpm --filter demo run dev",
+    "build": "pnpm --filter astro-icon --filter www run build",
+    "dev": "pnpm -r run dev",
     "lint": "prettier \"**/*.{js,ts,md,json}\"",
     "version": "changeset version && pnpm install --no-frozen-lockfile --lockfile-only"
   },
@@ -21,10 +21,10 @@
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "packageManager": "pnpm@8.11.0",
   "dependencies": {
-    "@changesets/cli": "^2.18.1",
-    "@changesets/changelog-github": "^0.4.2"
+    "@changesets/changelog-github": "^0.4.2",
+    "@changesets/cli": "^2.18.1"
   },
   "devDependencies": {
-    "prettier": "^2.5.0"
+    "prettier": "^3.1.1"
   }
 }

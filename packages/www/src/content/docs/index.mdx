@@ -1,0 +1,36 @@
+---
+title: Astro Icon
+description: Astro Icon simplifies working with icons in Astro
+template: splash
+editUrl: false
+lastUpdated: false
+hero:
+  tagline: Icons made easy, powered by Astro
+  actions:
+    - text: Get Started
+      link: /getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: View Repo
+      link: https://github.com/natemoo-re/astro-icon
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Next steps
+
+<CardGrid>
+	<Card title="Local Icons" icon="setting">
+		Automatically embed custom `svg` icons
+	</Card>
+	<Card title="Icon Sets" icon="puzzle">
+		Support for all [`@iconify-json/*`](https://iconify.design/) packages
+	</Card>
+	<Card title="Intelligent Sprites" icon="star">
+		Deduplicated sprites with zero overhead
+	</Card>
+	<Card title="Fully Dynamic" icon="open-book">
+		Fully dynamic icon references without imports
+	</Card>
+</CardGrid>

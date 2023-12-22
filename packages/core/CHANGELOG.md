@@ -1,5 +1,37 @@
 # astro-icon
 
+## 1.0.0-next.4
+
+### Patch Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`1d65511c418b0fef0668e760c33bff21deeb8ef3`](https://github.com/natemoo-re/astro-icon/commit/1d65511c418b0fef0668e760c33bff21deeb8ef3) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Updates the `exports` field to point to the correct `astro-icon/components` source file
+
+## 1.0.0-next.3
+
+### Patch Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`ad93cfc54abe169f4a52b803eded540b94299dbc`](https://github.com/natemoo-re/astro-icon/commit/ad93cfc54abe169f4a52b803eded540b94299dbc) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Makes the `astro-icon` integration's `include` settings optional. By default, all icons for any detected `@iconify-json/*` dependencies will be included. This makes migration much easier for existing static site users, while offering the same amount of control for server rendered users.
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`ee99e2119b3bcc9b05376909a46a65da0087305b`](https://github.com/natemoo-re/astro-icon/commit/ee99e2119b3bcc9b05376909a46a65da0087305b) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Updates the SVGO options so that they are correctly passed through the build process
+
+## 1.0.0-next.2
+
+### Patch Changes
+
+- [#123](https://github.com/natemoo-re/astro-icon/pull/123) [`41554ad`](https://github.com/natemoo-re/astro-icon/commit/41554adcfff0aa80486d9f456d3b1c5fc66ca199) Thanks [@stramel](https://github.com/stramel)! - move warning about local directory to on use
+
+## 1.0.0-next.1
+
+### Patch Changes
+
+- Oops, actually publish `dist`
+
+## 1.0.0-next.0
+
+### Major Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`f1c763d`](https://github.com/natemoo-re/astro-icon/commit/f1c763d506584aa551051fcc3ea19e99f8af8f7f) Thanks [@natemoo-re](https://github.com/natemoo-re)! - This version of `astro-icon` provides a new way to manage your icons, relying on Astro's official integration API rather than a managed remote API. Please see [the README](https://github.com/natemoo-re/astro-icon/tree/v1/packages/core#astro-icon) for more information.
+
 ## 0.8.2
 
 ### Patch Changes

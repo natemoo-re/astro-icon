@@ -1,0 +1,226 @@
+---
+title: Upgrade to Astro Icon v1
+prev: false
+next: false
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide will help you migrate from older versions of `astro-icon` to `astro-icon` v1.
+
+There are multiple breaking changes in `astro-icon` v1 that require changes to your existing code. This guide will outline the steps you must take.
+
+### History
+
+The original version of `astro-icon` was built in December 2021, when Astro had not even released a stable v1. Every Astro project was, by definition, a static site. Server-side rendering was not a supported feature and there was no official API for integrations. `astro-icon`'s architecture reflected the reduced scope that Astro had at the time.
+
+In v1, `astro-icon` has been refactored to provide a more stable foundation that supports everything Astro v3+ is capable of, including server-side rendering.
+
+## Upgrade `astro-icon`
+
+Update your project’s version of `astro-icon` to the latest version using your package manager.
+
+<Tabs>
+<TabItem label="npm">
+
+```sh ins="latest"
+npm install astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh ins="latest"
+pnpm add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh ins="latest"
+yarn add astro-icon@latest
+```
+
+</TabItem>
+
+</Tabs>
+
+## Breaking Changes
+
+### Changed: `astro-icon` is now an integration
+
+In v0, the entire API surface was limited to the `Icon` and `Sprite` components.
+
+In v1, `astro-icon` has become a full-fledged integration.
+
+#### What should I do?
+
+Update your `astro.config.mjs` file to include the new `astro-icon` integration.
+
+```js title="astro.config.mjs" ins="import icon from \"astro-icon\";" ins="icon()"
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
+
+export default defineConfig({
+  integrations: [icon()],
+});
+```
+
+### Removed: Remote API service
+
+In v0, icons were automatically fetched from a custom Astro Icon API, powered internally by [Iconify](https://iconify.design/). While this was convenient, missing icons and network latency caused frequent problems.
+
+In v1, icon sets **must** be installed as a dependency in your project.
+
+#### What should I do?
+
+Determine the icon sets (previously referred to as a "pack") used in your project. Install the equivalent `@iconify-json/<name>` package.
+
+For example, if using the `mdi:account` and `carbon:basketball` icons, the `mdi` and `carbon` icons must be installed in your project.
+
+
+<Tabs>
+<TabItem label="npm">
+
+```sh mark="mdi" mark="carbon"
+npm install @iconify-json/mdi @iconify-json/carbon
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh mark="mdi" mark="carbon"
+pnpm add @iconify-json/mdi @iconify-json/carbon
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh mark="mdi" mark="carbon"
+yarn add @iconify-json/mdi @iconify-json/carbon
+```
+
+</TabItem>
+
+</Tabs>
+
+### Changed: component export location
+
+In v0, components were exported directly from the `astro-icon` package.
+
+In v1, components are exported from the `astro-icon/components` path.
+
+#### What should I do?
+
+Update your import statements to reference `astro-icon/components`.
+
+```js ins="/components"
+import { Icon } from 'astro-icon/components'
+```
+
+### Changed: styling attribute
+
+In v0, icons used an `astro-icon` attribute for styling. This was technically invalid HTML.
+
+In v1, icons use the `data-icon` attribute instead.
+
+#### What should I do?
+
+Replace any `[astro-icon]` selectors in your styles with the equivalent `[data-icon]` selector.
+
+```diff lang="html" del="astro" ins="data"
+<style>
+-  [astro-icon] {
++  [data-icon] {
+    color: blue;
+  }
+-  [astro-icon="annotation"] {
++  [data-icon="annotation"] {
+    color: red;
+  }
+</style>
+```
+
+### Removed: `pack` prop
+
+In v0, the `Icon` component accepted separate `pack` and `name` props plus a shorthand `pack:name` syntax.
+
+In v1, the `Icon` component only accepts a `name` prop. Packs are always referenced via the shorthand `pack:name` syntax.
+
+#### What should I do?
+
+Update your components to replace the `pack` prop with the `name` prop.
+
+```astro del="pack=\"mdi\"" ins="mdi:"
+<Icon pack="mdi" name="mdi:account" />
+```
+
+### Removed: `Sprite` component
+
+In v0, the `Sprite` component was used to generate an SVG spritesheet. This required your entire page to be wrapped in a `<Sprite.Provider>`.
+
+In v1, the `Sprite` component has been removed. The `Icon` component now automatically optimizes itself into an SVG spritesheet when used multiple times on the same page.
+
+#### What should I do?
+
+Remove the `<Sprite.Provider>` wrapper from your pages. Replace any references to the `Sprite` component with the `Icon` component.
+
+```diff lang="astro" del="Sprite," ins="Icon" ins="/components"
+---
+import { Sprite, Icon } from 'astro-icon/components'
+---
+
+- <Sprite.Provider>
+  <html>
+    <head></head>
+    <body>
+-      <Sprite name="building" />
++      <Icon name="building" />
+    </body>
+- </Sprite.Provider>
+```
+
+### Removed: `createIconPack` utilities
+
+In v0, the `astro-icon/pack` module exported a `createIconPack` utility to create custom local icon packs from JS/TS files.
+
+In v1, the `astro-icon/pack` module has been removed. Network and custom loaders are no longer supported. All icons must be placed in the `src/icons/` directory.
+
+#### What should I do?
+
+Remove any loaders that used `createIconPack`. Instead, create a new directory for each icon pack in the `src/icons/` directory and add one `.svg` file for each icon.
+
+### Removed: `optimize` prop
+
+In v0, the `Icon` component accepted an `optimize` prop, but it defaulted to `true`. This controlled the SVGO optimizations for specific icons.
+
+In v1, the `optimize` prop has been removed. SVGO optimizations are automatically performed during the build rather than dynamically at runtime.
+
+#### What should I do?
+
+Remove any usage of the `optimize` prop. Configure SVGO optimization by passing `svgoOptions` to the `icon()` integration instead.
+
+```astro del="optimize"
+ <Icon name="mdi:account" optimize />
+```
+
+```js title="astro.config.mjs" {7-15}
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
+
+export default defineConfig({
+  integrations: [
+    icon({
+      svgoOptions: {
+        plugins: [
+          "preset-default",
+          {
+            name: "convertColors",
+            params: { currentColor: true },
+          },
+        ],
+      },
+    }),
+  ],
+});
+```
