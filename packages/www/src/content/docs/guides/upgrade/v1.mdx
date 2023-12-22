@@ -23,21 +23,21 @@ Update your project’s version of `astro-icon` to the latest version using your
 <Tabs>
 <TabItem label="npm">
 
-```sh
+```sh ins="latest"
 npm install astro-icon@latest
 ```
 
 </TabItem>
 <TabItem label="pnpm">
 
-```sh
+```sh ins="latest"
 pnpm add astro-icon@latest
 ```
 
 </TabItem>
 <TabItem label="Yarn">
 
-```sh
+```sh ins="latest"
 yarn add astro-icon@latest
 ```
 
@@ -57,7 +57,7 @@ In v1, `astro-icon` has become a full-fledged integration.
 
 Update your `astro.config.mjs` file to include the new `astro-icon` integration.
 
-```js title="astro.config.mjs"
+```js title="astro.config.mjs" ins="import icon from \"astro-icon\";" ins="icon()"
 import { defineConfig } from "astro/config";
 import icon from "astro-icon";
 
@@ -70,11 +70,11 @@ export default defineConfig({
 
 In v0, icons were automatically fetched from a custom Astro Icon API, powered internally by [Iconify](https://iconify.design/). While this was convenient, missing icons and network latency caused frequent problems.
 
-In v1, icon sets must be installed as a dependency in your project.
+In v1, icon sets **must** be installed as a dependency in your project.
 
 #### What should I do?
 
-Determine the icon sets (previously "pack") used in your project. Install the equivalent `@iconify-json/<name>` package.
+Determine the icon sets (previously referred to as a "pack") used in your project. Install the equivalent `@iconify-json/<name>` package.
 
 For example, if using the `mdi:account` and `carbon:basketball` icons, the `mdi` and `carbon` icons must be installed in your project.
 
@@ -82,21 +82,21 @@ For example, if using the `mdi:account` and `carbon:basketball` icons, the `mdi`
 <Tabs>
 <TabItem label="npm">
 
-```sh
+```sh mark="mdi" mark="carbon"
 npm install @iconify-json/mdi @iconify-json/carbon
 ```
 
 </TabItem>
 <TabItem label="pnpm">
 
-```sh
+```sh mark="mdi" mark="carbon"
 pnpm add @iconify-json/mdi @iconify-json/carbon
 ```
 
 </TabItem>
 <TabItem label="Yarn">
 
-```sh
+```sh mark="mdi" mark="carbon"
 yarn add @iconify-json/mdi @iconify-json/carbon
 ```
 
@@ -165,10 +165,9 @@ In v1, the `Sprite` component has been removed. The `Icon` component now automat
 
 Remove the `<Sprite.Provider>` wrapper from your pages. Replace any references to the `Sprite` component with the `Icon` component.
 
-```diff lang="astro"
+```diff lang="astro" del="Sprite," ins="Icon" ins="/components"
 ---
-- import { Sprite } from 'astro-icon'
-+ import { Icon } from 'astro-icon/components'
+import { Sprite, Icon } from 'astro-icon/components'
 ---
 
 - <Sprite.Provider>
