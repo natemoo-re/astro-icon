@@ -1,5 +1,13 @@
 # astro-icon
 
+## 1.0.0-next.3
+
+### Patch Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`ad93cfc54abe169f4a52b803eded540b94299dbc`](https://github.com/natemoo-re/astro-icon/commit/ad93cfc54abe169f4a52b803eded540b94299dbc) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Makes the `astro-icon` integration's `include` settings optional. By default, all icons for any detected `@iconify-json/*` dependencies will be included. This makes migration much easier for existing static site users, while offering the same amount of control for server rendered users.
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`ee99e2119b3bcc9b05376909a46a65da0087305b`](https://github.com/natemoo-re/astro-icon/commit/ee99e2119b3bcc9b05376909a46a65da0087305b) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Updates the SVGO options so that they are correctly passed through the build process
+
 ## 1.0.0-next.2
 
 ### Patch Changes
