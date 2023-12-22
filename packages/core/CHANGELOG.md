@@ -1,5 +1,23 @@
 # astro-icon
 
+## 1.0.0
+
+### Major Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`a40531cddfe8e688d35bd25ae15ebc64a0a14ec1`](https://github.com/natemoo-re/astro-icon/commit/a40531cddfe8e688d35bd25ae15ebc64a0a14ec1) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Finally, `astro-icon@1.0.0` has arrived! This release provides a more flexible and reliable method of icon management, removes a number of redundant APIs, and now relies on Astro's official integration API.
+
+  Please see the [Upgade to `astro-icon` v1](https://astroicon.dev/guides/upgrade/v1/) guide for specific migration steps and [the brand new docs site](https://astroicon.dev) for more information.
+
+### Patch Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`a40531cddfe8e688d35bd25ae15ebc64a0a14ec1`](https://github.com/natemoo-re/astro-icon/commit/a40531cddfe8e688d35bd25ae15ebc64a0a14ec1) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Updates the `exports` field to point to the correct `astro-icon/components` source file
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`a40531cddfe8e688d35bd25ae15ebc64a0a14ec1`](https://github.com/natemoo-re/astro-icon/commit/a40531cddfe8e688d35bd25ae15ebc64a0a14ec1) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Moves warning about local directory to the moment they are used
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`a40531cddfe8e688d35bd25ae15ebc64a0a14ec1`](https://github.com/natemoo-re/astro-icon/commit/a40531cddfe8e688d35bd25ae15ebc64a0a14ec1) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Makes the `astro-icon` integration's `include` settings optional. By default, all icons for any detected `@iconify-json/*` dependencies will be included. This makes migration much easier for existing static site users, while offering the same amount of control for server rendered users.
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`a40531cddfe8e688d35bd25ae15ebc64a0a14ec1`](https://github.com/natemoo-re/astro-icon/commit/a40531cddfe8e688d35bd25ae15ebc64a0a14ec1) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Updates the SVGO options so that they are correctly passed through the build process
+
 ## 1.0.0-next.4
 
 ### Patch Changes
