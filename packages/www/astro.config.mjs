@@ -14,7 +14,8 @@ export default defineConfig({
 					label: 'Start Here',
 					items: [
 						{ label: 'Getting Started', link: '/getting-started/' },
-						{ label: 'Upgrade to v1', link: '/guides/upgrade/v1' },
+						{ label: 'Upgrade to v1', link: '/guides/upgrade/v1/' },
+						{ label: 'Acknowledgements', link: '/acknowledgements/' },
 					],
 				},
 				{
