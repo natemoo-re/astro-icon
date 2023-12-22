@@ -13,7 +13,7 @@
     "@iconify-json/pixelarticons": "^1.1.6"
   },
   "devDependencies": {
-    "astro": "^2.5.0",
+    "astro": "^4.0.0",
     "astro-icon": "workspace:*"
   }
 }
