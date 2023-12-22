@@ -16,7 +16,7 @@ const {
 } = Astro.props
 
 const imageUrl = `${url}/social/${image || 'default.png'}`;
-const path = pathname || Astro.site.pathname;
+const path = pathname ?? Astro.site?.pathname;
 const ogUrl = `${url}${path}`
 ---
 
