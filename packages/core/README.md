@@ -1,4 +1,4 @@
-# astro-icon
+# Astro Icon
 
 This **[Astro integration](https://docs.astro.build/en/guides/integrations-guide/)** provides a straight-forward `Icon` component for [Astro](https://astro.build).
 
@@ -28,7 +28,7 @@ yarn astro add astro-icon
 pnpm astro add astro-icon
 ```
 
-If you run into any issues, [feel free to report them to us on GitHub](https://github.com/withastro/astro/issues) and try the manual installation steps below.
+If you run into any issues, [feel free to report them to us on GitHub](https://github.com/natemoo-re/astro-icon/issues) and try the manual installation steps below.
 
 ### Manual Install
 
@@ -42,19 +42,18 @@ Then, apply this integration to your `astro.config.*` file using the `integratio
 
 **`astro.config.mjs`**
 
-```js ins={2} "icon()"
+```js
 import { defineConfig } from "astro/config";
 import icon from "astro-icon";
 
 export default defineConfig({
-  // ...
   integrations: [icon()],
 });
 ```
 
 ## Usage
 
-Astro Icon should be ready to go with zero config. The `Icon` component is provided and allows you to inline `svg`s directly into your HTML.
+Astro Icon is ready to use, with zero additional configuration. The included `Icon` component allows you to inline `svg`s directly into your HTML. Repeasted
 
 ### Local Icons
 
@@ -75,31 +74,11 @@ import { Icon } from 'astro-icon/components';
 
 ## Iconify Icons
 
-Astro Icon also supports Iconify out-of-the-box with minimal configuration. To use an icon set from Iconify follow the instructions below:
+Astro Icon also supports [Iconify](https://iconify.design) icon sets out-of-the-box.
 
 1. Find an Icon Set to use on the [Iconify Icon Sets website](https://icon-sets.iconify.design/)
 2. Install the package (eg. `npm i -D @iconify-json/mdi`)
-3. Add an entry to the `astro.config.mjs` file
-
-**`astro.config.mjs`**
-
-```js ins={2}
-import { defineConfig } from "astro/config";
-import icon from "astro-icon";
-
-export default defineConfig({
-  // ...
-  integrations: [
-    icon({
-      include: {
-        mdi: ["*"], // Loads entire Material Design Icon set
-      },
-    }),
-  ],
-});
-```
-
-4. Reference a specific icon using the `name` prop with (eg. `mdi:account`)
+3. Reference a specific icon using the `name` prop with (eg. `mdi:account`)
 
 ```astro
 ---
@@ -133,7 +112,7 @@ See the [`Props.ts`](./packages/core/lib/Props.ts) file for more details.
 
 ### Styling
 
-Styling your `astro-icon` is straightforward. Any styles can be targeted to the `[data-icon]` attribute selector. If you want to target a specific icon, you may target it by name using `[data-icon="filename"]`.
+Styling your icons is straightforward. Any styles can be targeted to the `[data-icon]` attribute selector. If you want to target a specific icon, you may target it by name using `[data-icon="filename"]`.
 
 ```astro
 ---
@@ -172,11 +151,13 @@ The Astro Icon integration has its own options for controlling the `Icon` compon
 
 #### config.include
 
-If you want to use icon sets from Iconify, specify that set's name using this integration's `config.include` option. To specify including an entire pack use the wildcard `['*']`. Alternatively, loading individual icons is permitted as an array of those icon names.
+For users with a project using `output: 'server'` or `output: 'hybrid'`, it is highly recommended to configure the exact icons that should be included in the server bundle. By default, every icon in the set will be bundled into the server JavaScript.
+
+To filter the exact Iconify icons that should be included, set an array of allowed icons inside of the `include` object. Only these icons will be bundled.
 
 **`astro.config.mjs`**
 
-```js ins={2}
+```js
 import { defineConfig } from "astro/config";
 import icon from "astro-icon";
 
@@ -185,9 +166,8 @@ export default defineConfig({
   integrations: [
     icon({
       include: {
-        mdi: ["*"], // Loads entire Material Design Icon set
-        // or
-        mdi: ["account"], // Only loads the Material Design Icon's "account" SVG
+        mdi: ["*"], // (Default) Loads entire Material Design Icon set
+        mdi: ["account"], // Loads only Material Design Icon's "account" SVG
       },
     }),
   ],
@@ -206,7 +186,7 @@ export default defineConfig({
   // ...
   integrations: [
     icon({
-      iconDir: "src/images/icons",
+      iconDir: "src/assets/icons",
     }),
   ],
 });
@@ -214,9 +194,9 @@ export default defineConfig({
 
 #### config.svgoOptions
 
-If you want to change the `svgo` options instead of using the defaults, specify the options using `config.svgoOptions`. Read more about the available [`svgo` options here](https://github.com/svg/svgo#configuration)
+If you want to behavior of `.svg` optimization, you can configure the `svgo` options rather than using the defaults. Read more about the available [`svgo` options here](https://github.com/svg/svgo#configuration).
 
-```js ins={2}
+```js
 import { defineConfig } from "astro/config";
 import icon from "astro-icon";
 
@@ -248,16 +228,9 @@ export default defineConfig({
 });
 ```
 
-## Examples
-
-TODO: Examples
-
 ## Migrating to v1
 
-TODO:
-
-- sprite
-- icon packs
+`astro-icon` v1 contains a number of breaking changes. Please reference the [**Migrate to `astro-icon` v1** guide](https://github.com/natemoo-re/astro-icon/tree/main/docs/migrate-to-v1.md) to update from older versions of `astro-icon`.
 
 ## Contributing
 
