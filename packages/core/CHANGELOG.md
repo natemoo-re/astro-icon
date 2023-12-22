@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.0.0-next.4
+
+### Patch Changes
+
+- [#111](https://github.com/natemoo-re/astro-icon/pull/111) [`1d65511c418b0fef0668e760c33bff21deeb8ef3`](https://github.com/natemoo-re/astro-icon/commit/1d65511c418b0fef0668e760c33bff21deeb8ef3) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Updates the `exports` field to point to the correct `astro-icon/components` source file
+
 ## 1.0.0-next.3
 
 ### Patch Changes
