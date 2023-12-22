@@ -10,7 +10,7 @@ import type { SVG, Color, SVGOOptions } from "../../typings/iconify";
 
 export default async function createLocalCollection(
   dir: string,
-  options: SVGOOptions = { plugins: ["preset-default"] }
+  options: SVGOOptions = { plugins: ["preset-default"] },
 ): Promise<IconCollection> {
   // Import icons
   const local = await importDirectory(dir, {

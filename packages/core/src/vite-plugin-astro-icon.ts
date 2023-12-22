@@ -17,7 +17,7 @@ interface PluginContext extends Pick<AstroConfig, "root" | "output"> {
 let collections: AstroIconCollectionMap | undefined;
 export function createPlugin(
   { include = {}, iconDir = "src/icons", svgoOptions }: IntegrationOptions,
-  ctx: PluginContext
+  ctx: PluginContext,
 ): Plugin {
   const { root } = ctx;
   const virtualModuleId = "virtual:astro-icon";
@@ -46,7 +46,7 @@ export function createPlugin(
         await generateIconTypeDefinitions(Object.values(collections), root);
 
         return `export default ${JSON.stringify(
-          collections
+          collections,
         )};\nexport const config = ${JSON.stringify({ include })}`;
       }
     },
@@ -55,7 +55,7 @@ export function createPlugin(
 
 function logCollections(
   collections: AstroIconCollectionMap,
-  { logger }: PluginContext
+  { logger }: PluginContext,
 ) {
   if (Object.keys(collections).length === 0) {
     logger.warn("No icons detected!");
@@ -68,7 +68,7 @@ function logCollections(
 async function generateIconTypeDefinitions(
   collections: IconCollection[],
   rootDir: URL,
-  defaultPack = "local"
+  defaultPack = "local",
 ): Promise<void> {
   const typeFile = new URL("./.astro/icon.d.ts", rootDir);
   await ensureDir(new URL("./", typeFile));
@@ -93,14 +93,14 @@ declare module 'virtual:astro-icon' {
                     collection.prefix === defaultPack
                       ? ""
                       : `${collection.prefix}:`
-                  }${icon}"`
-              )
+                  }${icon}"`,
+              ),
             )
             .flat(1)
             .join("")
         : "never"
     };
-}`
+}`,
   );
 }
 

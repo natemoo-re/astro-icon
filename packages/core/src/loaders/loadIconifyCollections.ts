@@ -33,16 +33,16 @@ export default async function loadIconifyCollections({
   const possibleCollections = await Promise.all(
     installedCollections.map((collectionName) =>
       loadCollection(collectionName).then(
-        (possibleCollection) => [collectionName, possibleCollection] as const
-      )
-    )
+        (possibleCollection) => [collectionName, possibleCollection] as const,
+      ),
+    ),
   );
 
   const collections = possibleCollections.reduce<AstroIconCollectionMap>(
     (acc, [name, collection]) => {
       if (!collection) {
         console.error(
-          `[astro-icon] "${name}" does not appear to be a valid iconify collection! Did you install the "@iconify-json/${name}" dependency?`
+          `[astro-icon] "${name}" does not appear to be a valid iconify collection! Did you install the "@iconify-json/${name}" dependency?`,
         );
         return acc;
       }
@@ -58,21 +58,21 @@ export default async function loadIconifyCollections({
       const reducedCollection = getIcons(collection, requestedIcons);
       if (!reducedCollection) {
         console.error(
-          `[astro-icon] "${name}" failed to load the specified icons!`
+          `[astro-icon] "${name}" failed to load the specified icons!`,
         );
         return acc;
       } else if (
         Object.keys(reducedCollection.icons).length !== requestedIcons.length
       ) {
         console.error(
-          `[astro-icon] "${name}" failed to load at least one of the specified icons! Verify the icon names are included in the icon collection.`
+          `[astro-icon] "${name}" failed to load at least one of the specified icons! Verify the icon names are included in the icon collection.`,
         );
       }
 
       acc[name] = reducedCollection;
       return acc;
     },
-    {}
+    {},
   );
 
   return collections;
@@ -80,7 +80,7 @@ export default async function loadIconifyCollections({
 
 export async function loadCollection(
   name: string,
-  autoInstall?: AutoInstall
+  autoInstall?: AutoInstall,
 ): Promise<IconCollection | void> {
   if (!name) return;
 
