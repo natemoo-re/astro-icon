@@ -8,6 +8,7 @@
     "www": "0.0.8"
   },
   "changesets": [
+    "cool-eyes-remain",
     "fuzzy-beers-count",
     "neat-dodos-camp",
     "plenty-turtles-exist",
