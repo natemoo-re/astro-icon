@@ -2,4 +2,4 @@
 "astro-icon": patch
 ---
 
-Oops, actually publish `dist`
+Publishes the `dist` directory

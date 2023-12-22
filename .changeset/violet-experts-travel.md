@@ -2,4 +2,4 @@
 "astro-icon": patch
 ---
 
-fix: correctly pass SVGO Options
+Updates the SVGO options so that they are correctly passed through the build process

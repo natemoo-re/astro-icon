@@ -2,4 +2,4 @@
 "astro-icon": patch
 ---
 
-move warning about local directory to on use
+Moves warning about local directory to the moment they are used
