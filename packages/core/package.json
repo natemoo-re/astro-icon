@@ -8,7 +8,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./components": "./components/index.js"
+    "./components": "./components/index.ts"
   },
   "files": [
     "components",
