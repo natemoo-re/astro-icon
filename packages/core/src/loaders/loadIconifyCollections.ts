@@ -6,7 +6,7 @@ import type {
 import type { AutoInstall } from "../../typings/iconify";
 
 import { readFile } from "node:fs/promises";
-import { detectAgent } from '@skarab/detect-package-manager';
+import { detectAgent } from "@skarab/detect-package-manager";
 import { getIcons } from "@iconify/utils";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import { fileURLToPath } from "node:url";
@@ -20,14 +20,15 @@ interface LoadOptions {
   include?: IntegrationOptions["include"];
 }
 
-export default async function loadIconifyCollections(
-  { root, include = {} }: LoadOptions
-): Promise<AstroIconCollectionMap> {
+export default async function loadIconifyCollections({
+  root,
+  include = {},
+}: LoadOptions): Promise<AstroIconCollectionMap> {
   const installedCollections = await detectInstalledCollections(root);
   // If icons are installed locally but not explicitly included, include the whole pack
   for (let name of installedCollections) {
     if (include[name] !== undefined) continue;
-    include[name] = ['*'];
+    include[name] = ["*"];
   }
   const possibleCollections = await Promise.all(
     installedCollections.map((collectionName) =>
@@ -89,9 +90,11 @@ export async function loadCollection(
 async function detectInstalledCollections(root: URL) {
   try {
     const agent = await detectAgent(fileURLToPath(root));
-    let packages: string[] = []
+    let packages: string[] = [];
     if (!agent) {
-      const text = await readFile(new URL('./package.json', root), { encoding: 'utf8' });
+      const text = await readFile(new URL("./package.json", root), {
+        encoding: "utf8",
+      });
       const { dependencies = {}, devDependencies = {} } = JSON.parse(text);
       packages.push(...Object.keys(dependencies));
       packages.push(...Object.keys(devDependencies));
@@ -109,8 +112,10 @@ async function detectInstalledCollections(root: URL) {
         packages.push(...Object.keys(devDependencies));
       }
     }
-    const collections = packages.filter(name => name.startsWith('@iconify-json/')).map(name => name.replace('@iconify-json/', ''));
+    const collections = packages
+      .filter((name) => name.startsWith("@iconify-json/"))
+      .map((name) => name.replace("@iconify-json/", ""));
     return collections;
   } catch {}
-  return []
+  return [];
 }

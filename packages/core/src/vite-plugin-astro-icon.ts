@@ -10,8 +10,8 @@ import loadLocalCollection from "./loaders/loadLocalCollection.js";
 import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
 import { createHash } from "node:crypto";
 
-interface PluginContext extends Pick<AstroConfig, 'root' | 'output'> {
-  logger: AstroIntegrationLogger
+interface PluginContext extends Pick<AstroConfig, "root" | "output"> {
+  logger: AstroIntegrationLogger;
 }
 
 let collections: AstroIconCollectionMap | undefined;
@@ -54,13 +54,16 @@ export function createPlugin(
   };
 }
 
-function logCollections(collections: AstroIconCollectionMap, { logger, output }: PluginContext) {
+function logCollections(
+  collections: AstroIconCollectionMap,
+  { logger, output }: PluginContext
+) {
   if (Object.keys(collections).length === 0) {
-    logger.warn('No icons detected!');
+    logger.warn("No icons detected!");
     return;
   }
   const names: string[] = Object.keys(collections);
-  logger.info(`Loaded icons from ${names.join(', ')}`)
+  logger.info(`Loaded icons from ${names.join(", ")}`);
 }
 
 async function generateIconTypeDefinitions(
@@ -69,7 +72,7 @@ async function generateIconTypeDefinitions(
   defaultPack = "local"
 ): Promise<void> {
   const typeFile = new URL("./.astro/icon.d.ts", rootDir);
-  const oldHash = await tryGetHash(typeFile)
+  const oldHash = await tryGetHash(typeFile);
   const currentHash = collectionsHash(collections);
   if (currentHash === oldHash) {
     return;
@@ -103,23 +106,23 @@ declare module 'virtual:astro-icon' {
 }
 
 function collectionsHash(collections: IconCollection[]): string {
-  const hash = createHash('sha256')
+  const hash = createHash("sha256");
   for (const collection of collections) {
-    hash.update(collection.prefix)
-    hash.update(Object.keys(collection.icons).sort().join(','))
+    hash.update(collection.prefix);
+    hash.update(Object.keys(collection.icons).sort().join(","));
   }
-  return hash.digest('hex');
+  return hash.digest("hex");
 }
 
 async function tryGetHash(path: URL): Promise<string | void> {
   try {
-    const text = await readFile(path, { encoding: 'utf-8' })
-    return text.split('\n', 3)[1].replace('// ', '');
+    const text = await readFile(path, { encoding: "utf-8" });
+    return text.split("\n", 3)[1].replace("// ", "");
   } catch {}
 }
 
 async function ensureDir(path: URL): Promise<void> {
   try {
-    await mkdir(path, { recursive: true })
+    await mkdir(path, { recursive: true });
   } catch {}
 }
