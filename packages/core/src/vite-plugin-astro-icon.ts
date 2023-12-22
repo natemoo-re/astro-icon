@@ -45,7 +45,9 @@ export function createPlugin(
         }
         await generateIconTypeDefinitions(Object.values(collections), root);
 
-        return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
+        return `export default ${JSON.stringify(
+          collections
+        )};\nexport const config = ${JSON.stringify({ include })}`;
       }
     },
   };
