@@ -21,10 +21,10 @@ export default defineConfig({
 				{
 					label: 'Guides',
 					items: [
-						{ label: 'Icons', link: '/guides/icons/' },
+						{ label: 'Customizing Icons', link: '/guides/customization/' },
 						{ label: 'Components', link: '/guides/components/' },
-						{ label: 'Styling', link: '/guides/styling/' },
-						{ label: 'Server Rendering', link: '/guides/server-rendering/' },
+						{ label: 'CSS & Styling', link: '/guides/styling/' },
+						{ label: 'Deployment', link: '/guides/deployment/' },
 					],
 				},
 				{

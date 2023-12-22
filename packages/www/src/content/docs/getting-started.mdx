@@ -1,164 +1,153 @@
 ---
 title: Getting Started
-description: Learn how to start building your next documentation site with Starlight by Astro.
+description: Learn how to add Astro Icon to your existing Astro project.
 next: 
-  link: /guides/icons/
-  label: Icons
+  link: /guides/customization/
+  label: Customizing Icons
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Starlight is a full-featured documentation theme built on top of the [Astro](https://astro.build) framework.
-This guide will help you get started with a new project.
-See the [manual setup instructions](/manual-setup/) to add Starlight to an existing Astro project.
+Astro Icon is a straightforward icon system for the [Astro](https://astro.build) framework.
+This guide assumes that you have an existing Astro project.
 
-## Quick Start
+See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if you are starting a brand new project.
 
-### Create a new project
+## Installation
 
-Create a new Astro + Starlight project by running the following command in your terminal:
+### Quick Install
+
+The `astro add` command-line tool automates the installation for you. Run one of the following commands in a new terminal window. (If you aren't sure which package manager you're using, run the first command.) Then, follow the prompts, and type "y" in the terminal (meaning "yes") for each one.
 
 <Tabs>
 <TabItem label="npm">
 
 ```sh
-npm create astro@latest -- --template starlight
+npx astro add astro-icon
 ```
 
 </TabItem>
 <TabItem label="pnpm">
 
 ```sh
-pnpm create astro --template starlight
+pnpm astro add astro-icon
 ```
 
 </TabItem>
 <TabItem label="Yarn">
 
 ```sh
-yarn create astro --template starlight
+yarn astro add astro-icon
 ```
 
 </TabItem>
+
 </Tabs>
 
-This will create a new [project directory](/guides/project-structure/) with all the necessary files and configurations for your site.
+If you run into any issues, [feel free to report them to us on GitHub](https://github.com/natemoo-re/astro-icon/issues) and try the manual installation steps below.
 
-:::tip[See it in action]
-Try Starlight in your browser:
-[open the template on StackBlitz](https://stackblitz.com/github/withastro/starlight/tree/main/examples/basics).
-:::
+### Manual Install
 
-### Start the development server
-
-When working locally, [Astro’s development server](https://docs.astro.build/en/reference/cli-reference/#astro-dev) lets you preview your work and automatically refreshes your browser when you make changes.
-
-Inside your project directory, run the following command to start the development server:
+First, install the `astro-icon` package using your package manager. Run one of the following commands in the terminal:
 
 <Tabs>
 <TabItem label="npm">
 
 ```sh
-npm run dev
+npm install astro-icon
 ```
 
 </TabItem>
 <TabItem label="pnpm">
 
 ```sh
-pnpm dev
+pnpm add astro-icon
 ```
 
 </TabItem>
 <TabItem label="Yarn">
 
 ```sh
-yarn dev
+yarn add astro-icon
 ```
 
 </TabItem>
+
 </Tabs>
 
-This will log a message to your terminal with the URL of your local preview.
-Open this URL to start browsing your site.
+Then, apply this integration to your `astro.config.*` file using the `integrations` property:
 
-### Add content
+```diff title="astro.config.mjs" lang="js" ins="icon()"
+import { defineConfig } from "astro/config";
++ import icon from "astro-icon";
 
-Starlight is ready for you to add new content, or bring your existing files!
-
-#### File formats
-
-Starlight supports authoring content in Markdown and MDX with no configuration required.
-You can add support for Markdoc by installing the experimental [Astro Markdoc integration](https://docs.astro.build/en/guides/integrations-guide/markdoc/).
-
-#### Add Icons
-
-Add new pages to your site by creating `.md` or `.mdx` files in `src/content/docs/`.
-Use sub-folders to organize your files and to create multiple path segments.
-
-For example, the following file structure will generate pages at `example.com/hello-world` and `example.com/guides/faq`:
-
-#### Type-safe frontmatter
-
-All Starlight pages share a customizable [common set of frontmatter properties](/reference/frontmatter/) to control how the page appears:
-
-```md
----
-title: Hello, World!
-description: This is a page in my Starlight-powered site
----
+export default defineConfig({
+  integrations: [icon()],
+});
 ```
 
-If you forget anything important, Starlight will let you know.
+### Add Icons
+
+Add new icons to your site by creating `.svg` files in `/src/icons/`.
+Use sub-folders to organize your files and create multiple sets of icons.
+
+Icons in the `/src/icons/` directory can be automatically referenced by their slug, for example:
+
+```astro mark="/src/icons/logo.svg" mark="logo" mark="/src/icons/logos/astro.svg" mark="logos/astro"
+---
+import { Icon } from 'astro-icon/components'
+---
+
+<!-- Embed the contents of the `/src/icons/logo.svg` file -->
+<Icon name="logo" />
+
+<!-- Embed the contents of the `/src/icons/logos/astro.svg` file -->
+<Icon name="logos/astro" />
+```
+
 
 ### Next steps
 
-- **Configure:** Learn about common options in [“Customizing Starlight”](/guides/customization/).
-- **Navigate:** Set up your sidebar with the [“Sidebar Navigation”](/guides/sidebar/) guide.
-- **Components:** Discover built-in cards, tabs, and more in the [“Components”](/guides/components/) guide.
-- **Deploy:** Publish your work with the [“Deploy your site”](https://docs.astro.build/en/guides/deploy/) guide in the Astro docs.
+- **Configure:** Learn about additional icon options in [“Customizing Icons”](/guides/customization/).
+- **Components:** Understand the built-in `Icon` component in the [“Components”](/guides/components/) guide.
+- **Deploy:** Before you publish your project, refer to the [“Server Rendering”](/guides/server-rendering/) guide.
 
-## Updating Starlight
+## Updating Astro Icon
 
-:::tip
-Because Starlight is beta software, there will be frequent updates and improvements.
-Be sure to update Starlight regularly!
-:::
-
-Starlight is an Astro integration. You can update it and other Astro packages by running the following command in your terminal:
+Astro Icon is a third-party Astro integration, which are not yet supported by `@astrojs/upgrade`. Instead, you can upgrade `astro-icon` by running the following command in your terminal:
 
 <Tabs>
 <TabItem label="npm">
 
 ```sh
-npx @astrojs/upgrade
+npm install astro-icon@latest
 ```
 
 </TabItem>
 <TabItem label="pnpm">
 
 ```sh
-pnpm dlx @astrojs/upgrade
+pnpm add astro-icon@latest
 ```
 
 </TabItem>
 <TabItem label="Yarn">
 
 ```sh
-yarn dlx @astrojs/upgrade
+yarn add astro-icon@latest
 ```
 
 </TabItem>
 </Tabs>
 
-See the [Starlight changelog](https://github.com/withastro/starlight/blob/main/packages/starlight/CHANGELOG.md) for a full list of the changes made in each release.
+See the [Astro Icon changelog](https://github.com/natemoo-re/astro-icon/blob/main/packages/core/CHANGELOG.md) for a full list of the changes made in each release.
 
-## Troubleshooting Starlight
+## Troubleshooting Astro Icon
 
-Use the [project configuration](/reference/configuration/) and [individual page frontmatter configuration](/reference/frontmatter/) reference pages to ensure that your Starlight site is configured and functioning properly.
-See the guides in the sidebar for help adding content and customizing your Starlight site.
+Use the [Customizing Icons](/guides/customization/) guide and [project configuration](/reference/configuration/) reference pages to ensure that Astro Icon is configured and functioning properly.
+See the guides in the sidebar for help with additional topics.
 
 If your answer cannot be found in these docs, please visit the [full Astro Docs](https://docs.astro.build) for complete Astro documentation.
-Your question may be answered by understanding how Astro works in general, underneath this Starlight theme.
+Your question may be answered by understanding how Astro works in general.
 
-You can also check for any known [Starlight issues on GitHub](https://github.com/withastro/starlight/issues), and get help in the [Astro Discord](https://astro.build/chat/) from our active, friendly community! Post questions in our `#support` forum with the "starlight" tag, or visit our dedicated `#starlight` channel to discuss current development and more!
+You can also check for any known [Astro Icon issues on GitHub](https://github.com/natemoo-re/astro-icon/issues). Although this is not an official Astro package, we encourage you to join the [Astro Discord](https://astro.build/chat/) and chat with the active, friendly Astro community!
