@@ -1,6 +1,6 @@
-import type { AstroIntegration } from "astro";
 import type { IntegrationOptions } from "../typings/integration";
 import { createPlugin } from "./vite-plugin-astro-icon.js";
+import type { AstroIntegration } from 'astro';
 
 export default function createIntegration(
   opts: IntegrationOptions = {}
@@ -8,13 +8,18 @@ export default function createIntegration(
   return {
     name: "astro-icon",
     hooks: {
-      async "astro:config:setup"({ updateConfig, command, config }) {
+      "astro:config:setup"({ updateConfig, config, logger }) {
+        const external = config.output === 'static' ? ['@iconify-json/*'] : undefined;
+        const { root, output } = config;
         updateConfig({
           vite: {
-            plugins: [await createPlugin(opts, { root: config.root })],
+            plugins: [createPlugin(opts, { root, output, logger })],
+            ssr: {
+              external
+            }
           },
         });
       },
     },
-  };
+  }
 }

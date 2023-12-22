@@ -17,7 +17,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "tsc --watch"
+    "dev": "tsc --watch",
+    "start": "pnpm run dev"
   },
   "author": {
     "name": "Nate Moore",
@@ -48,13 +49,13 @@
   "dependencies": {
     "@iconify/tools": "^3.0.1",
     "@iconify/types": "^2.0.0",
-    "@iconify/utils": "^2.1.5"
+    "@iconify/utils": "^2.1.5",
+    "@skarab/detect-package-manager": "^1.0.0"
   },
   "devDependencies": {
-    "@astrojs/ts-plugin": "^1.0.6",
-    "@types/node": "^16.11.7",
-    "astro": "^2.5.0",
+    "@types/node": "^18.18.0",
+    "astro": "^4.0.0",
     "typescript": "^5.0.4",
-    "vite": "^4.3.8"
+    "vite": "^5.0.0"
   }
 }

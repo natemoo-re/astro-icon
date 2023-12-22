@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src", "typings"],
+  "include": [
+    "src",
+    "typings"
+  ],
   "compilerOptions": {
     "allowJs": true,
     "module": "ES2022",
@@ -21,7 +24,10 @@
     "synchronousWatchDirectory": true,
     // Finally, two additional settings for reducing the amount of possible
     // files to track  work from these directories
-    "excludeDirectories": ["**/node_modules", "_build"],
-    "excludeFiles": ["build/fileWhichChangesOften.ts"]
+    "excludeDirectories": [
+      "**/node_modules",
+      "_build"
+    ],
+    "excludeFiles": []
   }
 }
