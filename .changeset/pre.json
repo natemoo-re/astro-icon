@@ -7,11 +7,5 @@
     "service": "0.1.0",
     "www": "0.0.8"
   },
-  "changesets": [
-    "fuzzy-beers-count",
-    "neat-dodos-camp",
-    "plenty-turtles-exist",
-    "seven-buttons-perform",
-    "violet-experts-travel"
-  ]
+  "changesets": ["fuzzy-beers-count", "plenty-turtles-exist"]
 }
