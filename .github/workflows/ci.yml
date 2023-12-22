@@ -51,11 +51,8 @@ jobs:
           neutral_check_on_warning: true
 
   smoke:
-    name: 'Smoke Test: ${{ matrix.target }}'
+    name: Smoke Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [demo]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
@@ -63,12 +60,9 @@ jobs:
         with:
           node-version: 18
           cache: 'pnpm'
-      - run: pnpm install --prefer-offline --frozen-lockfile
-      - run: pnpm build
-        working-directory: ${{ matrix.target }}
+      - run: pnpm install
+      - run: pnpm -r build
 
-  # Changelog can only run _after_ Build and Test.
-  # We download all `dist/` artifacts from GitHub to skip the build process.
   changelog:
     name: Changelog PR or Release
     if: ${{ github.ref_name == 'main' }}
