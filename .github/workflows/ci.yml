@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'v1'
   pull_request:
     paths-ignore:
       - '.vscode/**'
@@ -65,7 +66,7 @@ jobs:
 
   changelog:
     name: Changelog PR or Release
-    if: ${{ github.ref_name == 'main' }}
+    if: ${{ github.ref_name == 'main' || github.ref_name == 'v1' }}
     needs: [lint, smoke]
     runs-on: ubuntu-latest
     steps:
