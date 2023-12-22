@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - 'main'
-      - 'v1'
   pull_request:
-    paths-ignore:
-      - '.vscode/**'
 
 # Automatically cancel in-progress actions on the same branch
 concurrency:
@@ -63,32 +60,3 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm -r build
-
-  changelog:
-    name: Changelog PR or Release
-    if: ${{ github.ref_name == 'main' || github.ref_name == 'v1' }}
-    needs: [lint, smoke]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'pnpm'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: pnpm install --prefer-offline --frozen-lockfile
-      - run: pnpm --filter astro-icon run build
-      - name: Create Release Pull Request or Publish
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: pnpm run version
-          commit: 'chore: release'
-          title: 'chore: release'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
