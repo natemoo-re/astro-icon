@@ -1,0 +1,56 @@
+name: "Bug Report"
+description: Report an issue or possible bug
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ##  Quick Checklist
+        Thank you for taking the time to file a bug report! Please fill out this form as completely as possible.
+
+        ✅ I am using the **latest version of Astro Icon**.
+        ✅ Astro Icon has been added to my `astro.config.mjs` file as an `integration`.
+        ✅ I have installed the corresponding `@iconify-json/*` packages.
+        ✅ I am using the **latest version of Astro** and all plugins.
+        ✅ I am using a version of Node that Astro supports (`>=18.14.1`)
+  - type: input
+    id: astro-icon
+    attributes:
+      label: What version of `astro-icon` are you using?
+      placeholder: v1.0.0
+  - type: textarea
+    id: astro-info
+    attributes:
+      label: Astro Info
+      description: Run the command `astro info` in your terminal and paste the output here. Please review the data before submitting in case there is any sensitive information you don't want to share.
+      render: block
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: If this issue only occurs in one browser, which browser is a problem?
+      placeholder: Chrome, Firefox, Safari
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: bug-expectation
+    attributes:
+      label: What's the expected result?
+      description: Describe what you expect to happen.
+    validations:
+      required: true
+  - type: input
+    id: bug-reproduction
+    attributes:
+      label: Link to Minimal Reproducible Example
+      description: 'Use [astro.new](https://astro.new) to create a minimal reproduction of the problem. **A minimal reproduction is required** so that we can help debug your issue!'
+      placeholder: 'https://stackblitz.com/abcd1234'
+    validations:
+      required: true
