@@ -230,7 +230,7 @@ export default defineConfig({
 
 ## Migrating to v1
 
-`astro-icon` v1 contains a number of breaking changes. Please reference the [**Migrate to `astro-icon` v1** guide](https://github.com/natemoo-re/astro-icon/tree/main/docs/migrate-to-v1.md) to update from older versions of `astro-icon`.
+`astro-icon` v1 contains a number of breaking changes. Please reference the [**Migrate to `astro-icon` v1** guide](https://www.astroicon.dev/guides/upgrade/v1/) to update from older versions of `astro-icon`.
 
 ## Contributing
 
