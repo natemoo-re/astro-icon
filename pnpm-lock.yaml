@@ -51,9 +51,6 @@ importers:
       "@iconify/utils":
         specifier: ^2.1.5
         version: 2.1.13
-      "@skarab/detect-package-manager":
-        specifier: ^1.0.0
-        version: 1.0.0
     devDependencies:
       "@types/node":
         specifier: ^18.18.0
@@ -1613,14 +1610,6 @@ packages:
     os: [win32]
     requiresBuild: true
     optional: true
-
-  /@skarab/detect-package-manager@1.0.0:
-    resolution:
-      {
-        integrity: sha512-CuU1x6LgkJIF+H8FCnKijx6DbWVP1Y7kqPk88LSxNe0ulbe3BZ37qd3AaX3t5vnFZESLFMcjQd2dlPhdvWNSdQ==,
-      }
-    engines: { node: ">=14", pnpm: ">=7" }
-    dev: false
 
   /@trysound/sax@0.2.0:
     resolution:
