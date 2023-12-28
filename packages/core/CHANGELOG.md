@@ -1,5 +1,13 @@
 # astro-icon
 
+## 1.0.1
+
+### Patch Changes
+
+- [#172](https://github.com/natemoo-re/astro-icon/pull/172) [`3819bd149236e7496beff275adc0239b098fe8ea`](https://github.com/natemoo-re/astro-icon/commit/3819bd149236e7496beff275adc0239b098fe8ea) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fix broken link in README
+
+- [#175](https://github.com/natemoo-re/astro-icon/pull/175) [`c8c3df3c7fbeb85ad6bf5af67c53048ea26abefc`](https://github.com/natemoo-re/astro-icon/commit/c8c3df3c7fbeb85ad6bf5af67c53048ea26abefc) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes an issue that caused installed `@iconify-json/*` packages to not be detected in production environments
+
 ## 1.0.0
 
 ### Major Changes
