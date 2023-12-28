@@ -6,10 +6,8 @@ import type {
 import type { AutoInstall } from "../../typings/iconify";
 
 import { readFile } from "node:fs/promises";
-import { detectAgent } from "@skarab/detect-package-manager";
 import { getIcons } from "@iconify/utils";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
-import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { exec } from "node:child_process";
 
@@ -89,29 +87,13 @@ export async function loadCollection(
 
 async function detectInstalledCollections(root: URL) {
   try {
-    const agent = await detectAgent(fileURLToPath(root));
     let packages: string[] = [];
-    if (!agent) {
-      const text = await readFile(new URL("./package.json", root), {
-        encoding: "utf8",
-      });
-      const { dependencies = {}, devDependencies = {} } = JSON.parse(text);
-      packages.push(...Object.keys(dependencies));
-      packages.push(...Object.keys(devDependencies));
-    } else {
-      const { stdout: text } = await execa(`${agent.name} list --json`);
-      const data = JSON.parse(text);
-      if (Array.isArray(data)) {
-        for (const { dependencies = {}, devDependencies = {} } of data) {
-          packages.push(...Object.keys(dependencies));
-          packages.push(...Object.keys(devDependencies));
-        }
-      } else {
-        const { dependencies = {}, devDependencies = {} } = data;
-        packages.push(...Object.keys(dependencies));
-        packages.push(...Object.keys(devDependencies));
-      }
-    }
+    const text = await readFile(new URL("./package.json", root), {
+      encoding: "utf8",
+    });
+    const { dependencies = {}, devDependencies = {} } = JSON.parse(text);
+    packages.push(...Object.keys(dependencies));
+    packages.push(...Object.keys(devDependencies));
     const collections = packages
       .filter((name) => name.startsWith("@iconify-json/"))
       .map((name) => name.replace("@iconify-json/", ""));
