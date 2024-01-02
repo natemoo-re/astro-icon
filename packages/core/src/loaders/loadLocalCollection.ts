@@ -16,6 +16,8 @@ export default async function createLocalCollection(
   const local = await importDirectory(dir, {
     prefix: "local",
     keepTitles: true,
+    includeSubDirs: true,
+    keyword: (file) => file.subdir + file.file,
   });
 
   // Validate, clean up, fix palette and optimize
