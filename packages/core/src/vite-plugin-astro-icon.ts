@@ -55,14 +55,14 @@ export function createPlugin(
 
 function logCollections(
   collections: AstroIconCollectionMap,
-  { logger, iconDir  }: PluginContext & { iconDir: string },
+  { logger, iconDir }: PluginContext & { iconDir: string },
 ) {
   if (Object.keys(collections).length === 0) {
     logger.warn("No icons detected!");
     return;
   }
-  const names: string[] = Object.keys(collections).filter(v => v !== 'local');
-  if (collections['local']) {
+  const names: string[] = Object.keys(collections).filter((v) => v !== "local");
+  if (collections["local"]) {
     names.unshift(iconDir);
   }
   logger.info(`Loaded icons from ${names.join(", ")}`);
