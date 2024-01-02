@@ -1,5 +1,31 @@
 # astro-icon
 
+## 1.0.2
+
+### Patch Changes
+
+- [#184](https://github.com/natemoo-re/astro-icon/pull/184) [`beefcb732c266bc3eedfa12740c0842fef7deccf`](https://github.com/natemoo-re/astro-icon/commit/beefcb732c266bc3eedfa12740c0842fef7deccf) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Improves handling of invalid local icons, which previously caused all local icons to silently fail.
+
+- [#179](https://github.com/natemoo-re/astro-icon/pull/179) [`b55cd5f92da8988467e86cb2a45d3dfa82ef3ffa`](https://github.com/natemoo-re/astro-icon/commit/b55cd5f92da8988467e86cb2a45d3dfa82ef3ffa) Thanks [@natemoo-re](https://github.com/natemoo-re)! - **BREAKING**: Requires subdirectory prefixes for local icons.
+
+  This fixes a regression introduced in v1 and matches the previous v0 `name` behavior.
+
+  As an example, the `src/icons/logos/astro.svg` file could previously be referenced by the name `astro`. It should correctly be referenced as `logos/astro`.
+
+  **Before**
+
+  ```jsx
+  <Icon name="astro" />
+  ```
+
+  **After**
+
+  ```jsx
+  <Icon name="logos/astro" />
+  ```
+
+- [#180](https://github.com/natemoo-re/astro-icon/pull/180) [`580b5cd93d373ba72418365a97dac4cddf82afd7`](https://github.com/natemoo-re/astro-icon/commit/580b5cd93d373ba72418365a97dac4cddf82afd7) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Removes an unecessary warning when only using local icons
+
 ## 1.0.1
 
 ### Patch Changes
