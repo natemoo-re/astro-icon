@@ -17,7 +17,7 @@ export default async function createLocalCollection(
     prefix: "local",
     keepTitles: true,
     includeSubDirs: true,
-    keyword: (file) => file.subdir + file.file
+    keyword: (file) => file.subdir + file.file,
   });
 
   // Validate, clean up, fix palette and optimize
