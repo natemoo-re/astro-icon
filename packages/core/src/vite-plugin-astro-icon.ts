@@ -34,7 +34,6 @@ export function createPlugin(
       if (id === resolvedVirtualModuleId) {
         if (!collections) {
           collections = await loadIconifyCollections({ root, include });
-          logCollections(collections, ctx);
         }
         try {
           // Attempt to create local collection
@@ -43,6 +42,7 @@ export function createPlugin(
         } catch (ex) {
           // Failed to load the local collection
         }
+        logCollections(collections, { ...ctx, iconDir });
         await generateIconTypeDefinitions(Object.values(collections), root);
 
         return `export default ${JSON.stringify(
@@ -55,13 +55,16 @@ export function createPlugin(
 
 function logCollections(
   collections: AstroIconCollectionMap,
-  { logger }: PluginContext,
+  { logger, iconDir  }: PluginContext & { iconDir: string },
 ) {
   if (Object.keys(collections).length === 0) {
     logger.warn("No icons detected!");
     return;
   }
-  const names: string[] = Object.keys(collections);
+  const names: string[] = Object.keys(collections).filter(v => v !== 'local');
+  if (collections['local']) {
+    names.unshift(iconDir);
+  }
   logger.info(`Loaded icons from ${names.join(", ")}`);
 }
 
