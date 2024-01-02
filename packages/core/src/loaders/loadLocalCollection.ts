@@ -17,6 +17,7 @@ export default async function createLocalCollection(
     prefix: "local",
     keepTitles: true,
     includeSubDirs: true,
+    ignoreImportErrors: 'warn',
     keyword: (file) => file.subdir + file.file,
   });
 
