@@ -40,7 +40,7 @@ let [setName, iconName] = (name as string).split(":");
 if (!setName && iconName) {
   const err = new AstroIconError(`Invalid "name" provided!`);
   if (import.meta.env.DEV) {
-    err.hint = `The provided value of "${name}" is invalid.\n\nDid you forget the icon set name? If you were attemping to reference a local icon, use the icon's name directly. (ie. "${providedIconName}")`;
+    err.hint = `The provided value of "${name}" is invalid.\n\nDid you forget the icon set name? If you were attemping to reference a local icon, use the icon's name directly. (ie. "${iconName}")`;
   }
   throw err;
 }
