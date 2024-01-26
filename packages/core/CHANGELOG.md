@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.0.3
+
+### Patch Changes
+
+- [`2aad9d7ab21cdeff91ce43a21babf70e81b1d116`](https://github.com/natemoo-re/astro-icon/commit/2aad9d7ab21cdeff91ce43a21babf70e81b1d116) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes an internal TypeScript issue that may have been visible when running `astro check`
+
 ## 1.0.2
 
 ### Patch Changes
