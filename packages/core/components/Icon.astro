@@ -108,7 +108,7 @@ if (props.size) {
   props.height = props.size;
   delete props.size;
 }
-const renderData = iconToSVG(iconData);
+const renderData = iconToSVG(iconData, { width: "auto", height: "auto" });
 const normalizedProps = { ...renderData.attributes, ...props };
 const normalizedBody = renderData.body;
 ---
