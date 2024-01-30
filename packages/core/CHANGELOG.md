@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.0.4
+
+### Patch Changes
+
+- [#198](https://github.com/natemoo-re/astro-icon/pull/198) [`aac1ca330f6fdb56a6f3c32c4a91444ee746b557`](https://github.com/natemoo-re/astro-icon/commit/aac1ca330f6fdb56a6f3c32c4a91444ee746b557) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes a regression in `1.0.3` that changed how icons were sized
+
 ## 1.0.3
 
 ### Patch Changes
