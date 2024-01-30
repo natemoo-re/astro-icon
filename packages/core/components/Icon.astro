@@ -9,6 +9,7 @@ import { cache } from "./cache.js";
 
 interface Props extends HTMLAttributes<"svg"> {
   name: Icon;
+  "is:inline"?: boolean;
   title?: string;
   size?: number;
   width?: number;
@@ -24,7 +25,7 @@ class AstroIconError extends Error {
 }
 
 const req = Astro.request;
-const { name = "", title, ...props } = Astro.props;
+const { name = "", title, "is:inline": inline = false, ...props } = Astro.props;
 const map = cache.get(req) ?? new Map();
 const i = map.get(name) ?? 0;
 map.set(name, i + 1);
@@ -33,7 +34,7 @@ cache.set(req, map);
 const { include = {} } = config;
 const sets = Object.keys(include);
 
-const includeSymbol = i === 0;
+const includeSymbol = !inline && i === 0;
 
 let [setName, iconName] = (name as string).split(":");
 
@@ -115,6 +116,14 @@ const normalizedBody = renderData.body;
 
 <svg {...normalizedProps} data-icon={name}>
   {title && <title>{title}</title>}
-  {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
-  <use xlink:href={`#${id}`}></use>
+  {
+    inline ? (
+      <Fragment id={id} set:html={normalizedBody} />
+    ) : (
+      <Fragment>
+        {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
+        <use xlink:href={`#${id}`} />
+      </Fragment>
+    )
+  }
 </svg>
