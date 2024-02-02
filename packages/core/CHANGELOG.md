@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.1.0
+
+### Minor Changes
+
+- [#200](https://github.com/natemoo-re/astro-icon/pull/200) [`d7528f61484d5b60108cbe00bc5fb856766688d0`](https://github.com/natemoo-re/astro-icon/commit/d7528f61484d5b60108cbe00bc5fb856766688d0) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Adds support for the `is:inline` directive, which bypasses automatic sprite optimization and directly embeds the plain SVG.
+
 ## 1.0.4
 
 ### Patch Changes
