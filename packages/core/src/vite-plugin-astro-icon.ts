@@ -14,11 +14,11 @@ interface PluginContext extends Pick<AstroConfig, "root" | "output"> {
   logger: AstroIntegrationLogger;
 }
 
-let collections: AstroIconCollectionMap | undefined;
 export function createPlugin(
   { include = {}, iconDir = "src/icons", svgoOptions }: IntegrationOptions,
   ctx: PluginContext,
 ): Plugin {
+  let collections: AstroIconCollectionMap | undefined;
   const { root } = ctx;
   const virtualModuleId = "virtual:astro-icon";
   const resolvedVirtualModuleId = "\0" + virtualModuleId;
