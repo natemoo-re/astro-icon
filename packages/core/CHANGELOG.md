@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.1.1
+
+### Patch Changes
+
+- [#203](https://github.com/natemoo-re/astro-icon/pull/203) [`a4ff8736965214e16ce0b72364f43b3a4973f281`](https://github.com/natemoo-re/astro-icon/commit/a4ff8736965214e16ce0b72364f43b3a4973f281) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes an issue where collections would not be updated when the dev server was automatically restarted
+
 ## 1.1.0
 
 ### Minor Changes
