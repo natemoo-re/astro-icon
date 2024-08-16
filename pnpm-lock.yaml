@@ -44,14 +44,14 @@ importers:
   packages/core:
     dependencies:
       '@iconify/tools':
-        specifier: ^4.0.4
+        specifier: ^4.0.5
         version: 4.0.5
       '@iconify/types':
         specifier: ^2.0.0
         version: 2.0.0
       '@iconify/utils':
-        specifier: ^2.1.5
-        version: 2.1.13
+        specifier: ^2.1.30
+        version: 2.1.30
     devDependencies:
       '@types/node':
         specifier: ^18.18.0
@@ -111,9 +111,6 @@ packages:
 
   '@antfu/utils@0.7.10':
     resolution: {integrity: sha512-+562v9k4aI80m1+VuMHehNJWLOFjBnXn3tdOitzD0il5b7smkSBal4+a3oKiQTbrwMmN/TBUMDvbdoWDehgOww==}
-
-  '@antfu/utils@0.7.7':
-    resolution: {integrity: sha512-gFPqTG7otEJ8uP6wrhDv6mqwGWYZKNvAcCq6u9hOj0c+IKCEsY4L1oC9trPq2SaWIzAfHvqfBDxF591JkMf+kg==}
 
   '@astrojs/check@0.3.4':
     resolution: {integrity: sha512-Wi4KwW38J3GCd/U6LH2UuU4uc4P/K1WYaqhoKm2o7rVoGhQfO+RWrSO26rUPRXYbmae8JugAgpCmsHC8bt5RlA==}
@@ -523,9 +520,6 @@ packages:
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
-
-  '@iconify/utils@2.1.13':
-    resolution: {integrity: sha512-6uWvJIo715xYRy1KmCCyZYW0YYkLjaojEExoEkxpOHKhi9cyHW8hVKo+m8zrxzNVSqjUx9OuVRa2BWXeXfkp5A==}
 
   '@iconify/utils@2.1.30':
     resolution: {integrity: sha512-bY0IO5xLOlbzJBnjWLxknp6Sss3yla03sVY9VeUz9nT6dbc+EGKlLfCt+6uytJnWm5CUvTF/BNotsLWF7kI61A==}
@@ -1917,10 +1911,6 @@ packages:
     resolution: {integrity: sha512-OfCBkGEw4nN6JLtgRidPX6QxjBQGQf72q3si2uvqyFEMbycSFFHwAZeXx6cJgFM9wmLrf9zBwCP3Ivqa+LLZPw==}
     engines: {node: '>=6'}
 
-  local-pkg@0.4.3:
-    resolution: {integrity: sha512-SFppqq5p42fe2qcZQqqEOiVRXl+WCP1MdT6k7BDEW1j++sp5fIY+/fdRQitvKgB5BrBcmrs5m/L0v2FrU5MY1g==}
-    engines: {node: '>=14'}
-
   local-pkg@0.5.0:
     resolution: {integrity: sha512-ok6z3qlYyCDS4ZEU27HaU6x/xZa9Whf8jD4ptH5UZTQYZVYeb9bnZ3ojVhiJNLiXK1Hfc0GNbLXcmZ5plLDDBg==}
     engines: {node: '>=14'}
@@ -2697,9 +2687,11 @@ packages:
 
   shikiji@0.6.13:
     resolution: {integrity: sha512-4T7X39csvhT0p7GDnq9vysWddf2b6BeioiN3Ymhnt3xcy9tXmDcnsEFVxX18Z4YcQgEE/w48dLJ4pPPUcG9KkA==}
+    deprecated: Shikiji is merged back to Shiki v1.0, please migrate over to get the latest updates
 
   shikiji@0.8.7:
     resolution: {integrity: sha512-j5usxwI0yHkDTHOuhuSJl9+wT5CNYeYO82dJMSJBlJ/NYT5SIebGcPoL6y9QOyH15wGrJC4LOP2nz5k8mUDGRQ==}
+    deprecated: Shikiji is merged back to Shiki v1.0, please migrate over to get the latest updates
 
   side-channel@1.0.4:
     resolution: {integrity: sha512-q5XPytqFEIKHkGdiMIrY10mvLRvnQh42/+GoBlFW3b2LXLE2xxJpZFdm94we0BaoV3RwJyGqg5wS7epxTv0Zvw==}
@@ -3349,8 +3341,6 @@ snapshots:
 
   '@antfu/utils@0.7.10': {}
 
-  '@antfu/utils@0.7.7': {}
-
   '@astrojs/check@0.3.4(prettier@3.1.1)(typescript@5.3.3)':
     dependencies:
       '@astrojs/language-server': 2.5.5(prettier@3.1.1)(typescript@5.3.3)
@@ -3935,17 +3925,6 @@ snapshots:
 
   '@iconify/types@2.0.0': {}
 
-  '@iconify/utils@2.1.13':
-    dependencies:
-      '@antfu/install-pkg': 0.1.1
-      '@antfu/utils': 0.7.7
-      '@iconify/types': 2.0.0
-      debug: 4.3.4
-      kolorist: 1.8.0
-      local-pkg: 0.4.3
-    transitivePeerDependencies:
-      - supports-color
-
   '@iconify/utils@2.1.30':
     dependencies:
       '@antfu/install-pkg': 0.1.1
@@ -4241,9 +4220,9 @@ snapshots:
 
   '@vscode/l10n@0.0.16': {}
 
-  acorn-jsx@5.3.2(acorn@8.11.2):
+  acorn-jsx@5.3.2(acorn@8.12.1):
     dependencies:
-      acorn: 8.11.2
+      acorn: 8.12.1
 
   acorn@8.11.2: {}
 
@@ -4999,7 +4978,7 @@ snapshots:
 
   extract-zip@2.0.1:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.6
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -5602,8 +5581,6 @@ snapshots:
       pify: 4.0.1
       strip-bom: 3.0.0
 
-  local-pkg@0.4.3: {}
-
   local-pkg@0.5.0:
     dependencies:
       mlly: 1.7.1
@@ -5987,8 +5964,8 @@ snapshots:
 
   micromark-extension-mdxjs@3.0.0:
     dependencies:
-      acorn: 8.11.2
-      acorn-jsx: 5.3.2(acorn@8.11.2)
+      acorn: 8.12.1
+      acorn-jsx: 5.3.2(acorn@8.12.1)
       micromark-extension-mdx-expression: 3.0.0
       micromark-extension-mdx-jsx: 3.0.0
       micromark-extension-mdx-md: 2.0.0
@@ -6113,7 +6090,7 @@ snapshots:
   micromark@4.0.0:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.3.4
+      debug: 4.3.6
       decode-named-character-reference: 1.0.2
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.0

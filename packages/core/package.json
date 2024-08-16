@@ -47,9 +47,9 @@
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "dependencies": {
-    "@iconify/tools": "^4.0.4",
+    "@iconify/tools": "^4.0.5",
     "@iconify/types": "^2.0.0",
-    "@iconify/utils": "^2.1.5"
+    "@iconify/utils": "^2.1.30"
   },
   "devDependencies": {
     "@types/node": "^18.18.0",
