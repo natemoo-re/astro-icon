@@ -17,7 +17,7 @@ interface Props extends HTMLAttributes<"svg"> {
 }
 
 class AstroIconError extends Error {
-  public hint: string;
+  public hint: string = '';
 
   constructor(message: string) {
     super(message);
