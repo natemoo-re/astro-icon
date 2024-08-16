@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -23,7 +23,7 @@ jobs:
           cache: 'pnpm'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: pnpm install --prefer-offline --frozen-lockfile
+      - run: pnpm install
       - run: pnpm --filter astro-icon run build
       - name: Create Release Pull Request or Publish
         id: changesets
