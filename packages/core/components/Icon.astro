@@ -11,9 +11,9 @@ interface Props extends HTMLAttributes<"svg"> {
   name: Icon;
   "is:inline"?: boolean;
   title?: string;
-  size?: number;
-  width?: number;
-  height?: number;
+  size?: number | string;
+  width?: number | string;
+  height?: number | string;
 }
 
 class AstroIconError extends Error {
