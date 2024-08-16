@@ -1,5 +1,15 @@
 # astro-icon
 
+## 1.1.1
+
+### Patch Changes
+
+- [#219](https://github.com/natemoo-re/astro-icon/pull/219) [`f18661fc47da152e7555d24b23143f0b481c852b`](https://github.com/natemoo-re/astro-icon/commit/f18661fc47da152e7555d24b23143f0b481c852b) Thanks [@Harry-Ross](https://github.com/Harry-Ross)! - Added better typings for height, width and size to accept non-number values (i.e. 2 rem)
+
+- [#203](https://github.com/natemoo-re/astro-icon/pull/203) [`a4ff8736965214e16ce0b72364f43b3a4973f281`](https://github.com/natemoo-re/astro-icon/commit/a4ff8736965214e16ce0b72364f43b3a4973f281) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes an issue where collections would not be updated when the dev server was automatically restarted
+
+- [#230](https://github.com/natemoo-re/astro-icon/pull/230) [`7b11f6b0fb8977bfa35305f48ce70e9bc04ea07a`](https://github.com/natemoo-re/astro-icon/commit/7b11f6b0fb8977bfa35305f48ce70e9bc04ea07a) Thanks [@frankievalentine](https://github.com/frankievalentine)! - Fixes a type definition issue caused by outdated dependency
+
 ## 1.1.0
 
 ### Minor Changes
