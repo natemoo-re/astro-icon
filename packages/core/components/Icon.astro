@@ -14,6 +14,7 @@ interface Props extends HTMLAttributes<"svg"> {
   size?: number | string;
   width?: number | string;
   height?: number | string;
+  symbol?: boolean;
 }
 
 class AstroIconError extends Error {
@@ -25,7 +26,7 @@ class AstroIconError extends Error {
 }
 
 const req = Astro.request;
-const { name = "", title, "is:inline": inline = false, ...props } = Astro.props;
+const { name = "", title, "is:inline": inline = false, symbol: isSymbol, ...props } = Astro.props;
 const map = cache.get(req) ?? new Map();
 const i = map.get(name) ?? 0;
 map.set(name, i + 1);
@@ -112,18 +113,22 @@ if (props.size) {
 const renderData = iconToSVG(iconData);
 const normalizedProps = { ...renderData.attributes, ...props };
 const normalizedBody = renderData.body;
+const symbolProps = isSymbol ? { viewBox: renderData.attributes.viewBox } : {};
 ---
-
-<svg {...normalizedProps} data-icon={name}>
-  {title && <title>{title}</title>}
-  {
-    inline ? (
-      <Fragment id={id} set:html={normalizedBody} />
-    ) : (
-      <Fragment>
-        {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
-        <use xlink:href={`#${id}`} />
-      </Fragment>
-    )
-  }
-</svg>
+{
+  isSymbol && !inline
+    ? (includeSymbol ? <symbol id={id} set:html={normalizedBody} {...symbolProps} /> : <></>)
+    : <svg {...normalizedProps} data-icon={name}>
+      {title && <title>{title}</title>}
+      {
+        inline ? (
+          <Fragment id={id} set:html={normalizedBody} />
+        ) : (
+          <Fragment>
+            {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
+            <use xlink:href={`#${id}`} />
+          </Fragment>
+        )
+      }
+    </svg>
+}
