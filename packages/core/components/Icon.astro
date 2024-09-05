@@ -113,7 +113,7 @@ if (props.size) {
 const renderData = iconToSVG(iconData);
 const normalizedProps = { ...renderData.attributes, ...props };
 const normalizedBody = renderData.body;
-const symbolProps = isSymbol ? { viewBox: renderData.attributes.viewBox } : {};
+const symbolProps = { viewBox: renderData.attributes.viewBox };
 ---
 {
   isSymbol && !inline
@@ -125,7 +125,7 @@ const symbolProps = isSymbol ? { viewBox: renderData.attributes.viewBox } : {};
           <Fragment id={id} set:html={normalizedBody} />
         ) : (
           <Fragment>
-            {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
+            {includeSymbol && <symbol id={id} set:html={normalizedBody} {...symbolProps} />}
             <use xlink:href={`#${id}`} />
           </Fragment>
         )
