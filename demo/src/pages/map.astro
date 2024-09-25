@@ -1,12 +1,12 @@
 ---
-import { Icon } from "astro-icon/components";
+import Star from 'astro:icons/ic/outline-star'
 import Base from "../layouts/base.astro";
 ---
 
 <Base>
   <h1>Welcome to Astro Icon!</h1>
 
-  {Array.from({ length: 5 }).map(() => <Icon name="ic:outline-star" />)}
+  {Array.from({ length: 5 }).map(() => <Star />)}
 </Base>
 
 <style lang="css">
