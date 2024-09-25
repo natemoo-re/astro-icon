@@ -8,12 +8,9 @@ interface PluginContext extends Pick<AstroConfig, "cacheDir"> {
 }
 
 const DEFAULT_ICON_SIZE = 24;
-const VIRTUAL_MODULE_ID = 'astro:icons/'
+const VIRTUAL_MODULE_ID = "astro:icons/";
 
-export function createPlugin({
-  cacheDir,
-}: PluginContext
-): Plugin {
+export function createPlugin({ cacheDir }: PluginContext): Plugin {
   const resolvedVirtualModuleId = "\0" + VIRTUAL_MODULE_ID;
 
   return {
@@ -27,15 +24,22 @@ export function createPlugin({
     async load(id) {
       if (id.startsWith(resolvedVirtualModuleId)) {
         const name = id.slice(resolvedVirtualModuleId.length);
-        const [collection, icon] = name.split('/');
+        const [collection, icon] = name.split("/");
 
         const data = await getIconData(collection, icon, { cacheDir });
         if (!data) return;
 
-        const { width = DEFAULT_ICON_SIZE, height = DEFAULT_ICON_SIZE, body } = data;
+        const {
+          width = DEFAULT_ICON_SIZE,
+          height = DEFAULT_ICON_SIZE,
+          body,
+        } = data;
         const svg = `<svg data-icon="${collection}:${icon}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`;
 
-        return makeSvgComponent({ src: name, format: 'svg', height, width }, svg);
+        return makeSvgComponent(
+          { src: name, format: "svg", height, width },
+          svg,
+        );
       }
     },
     configureServer({ watcher, moduleGraph }) {

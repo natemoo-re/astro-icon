@@ -47,8 +47,7 @@
     "url": "https://github.com/natemoo-re/astro-icon/issues"
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.7.0",
     "astro": "../../../astro/packages/astro",
