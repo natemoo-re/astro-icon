@@ -8,8 +8,7 @@
     "build": "astro build",
     "preview": "astro preview"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "astro": "../../astro/packages/astro",
     "astro-icon": "../packages/core"
