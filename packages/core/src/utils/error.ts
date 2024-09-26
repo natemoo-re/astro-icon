@@ -1,7 +1,7 @@
 export class AstroIconError extends Error {
-    public hint: string = '';
-  
-    constructor(message: string) {
-      super(message);
-    }
+  public hint: string = "";
+
+  constructor(message: string) {
+    super(message);
   }
+}
