@@ -50,8 +50,8 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.7.0",
-    "astro": "../../../astro/packages/astro",
+    "astro": "^4.15.9",
     "typescript": "^5.6.2",
-    "vite": "^5.4.7"
+    "vite": "^5.4.8"
   }
 }

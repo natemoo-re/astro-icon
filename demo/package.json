@@ -10,7 +10,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "astro": "../../astro/packages/astro",
+    "astro": "^4.15.9",
     "astro-icon": "../packages/core"
   }
 }
