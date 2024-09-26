@@ -2,16 +2,18 @@ import type { AstroConfig, AstroIntegrationLogger } from "astro";
 import type { Plugin } from "vite";
 import { makeSvgComponent } from "astro/assets/utils";
 import { getIconData } from "./utils/icon.js";
+import { FileCache } from "./utils/cache.js";
 
-interface PluginContext extends Pick<AstroConfig, "cacheDir"> {
+interface PluginOptions extends Pick<AstroConfig, "cacheDir"> {
   logger: AstroIntegrationLogger;
 }
 
 const DEFAULT_ICON_SIZE = 24;
 const VIRTUAL_MODULE_ID = "astro:icons/";
+const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
 
-export function createPlugin({ cacheDir }: PluginContext): Plugin {
-  const resolvedVirtualModuleId = "\0" + VIRTUAL_MODULE_ID;
+export function createPlugin(options: PluginOptions): Plugin {
+  const cache = new FileCache(new URL("astro-icon/icons/", options.cacheDir), options.logger);
 
   return {
     name: "astro-icon",
@@ -22,12 +24,22 @@ export function createPlugin({ cacheDir }: PluginContext): Plugin {
     },
 
     async load(id) {
-      if (id.startsWith(resolvedVirtualModuleId)) {
-        const name = id.slice(resolvedVirtualModuleId.length);
+      if (id.startsWith(RESOLVED_VIRTUAL_MODULE_ID)) {
+        const name = id.slice(RESOLVED_VIRTUAL_MODULE_ID.length);
         const [collection, icon] = name.split("/");
 
-        const data = await getIconData(collection, icon, { cacheDir });
-        if (!data) return;
+        let data: Awaited<ReturnType<typeof getIconData>> | undefined;
+        try {
+          data = await getIconData(collection, icon, { cache });
+          if (!data) return;
+        } catch (e) {
+          if (e instanceof Error) {
+            options.logger.error(e.message);
+            return;
+          } else {
+            throw e;
+          }
+        }
 
         const {
           width = DEFAULT_ICON_SIZE,
