@@ -1,4 +1,5 @@
 import type { FileCache } from "./cache.js";
+import { AstroIconError } from "./error.js";
 import { dedupeFetch } from "./fetch.js";
 
 interface IconCollection {
@@ -22,18 +23,28 @@ function getIconifyUrl(collection: string) {
   return new URL(`./${collection}.json`, ICONIFY_REPO);
 }
 
-async function fetchCollection(collection: string): Promise<IconCollection> {
-  let collectionData: IconCollection | undefined;
-  try {
-    const res = await fetch(getIconifyUrl(collection));
-    collectionData = await res.json();
-  } catch {
-    throw new Error(`An error occurred while attempting to fetch icon collection "${collection}"`);
+async function fetchCollection(collection: string, { cache }: { cache: FileCache}): Promise<IconCollection> {
+  let collectionData = await cache.read<IconCollection>(collection);
+  if (collectionData) {
+    return collectionData
   }
+
+  try {
+    collectionData = await dedupeFetch(async (collectionName) => {
+      const res = await fetch(getIconifyUrl(collectionName));
+      return res.json();
+    }, collection);
+  } catch {}
   
   if (!collectionData) {
-    throw new Error(`Unable to locate icon collection "${collection}"`);
+    const err = new AstroIconError(`Unable to locate the icon collection "${collection}"`);
+    // @ts-expect-error -- TODO: figure out why this is throwing an error
+    if (import.meta.env.DEV) {
+      err.hint = `The "${collection}" icon collection does not exist.\n\nIs this a typo?`;
+    }
+    throw err;
   }
+  await cache.write(collection, collectionData);
 
   return collectionData;
 }
@@ -43,16 +54,16 @@ export async function getIconData(
   name: string,
   { cache }: { cache: FileCache },
 ): Promise<IconData | undefined> {
-  let collectionData = await cache.read<IconCollection>(collection);
-  
-  if (!collectionData) {
-    collectionData = await dedupeFetch(fetchCollection, collection);
-    await cache.write(collection, collectionData);
-  }
+  const collectionData = await fetchCollection(collection, { cache });
 
   const { icons } = collectionData;
   if (icons[name] === undefined) {
-    throw new Error(`Unable to locate icon "${collection}:${name}"`);
+    const err = new AstroIconError(`Unable to locate the icon "${collection}:${name}"`);
+    // @ts-expect-error -- TODO: figure out why this is throwing an error
+    if (import.meta.env.DEV) {
+      err.hint = `The "${collection}" icon collection does not include an icon named "${name}".\n\nIs this a typo?`;
+    }
+    throw err;
   }
 
   return icons[name];
