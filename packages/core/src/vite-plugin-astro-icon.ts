@@ -13,7 +13,7 @@ const DEFAULT_ICON_SIZE = 24;
 const VIRTUAL_MODULE_ID = "astro:icons/";
 const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
 
-export function createPlugin({cacheDir, logger}: PluginOptions): Plugin {
+export function createPlugin({ cacheDir, logger }: PluginOptions): Plugin {
   const cache = new FileCache(new URL("astro-icon/icons/", cacheDir), logger);
 
   return {
@@ -39,7 +39,7 @@ export function createPlugin({cacheDir, logger}: PluginOptions): Plugin {
             body,
           } = data;
           const svg = `<svg data-icon="${collection}:${icon}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`;
-  
+
           return makeSvgComponent(
             { src: name, format: "svg", height, width },
             svg,

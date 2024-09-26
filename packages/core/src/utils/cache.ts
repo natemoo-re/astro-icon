@@ -4,7 +4,10 @@ import fs from "node:fs";
 export class FileCache {
   private enabled = true;
 
-  constructor(private cacheDir: URL, private logger: AstroIntegrationLogger) {
+  constructor(
+    private cacheDir: URL,
+    private logger: AstroIntegrationLogger,
+  ) {
     try {
       fs.mkdirSync(cacheDir, { recursive: true });
     } catch (err) {
@@ -17,12 +20,12 @@ export class FileCache {
 
   async read<T>(key: string): Promise<T | undefined> {
     if (!this.enabled) return;
-    
+
     try {
       const path = new URL(`./${key}.json`, this.cacheDir);
       return JSON.parse(fs.readFileSync(path, { encoding: "utf-8" })) as T;
     } catch {
-        this.logger.debug(`Cache miss for key "${key}"`);
+      this.logger.debug(`Cache miss for key "${key}"`);
     }
   }
 
@@ -31,9 +34,13 @@ export class FileCache {
 
     try {
       const path = new URL(`./${key}.json`, this.cacheDir);
-      await fs.promises.writeFile(path, JSON.stringify(data), { encoding: "utf-8" });
+      await fs.promises.writeFile(path, JSON.stringify(data), {
+        encoding: "utf-8",
+      });
     } catch {
-        this.logger.debug(`An error occurred while attempting to write to the cache for key "${key}"`);
+      this.logger.debug(
+        `An error occurred while attempting to write to the cache for key "${key}"`,
+      );
     }
   }
 }

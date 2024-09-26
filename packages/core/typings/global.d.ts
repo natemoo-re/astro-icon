@@ -1,3 +1,3 @@
 interface Error {
-    hint?: string;
+  hint?: string;
 }
