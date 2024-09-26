@@ -8,11 +8,9 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./components": "./components/index.ts",
     "./types": "./typings/virtual.d.ts"
   },
   "files": [
-    "components",
     "dist",
     "typings"
   ],
