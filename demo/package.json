@@ -11,6 +11,6 @@
   "dependencies": {},
   "devDependencies": {
     "astro": "^4.15.9",
-    "astro-icon": "../packages/core"
+    "astro-icon": "workspace:^"
   }
 }

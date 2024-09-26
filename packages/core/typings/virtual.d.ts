@@ -1,4 +1,4 @@
-/// <reference types="astro/jsx-runtime" />
+/// <reference types="astro/client" />
 
 declare module "astro:icons/*" {
   type Props = {

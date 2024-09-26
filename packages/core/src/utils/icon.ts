@@ -38,7 +38,6 @@ async function fetchCollection(collection: string, { cache }: { cache: FileCache
   
   if (!collectionData) {
     const err = new AstroIconError(`Unable to locate the icon collection "${collection}"`);
-    // @ts-expect-error -- TODO: figure out why this is throwing an error
     if (import.meta.env.DEV) {
       err.hint = `The "${collection}" icon collection does not exist.\n\nIs this a typo?`;
     }
@@ -59,7 +58,6 @@ export async function getIconData(
   const { icons } = collectionData;
   if (icons[name] === undefined) {
     const err = new AstroIconError(`Unable to locate the icon "${collection}:${name}"`);
-    // @ts-expect-error -- TODO: figure out why this is throwing an error
     if (import.meta.env.DEV) {
       err.hint = `The "${collection}" icon collection does not include an icon named "${name}".\n\nIs this a typo?`;
     }
