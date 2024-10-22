@@ -108,7 +108,6 @@ interface Props extends HTMLAttributes<"svg"> {
 ```
 
 The `Icon` also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
-https://github.com/natemoo-re/astro-icon/blob/main/packages/core/components/Icon.astro#L10-L17
 See the [`Props.ts`](./packages/core/components/Icon.astro#L10-L17) file for more details.
 
 ### Styling
