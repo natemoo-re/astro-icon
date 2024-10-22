@@ -54,13 +54,13 @@ import { Icon } from 'astro-icon/components'
 <!-- First usage generates the following HTML -->
 <svg data-icon="logo">
 	<symbol id="ai:uniqueid"><!-- contents of /src/icons/logo.svg --></symbol>
-	<use xlink:href="#ai:uniqueid"></use>
+	<use href="#ai:uniqueid"></use>
 </svg>
 
 <Icon name="logo" />
 <!-- Additional usage generates the following HTML -->
 <svg data-icon="logo">
-	<use xlink:href="#ai:uniqueid"></use>
+	<use href="#ai:uniqueid"></use>
 </svg>
 ```
 
