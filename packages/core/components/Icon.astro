@@ -6,6 +6,7 @@ import type { Icon } from "virtual:astro-icon";
 import { getIconData, iconToSVG } from "@iconify/utils";
 import type { HTMLAttributes } from "astro/types";
 import { cache } from "./cache.js";
+import type { IconifyIconBuildResult } from "@iconify/utils/lib/svg/build.js";
 
 interface Props extends HTMLAttributes<"svg"> {
   name: Icon;
@@ -110,8 +111,13 @@ if (props.size) {
   delete props.size;
 }
 const renderData = iconToSVG(iconData);
-const normalizedProps = { ...renderData.attributes, ...props };
+const normalizedProps = { ...renderData.attributes as Partial<IconifyIconBuildResult['attributes']>, ...props };
 const normalizedBody = renderData.body;
+
+const { viewBox } = normalizedProps;
+if (includeSymbol) {
+  delete normalizedProps.viewBox;
+}
 ---
 
 <svg {...normalizedProps} data-icon={name}>
@@ -121,7 +127,7 @@ const normalizedBody = renderData.body;
       <Fragment id={id} set:html={normalizedBody} />
     ) : (
       <Fragment>
-        {includeSymbol && <symbol id={id} set:html={normalizedBody} />}
+        {includeSymbol && <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />}
         <use xlink:href={`#${id}`} />
       </Fragment>
     )
