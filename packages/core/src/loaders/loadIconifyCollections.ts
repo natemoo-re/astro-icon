@@ -45,7 +45,7 @@ export default async function loadIconifyCollections({
         return acc;
       }
 
-      const requestedIcons = include[name];
+      const requestedIcons = Array.from(new Set(include[name]));
 
       // Requested entire icon collection
       if (requestedIcons.length === 1 && requestedIcons[0] === "*") {
