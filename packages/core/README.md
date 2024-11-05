@@ -99,16 +99,17 @@ interface Props extends HTMLAttributes<"svg"> {
    * References a specific Icon
    */
   name: string;
+  "is:inline"?: boolean;
   title?: string;
-  size?: number;
-  width?: number;
-  height?: number;
+  desc?: string;
+  size?: number | string;
+  width?: number | string;
+  height?: number | string;
 }
 ```
 
 The `Icon` also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
-
-See the [`Props.ts`](./packages/core/lib/Props.ts) file for more details.
+See the [`Props.ts`](./packages/core/components/Icon.astro#L10-L17) file for more details.
 
 ### Styling
 
