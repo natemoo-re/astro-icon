@@ -3,4 +3,4 @@
 "www": patch
 ---
 
-fix(Icon): switch to non-deprecated `href` attribute
+Replaces deprecated `xlink:href` attribute with standard `href` attribute
