@@ -130,7 +130,7 @@ if (includeSymbol) {
     ) : (
       <Fragment>
         {includeSymbol && <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />}
-        <use xlink:href={`#${id}`} />
+        <use href={`#${id}`} />
       </Fragment>
     )
   }
