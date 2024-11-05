@@ -1,5 +1,17 @@
 # astro-icon
 
+## 1.1.2
+
+### Patch Changes
+
+- [#247](https://github.com/natemoo-re/astro-icon/pull/247) [`fce07f17fe67116165d5d3dd279519bb7bbed55c`](https://github.com/natemoo-re/astro-icon/commit/fce07f17fe67116165d5d3dd279519bb7bbed55c) Thanks [@christina-de-martinez](https://github.com/christina-de-martinez)! - Adds a `desc` prop shorthand which maps to the SVG `<desc>` tag, similar to `title`.
+
+- [#246](https://github.com/natemoo-re/astro-icon/pull/246) [`4c5da3378436c2bee6ccdf4ad9cf0e1f32fb6903`](https://github.com/natemoo-re/astro-icon/commit/4c5da3378436c2bee6ccdf4ad9cf0e1f32fb6903) Thanks [@stramel](https://github.com/stramel)! - Fixes an issue where `viewBox` was not correctly passed to `<symbol>` elements
+
+- [#245](https://github.com/natemoo-re/astro-icon/pull/245) [`ff3a66a8a357375076022b6f9800561ed845c071`](https://github.com/natemoo-re/astro-icon/commit/ff3a66a8a357375076022b6f9800561ed845c071) Thanks [@stramel](https://github.com/stramel)! - Fixes handling of duplicate icon entries in the integration configuration
+
+- [#243](https://github.com/natemoo-re/astro-icon/pull/243) [`a8c0a6c5fe2a01841c258af5fb3abe04839df5eb`](https://github.com/natemoo-re/astro-icon/commit/a8c0a6c5fe2a01841c258af5fb3abe04839df5eb) Thanks [@stramel](https://github.com/stramel)! - Replaces deprecated `xlink:href` attribute with standard `href` attribute
+
 ## 1.1.1
 
 ### Patch Changes
