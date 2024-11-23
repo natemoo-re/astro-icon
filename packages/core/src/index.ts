@@ -7,8 +7,17 @@ export default function createIntegration(): AstroIntegration {
     hooks: {
       "astro:config:setup"({ updateConfig, config, logger }) {
         updateConfig({
+          experimental: {
+            svg: config.experimental?.svg ?? { mode: "inline" },
+          },
           vite: {
-            plugins: [createPlugin({ cacheDir: config.cacheDir, logger })],
+            plugins: [
+              createPlugin({
+                cacheDir: config.cacheDir,
+                logger,
+                experimental: config.experimental,
+              }),
+            ],
           } as ViteUserConfig,
         });
       },

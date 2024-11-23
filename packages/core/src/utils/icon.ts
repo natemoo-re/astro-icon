@@ -15,7 +15,7 @@ interface IconData {
 }
 
 const ICONIFY_REPO = new URL(
-  `https://raw.githubusercontent.com/iconify/icon-sets/master/json/`,
+  `https://raw.githubusercontent.com/iconify/icon-sets/master/json/`
 );
 
 function getIconifyUrl(collection: string) {
@@ -24,7 +24,7 @@ function getIconifyUrl(collection: string) {
 
 async function fetchCollection(
   collection: string,
-  { cache }: { cache: FileCache },
+  { cache }: { cache: FileCache }
 ): Promise<IconCollection> {
   let collectionData = await cache.read<IconCollection>(collection);
   if (collectionData) {
@@ -40,7 +40,7 @@ async function fetchCollection(
 
   if (!collectionData) {
     const err = new AstroIconError(
-      `Unable to locate the icon collection "${collection}"`,
+      `Unable to locate the icon collection "${collection}"`
     );
     if (import.meta.env.DEV) {
       err.hint = `The "${collection}" icon collection does not exist.\n\nIs this a typo?`;
@@ -55,14 +55,14 @@ async function fetchCollection(
 export async function getIconData(
   collection: string,
   name: string,
-  { cache }: { cache: FileCache },
+  { cache }: { cache: FileCache }
 ): Promise<IconData | undefined> {
   const collectionData = await fetchCollection(collection, { cache });
 
   const { icons } = collectionData;
   if (icons[name] === undefined) {
     const err = new AstroIconError(
-      `Unable to locate the icon "${collection}:${name}"`,
+      `Unable to locate the icon "${collection}:${name}"`
     );
     if (import.meta.env.DEV) {
       err.hint = `The "${collection}" icon collection does not include an icon named "${name}".\n\nIs this a typo?`;

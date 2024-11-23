@@ -5,7 +5,7 @@ import { getIconData } from "./utils/icon.js";
 import { FileCache } from "./utils/cache.js";
 import { AstroIconError } from "./utils/error.js";
 
-interface PluginOptions extends Pick<AstroConfig, "cacheDir"> {
+interface PluginOptions extends Pick<AstroConfig, "cacheDir" | "experimental"> {
   logger: AstroIntegrationLogger;
 }
 
@@ -13,7 +13,11 @@ const DEFAULT_ICON_SIZE = 24;
 const VIRTUAL_MODULE_ID = "astro:icons/";
 const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
 
-export function createPlugin({ cacheDir, logger }: PluginOptions): Plugin {
+export function createPlugin({
+  cacheDir,
+  logger,
+  experimental,
+}: PluginOptions): Plugin {
   const cache = new FileCache(new URL("astro-icon/icons/", cacheDir), logger);
 
   return {
@@ -43,6 +47,7 @@ export function createPlugin({ cacheDir, logger }: PluginOptions): Plugin {
           return makeSvgComponent(
             { src: name, format: "svg", height, width },
             svg,
+            experimental.svg
           );
         } catch (e) {
           if (e instanceof AstroIconError) {

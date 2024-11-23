@@ -10,7 +10,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "astro": "^4.15.9",
+    "astro": "^5.0.0-beta.9",
     "astro-icon": "workspace:^"
   }
 }
