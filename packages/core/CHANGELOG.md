@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.1.3
+
+### Patch Changes
+
+- [`1e6d429829a0e90ea2d43354daddedf026e08e51`](https://github.com/natemoo-re/astro-icon/commit/1e6d429829a0e90ea2d43354daddedf026e08e51) Thanks [@natemoo-re](https://github.com/natemoo-re)! - Fixes change detection logic for local icons while `astro dev` is running
+
 ## 1.1.2
 
 ### Patch Changes
