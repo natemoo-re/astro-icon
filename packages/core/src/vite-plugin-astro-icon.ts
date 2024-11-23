@@ -106,14 +106,16 @@ declare module 'virtual:astro-icon' {
       collections.length > 0
         ? collections
             .map((collection) =>
-              Object.keys(collection.icons).map(
-                (icon) =>
-                  `\n\t\t| "${
-                    collection.prefix === defaultPack
-                      ? ""
-                      : `${collection.prefix}:`
-                  }${icon}"`,
-              ),
+              Object.keys(collection.icons)
+                .concat(Object.keys(collection.aliases ?? {}))
+                .map(
+                  (icon) =>
+                    `\n\t\t| "${
+                      collection.prefix === defaultPack
+                        ? ""
+                        : `${collection.prefix}:`
+                    }${icon}"`,
+                ),
             )
             .flat(1)
             .join("")
@@ -127,7 +129,12 @@ function collectionsHash(collections: IconCollection[]): string {
   const hash = createHash("sha256");
   for (const collection of collections) {
     hash.update(collection.prefix);
-    hash.update(Object.keys(collection.icons).sort().join(","));
+    hash.update(
+      Object.keys(collection.icons)
+        .concat(Object.keys(collection.aliases ?? {}))
+        .sort()
+        .join(","),
+    );
   }
   return hash.digest("hex");
 }
