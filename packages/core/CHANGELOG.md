@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.1.4
+
+### Patch Changes
+
+- [#250](https://github.com/natemoo-re/astro-icon/pull/250) [`41218facd06f51a63d75cccb80c3745c256ec99f`](https://github.com/natemoo-re/astro-icon/commit/41218facd06f51a63d75cccb80c3745c256ec99f) Thanks [@harukats](https://github.com/harukats)! - Fixes type definitions and hash calculation for aliased icon names
+
 ## 1.1.3
 
 ### Patch Changes
