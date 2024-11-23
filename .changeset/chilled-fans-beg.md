@@ -2,4 +2,4 @@
 "astro-icon": patch
 ---
 
-fix: include aliases in icon type definitions and hash calculation
+Fixes type definitions and hash calculation for aliased icon names
