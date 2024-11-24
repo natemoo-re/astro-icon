@@ -34,7 +34,7 @@ export function createPlugin({
         const [collection, icon] = name.split("/");
 
         try {
-          const data = await getIconData(collection, icon, { cache });
+          const data = await getIconData(collection, icon, { cache, logger });
           if (!data) return;
 
           const {

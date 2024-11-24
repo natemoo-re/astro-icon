@@ -6,7 +6,6 @@ export async function dedupeFetch<T>(
 ): Promise<T> {
   const key = keys.join(":");
   if (inFlightRequests.has(key)) {
-    console.log("inflight", key);
     return inFlightRequests.get(key) as T;
   }
 

@@ -1,4 +1,4 @@
-import type { AstroIntegration, ViteUserConfig } from "astro";
+import type { AstroIntegration } from "astro";
 import { createPlugin } from "./vite-plugin-astro-icon.js";
 
 export default function createIntegration(): AstroIntegration {
@@ -18,7 +18,7 @@ export default function createIntegration(): AstroIntegration {
                 experimental: config.experimental,
               }),
             ],
-          } as ViteUserConfig,
+          },
         });
       },
     },

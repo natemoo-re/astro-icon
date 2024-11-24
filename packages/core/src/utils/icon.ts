@@ -1,3 +1,4 @@
+import type { AstroIntegrationLogger } from "astro";
 import type { FileCache } from "./cache.js";
 import { AstroIconError } from "./error.js";
 import { dedupeFetch } from "./fetch.js";
@@ -7,11 +8,13 @@ interface IconCollection {
   info: Record<string, string>;
   lastModified: number;
   icons: Record<string, IconData>;
+  aliases: Record<string, IconData>;
 }
 interface IconData {
   body: string;
   width?: number;
   height?: number;
+  hidden?: boolean;
 }
 
 const ICONIFY_REPO = new URL(
@@ -55,12 +58,13 @@ async function fetchCollection(
 export async function getIconData(
   collection: string,
   name: string,
-  { cache }: { cache: FileCache }
+  { cache, logger }: { cache: FileCache; logger: AstroIntegrationLogger }
 ): Promise<IconData | undefined> {
   const collectionData = await fetchCollection(collection, { cache });
 
-  const { icons } = collectionData;
-  if (icons[name] === undefined) {
+  const { icons, aliases } = collectionData;
+  const icon = icons[name] ?? aliases[name];
+  if (icon === undefined) {
     const err = new AstroIconError(
       `Unable to locate the icon "${collection}:${name}"`
     );
@@ -70,5 +74,11 @@ export async function getIconData(
     throw err;
   }
 
-  return icons[name];
+  if (icon.hidden) {
+    logger.warn(
+      `Deprecation Warning: The icon "${collection}:${name}" has been removed from the icon set.`
+    );
+  }
+
+  return icon;
 }
