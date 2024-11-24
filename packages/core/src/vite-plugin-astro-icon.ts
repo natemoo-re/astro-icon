@@ -27,7 +27,6 @@ export function createPlugin({
         return `\0${id}`;
       }
     },
-
     async load(id) {
       if (id.startsWith(RESOLVED_VIRTUAL_MODULE_ID)) {
         const name = id.slice(RESOLVED_VIRTUAL_MODULE_ID.length);
@@ -47,7 +46,7 @@ export function createPlugin({
           return makeSvgComponent(
             { src: name, format: "svg", height, width },
             svg,
-            experimental.svg,
+            experimental.svg
           );
         } catch (e) {
           if (e instanceof AstroIconError) {
@@ -60,25 +59,6 @@ export function createPlugin({
           }
         }
       }
-    },
-    configureServer({ watcher, moduleGraph }) {
-      watcher.add(`${iconDir}/**/*.svg`);
-      watcher.on("change", async () => {
-        console.log(`Local icons changed, reloading`);
-        try {
-          if (!collections) {
-            collections = await loadIconifyCollections({ root, include });
-          }
-          const local = await loadLocalCollection(iconDir, svgoOptions);
-          collections["local"] = local;
-          logCollections(collections, { ...ctx, iconDir });
-          await generateIconTypeDefinitions(Object.values(collections), root);
-          moduleGraph.invalidateAll();
-        } catch (ex) {
-          // Failed to load the local collection
-        }
-        return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
-      });
     },
   };
 }
