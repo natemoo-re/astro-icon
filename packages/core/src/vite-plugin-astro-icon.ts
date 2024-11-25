@@ -7,6 +7,7 @@ import { AstroIconError } from "./utils/error.js";
 
 interface PluginOptions extends Pick<AstroConfig, "cacheDir" | "experimental"> {
   logger: AstroIntegrationLogger;
+  __DEV__: boolean;
 }
 
 const DEFAULT_ICON_SIZE = 24;
@@ -17,6 +18,7 @@ export function createPlugin({
   cacheDir,
   logger,
   experimental,
+  __DEV__,
 }: PluginOptions): Plugin {
   const cache = new FileCache(new URL("astro-icon/icons/", cacheDir), logger);
 
@@ -33,7 +35,11 @@ export function createPlugin({
         const [collection, icon] = name.split("/");
 
         try {
-          const data = await getIconData(collection, icon, { cache, logger });
+          const data = await getIconData(collection, icon, {
+            cache,
+            logger,
+            __DEV__,
+          });
           if (!data) return;
 
           const {

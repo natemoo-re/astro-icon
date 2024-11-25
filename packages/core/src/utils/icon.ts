@@ -27,7 +27,7 @@ function getIconifyUrl(collection: string) {
 
 async function fetchCollection(
   collection: string,
-  { cache }: { cache: FileCache }
+  { cache, __DEV__ }: { cache: FileCache; __DEV__: boolean }
 ): Promise<IconCollection> {
   let collectionData = await cache.read<IconCollection>(collection);
   if (collectionData) {
@@ -45,7 +45,7 @@ async function fetchCollection(
     const err = new AstroIconError(
       `Unable to locate the icon collection "${collection}"`
     );
-    if (import.meta.env.DEV) {
+    if (__DEV__) {
       err.hint = `The "${collection}" icon collection does not exist.\n\nIs this a typo?`;
     }
     throw err;
@@ -58,9 +58,13 @@ async function fetchCollection(
 export async function getIconData(
   collection: string,
   name: string,
-  { cache, logger }: { cache: FileCache; logger: AstroIntegrationLogger }
+  {
+    cache,
+    logger,
+    __DEV__,
+  }: { cache: FileCache; logger: AstroIntegrationLogger; __DEV__: boolean }
 ): Promise<IconData | undefined> {
-  const collectionData = await fetchCollection(collection, { cache });
+  const collectionData = await fetchCollection(collection, { cache, __DEV__ });
 
   const { icons, aliases } = collectionData;
   const icon = icons[name] ?? aliases[name];
@@ -68,7 +72,7 @@ export async function getIconData(
     const err = new AstroIconError(
       `Unable to locate the icon "${collection}:${name}"`
     );
-    if (import.meta.env.DEV) {
+    if (__DEV__) {
       err.hint = `The "${collection}" icon collection does not include an icon named "${name}".\n\nIs this a typo?`;
     }
     throw err;

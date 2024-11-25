@@ -5,7 +5,7 @@ export default function createIntegration(): AstroIntegration {
   return {
     name: "astro-icon",
     hooks: {
-      "astro:config:setup"({ updateConfig, config, logger }) {
+      "astro:config:setup"({ updateConfig, command, config, logger }) {
         updateConfig({
           experimental: {
             svg: config.experimental?.svg ?? { mode: "inline" },
@@ -16,6 +16,7 @@ export default function createIntegration(): AstroIntegration {
                 cacheDir: config.cacheDir,
                 logger,
                 experimental: config.experimental,
+                __DEV__: command === "dev",
               }),
             ],
           },
