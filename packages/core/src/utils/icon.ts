@@ -18,7 +18,7 @@ interface IconData {
 }
 
 const ICONIFY_REPO = new URL(
-  `https://raw.githubusercontent.com/iconify/icon-sets/master/json/`
+  `https://raw.githubusercontent.com/iconify/icon-sets/master/json/`,
 );
 
 function getIconifyUrl(collection: string) {
@@ -27,7 +27,7 @@ function getIconifyUrl(collection: string) {
 
 async function fetchCollection(
   collection: string,
-  { cache, __DEV__ }: { cache: FileCache; __DEV__: boolean }
+  { cache, __DEV__ }: { cache: FileCache; __DEV__: boolean },
 ): Promise<IconCollection> {
   let collectionData = await cache.read<IconCollection>(collection);
   if (collectionData) {
@@ -43,7 +43,7 @@ async function fetchCollection(
 
   if (!collectionData) {
     const err = new AstroIconError(
-      `Unable to locate the icon collection "${collection}"`
+      `Unable to locate the icon collection "${collection}"`,
     );
     if (__DEV__) {
       err.hint = `The "${collection}" icon collection does not exist.\n\nIs this a typo?`;
@@ -62,7 +62,7 @@ export async function getIconData(
     cache,
     logger,
     __DEV__,
-  }: { cache: FileCache; logger: AstroIntegrationLogger; __DEV__: boolean }
+  }: { cache: FileCache; logger: AstroIntegrationLogger; __DEV__: boolean },
 ): Promise<IconData | undefined> {
   const collectionData = await fetchCollection(collection, { cache, __DEV__ });
 
@@ -70,7 +70,7 @@ export async function getIconData(
   const icon = icons[name] ?? aliases[name];
   if (icon === undefined) {
     const err = new AstroIconError(
-      `Unable to locate the icon "${collection}:${name}"`
+      `Unable to locate the icon "${collection}:${name}"`,
     );
     if (__DEV__) {
       err.hint = `The "${collection}" icon collection does not include an icon named "${name}".\n\nIs this a typo?`;
@@ -80,7 +80,7 @@ export async function getIconData(
 
   if (icon.hidden) {
     logger.warn(
-      `Deprecation Warning: The icon "${collection}:${name}" has been removed from the icon set.`
+      `Deprecation Warning: The icon "${collection}:${name}" has been removed from the icon set.`,
     );
   }
 

@@ -52,7 +52,7 @@ export function createPlugin({
           return makeSvgComponent(
             { src: name, format: "svg", height, width },
             svg,
-            experimental.svg
+            experimental.svg,
           );
         } catch (e) {
           if (e instanceof AstroIconError) {
