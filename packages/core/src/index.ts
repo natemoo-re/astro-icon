@@ -1,23 +1,24 @@
-import type { IntegrationOptions } from "../typings/integration";
-import { createPlugin } from "./vite-plugin-astro-icon.js";
 import type { AstroIntegration } from "astro";
+import { createPlugin } from "./vite-plugin-astro-icon.js";
 
-export default function createIntegration(
-  opts: IntegrationOptions = {},
-): AstroIntegration {
+export default function createIntegration(): AstroIntegration {
   return {
     name: "astro-icon",
     hooks: {
-      "astro:config:setup"({ updateConfig, config, logger }) {
-        const external =
-          config.output === "static" ? ["@iconify-json/*"] : undefined;
-        const { root, output } = config;
+      "astro:config:setup"({ updateConfig, command, config, logger }) {
         updateConfig({
+          experimental: {
+            svg: config.experimental?.svg ?? { mode: "inline" },
+          },
           vite: {
-            plugins: [createPlugin(opts, { root, output, logger })],
-            ssr: {
-              external,
-            },
+            plugins: [
+              createPlugin({
+                cacheDir: config.cacheDir,
+                logger,
+                experimental: config.experimental,
+                __DEV__: command === "dev",
+              }),
+            ],
           },
         });
       },

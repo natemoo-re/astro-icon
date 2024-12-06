@@ -8,14 +8,9 @@
     "build": "astro build",
     "preview": "astro preview"
   },
-  "dependencies": {
-    "@iconify-json/bi": "^1.1.15",
-    "@iconify-json/fe": "^1.1.6",
-    "@iconify-json/ic": "^1.1.13",
-    "@iconify-json/ri": "^1.1.5"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "astro": "^4.0.7",
-    "astro-icon": "workspace:*"
+    "astro": "^5.0.0",
+    "astro-icon": "workspace:^"
   }
 }

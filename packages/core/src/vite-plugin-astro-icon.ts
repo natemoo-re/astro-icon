@@ -1,153 +1,70 @@
 import type { AstroConfig, AstroIntegrationLogger } from "astro";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { Plugin } from "vite";
-import type {
-  AstroIconCollectionMap,
-  IconCollection,
-  IntegrationOptions,
-} from "../typings/integration";
-import loadLocalCollection from "./loaders/loadLocalCollection.js";
-import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
-import { createHash } from "node:crypto";
+import { makeSvgComponent } from "astro/assets/utils";
+import { getIconData } from "./utils/icon.js";
+import { FileCache } from "./utils/cache.js";
+import { AstroIconError } from "./utils/error.js";
 
-interface PluginContext extends Pick<AstroConfig, "root" | "output"> {
+interface PluginOptions extends Pick<AstroConfig, "cacheDir" | "experimental"> {
   logger: AstroIntegrationLogger;
+  __DEV__: boolean;
 }
 
-export function createPlugin(
-  { include = {}, iconDir = "src/icons", svgoOptions }: IntegrationOptions,
-  ctx: PluginContext,
-): Plugin {
-  let collections: AstroIconCollectionMap | undefined;
-  const { root } = ctx;
-  const virtualModuleId = "virtual:astro-icon";
-  const resolvedVirtualModuleId = "\0" + virtualModuleId;
+const DEFAULT_ICON_SIZE = 24;
+const VIRTUAL_MODULE_ID = "astro:icons/";
+const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
+
+export function createPlugin({
+  cacheDir,
+  logger,
+  experimental,
+  __DEV__,
+}: PluginOptions): Plugin {
+  const cache = new FileCache(new URL("astro-icon/icons/", cacheDir), logger);
 
   return {
     name: "astro-icon",
     resolveId(id) {
-      if (id === virtualModuleId) {
-        return resolvedVirtualModuleId;
+      if (id.startsWith(VIRTUAL_MODULE_ID)) {
+        return `\0${id}`;
       }
     },
-
     async load(id) {
-      if (id === resolvedVirtualModuleId) {
+      if (id.startsWith(RESOLVED_VIRTUAL_MODULE_ID)) {
+        const name = id.slice(RESOLVED_VIRTUAL_MODULE_ID.length);
+        const [collection, icon] = name.split("/");
+
         try {
-          if (!collections) {
-            collections = await loadIconifyCollections({ root, include });
+          const data = await getIconData(collection, icon, {
+            cache,
+            logger,
+            __DEV__,
+          });
+          if (!data) return;
+
+          const {
+            width = DEFAULT_ICON_SIZE,
+            height = DEFAULT_ICON_SIZE,
+            body,
+          } = data;
+          const svg = `<svg data-icon="${collection}:${icon}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`;
+
+          return makeSvgComponent(
+            { src: name, format: "svg", height, width },
+            svg,
+            experimental.svg,
+          );
+        } catch (e) {
+          if (e instanceof AstroIconError) {
+            throw e;
+          } else if (e instanceof Error) {
+            logger.error(e.message);
+            return;
+          } else {
+            throw e;
           }
-          const local = await loadLocalCollection(iconDir, svgoOptions);
-          collections["local"] = local;
-          logCollections(collections, { ...ctx, iconDir });
-          await generateIconTypeDefinitions(Object.values(collections), root);
-        } catch (ex) {
-          // Failed to load the local collection
         }
-        return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
       }
-    },
-    configureServer({ watcher, moduleGraph }) {
-      watcher.add(`${iconDir}/**/*.svg`);
-      watcher.on("change", async () => {
-        console.log(`Local icons changed, reloading`);
-        try {
-          if (!collections) {
-            collections = await loadIconifyCollections({ root, include });
-          }
-          const local = await loadLocalCollection(iconDir, svgoOptions);
-          collections["local"] = local;
-          logCollections(collections, { ...ctx, iconDir });
-          await generateIconTypeDefinitions(Object.values(collections), root);
-          moduleGraph.invalidateAll();
-        } catch (ex) {
-          // Failed to load the local collection
-        }
-        return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
-      });
     },
   };
-}
-
-function logCollections(
-  collections: AstroIconCollectionMap,
-  { logger, iconDir }: PluginContext & { iconDir: string },
-) {
-  if (Object.keys(collections).length === 0) {
-    logger.warn("No icons detected!");
-    return;
-  }
-  const names: string[] = Object.keys(collections).filter((v) => v !== "local");
-  if (collections["local"]) {
-    names.unshift(iconDir);
-  }
-  logger.info(`Loaded icons from ${names.join(", ")}`);
-}
-
-async function generateIconTypeDefinitions(
-  collections: IconCollection[],
-  rootDir: URL,
-  defaultPack = "local",
-): Promise<void> {
-  const typeFile = new URL("./.astro/icon.d.ts", rootDir);
-  await ensureDir(new URL("./", typeFile));
-  const oldHash = await tryGetHash(typeFile);
-  const currentHash = collectionsHash(collections);
-  if (currentHash === oldHash) {
-    return;
-  }
-  await writeFile(
-    typeFile,
-    `// Automatically generated by astro-icon
-// ${currentHash}
-
-declare module 'virtual:astro-icon' {
-\texport type Icon = ${
-      collections.length > 0
-        ? collections
-            .map((collection) =>
-              Object.keys(collection.icons)
-                .concat(Object.keys(collection.aliases ?? {}))
-                .map(
-                  (icon) =>
-                    `\n\t\t| "${
-                      collection.prefix === defaultPack
-                        ? ""
-                        : `${collection.prefix}:`
-                    }${icon}"`,
-                ),
-            )
-            .flat(1)
-            .join("")
-        : "never"
-    };
-}`,
-  );
-}
-
-function collectionsHash(collections: IconCollection[]): string {
-  const hash = createHash("sha256");
-  for (const collection of collections) {
-    hash.update(collection.prefix);
-    hash.update(
-      Object.keys(collection.icons)
-        .concat(Object.keys(collection.aliases ?? {}))
-        .sort()
-        .join(","),
-    );
-  }
-  return hash.digest("hex");
-}
-
-async function tryGetHash(path: URL): Promise<string | void> {
-  try {
-    const text = await readFile(path, { encoding: "utf-8" });
-    return text.split("\n", 3)[1].replace("// ", "");
-  } catch {}
-}
-
-async function ensureDir(path: URL): Promise<void> {
-  try {
-    await mkdir(path, { recursive: true });
-  } catch {}
 }

@@ -1,30 +1,15 @@
 ---
-import { Icon } from "astro-icon/components";
+import BaselineAccountBox from "astro:icons/ic/baseline-account-box";
+import BaselineDirectionsRun from "astro:icons/ic/baseline-directions-run";
+import Building from "astro:icons/fe/building";
+import Alien from "astro:icons/ri/aliens-fill";
+import Stars from "astro:icons/bi/stars";
+import OutlineStar from "astro:icons/ic/outline-star";
 import Base from "../layouts/base.astro";
-
-const icon = "adjustment";
 ---
 
 <Base>
   <h1>Welcome to Astro Icon!</h1>
-
-  <p>
-    The <code>Icon</code> component will optimize and inline any SVG file inside
-    of <code>src/icons/</code>
-  </p>
-
-  <article>
-    <h2>Local Icons</h2>
-    <Icon size={24} name="adjustment" />
-    <Icon size={24} name={icon} />
-    <Icon size={24} name="annotation" />
-    <Icon size={24} name="logos/deno" />
-    <Icon name="logos/deno" />
-    <Icon width={75} name="logos/alpine" />
-    <Icon name="logos/alpine-multi-color" />
-
-    <Icon is:inline size={24} name="adjustment" />
-  </article>
 
   <article>
     <h2>Automatic Icons from Iconify</h2>
@@ -34,28 +19,29 @@ const icon = "adjustment";
     </p>
   </article>
   <!-- Pull your icon from the default remote service -->
-  <Icon size={32} name="ic:baseline-account-box" />
-  <Icon size={64} name="ic:baseline-account-box" />
-  <Icon size={80} name="ic:baseline-account-box" />
+  <BaselineAccountBox inline />
+  <BaselineAccountBox size={32} />
+  <BaselineAccountBox size={64} />
+  <BaselineAccountBox size={80} />
 
-  <Icon size={24} name="ic:baseline-directions-run" />
-  <Icon size={64} name="fe:building" />
-  <Icon size={64} name="ri:aliens-fill" />
-  <Icon name="bi:stars" />
-  <Icon name="ic:outline-star" />
+  <BaselineDirectionsRun />
+  <Building size="64" />
+  <Alien size="64" />
+  <Stars />
+  <OutlineStar />
 </Base>
 
 <style lang="css">
   [data-icon] {
     color: blue;
   }
-  [data-icon="annotation"] {
+  [data-icon="bi:stars"] {
     color: red;
   }
-  [data-icon="deno"] {
+  [data-icon="fe:building"] {
     color: #12124b;
   }
-  [data-icon="alpine"] {
-    color: rgb(45, 52, 65);
+  [data-icon="ri:aliens-fill"] {
+    color: lime;
   }
 </style>
