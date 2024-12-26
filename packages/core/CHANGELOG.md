@@ -1,5 +1,11 @@
 # astro-icon
 
+## 1.1.5
+
+### Patch Changes
+
+- [#258](https://github.com/natemoo-re/astro-icon/pull/258) [`61d5da607914212b8c7895cbffb049512a289b5a`](https://github.com/natemoo-re/astro-icon/commit/61d5da607914212b8c7895cbffb049512a289b5a) Thanks [@maxchang3](https://github.com/maxchang3)! - Fix icon reloading logic to only trigger for relevant file changes
+
 ## 1.1.4
 
 ### Patch Changes
