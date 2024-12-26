@@ -1,4 +1,6 @@
 import type { AstroConfig, AstroIntegrationLogger } from "astro";
+import { createHash } from "node:crypto";
+import {parse, resolve} from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { Plugin } from "vite";
 import type {
@@ -8,8 +10,6 @@ import type {
 } from "../typings/integration";
 import loadLocalCollection from "./loaders/loadLocalCollection.js";
 import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
-import { createHash } from "node:crypto";
-import Path from "node:path";
 
 interface PluginContext extends Pick<AstroConfig, "root" | "output"> {
   logger: AstroIntegrationLogger;
@@ -51,8 +51,8 @@ export function createPlugin(
     configureServer({ watcher, moduleGraph }) {
       watcher.add(`${iconDir}/**/*.svg`);
       watcher.on("all", async (_, filepath: string) => {
-        const parsedPath = Path.parse(filepath);
-        const resolvedIconDir = Path.resolve(root.pathname, iconDir);
+        const parsedPath = parse(filepath);
+        const resolvedIconDir = resolve(root.pathname, iconDir);
         const isSvgFileInIconDir =
           parsedPath.dir.startsWith(resolvedIconDir) &&
           parsedPath.ext === ".svg";
