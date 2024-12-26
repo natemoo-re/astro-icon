@@ -1,6 +1,6 @@
 import type { AstroConfig, AstroIntegrationLogger } from "astro";
 import { createHash } from "node:crypto";
-import {parse, resolve} from "node:path";
+import { parse, resolve } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { Plugin } from "vite";
 import type {
