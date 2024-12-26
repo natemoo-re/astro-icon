@@ -9,7 +9,7 @@ import type {
 import loadLocalCollection from "./loaders/loadLocalCollection.js";
 import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
 import { createHash } from "node:crypto";
-import Path from 'node:path'
+import Path from "node:path";
 
 interface PluginContext extends Pick<AstroConfig, "root" | "output"> {
   logger: AstroIntegrationLogger;
@@ -51,11 +51,13 @@ export function createPlugin(
     configureServer({ watcher, moduleGraph }) {
       watcher.add(`${iconDir}/**/*.svg`);
       watcher.on("all", async (_, filepath: string) => {
-        const parsedPath = Path.parse(filepath)
-        const resolvedIconDir = Path.resolve(root.pathname, iconDir)
-        const isSvgFileInIconDir = parsedPath.dir.startsWith(resolvedIconDir) && parsedPath.ext === ".svg";
+        const parsedPath = Path.parse(filepath);
+        const resolvedIconDir = Path.resolve(root.pathname, iconDir);
+        const isSvgFileInIconDir =
+          parsedPath.dir.startsWith(resolvedIconDir) &&
+          parsedPath.ext === ".svg";
         const isAstroConfig = parsedPath.name === "astro.config";
-        if (!isSvgFileInIconDir && !isAstroConfig) return;        
+        if (!isSvgFileInIconDir && !isAstroConfig) return;
         console.log(`Local icons changed, reloading`);
         try {
           if (!collections) {
