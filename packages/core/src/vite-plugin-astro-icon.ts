@@ -70,6 +70,7 @@ export function createPlugin(
           moduleGraph.invalidateAll();
         } catch (ex) {
           // Failed to load the local collection
+          throw new Error(`Failed to load local collection at: ${iconDir}`);
         }
         return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
       });
