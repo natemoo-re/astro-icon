@@ -2,8 +2,8 @@ import type { IntegrationOptions } from "../typings/integration";
 import { createPlugin } from "./vite-plugin-astro-icon.js";
 import type { AstroIntegration } from "astro";
 
-export default function createIntegration(
-  opts: IntegrationOptions = {},
+export default function createIntegration<T extends Record<string, ["*"] | readonly string[]>>(
+  opts: IntegrationOptions<T> = {},
 ): AstroIntegration {
   return {
     name: "astro-icon",
