@@ -9,10 +9,16 @@ You can style your icons with custom CSS.
 
 Customize the styles applied to every icon by using the `[data-icon]` attribute selector.
 
-```astro mark="Icon" mark="[data-icon]"
-<Icon name="twitter" />
-<Icon name="mastodon" />
-<Icon name="threads" />
+```astro mark="[data-icon]"
+---
+import Twitter from 'virtual:icons/mdi/twitter';
+import Mastodon from 'virtual:icons/ri/mastodon';
+import Threads from 'virtual:icons/simple-icons/threads';
+---
+
+<Twitter />
+<Mastodon />
+<Threads />
 
 <style>
 [data-icon] {
@@ -22,13 +28,17 @@ Customize the styles applied to every icon by using the `[data-icon]` attribute 
 </style>
 ```
 
-Customize the styles applied to a single icon by using the `[data-icon="name"]` attribute selector.
+Customize the styles applied to a single icon by using the `[data-icon="{collection}:{name}"]` attribute selector.
 
-```astro mark="Icon" mark="logo" mark="[data-icon=\"logo\"]"
-<Icon name="logo" />
+```astro mark="[data-icon=\"mdi:instagram\"]"
+---
+import Instagram from 'virtual:icons/mdi/instagram';
+---
+
+<Instagram />
 
 <style>
-[data-icon="logo"] {
+[data-icon="mdi:instagram"] {
     font-size: 2rem;
     color: var(--brand-color);
 }
@@ -38,8 +48,11 @@ Customize the styles applied to a single icon by using the `[data-icon="name"]` 
 ## Tailwind CSS
 
 Tailwind CSS support in Astro projects is provided by the [Astro Tailwind integration](https://docs.astro.build/en/guides/integrations-guide/tailwind/).
-The `Icon` component automatically passes the `class` prop through to the underlying `svg` element.
+The imported icon component automatically passes the `class` prop through to the underlying `svg` element.
 
 ```astro mark="class=\"text-xl text-emerald-700\""
-<Icon name="logo" class="text-xl text-emerald-700" />
+---
+import Facebook from 'virtual:icons/mdi/facebook';
+---
+<Facebook class="text-xl text-emerald-700" />
 ```

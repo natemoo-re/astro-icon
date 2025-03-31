@@ -14,6 +14,7 @@ export default defineConfig({
 					label: 'Start Here',
 					items: [
 						{ label: 'Getting Started', link: '/getting-started/' },
+						{ label: 'Upgrade to v2', link: '/guides/upgrade/v2/' },
 						{ label: 'Upgrade to v1', link: '/guides/upgrade/v1/' },
 						{ label: 'Acknowledgements', link: '/acknowledgements/' },
 					],
@@ -22,7 +23,6 @@ export default defineConfig({
 					label: 'Guides',
 					items: [
 						{ label: 'Customizing Icons', link: '/guides/customization/' },
-						{ label: 'Components', link: '/guides/components/' },
 						{ label: 'CSS & Styling', link: '/guides/styling/' },
 						{ label: 'Deployment', link: '/guides/deployment/' },
 					],

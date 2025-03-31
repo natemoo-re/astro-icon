@@ -15,9 +15,4 @@ Astro projects that are entirely pre-rendered do not need any special configurat
 
 ### On-demand rendered
 
-Astro projects that have [enabled on-demand server rendering](https://docs.astro.build/en/guides/server-side-rendering/#enable-on-demand-server-rendering) should take special care when using Astro Icon.
-
-By default, all `@iconify-json/*` packages will be bundled into your server code, potentially bloating your server JavaScript bundles.
-
-For complete control over the size of your bundle, it is **highly recommended** to [configure the `include` option](/reference/configuration#include) to enable only your required icons.
-
+Astro projects that have [enabled on-demand server rendering](https://docs.astro.build/en/guides/server-side-rendering/#enable-on-demand-server-rendering) should note that by default, only the icons that are used in your project will be included in the server bundle. This means that any icons that are dynamically referenced will be fetched from the server at runtime preventing bloating your JavaScript bundles.

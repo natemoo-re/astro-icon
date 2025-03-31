@@ -10,8 +10,7 @@
     }
   },
   "files": [
-    "dist",
-    "typings"
+    "dist"
   ],
   "scripts": {
     "build": "tsc",

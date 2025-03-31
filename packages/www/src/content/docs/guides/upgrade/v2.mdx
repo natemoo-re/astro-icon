@@ -1,0 +1,209 @@
+---
+title: Upgrade to Astro Icon v2
+prev: false
+next: false
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide will help you migrate from older versions of `astro-icon` to `astro-icon` v2.
+
+There are multiple breaking changes in `astro-icon` v2 that require changes to your existing code. This guide will outline the steps you must take.
+
+## Upgrade `astro-icon`
+
+Update your project’s version of `astro-icon` to the latest version using your package manager.
+
+<Tabs>
+<TabItem label="npm">
+
+```sh ins="latest"
+npm install astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh ins="latest"
+pnpm add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh ins="latest"
+yarn add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="Bun">
+
+```sh ins="latest"
+bun add astro-icon@latest
+```
+
+</TabItem>
+
+</Tabs>
+
+## Breaking Changes
+
+### Removed: Local SVG File Support
+
+In v1, `astro-icon` supported importing SVG files directly into your components. This feature has been removed in v2 in favor of using Astro's official SVG support. You can read more about Astro's SVG support in the [SVG components guide](https://docs.astro.build/en/reference/experimental-flags/svg/).
+
+#### What should I do?
+
+If you were using `astro-icon` to import SVG files, you can now use Astro's built-in support for SVG files. You can import SVG files directly into your components like this:
+
+```diff lang="astro" title="src/components/MyComponent.astro"
+---
+- import { Icon } from 'astro-icon';
++ import MyIcon from '../assets/my-icon.svg';
+---
+
+- <Icon name="my-icon" />
++ <MyIcon />
+```
+
+### Removed: `Icon` Component
+
+In v1, `astro-icon` provided an `Icon` component that allowed you to render icons. 
+
+In v2, This component has been removed in favor of using SVG imports similar to how you would import SVG files in Astro.
+
+#### What should I do?
+
+If you were using the `Icon` component, you can now use the SVG imports that Astro has built-in. You can import SVG files directly into your components like this:
+
+```diff lang="astro" title="src/components/MyComponent.astro"
+---
+- import Icon from 'astro-icon';
++ import MenuIcon from 'virtual:icons/heroicons-outline/menu';
+---
+- <Icon name="heroicons-outline:menu" />
++ <MenuIcon />
+```
+
+### Removed: Iconify JSON Packages
+
+In v1, `astro-icon` used Iconify JSON packages to provide icons. 
+
+In v2, the icon data will be fetched from the official Iconify CDN. This means that you no longer need to install the Iconify JSON packages in your project.
+
+#### What should I do?
+
+If you were using Iconify JSON packages, you can now safely remove them from your project.
+
+```diff lang="json" title="package.json"
+  "dependencies": {
+-   "@iconify-json/heroicons-outline": "^1.0.0",
+  }
+```
+
+### Removed: Sprite Mode
+
+In v1, `astro-icon` supported a sprite mode that allowed you to use a single SVG definition and reference it multiple times in your project to save space.
+
+In v2, this feature has been removed as the Astro team has not implemented a way to use the sprite mode with Astro's built-in SVG support. This will likely be added in a future version of Astro.
+
+#### What should I do?
+
+If you were using the sprite mode, all icons will still work they will just create a new SVG definition each time you use them.
+
+### Removed: `is:inline` prop
+
+In v1, the `Icon` component had an `is:inline` prop that allowed you to render the icon inline rather than the default sprite mode. 
+
+In v2, this prop has been removed as the sprite mode has been removed. All icons will now render inline by default.
+
+### Removed: `include` config option
+
+In v1, the `astro-icon` integration had an `include` config option that allowed you to specify which icons to include in your project.
+
+In v2, this option has been removed as the integration now automatically includes all used icons in your project. This means that you no longer need to specify which icons to include in your project.
+
+#### What should I do?
+
+If you were using the `include` config option, you can now safely remove it from your integration config.
+
+```diff lang="js" title="astro.config.mjs"
+import { defineConfig } from 'astro/config';
+import icon from 'astro-icon';
+
+export default defineConfig({
+  integrations: [
+    icon({
+-      include: {
+-        // Include only three `mdi` icons in the bundle
+-        mdi: ['account', 'account-plus', 'account-minus'],
+-        // Include all `uis` icons
+-        uis: ['*']
+-      }
+    })
+  ]
+});
+```
+
+### Removed: `iconDir` config option
+
+In v1, the `astro-icon` integration had an `iconDir` config option that allowed you to specify the directory where your icons were stored.
+
+In v2, this option has been removed as the integration no longer handles local icons. Please refer to the [Astro SVG components guide](https://docs.astro.build/en/reference/experimental-flags/svg/) for more information on how to use SVG files in your project.
+
+#### What should I do?
+
+If you were using the `iconDir` config option, you can now safely remove it from your integration config.
+
+```diff lang="js" title="astro.config.mjs"
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
+
+export default defineConfig({
+  integrations: [
+    icon({
+-      iconDir: "src/assets/icons",
+    })
+  ]
+});
+```
+
+### Removed: SVGO Optimizations
+
+In v1, the `astro-icon` integration ran SVGO optimizations on the icons at build time in order to further reduce the size of the icons.
+
+In v2, this feature has been removed as the integration is no longer handling local icons and the Iconify icons have already been optimized.
+
+#### What should I do?
+
+If you were using the custom SVGO config options, `svgoOptions`, you can now safely remove them from your integration config.
+
+```diff lang="js" title="astro.config.mjs"
+import { defineConfig } from "astro/config";
+import icon from "astro-icon";
+
+export default defineConfig({
+  integrations: [
+    icon({
+-      svgoOptions: {
+-        multipass: true,
+-        plugins: [
+-          {
+-            name: "preset-default",
+-            params: {
+-              overrides: {
+-                // customize default plugin options
+-                inlineStyles: {
+-                  onlyMatchedOnce: false,
+-                },
+-                // or disable plugins
+-                removeDoctype: false,
+-              }
+-            }
+-          }
+-        ]
+-      }
+    })
+  ]
+});
+```
