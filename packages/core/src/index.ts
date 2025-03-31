@@ -42,10 +42,10 @@ export default defineIntegration({
             filename: "astro-icons.d.ts",
             content: readFileSync(
               resolve("../typings/virtual.d.ts"),
-              "utf-8"
+              "utf-8",
             ).replaceAll(
               "virtual:icons/*",
-              `${normalizedVirtualModulePrefix}*`
+              `${normalizedVirtualModulePrefix}*`,
             ),
           });
         },

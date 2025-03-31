@@ -14,7 +14,7 @@ interface PluginOptions extends Pick<AstroConfig, "cacheDir"> {
 export function createVitePlugin(
   name: string,
   virtualModulePrefix: string,
-  { cacheDir, logger, __DEV__ }: PluginOptions
+  { cacheDir, logger, __DEV__ }: PluginOptions,
 ): Plugin {
   const DEFAULT_ICON_SIZE = 24;
   const VIRTUAL_MODULE_ID = virtualModulePrefix;
@@ -58,7 +58,7 @@ export function createVitePlugin(
 
           return makeSvgComponent(
             { src: name, format: "svg", height, width },
-            svg
+            svg,
           );
         } catch (e) {
           if (e instanceof AstroIconError) {
