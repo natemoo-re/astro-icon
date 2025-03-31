@@ -7,8 +7,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./types": "./typings/virtual.d.ts"
+    }
   },
   "files": [
     "dist",
@@ -45,7 +44,9 @@
     "url": "https://github.com/natemoo-re/astro-icon/issues"
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
-  "dependencies": {},
+  "dependencies": {
+    "astro-integration-kit": "^0.18.0"
+  },
   "devDependencies": {
     "@types/node": "^22.7.0",
     "astro": "^5.0.0",

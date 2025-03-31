@@ -1,9 +1,15 @@
 /// <reference types="astro/client" />
 
-declare module "astro:icons/*" {
+// IMPORTANT: This MUST come before the other module to ensure the typing applies correctly
+declare module "virtual:icons/*?raw" {
+  const rawSvg: string;
+  export default rawSvg;
+}
+
+declare module "virtual:icons/*" {
   type Props = {
     /**
-     * Accesible, short-text description
+     * Accessible, short-text description
      *
      *  {@link https://developer.mozilla.org/en-US/docs/Web/SVG/Element/title|MDN Reference}
      */
@@ -13,10 +19,6 @@ declare module "astro:icons/*" {
      * @default 24
      */
     size?: number | string;
-    /**
-     * Bypasses automatic sprite optimization by directly inlinining the SVG
-     */
-    inline?: boolean;
   } & astroHTML.JSX.SVGAttributes;
 
   const Component: (_props: Props) => any;

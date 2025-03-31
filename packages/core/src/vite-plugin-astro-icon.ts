@@ -1,37 +1,40 @@
 import type { AstroConfig, AstroIntegrationLogger } from "astro";
 import type { Plugin } from "vite";
 import { makeSvgComponent } from "astro/assets/utils";
+
 import { getIconData } from "./utils/icon.js";
 import { FileCache } from "./utils/cache.js";
 import { AstroIconError } from "./utils/error.js";
 
-interface PluginOptions extends Pick<AstroConfig, "cacheDir" | "experimental"> {
+interface PluginOptions extends Pick<AstroConfig, "cacheDir"> {
   logger: AstroIntegrationLogger;
   __DEV__: boolean;
 }
 
-const DEFAULT_ICON_SIZE = 24;
-const VIRTUAL_MODULE_ID = "astro:icons/";
-const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
+export function createVitePlugin(
+  name: string,
+  virtualModulePrefix: string,
+  { cacheDir, logger, __DEV__ }: PluginOptions
+): Plugin {
+  const DEFAULT_ICON_SIZE = 24;
+  const VIRTUAL_MODULE_ID = virtualModulePrefix;
+  const RESOLVED_VIRTUAL_ICON_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
 
-export function createPlugin({
-  cacheDir,
-  logger,
-  experimental,
-  __DEV__,
-}: PluginOptions): Plugin {
-  const cache = new FileCache(new URL("astro-icon/icons/", cacheDir), logger);
+  const cache = new FileCache(new URL(`${name}/icons/`, cacheDir), logger);
 
   return {
-    name: "astro-icon",
+    name: `vite-plugin-${name}`,
     resolveId(id) {
       if (id.startsWith(VIRTUAL_MODULE_ID)) {
         return `\0${id}`;
       }
     },
     async load(id) {
-      if (id.startsWith(RESOLVED_VIRTUAL_MODULE_ID)) {
-        const name = id.slice(RESOLVED_VIRTUAL_MODULE_ID.length);
+      if (id.startsWith(RESOLVED_VIRTUAL_ICON_MODULE_ID)) {
+        const isRaw = id.endsWith("?raw");
+        const name = id
+          .slice(RESOLVED_VIRTUAL_ICON_MODULE_ID.length)
+          .replace("?raw", "");
         const [collection, icon] = name.split("/");
 
         try {
@@ -49,10 +52,13 @@ export function createPlugin({
           } = data;
           const svg = `<svg data-icon="${collection}:${icon}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`;
 
+          if (isRaw) {
+            return `export default ${JSON.stringify(svg)}`;
+          }
+
           return makeSvgComponent(
             { src: name, format: "svg", height, width },
-            svg,
-            experimental.svg,
+            svg
           );
         } catch (e) {
           if (e instanceof AstroIconError) {

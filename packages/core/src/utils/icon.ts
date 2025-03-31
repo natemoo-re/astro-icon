@@ -9,6 +9,8 @@ interface IconCollection {
   lastModified: number;
   icons: Record<string, IconData>;
   aliases: Record<string, IconData>;
+  // Manually injected for additional caching techniques
+  etag?: string;
 }
 interface IconData {
   body: string;
@@ -18,7 +20,7 @@ interface IconData {
 }
 
 const ICONIFY_REPO = new URL(
-  `https://raw.githubusercontent.com/iconify/icon-sets/master/json/`,
+  "https://raw.githubusercontent.com/iconify/icon-sets/master/json/"
 );
 
 function getIconifyUrl(collection: string) {
@@ -27,23 +29,42 @@ function getIconifyUrl(collection: string) {
 
 async function fetchCollection(
   collection: string,
-  { cache, __DEV__ }: { cache: FileCache; __DEV__: boolean },
+  { cache, __DEV__ }: { cache: FileCache; __DEV__: boolean }
 ): Promise<IconCollection> {
+  // Initialize with cached data
   let collectionData = await cache.read<IconCollection>(collection);
-  if (collectionData) {
-    return collectionData;
+  const headers: HeadersInit = {};
+
+  if (collectionData?.lastModified) {
+    headers["If-Modified-Since"] = new Date(
+      collectionData.lastModified
+    ).toUTCString();
+  }
+
+  if (collectionData?.etag) {
+    headers["If-None-Match"] = collectionData.etag;
   }
 
   try {
     collectionData = await dedupeFetch(async (collectionName) => {
-      const res = await fetch(getIconifyUrl(collectionName));
-      return res.json();
+      const res = await fetch(getIconifyUrl(collectionName), { headers });
+
+      if (res.status === 304 && collectionData) {
+        // No changes, return cached data
+        return collectionData;
+      }
+
+      const data = await res.json();
+      // Inject the etag for caching
+      data.etag = res.headers.get("etag");
+
+      return data;
     }, collection);
   } catch {}
 
   if (!collectionData) {
     const err = new AstroIconError(
-      `Unable to locate the icon collection "${collection}"`,
+      `Unable to locate the icon collection "${collection}"`
     );
     if (__DEV__) {
       err.hint = `The "${collection}" icon collection does not exist.\n\nIs this a typo?`;
@@ -62,15 +83,18 @@ export async function getIconData(
     cache,
     logger,
     __DEV__,
-  }: { cache: FileCache; logger: AstroIntegrationLogger; __DEV__: boolean },
+  }: { cache: FileCache; logger: AstroIntegrationLogger; __DEV__: boolean }
 ): Promise<IconData | undefined> {
-  const collectionData = await fetchCollection(collection, { cache, __DEV__ });
+  const collectionData = await fetchCollection(collection, {
+    cache,
+    __DEV__,
+  });
 
   const { icons, aliases } = collectionData;
   const icon = icons[name] ?? aliases[name];
   if (icon === undefined) {
     const err = new AstroIconError(
-      `Unable to locate the icon "${collection}:${name}"`,
+      `Unable to locate the icon "${collection}:${name}"`
     );
     if (__DEV__) {
       err.hint = `The "${collection}" icon collection does not include an icon named "${name}".\n\nIs this a typo?`;
@@ -80,7 +104,7 @@ export async function getIconData(
 
   if (icon.hidden) {
     logger.warn(
-      `Deprecation Warning: The icon "${collection}:${name}" has been removed from the icon set.`,
+      `Deprecation Warning: The icon "${collection}:${name}" has been removed from the icon set.`
     );
   }
 
