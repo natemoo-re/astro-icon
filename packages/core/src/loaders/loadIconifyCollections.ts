@@ -10,6 +10,7 @@ import { getIcons } from "@iconify/utils";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import { promisify } from "node:util";
 import { exec } from "node:child_process";
+import { dirname } from "node:path";
 
 const execa = promisify(exec);
 
@@ -85,10 +86,57 @@ export async function loadCollection(
   return loadCollectionFromFS(name, autoInstall);
 }
 
+export async function findNearestPackageJson(
+  startUrl: URL,
+): Promise<URL | null> {
+  let currentPath = startUrl.pathname;
+
+  // Convert to file:// URL if it's not already
+  if (!startUrl.protocol.startsWith("file:")) {
+    throw new Error("Expected file:// URL");
+  }
+
+  while (currentPath !== "/" && currentPath !== "") {
+    try {
+      const packageJsonUrl = new URL("package.json", `file://${currentPath}/`);
+      const text = await readFile(packageJsonUrl, { encoding: "utf8" });
+      const { dependencies = {}, devDependencies = {} } = JSON.parse(text);
+
+      // Check if this package.json has any @iconify-json dependencies
+      const allDeps = [
+        ...Object.keys(dependencies),
+        ...Object.keys(devDependencies),
+      ];
+      const hasIconifyDeps = allDeps.some((dep) =>
+        dep.startsWith("@iconify-json/"),
+      );
+
+      if (hasIconifyDeps) {
+        return packageJsonUrl;
+      }
+
+      // If no iconify deps, continue searching up the tree
+      currentPath = dirname(currentPath);
+    } catch {
+      // package.json not found at this level, go up one directory
+      currentPath = dirname(currentPath);
+    }
+  }
+
+  return null;
+}
+
 async function detectInstalledCollections(root: URL) {
   try {
     let packages: string[] = [];
-    const text = await readFile(new URL("./package.json", root), {
+
+    // Find the nearest package.json by traversing up the directory tree
+    const packageJsonUrl = await findNearestPackageJson(root);
+    if (!packageJsonUrl) {
+      return [];
+    }
+
+    const text = await readFile(packageJsonUrl, {
       encoding: "utf8",
     });
     const { dependencies = {}, devDependencies = {} } = JSON.parse(text);

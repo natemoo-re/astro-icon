@@ -47,6 +47,19 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           neutral_check_on_warning: true
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm run test:run
+
   smoke:
     name: Smoke Test
     runs-on: ubuntu-latest
