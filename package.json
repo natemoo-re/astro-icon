@@ -7,6 +7,8 @@
     "build": "pnpm --filter astro-icon --filter www run build",
     "dev": "pnpm -r run dev",
     "lint": "prettier \"**/*.{js,ts,md,json}\"",
+    "test": "pnpm --filter astro-icon run test",
+    "test:run": "pnpm --filter astro-icon run test:run",
     "version": "changeset version && pnpm install --no-frozen-lockfile --lockfile-only"
   },
   "repository": {
