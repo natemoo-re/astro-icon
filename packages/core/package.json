@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "pnpm run dev"
+    "start": "pnpm run dev",
+    "test": "pnpm run build && node --test test/*.test.mjs"
   },
   "author": {
     "name": "Nate Moore",

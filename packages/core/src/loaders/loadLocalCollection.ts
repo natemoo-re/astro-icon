@@ -59,7 +59,9 @@ export default async function createLocalCollection(
     local.fromSVG(name, svg);
   });
 
-  return local.export(true);
+  const collection = local.export(true);
+  delete collection.lastModified;
+  return collection;
 }
 
 async function convertToCurrentColor(svg: SVG): Promise<void> {
