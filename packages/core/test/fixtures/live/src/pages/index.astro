@@ -1,0 +1,11 @@
+---
+import { LiveIcon } from "astro-icon/components";
+---
+
+<html>
+  <body>
+    <LiveIcon name="spinners:3-dots-fade" />
+    <!-- A missing icon should degrade to nothing instead of crashing the page. -->
+    <LiveIcon name="spinners:does-not-exist" />
+  </body>
+</html>
