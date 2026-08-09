@@ -9,6 +9,7 @@
   "scripts": {
     "build": "pnpm --filter astro-icon --filter www run build",
     "dev": "pnpm -r run dev",
+    "test": "pnpm --filter astro-icon run test",
     "lint": "prettier \"**/*.{js,ts,md,json,astro}\"",
     "version": "changeset version && pnpm install --no-frozen-lockfile --lockfile-only"
   },
