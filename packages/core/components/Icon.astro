@@ -1,7 +1,6 @@
 ---
 import { getEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
-import { cache } from "./cache.js";
 import { AstroIconError } from "../src/core/AstroIconError.js";
 import { parseIconName } from "../src/core/parseName.js";
 import { renderableIconProps } from "../src/core/renderableIconProps.js";
@@ -15,7 +14,6 @@ interface AccessibleElementProps {
 
 interface Props extends HTMLAttributes<"svg"> {
   name: IconName;
-  "is:inline"?: boolean;
   title?: string | AccessibleElementProps;
   desc?: string | AccessibleElementProps;
   size?: number | string;
@@ -23,25 +21,12 @@ interface Props extends HTMLAttributes<"svg"> {
   height?: number | string;
 }
 
-const localsKey = Astro.locals;
-const {
-  name = "",
-  title,
-  desc,
-  "is:inline": inline = false,
-  ...props
-} = Astro.props;
+const { name = "", title, desc, ...props } = Astro.props;
 
 const normalizeAccessibleElement = (value?: string | AccessibleElementProps) =>
   typeof value === "string" ? { value } : value;
 const normalizedTitle = normalizeAccessibleElement(title);
 const normalizedDesc = normalizeAccessibleElement(desc);
-const map = cache.get(localsKey) ?? new Map();
-const i = map.get(name) ?? 0;
-map.set(name, i + 1);
-cache.set(localsKey, map);
-
-const includeSymbol = !inline && i === 0;
 
 const { collection, name: iconName, hasPrefix } = parseIconName(name as string);
 
@@ -74,12 +59,8 @@ if (!entry) {
   );
 }
 
-const { body, viewBox } = entry.data;
-const { id, normalizedProps } = renderableIconProps(entry.data, collection, iconName, props);
-
-if (includeSymbol) {
-  delete normalizedProps.viewBox;
-}
+const { body } = entry.data;
+const { normalizedProps } = renderableIconProps(entry.data, collection, iconName, props);
 ---
 
 <svg {...normalizedProps} data-icon={name}>
@@ -89,14 +70,5 @@ if (includeSymbol) {
     )
   }
   {normalizedDesc && <desc id={normalizedDesc.id}>{normalizedDesc.value}</desc>}
-  {
-    inline ? (
-      <Fragment id={id} set:html={body} />
-    ) : (
-      <Fragment>
-        {includeSymbol && <symbol id={id} viewBox={viewBox} set:html={body} />}
-        <use href={`#${id}`} />
-      </Fragment>
-    )
-  }
+  <Fragment set:html={body} />
 </svg>

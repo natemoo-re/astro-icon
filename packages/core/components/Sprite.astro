@@ -1,0 +1,64 @@
+---
+import { getEntry } from "astro:content";
+import { AstroIconError } from "../src/core/AstroIconError.js";
+import { extractSpriteIcons, rewriteSpriteHtml } from "../src/core/spriteRewrite.js";
+import { spriteRenderedForRequest } from "../src/core/spriteRequestMarker.js";
+import type { IconEntry } from "../typings/types";
+
+if (!Astro.isPrerendered) {
+  throw new AstroIconError(
+    `<Sprite> is only supported on prerendered pages!`,
+    import.meta.env.DEV
+      ? `This route isn't prerendered, so <Sprite> can't safely buffer and rewrite its contents without breaking HTML streaming.\n\nAdd \`export const prerender = true;\` to this page/layout, or use plain <Icon> usages instead - each renders as a standalone <svg>, safe on server-rendered routes.`
+      : undefined,
+  );
+}
+
+if (import.meta.env.DEV) {
+  if (spriteRenderedForRequest.get(Astro.request)) {
+    console.warn(
+      `[astro-icon] Multiple <Sprite> components rendered on the same page. Only one <Sprite> per page is supported - each Sprite dedupes independently, so extra ones just add duplicate <symbol> defs instead of sharing one.`,
+    );
+  }
+  spriteRenderedForRequest.set(Astro.request, true);
+}
+
+const slotHtml = Astro.slots.has("default") ? await Astro.slots.render("default") : "";
+const refs = extractSpriteIcons(slotHtml);
+
+const resolvedSymbols = new Map<string, { viewBox: string; body: string }>();
+for (const { collection, name, id } of refs) {
+  let entry: { data: IconEntry } | undefined;
+  try {
+    entry = (await getEntry(collection as never, name)) as { data: IconEntry } | undefined;
+  } catch {
+    entry = undefined;
+  }
+
+  if (!entry) {
+    throw new AstroIconError(
+      `Unable to locate "${collection}:${name}" icon!`,
+      import.meta.env.DEV
+        ? `<Sprite> found a "${collection}:${name}" icon rendered in its slot, but couldn't re-resolve it from the "${collection}" collection.`
+        : undefined,
+    );
+  }
+
+  resolvedSymbols.set(id, { viewBox: entry.data.viewBox, body: entry.data.body });
+}
+
+const rewrittenHtml = rewriteSpriteHtml(slotHtml, resolvedSymbols);
+---
+
+{
+  resolvedSymbols.size > 0 && (
+    <svg style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false">
+      {
+        Array.from(resolvedSymbols, ([id, { viewBox, body }]) => (
+          <symbol id={id} viewBox={viewBox} set:html={body} />
+        ))
+      }
+    </svg>
+  )
+}
+<Fragment set:html={rewrittenHtml} />

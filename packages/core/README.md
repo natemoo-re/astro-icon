@@ -99,7 +99,6 @@ interface Props extends HTMLAttributes<"svg"> {
    * References a specific Icon
    */
   name: string;
-  "is:inline"?: boolean;
   title?: string;
   desc?: string;
   size?: number | string;
@@ -146,6 +145,26 @@ import { Icon } from "astro-icon/components";
 ### Using with Frameworks
 
 Astro Icon can be used with other frameworks utilizing the [`slot` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). You can read more about how to use Slots in Astro here. [Passing Children to Framework Components](https://docs.astro.build/en/core-concepts/framework-components/#passing-children-to-framework-components)
+
+## `<Sprite>`
+
+`<Icon>` always renders a plain, standalone `<svg>` - no deduping. If you render the same icon many times on a page and want it deduped into one `<symbol>` + many `<use>`s, wrap those `<Icon>` usages in `<Sprite>`:
+
+```astro
+---
+import { Icon, Sprite } from "astro-icon/components";
+---
+
+<Sprite>
+  <Icon name="mdi:home" />
+  <Icon name="mdi:home" />
+  <Icon name="mdi:home" />
+</Sprite>
+```
+
+`<Sprite>` only affects `<Icon>` usages nested inside it - anything rendered outside a `Sprite` is never deduped, so there's no flag to remember on individual icons. Stick to one `<Sprite>` per page (a dev warning fires if a second one renders); each `Sprite` dedupes independently, so extras won't share defs with each other.
+
+`<Sprite>` only works on **prerendered pages** (`export const prerender = true`, or an `output: "static"` project). It throws on server-rendered routes, since it has to fully render its contents before rewriting them, which would otherwise break HTML streaming - see [`docs/adr/0002-sprite-requires-prerendering.md`](../../docs/adr/0002-sprite-requires-prerendering.md) for the full reasoning.
 
 ## Configuration
 

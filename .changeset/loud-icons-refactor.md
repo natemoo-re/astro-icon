@@ -40,5 +40,17 @@ Rebuilt astro-icon on top of Astro's Content Layer instead of a custom Vite reso
 - **No more bundled SVGO.** Loaders accept an optional `optimize(svg, { collection, name })` function instead - a plain transform with no default and no dependency pulled in for you.
 - **`viewBox` handling**: the source `viewBox` is used when present; otherwise one is derived from the icon's width/height, with a warning. Pass `strict: true` to a loader to turn that warning (and a few others - a source failing to provide/build a requested icon) into a build error instead.
 - Name types are generated per-collection (`.astro/astro-icon/<kind>-<collection>.d.ts`), referenced from a single `.astro/astro-icon.d.ts` you point `src/env.d.ts` at.
+- **`<Icon>` no longer dedupes on its own, and `is:inline` is gone.** `<Icon>` always renders a plain, standalone `<svg>` now. To dedupe repeated icons into one `<symbol>` + many `<use>`s, wrap them in the new `<Sprite>` component instead:
+  ```astro
+  ---
+  import { Icon, Sprite } from "astro-icon/components";
+  ---
+
+  <Sprite>
+    <Icon name="mdi:home" />
+    <Icon name="mdi:home" />
+  </Sprite>
+  ```
+  Only `<Icon>` usages nested inside a `<Sprite>` are affected - nothing outside it is ever deduped, so there's no per-icon flag to remember. `<Sprite>` only works on prerendered pages, and throws on server-rendered routes.
 
 A full migration guide for the docs site is tracked separately and not yet published.

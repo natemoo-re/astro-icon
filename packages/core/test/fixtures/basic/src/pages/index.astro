@@ -8,11 +8,9 @@ import { Icon } from "astro-icon/components";
     <Icon name="3-dots-fade" />
     <!-- Prefixed name -> "spinners" collection -->
     <Icon name="spinners:3-dots-fade" />
-    <!-- Repeated non-inline render of the same name -> symbol + use dedupe -->
+    <!-- Repeated render of the same name -> each renders standalone, no dedupe -->
     <Icon name="3-dots-fade" />
     <Icon name="3-dots-fade" />
-    <!-- Inlined render -->
-    <Icon name="3-dots-fade" is:inline />
     <!-- Merged collection: one icon from svg-spinners, one from a custom source -->
     <Icon name="combined:180-ring" />
     <Icon name="combined:custom-square" />

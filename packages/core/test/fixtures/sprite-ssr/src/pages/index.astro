@@ -1,0 +1,13 @@
+---
+// Deliberately no `export const prerender = true` - this route is
+// server-rendered, and <Sprite> should refuse to run on it.
+import { Icon, Sprite } from "astro-icon/components";
+---
+
+<html>
+  <body>
+    <Sprite>
+      <Icon name="3-dots-fade" />
+    </Sprite>
+  </body>
+</html>
