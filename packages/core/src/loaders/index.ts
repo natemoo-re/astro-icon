@@ -1,0 +1,12 @@
+export { AstroIconError } from "../core/AstroIconError.js";
+export { iconify } from "../iconify/iconify.js";
+export { iconifySource } from "../iconify/iconifySource.js";
+export { localIcons } from "../local/localIcons.js";
+export { localSource } from "../local/localSource.js";
+export type { LocalSourceOptions } from "../local/localSource.js";
+export { createIconLoader } from "./createIconLoader.js";
+export type { IconLoaderOptions } from "./createIconLoader.js";
+export type { IconSource } from "../core/iconSource.js";
+export { parseIconSVG } from "../core/parseIconSVG.js";
+export type { ParseIconSVGOptions } from "../core/parseIconSVG.js";
+export type { IconifySourceOptions, OptimizeFn, IconEntry } from "../../typings/types";
