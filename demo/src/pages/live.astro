@@ -1,0 +1,33 @@
+---
+// Server-rendered on every request - <LiveIcon> resolves live collections
+// (src/live.config.ts) at request time, not at build time.
+import { LiveIcon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+---
+
+<Base>
+  <h1>&lt;LiveIcon&gt; demo</h1>
+
+  <article>
+    <h2>Resolved straight from Iconify</h2>
+    <LiveIcon name="mdi:account" />
+    <LiveIcon name="mdi:home" />
+  </article>
+
+  <article>
+    <h2>Resolved from a custom source (packages/service)</h2>
+    <p>
+      Run <code>pnpm --filter service dev</code> for these to render - they're
+      backed by a from-scratch <code>IconSource</code> in
+      <code>src/live.config.ts</code>, not Iconify's API.
+    </p>
+    <LiveIcon name="service:heart" />
+    <LiveIcon name="service:star" />
+  </article>
+
+  <p>
+    <a href="/">&larr; Back</a>
+    &middot;
+    <a href="/search/">Try the &lt;LiveIcon&gt; search demo &rarr;</a>
+  </p>
+</Base>

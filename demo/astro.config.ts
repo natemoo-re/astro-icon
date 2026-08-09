@@ -1,7 +1,10 @@
+import node from "@astrojs/node";
 import { defineConfig } from "astro/config";
-import icon from "astro-icon";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [icon()],
+  // Server output so `src/pages/live.astro` can render <LiveIcon> per
+  // request. Everything else opts back into prerendering below.
+  output: "server",
+  adapter: node({ mode: "standalone" }),
 });

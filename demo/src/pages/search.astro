@@ -1,0 +1,222 @@
+---
+// Server-rendered per request - a live icon picker for the "mdi" live
+// collection (src/live.config.ts). Nothing is preloaded: Iconify's search
+// API finds matching icon names for the query, and each result is rendered
+// on demand via <LiveIcon>, capped well below the thousands of icons in
+// the full "mdi" pack.
+//
+// Works without JS (search-on-submit, server-rendered below); with JS, a
+// client script in ./api/icon-search.ts re-searches on every keystroke -
+// debounced, aborting whatever search was still in flight.
+import { LiveIcon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+
+const RESULT_LIMIT = 12;
+const PACK = "mdi";
+
+const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+
+// The "mdi" live collection is the only one this page searches against, so
+// every result is guaranteed to come back "mdi:<name>" - matching
+// <LiveIcon>'s `collection:name` requirement.
+let results: `${typeof PACK}:${string}`[] = [];
+let error: string | undefined;
+
+if (query) {
+  try {
+    const res = await fetch(
+      `https://api.iconify.design/search?query=${encodeURIComponent(query)}&prefix=${PACK}&limit=${RESULT_LIMIT}`,
+    );
+    if (!res.ok) {
+      error = `Iconify search returned ${res.status}.`;
+    } else {
+      const data = (await res.json()) as { icons: `${typeof PACK}:${string}`[] };
+      results = data.icons.slice(0, RESULT_LIMIT);
+    }
+  } catch {
+    error = "Couldn't reach the Iconify search API.";
+  }
+}
+---
+
+<Base>
+  <h1>Icon search</h1>
+  <p>
+    Search the <code>mdi</code> pack and render results with
+    <code>&lt;LiveIcon&gt;</code> - only the {RESULT_LIMIT} icons shown below
+    are ever resolved, not the thousands in the full pack.
+  </p>
+
+  <form method="get" data-search-form>
+    <input
+      type="search"
+      name="q"
+      value={query}
+      placeholder="e.g. home, cart, arrow..."
+      autocomplete="off"
+      data-search-input
+    />
+    <button type="submit">Search</button>
+  </form>
+
+  <p class="status" data-status>
+    {error && <span class="error">{error}</span>}
+    {!error && query && results.length === 0 && <>No icons matched &ldquo;{query}&rdquo;.</>}
+  </p>
+
+  <ul class="results" data-results>
+    {results.map((name) => (
+      <li>
+        <LiveIcon name={name} size={32} />
+        <code>{name}</code>
+      </li>
+    ))}
+  </ul>
+
+  <p><a href="/">&larr; Back</a></p>
+</Base>
+
+<script>
+  const DEBOUNCE_MS = 250;
+
+  const form = document.querySelector<HTMLFormElement>("[data-search-form]")!;
+  const input = document.querySelector<HTMLInputElement>("[data-search-input]")!;
+  const resultsEl = document.querySelector<HTMLElement>("[data-results]")!;
+  const statusEl = document.querySelector<HTMLElement>("[data-status]")!;
+
+  interface IconResult {
+    name: string;
+    body: string;
+    viewBox: string;
+    width: number;
+    height: number;
+  }
+
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let controller: AbortController | undefined;
+
+  // The server-rendered <LiveIcon> results above still work with JS
+  // disabled (a normal form submit reloads the page); once JS is running,
+  // intercept the form and search live instead.
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    search(input.value);
+  });
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => search(input.value), DEBOUNCE_MS);
+  });
+
+  async function search(rawQuery: string) {
+    const query = rawQuery.trim();
+
+    // Abort whatever search was still in flight - its response would only
+    // ever be stale by the time it arrives.
+    controller?.abort();
+
+    const url = new URL(location.href);
+    if (query) url.searchParams.set("q", query);
+    else url.searchParams.delete("q");
+    history.replaceState(null, "", url);
+
+    if (!query) {
+      renderResults([]);
+      setStatus("");
+      return;
+    }
+
+    controller = new AbortController();
+    setStatus("Searching…");
+
+    let response: Response;
+    try {
+      response = await fetch(`/api/icon-search?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return; // superseded by a newer search
+      setStatus("Couldn't reach the search API.");
+      return;
+    }
+
+    if (!response.ok) {
+      setStatus(`Search failed (${response.status}).`);
+      return;
+    }
+
+    const data = (await response.json()) as { results: IconResult[]; error?: string };
+    if (data.error) {
+      setStatus(data.error);
+      return;
+    }
+
+    renderResults(data.results);
+    setStatus(data.results.length === 0 ? `No icons matched “${query}”.` : "");
+  }
+
+  function renderResults(results: IconResult[]) {
+    resultsEl.replaceChildren(
+      ...results.map((icon) => {
+        const li = document.createElement("li");
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "32");
+        svg.setAttribute("height", "32");
+        svg.setAttribute("viewBox", icon.viewBox);
+        svg.setAttribute("data-icon", icon.name);
+        svg.innerHTML = icon.body;
+
+        const code = document.createElement("code");
+        code.textContent = icon.name;
+
+        li.append(svg, code);
+        return li;
+      }),
+    );
+  }
+
+  function setStatus(message: string) {
+    statusEl.textContent = message;
+  }
+</script>
+
+<style>
+  form {
+    display: flex;
+    gap: 0.5rem;
+    margin-block: 1rem;
+  }
+  input[type="search"] {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    font-size: 1rem;
+  }
+  .status {
+    min-height: 1.2em;
+  }
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+  }
+  .results li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+  }
+  .results code {
+    font-size: 0.7rem;
+    text-align: center;
+    word-break: break-all;
+    color: #666;
+  }
+  .error {
+    color: #b00020;
+  }
+</style>
