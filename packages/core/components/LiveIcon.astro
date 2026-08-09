@@ -1,0 +1,50 @@
+---
+import { getLiveEntry } from "astro:content";
+import type { HTMLAttributes } from "astro/types";
+import { AstroIconError } from "../src/core/AstroIconError.js";
+import { parseLiveIconName } from "../src/core/parseName.js";
+import { renderableIconProps } from "../src/core/renderableIconProps.js";
+import type { LiveIconName } from "../typings/names";
+import type { IconEntry } from "../typings/types";
+
+interface Props extends HTMLAttributes<"svg"> {
+  name: LiveIconName;
+  title?: string;
+  desc?: string;
+  size?: number | string;
+  width?: number | string;
+  height?: number | string;
+}
+
+const { name = "", title, desc, ...props } = Astro.props;
+
+const parsed = parseLiveIconName(name as string);
+if (!parsed) {
+  throw new AstroIconError(
+    `Invalid "name" provided!`,
+    import.meta.env.DEV
+      ? `The provided value of "${name}" is invalid.\n\n<LiveIcon> always requires a "collection:name" value - there is no default collection. Did you mean "collection:${name}"?`
+      : undefined,
+  );
+}
+const { collection, name: iconName } = parsed;
+
+const { entry, error } = await getLiveEntry(collection, iconName);
+
+if (error || !entry) {
+  const hint = error instanceof AstroIconError ? error.hint : undefined;
+  console.warn(
+    `<LiveIcon> failed to load "${name}"${error ? `: ${error.message}` : ""}${hint ? `\nHint: ${hint}` : ""}`,
+  );
+  return;
+}
+
+const data = entry.data as IconEntry;
+const { id, normalizedProps } = renderableIconProps(data, collection, iconName, props);
+---
+
+<svg {...normalizedProps} data-icon={name}>
+  {title && <title>{title}</title>}
+  {desc && <desc>{desc}</desc>}
+  <Fragment id={id} set:html={data.body} />
+</svg>
