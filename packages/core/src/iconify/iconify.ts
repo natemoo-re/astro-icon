@@ -4,15 +4,27 @@ import { iconifySource } from "./iconifySource.js";
 import type { IconifySourceOptions } from "../../typings/types";
 
 /**
- * A pre-built content layer loader for one or more Iconify icon packs -
- * `iconifySource(pack, options)` fed into `createIconLoader()`. Each pack
- * is its own collection by convention; there's no shared namespace across
- * packs unless you pass more than one here (in which case they're combined
- * into a single collection, first pack wins on a name collision).
+ * A content layer loader for one or more Iconify icon packs. This is what
+ * most projects reach for: pass a pack name to `defineCollection()` and
+ * astro-icon resolves, types, and watches it for you.
  *
- * Prefers a locally installed `@iconify-json/<pack>` package, falling back
- * to the public Iconify API when it isn't (which can only ever resolve
- * icons you specifically request, not the whole pack).
+ * ```ts
+ * // src/content.config.ts
+ * import { defineCollection } from "astro:content";
+ * import { iconify } from "astro-icon/loaders";
+ *
+ * export const collections = {
+ *   mdi: defineCollection({ loader: iconify("mdi") }),
+ * };
+ * ```
+ *
+ * Prefers a locally installed `@iconify-json/<pack>` package. If it isn't
+ * installed, astro-icon falls back to the public Iconify API, which can only
+ * resolve icons you request by name, not the whole pack. Install the package
+ * for production builds so `listIcons()` and full autocomplete work.
+ *
+ * Pass an array of packs to combine them into one collection; each keeps its
+ * own icon names, and the first pack wins if two share a name.
  */
 export function iconify(pack: string, options: IconifySourceOptions): Loader;
 export function iconify(packs: string[], options: IconifySourceOptions): Loader;

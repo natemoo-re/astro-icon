@@ -4,22 +4,12 @@ export interface ParsedName {
   hasPrefix: boolean;
 }
 
-/**
- * Shared by an icon's `<symbol>` (if any) and its `<use>`/inline body -
- * the single format `spriteRewrite` keys off when scanning rendered
- * `data-icon` markers.
- */
+/** The id shared by an icon's `<symbol>` and its `<use>`/inline body, used by `spriteRewrite`. */
 export function iconId(collection: string, name: string): string {
   return `ai:${collection}:${name}`;
 }
 
-/**
- * Splits an `<Icon>` name on its *first* colon only, so pack names like
- * `logos:aws-s3` (which themselves contain no further colons) resolve
- * correctly and icon names that legitimately contain a colon aren't
- * truncated. A name with no colon resolves against the conventionally
- * named "icons" collection.
- */
+/** Splits an `<Icon>` name on its first colon only; a bare name resolves against the "icons" collection. */
 export function parseIconName(name: string): ParsedName {
   const colonIndex = name.indexOf(":");
   if (colonIndex === -1) {
@@ -32,10 +22,7 @@ export function parseIconName(name: string): ParsedName {
   };
 }
 
-/**
- * Same split, but for `<LiveIcon>`, which always requires an explicit
- * `collection:name` value - there is no default collection.
- */
+/** Same split, but for `<LiveIcon>`, which requires an explicit `collection:name` value (no default collection). */
 export function parseLiveIconName(name: string): ParsedName | undefined {
   const colonIndex = name.indexOf(":");
   if (colonIndex === -1) return undefined;

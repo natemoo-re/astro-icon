@@ -4,10 +4,12 @@ import { iconifySource } from "../iconify/iconifySource.js";
 import type { IconEntry, IconifySourceOptions } from "../../typings/types";
 
 /**
- * A pre-built live content collection loader for one or more Iconify icon
- * packs, resolved on demand per request - `iconifySource(pack, options)`
- * fed into `createLiveIconLoader()`. Use those directly to back
- * `<LiveIcon>` with a different pack format or API.
+ * A live content collection loader for one or more Iconify icon packs,
+ * resolved on demand per request rather than at build time: `iconifySource`
+ * fed into {@link createLiveIconLoader}.
+ *
+ * Use `createLiveIconLoader` and `iconifySource` directly if you need to
+ * back `<LiveIcon>` with a different pack format or API.
  */
 export function iconifyLive(
   pack: string | string[],

@@ -12,10 +12,7 @@ interface IconResult {
   height: number;
 }
 
-// Backs the client-side debounced search on /search/ - the page itself
-// still works without JS (it does the same search server-side on submit),
-// this just lets the client re-search on every keystroke without a full
-// page reload.
+// Backs the client-side debounced search on /search/, which also works server-side without JS.
 export const GET: APIRoute = async ({ url }) => {
   const query = url.searchParams.get("q")?.trim() ?? "";
   if (!query) {

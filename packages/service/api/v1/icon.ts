@@ -43,7 +43,6 @@ const handler: VercelApiHandler = async (req, res) => {
 
   let collection = new Collection();
   if (!collection.loadIconifyCollection(pack)) {
-    // TODO: fuzzy match to provide more helpful error?
     res.status(404).send(`Not Found: pack "${pack}"`);
     return;
   }

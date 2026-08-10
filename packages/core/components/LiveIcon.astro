@@ -7,10 +7,27 @@ import { renderableIconProps } from "../src/core/renderableIconProps.js";
 import type { LiveIconName } from "../typings/names";
 import type { IconEntry } from "../typings/types";
 
+/**
+ * Renders one icon from a live collection as an inline `<svg>`, resolved at
+ * request time instead of build time. Use it when you can't know your icon
+ * names ahead of time, such as a user-driven icon search.
+ *
+ * Requires `defineLiveCollection()` in `live.config.ts` and Astro's
+ * `experimental.liveContentCollections` flag. If the icon fails to resolve,
+ * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
+ * one bad icon doesn't take down the page.
+ *
+ * Use `<Icon>` instead when your icon names are known at build time; it's
+ * cheaper since it resolves once, not on every request.
+ */
 interface Props extends HTMLAttributes<"svg"> {
+  /** `"collection:icon"`. Live collections have no default, unlike `<Icon>`. */
   name: LiveIconName;
+  /** Adds an accessible `<title>` before the icon body. */
   title?: string;
+  /** Adds an accessible `<desc>` after `title`. */
   desc?: string;
+  /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
   size?: number | string;
   width?: number | string;
   height?: number | string;
@@ -23,7 +40,7 @@ if (!parsed) {
   throw new AstroIconError(
     `Invalid "name" provided!`,
     import.meta.env.DEV
-      ? `The provided value of "${name}" is invalid.\n\n<LiveIcon> always requires a "collection:name" value - there is no default collection. Did you mean "collection:${name}"?`
+      ? `The provided value of "${name}" is invalid.\n\n<LiveIcon> always requires a "collection:name" value; there is no default collection. Did you mean "collection:${name}"?`
       : undefined,
   );
 }

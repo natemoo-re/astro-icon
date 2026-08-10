@@ -1,34 +1,29 @@
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "./AstroIconError.js";
+import type { IconSource } from "./iconSource.js";
 import type { IconEntry, OptimizeFn } from "../../typings/types";
 
 export interface ParseIconSVGOptions {
-  /** The collection this icon belongs to - passed through to `optimize` and used in warnings/errors. */
+  /** The collection this icon belongs to. Passed through to `optimize` and used in warnings and errors. */
   collection: string;
-  /** The icon's name within that collection - passed through to `optimize` and used in warnings/errors. */
+  /** The icon's name within that collection. Passed through to `optimize` and used in warnings and errors. */
   name: string;
   optimize?: OptimizeFn;
   strict?: boolean;
   logger: Pick<AstroIntegrationLogger, "warn">;
-  /**
-   * Best-known intrinsic size to fall back to if optimization strips the
-   * viewBox and none can be recovered from the SVG's own numeric width/height
-   * attributes (e.g. iconify renders those as relative units like "1em" by
-   * default, which aren't usable as pixel dimensions). Defaults to 24x24.
-   */
+  /** Fallback intrinsic size to use if optimization strips the viewBox and none can be recovered from the SVG's own attributes. Defaults to 24x24. */
   fallbackSize?: { width: number; height: number };
 }
 
 /**
- * Turns a single raw SVG string into a render-ready `IconEntry`: optionally
- * runs the user's `optimize`, then parses the result once into
- * `{ body, viewBox, width, height }`, deriving a viewBox (with a warning,
- * or an error under `strict`) if optimization stripped it.
+ * Turns a raw SVG string into a render-ready {@link IconEntry}: runs
+ * `optimize` first if given, then parses the result into
+ * `{ body, viewBox, width, height }`, deriving a viewBox if optimization
+ * stripped it.
  *
- * Generic entry point for any icon source that produces a full `<svg>...
- * </svg>` string per icon - iconify is one such source (see
- * `buildIconEntry` in `iconify/iconifySource.ts`), but this is also what a
- * custom `IconSource` should reach for.
+ * A generic entry point for any {@link IconSource} that produces a full
+ * `<svg>...</svg>` string per icon. `iconifySource` is one such source; reach
+ * for this directly when you write your own.
  */
 export async function parseIconSVG(
   svg: string,
@@ -57,14 +52,12 @@ export async function parseIconSVG(
       );
     }
     logger.warn(
-      `"${collection}:${name}" has no viewBox after optimization - falling back to a derived viewBox ("${derived}"). Preserve the viewBox in your "optimize" function to avoid this.`,
+      `"${collection}:${name}" has no viewBox after optimization, falling back to a derived viewBox ("${derived}"). Preserve the viewBox in your "optimize" function to avoid this.`,
     );
     viewBox = derived;
   }
 
-  // Width/height are always derived from the viewBox, not from the SVG's own
-  // width/height attributes - those are commonly relative units (e.g. "1em"),
-  // which aren't meaningful as numbers.
+  // Derived from the viewBox, not the SVG's own attributes, which are often relative units like "1em".
   const [, , width, height] = viewBox.split(/\s+/).map(Number);
 
   return { body: parsed.body, viewBox, width, height };
@@ -75,9 +68,7 @@ function deriveViewBox(
   fallbackSize?: { width: number; height: number },
 ): string {
   const attrs = svg.match(/<svg\b([^>]*)>/i)?.[1] ?? "";
-  // Only trust width/height attributes that are plain numbers (no unit
-  // suffix like "em"/"px") - otherwise fall back to the caller's best-known
-  // intrinsic size, or 24x24.
+  // Only trust width/height attributes with no unit suffix (e.g. "em"/"px").
   const width =
     attrs.match(/\bwidth=["'](\d+(?:\.\d+)?)["']/i)?.[1] ??
     String(fallbackSize?.width ?? 24);
@@ -92,11 +83,7 @@ interface ParsedSVG {
   viewBox?: string;
 }
 
-/**
- * Minimal SVG parser: extracts the outer `<svg>` attributes we care about
- * and the inner markup. Intentionally not a full XML parser - icon SVGs are
- * a single, non-nested `<svg>...</svg>` document.
- */
+/** Minimal SVG parser: extracts the outer `<svg>` attributes and inner markup. Not a full XML parser. */
 function parseSVG(svg: string): ParsedSVG {
   const openTagMatch = svg.match(/<svg\b([^>]*)>/i);
   const attrs = openTagMatch?.[1] ?? "";

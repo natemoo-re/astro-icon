@@ -1,16 +1,7 @@
 import { AstroIconError } from "./AstroIconError.js";
 import type { IconSource } from "./iconSource.js";
 
-/**
- * Normalizes one-or-more `IconSource`s into a single one. A single source
- * passes through unchanged (no wrapping overhead); multiple sources are
- * combined by trying each in order for a given icon (first match wins) and
- * unioning their `listIcons()` results the same way.
- *
- * Shared by `createIconLoader` and `createLiveIconLoader` - this is what
- * "merging" actually is, it's just not exposed as a separate public
- * function since both loaders take `IconSource | IconSource[]` directly.
- */
+/** Normalizes one-or-more `IconSource`s into a single one, trying each in order per icon (first match wins). */
 export function mergeSources(sources: IconSource | IconSource[]): IconSource {
   if (!Array.isArray(sources)) return sources;
   if (sources.length === 1) return sources[0];
@@ -24,7 +15,7 @@ export function mergeSources(sources: IconSource | IconSource[]): IconSource {
         try {
           return await source.getIcon(iconName);
         } catch {
-          // Try the next source - only report failure if none of them have it.
+          // Try the next source; only fail if none of them have it.
         }
       }
       throw new AstroIconError(
@@ -39,8 +30,7 @@ export function mergeSources(sources: IconSource | IconSource[]): IconSource {
       return [...new Set(lists.flat())];
     },
     async getVersion() {
-      // Only meaningful if every merged source can report one - otherwise
-      // there's no way to tell "nothing changed" for the whole group.
+      // Only meaningful if every merged source can report one.
       const versions = await Promise.all(
         sources.map((source) => source.getVersion?.().catch(() => undefined) ?? Promise.resolve(undefined)),
       );

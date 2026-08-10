@@ -11,23 +11,10 @@ import { parseIconSVG } from "../core/parseIconSVG.js";
 import type { IconSource } from "../core/iconSource.js";
 import type { IconEntry, IconifySourceOptions, OptimizeFn } from "../../typings/types";
 
-/**
- * The installed `@iconify-json/<pack>`'s own npm `version` - a cheap
- * freshness signal for `createIconLoader`'s version-based skip (see
- * `IconSource.getVersion`). Undefined for anything that isn't a plain
- * local install (not found, or resolved via the API-fallback path, which
- * has no version to key off of) - the loader always falls back to a full
- * resolve in that case.
- *
- * Resolved from `process.cwd()`, the same base `loadCollectionFromFS` (via
- * `@iconify/utils`) uses to find the pack itself - `import.meta.resolve`
- * would instead resolve relative to *this* file's own location, which in
- * a pnpm workspace can't see a sibling package's dependencies (the pack is
- * installed for the Astro project consuming astro-icon, not for
- * astro-icon's own package directory).
- */
+/** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
 async function getPackVersion(pack: string): Promise<string | undefined> {
   try {
+    // cwd, not import.meta.resolve, to reach the consuming project's install in a pnpm workspace.
     const require = createRequire(join(process.cwd(), "package.json"));
     const pkgPath = require.resolve(`@iconify-json/${pack}/package.json`);
     const raw = await readFile(pkgPath, "utf-8");
@@ -39,14 +26,14 @@ async function getPackVersion(pack: string): Promise<string | undefined> {
 }
 
 /**
- * An `IconSource` backed by a single Iconify icon pack. Prefers a locally
- * installed `@iconify-json/<pack>` package; otherwise resolves each
- * requested icon individually from the public Iconify API, which only
- * supports fetching specific icons - not an entire pack - per request.
+ * An {@link IconSource} backed by a single Iconify icon pack. `iconify()`
+ * uses this internally; reach for it directly when you compose sources
+ * yourself, for example combining two packs into one collection with
+ * `createIconLoader` or building a custom {@link IconSource}-based live
+ * loader with `createLiveIconLoader`.
  *
- * Pack resolution is cached at the module level (see `resolvePack` in
- * `iconify/resolvePack.ts`), so this is cheap to call repeatedly and shares
- * its result with any other source using the same pack.
+ * Prefers a local `@iconify-json/<pack>` install, falling back to fetching
+ * each requested icon individually from the public Iconify API.
  */
 export function iconifySource(
   pack: string,
@@ -57,9 +44,6 @@ export function iconifySource(
   const logger = consoleLogger;
 
   return {
-    // Matches the pack name - if a collection is named the same way
-    // (astro-icon's own convention, e.g. `mdi: defineCollection({ loader:
-    // iconify("mdi") })`), typegen keys line up correctly.
     name: pack,
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
@@ -86,8 +70,7 @@ export function iconifySource(
       return entry;
     },
     async listIcons() {
-      // An explicit allowlist is typed exactly as given, the same way it's
-      // enforced in getIcon - not verified upfront against the pack.
+      // Not verified against the pack upfront, matching getIcon's own lazy check.
       if (allowed) return [...icons!];
 
       const local = await resolveLocalPack(pack);

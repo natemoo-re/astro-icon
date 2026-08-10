@@ -8,15 +8,25 @@ import type { IconSource } from "../core/iconSource.js";
 import type { IconEntry } from "../../typings/types";
 
 /**
- * Builds a live content collection loader around one or more `IconSource`s,
- * handling the per-request plumbing every icon source needs: caching
- * resolved entries for the lifetime of the server process, wrapping thrown
- * errors as `{ error }`, and (when the source supports it) fulfilling
- * whole-collection loads via `listIcons` + `getIcon`.
+ * Builds a live content collection loader (`defineLiveCollection()`) around
+ * one or more {@link IconSource}s, resolving icons on demand per request
+ * instead of at build time. Use this when you can't know your icon names
+ * ahead of time, such as a user-driven icon search.
  *
- * Passing multiple sources combines them into one live collection: each
- * icon is resolved by trying sources in order and using the first one that
- * has it.
+ * ```ts
+ * // src/live.config.ts
+ * import { defineLiveCollection } from "astro:content";
+ * import { createLiveIconLoader, iconifySource } from "astro-icon/loaders/live";
+ *
+ * export const collections = {
+ *   mdi: defineLiveCollection({ loader: createLiveIconLoader(iconifySource("mdi")) }),
+ * };
+ * ```
+ *
+ * Caches resolved entries for the lifetime of the server process, wraps
+ * thrown errors as `{ error }` for `getLiveEntry()`/`getLiveCollection()`,
+ * and, when the source supports `listIcons()`, fulfills whole-collection
+ * loads and generates autocomplete types for it.
  */
 export function createLiveIconLoader(
   sources: IconSource | IconSource[],
@@ -24,13 +34,7 @@ export function createLiveIconLoader(
   const source = mergeSources(sources);
   const cache = new Map<string, IconEntry>();
 
-  // Best-effort typegen, fired once at construction time (not per-request -
-  // `LiveLoader`'s context never exposes the project root or the
-  // collection's own name, so this relies on `process.cwd()` and on
-  // `source.name` matching the collection key). If the source can list its
-  // icons, generated types offer all of them for autocomplete; otherwise
-  // (no `listIcons`, or it fails - e.g. an API-only iconify pack with no
-  // local install) this collection falls back to typing as a plain `string`.
+  // Best-effort typegen at construction time, since `LiveLoader`'s context exposes no project root or collection name.
   const rootDir = new URL(`file://${process.cwd()}/`);
   const names = source.listIcons ? source.listIcons().catch(() => []) : Promise.resolve([]);
   names

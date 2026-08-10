@@ -1,13 +1,5 @@
 ---
-// Server-rendered per request - a live icon picker for the "mdi" live
-// collection (src/live.config.ts). Nothing is preloaded: Iconify's search
-// API finds matching icon names for the query, and each result is rendered
-// on demand via <LiveIcon>, capped well below the thousands of icons in
-// the full "mdi" pack.
-//
-// Works without JS (search-on-submit, server-rendered below); with JS, a
-// client script in ./api/icon-search.ts re-searches on every keystroke -
-// debounced, aborting whatever search was still in flight.
+// A live icon picker for the "mdi" collection; works without JS (search-on-submit), and with JS via ./api/icon-search.ts.
 import { LiveIcon } from "astro-icon/components";
 import Base from "../layouts/base.astro";
 
@@ -16,9 +8,6 @@ const PACK = "mdi";
 
 const query = Astro.url.searchParams.get("q")?.trim() ?? "";
 
-// The "mdi" live collection is the only one this page searches against, so
-// every result is guaranteed to come back "mdi:<name>" - matching
-// <LiveIcon>'s `collection:name` requirement.
 let results: `${typeof PACK}:${string}`[] = [];
 let error: string | undefined;
 
@@ -95,9 +84,7 @@ if (query) {
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let controller: AbortController | undefined;
 
-  // The server-rendered <LiveIcon> results above still work with JS
-  // disabled (a normal form submit reloads the page); once JS is running,
-  // intercept the form and search live instead.
+  // Intercepts the form so search runs live instead of a full page reload.
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     search(input.value);
@@ -111,9 +98,7 @@ if (query) {
   async function search(rawQuery: string) {
     const query = rawQuery.trim();
 
-    // Abort whatever search was still in flight - its response would only
-    // ever be stale by the time it arrives.
-    controller?.abort();
+    controller?.abort(); // superseded by this new search
 
     const url = new URL(location.href);
     if (query) url.searchParams.set("q", query);

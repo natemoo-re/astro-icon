@@ -1,10 +1,4 @@
 import type { IconEntry } from "../../typings/types";
 
-/**
- * Module-level (process-lifetime) cache of resolved content-store entries,
- * keyed by `${collection}:${name}`. `Icon.astro`'s frontmatter re-runs on
- * every render, so a `Map` declared there is a fresh empty map each time -
- * this has to live in its own module to actually persist across renders,
- * the same way `createLiveIconLoader`'s cache does.
- */
+/** Process-lifetime cache of resolved entries, keyed by `${collection}:${name}`; lives outside `Icon.astro` so it persists across its per-render frontmatter. */
 export const entryCache = new Map<string, { data: IconEntry }>();

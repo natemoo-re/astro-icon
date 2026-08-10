@@ -6,11 +6,7 @@ interface TypegenState {
   live: Record<string, string[]>;
 }
 
-// A build collection with zero names is genuinely empty ("never" - no value
-// is valid). A live collection with zero names just means its source
-// couldn't list its icons (no `listIcons`, or it failed/isn't possible, e.g.
-// an API-only pack with no local install) - any string might still resolve
-// at request time, so it falls back to `string` rather than `never`.
+// An empty build collection types as `never`; an empty live collection falls back to `string`, since it may just mean the source couldn't list its icons.
 const KIND_CONFIG = {
   build: { interfaceName: "Collections", emptyValueType: "never" },
   live: { interfaceName: "LiveCollections", emptyValueType: "string" },
@@ -19,16 +15,7 @@ const KIND_CONFIG = {
 // Serializes concurrent writes from multiple loaders running in the same sync.
 let chain: Promise<void> = Promise.resolve();
 
-/**
- * Records the full set of icon names available for a collection (not just
- * the ones actually loaded/used - see `iconify.ts`) so its generated types
- * offer autocomplete across everything the pack/source has to offer.
- *
- * Each collection gets its own declaration file under `.astro/astro-icon/`,
- * rather than one file for the whole project - individually easy to find
- * ("which file has mdi's icons?" -> `astro-icon/build-mdi.d.ts`) and only
- * the collections that actually changed get rewritten.
- */
+/** Records a collection's full icon name set to its own declaration file under `.astro/astro-icon/`, for autocomplete. */
 export function recordCollection(
   rootDir: URL,
   kind: "build" | "live",
@@ -74,11 +61,7 @@ async function writePartial(
 }
 
 function partialFilename(kind: "build" | "live", collection: string): string {
-  // Collection names are arbitrary identifiers chosen by the user in
-  // content.config.ts/live.config.ts - sanitize before using one as a
-  // filename. Prefixed by kind so a build and a live collection that
-  // happen to share a name (different files, different namespaces) don't
-  // collide.
+  // Sanitized since collection names are arbitrary user-chosen identifiers; prefixed by kind to avoid a build/live name collision.
   const safeName = collection.replace(/[^a-zA-Z0-9_-]/g, "_");
   return `${kind}-${safeName}.d.ts`;
 }

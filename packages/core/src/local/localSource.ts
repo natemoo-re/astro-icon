@@ -6,18 +6,18 @@ import { AstroIconError } from "../core/AstroIconError.js";
 import { consoleLogger } from "../core/logger.js";
 import { parseIconSVG } from "../core/parseIconSVG.js";
 import type { IconSource } from "../core/iconSource.js";
-import type { OptimizeFn } from "../../typings/types";
+import type { createIconLoader } from "../loaders/createIconLoader.js";
+import type { createLiveIconLoader } from "../loaders/createLiveIconLoader.js";
+import type { IconifySourceOptions, OptimizeFn } from "../../typings/types";
 
 export interface LocalSourceOptions {
   /**
-   * Restricts this source to a fixed set of icon names - the same
-   * deliberate-allowlist semantics as `iconifySource`'s `icons` option.
-   * Omit to allow every `.svg` file found in the directory.
+   * Restricts this source to a fixed list of icon names, the same
+   * deliberate allowlist semantics as {@link IconifySourceOptions.icons}.
+   * Omit it to allow every `.svg` file found in the directory.
    */
   icons?: string[];
-  /**
-   * Optional transform applied to each icon's raw SVG markup before it is parsed and stored.
-   */
+  /** Optional transform applied to each icon's raw SVG markup before it is parsed and stored. */
   optimize?: OptimizeFn;
   /**
    * When true, turns a missing/unreadable icon file into a build error
@@ -25,22 +25,19 @@ export interface LocalSourceOptions {
    * @default false
    */
   strict?: boolean;
-  /**
-   * Where warnings (e.g. a derived viewBox) are reported. `localIcons()`
-   * passes its own `context.logger` here so they carry Astro's usual
-   * `[loader-name]` label; a bare `localSource()` call falls back to
-   * `console.warn` since it has no loader context to draw one from.
-   */
+  /** Where warnings are reported; defaults to `console.warn` if not passed a loader's own logger. */
   logger?: Pick<AstroIntegrationLogger, "warn">;
 }
 
 /**
- * An `IconSource` backed by a directory of local `.svg` files. Each file's
- * path relative to `dir` (without its extension, subdirectories joined with
- * `/`) is its icon name - `<dir>/logos/deno.svg` is `"logos/deno"`.
+ * An {@link IconSource} backed by a directory of local `.svg` files.
+ * `localIcons()` uses this internally and adds file watching; reach for
+ * `localSource` directly when you compose it with other sources through
+ * {@link createIconLoader} or {@link createLiveIconLoader}, since it doesn't
+ * watch the directory on its own.
  *
- * Doesn't watch the directory itself - see `localIcons()`, which wires this
- * up with the file-watching a directory-backed source needs.
+ * Each file's path relative to `dir` becomes its icon name, the same
+ * convention `localIcons()` uses: `<dir>/logos/deno.svg` is `"logos/deno"`.
  */
 export function localSource(dir: URL | string, options: LocalSourceOptions = {}): IconSource {
   const dirPath = dir instanceof URL ? fileURLToPath(dir) : dir;

@@ -6,17 +6,7 @@ export interface ResolvedIcon {
   data: IconEntry;
 }
 
-/**
- * Resolves every name in `names` against `source.getIcon()`, in parallel. A
- * name that fails to resolve is skipped (reported via `onError`, which can
- * throw to abort the whole batch - e.g. for `strict` mode) rather than
- * failing every other icon too.
- *
- * Shared between `createIconLoader` (build) and `createLiveIconLoader`'s
- * `loadCollection` (live) - loading "everything a source has" is the same
- * logic in both; they just do different things with the result (write to
- * the persistent store vs. return `{ entries }` for one request).
- */
+/** Resolves every name against `source.getIcon()` in parallel, skipping (and reporting via `onError`) any that fail. */
 export async function resolveAllIcons(
   source: Pick<IconSource, "getIcon">,
   names: string[],

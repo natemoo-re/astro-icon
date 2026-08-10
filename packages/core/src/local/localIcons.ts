@@ -17,20 +17,20 @@ function hashSource(raw: string): string {
 }
 
 /**
- * A content layer loader for a directory of local `.svg` files. Each file's
- * path relative to `dir` (without its extension, subdirectories joined with
- * `/`) is its icon name - `<dir>/logos/deno.svg` is `"logos/deno"`.
+ * A content layer loader for a directory of local `.svg` files, the
+ * suggested default for the `icons` collection:
  *
- * Watches the directory in dev the same way Astro's own built-in loaders
- * (`glob()`, `file()`) watch theirs: `add`/`change`/`unlink` update just the
- * one affected entry, not a full reload of every icon - add, edit, or
- * remove a `.svg` file and the collection picks it up with no dev server
- * restart, the same way Astro's built-in file-backed collections do.
- *
- * The suggested default for the `icons` collection:
  * ```ts
  * icons: defineCollection({ loader: localIcons() }),
  * ```
+ *
+ * Each file's path relative to `dir` (without its extension, subdirectories
+ * joined with `/`) becomes its icon name: `src/icons/logos/deno.svg` is
+ * `"logos/deno"`.
+ *
+ * Watches the directory in dev the same way Astro's own file-backed loaders
+ * do: add, edit, or remove an `.svg` file and the collection picks it up
+ * without a dev server restart.
  */
 export function localIcons(dir: string = "src/icons", options: LocalSourceOptions = {}): Loader {
   const strict = options.strict ?? false;
@@ -60,13 +60,7 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
           .slice(0, -".svg".length);
       }
 
-      // Skips re-running `optimize`/SVGO on an icon whose source file hasn't
-      // actually changed since the last time it was synced - `previous` is
-      // this id's entry from *before* the current sync pass touched it
-      // (either the pre-`store.clear()` snapshot on a full sync, or just
-      // `store.get(id)` for a single-icon watcher update), which on a warm
-      // process (or a fresh one with a persisted content-layer cache) can
-      // already hold last run's result.
+      // Skips re-running `optimize`/SVGO if the source file's hash matches `previous`'s.
       async function syncIcon(
         id: string,
         previous?: { data: Record<string, unknown>; digest?: string | number },
@@ -77,8 +71,7 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
           try {
             raw = await readFile(filePath, "utf-8");
           } catch {
-            // Fall through to `source.getIcon()` below for its standard
-            // "no local icon file found" error.
+            // Falls through to source.getIcon()'s "no local icon file found" error.
           }
 
           if (raw !== undefined) {
@@ -112,17 +105,13 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
         await recordCollection(config.root, "build", collection, [...store.keys()]);
       }
 
-      // Full sync, same as any other loader's first run.
       const names = await listIconsOrFallback(source, {
         strict,
         logger,
         failureMessage: (detail) => `Failed to list local icons in "${dirPath}": ${detail}`,
         hint: `Fix the error above, or disable "strict" to skip local icons with a warning instead.`,
       });
-      // Snapshot before clearing - on a warm process (or a fresh one with a
-      // persisted content-layer cache restored from disk) `store` may
-      // already hold last run's entries here, which `syncIcon` uses to skip
-      // re-`optimize`-ing icons whose source file hasn't actually changed.
+      // Snapshot before clearing so syncIcon can skip unchanged icons.
       const previousEntries = new Map(store.entries());
       store.clear();
       for (const id of names) {

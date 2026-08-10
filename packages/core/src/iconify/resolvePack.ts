@@ -8,19 +8,7 @@ export interface ResolvePackOptions {
   logger: Pick<AstroIntegrationLogger, "warn">;
 }
 
-// Shared across every loader instance in this process (the build `iconify()`
-// loader and any number of `iconifySource()`-backed live loaders commonly
-// resolve the same pack independently otherwise).
-//
-// Keyed by `<pack>` for a full pack (from a local install - the only way to
-// get "everything") and `<pack>:<sorted icons>` for an API-fallback subset
-// (the public API can only ever return the icons you explicitly ask for,
-// see `fetchPackFromAPI`) - a bare pack name and a `pack:icons` string can
-// never collide, since iconify pack names never contain a colon.
-//
-// Only successful resolutions are kept - a failed lookup (pack not
-// installed yet, transient network error) isn't cached, so it's retried
-// rather than "stuck" for the life of the process.
+// Shared across every loader instance in this process; keyed by `<pack>` (full local install) or `<pack>:<sorted icons>` (API subset). Failed lookups aren't cached, so they're retried.
 const packCache = new Map<string, Promise<IconifyJSON | undefined>>();
 
 function cachedPackResolution(
@@ -41,10 +29,7 @@ function cachedPackResolution(
   return promise;
 }
 
-// Packs already warned about (see `warnMissingLocalPackOnce` below) - a live
-// source resolves one icon at a time, so without this the same "not
-// installed locally" notice would repeat for every distinct icon requested
-// through it. Reset only by process restart (or `__clearPackCache` in tests).
+// Packs already warned about, so the notice doesn't repeat per icon requested.
 const warnedPacks = new Set<string>();
 
 function warnMissingLocalPackOnce(
@@ -54,34 +39,24 @@ function warnMissingLocalPackOnce(
   if (warnedPacks.has(pack)) return;
   warnedPacks.add(pack);
   logger.warn(
-    `"${pack}" icon set was not found locally - falling back to the Iconify API for individual icon lookups (works, but slower, and it can only ever resolve icons you specifically request). Install it for better performance: \`npm install @iconify-json/${pack}\`. (Logged once per pack.)`,
+    `"${pack}" icon set was not found locally, falling back to the Iconify API for individual icon lookups (works, but slower, and it can only ever resolve icons you specifically request). Install it for better performance: \`npm install @iconify-json/${pack}\`. (Logged once per pack.)`,
   );
 }
 
-/** Clears the shared pack cache and warning state - for tests only. */
+/** Clears the shared pack cache and warning state; for tests only. */
 export function __clearPackCache(): void {
   packCache.clear();
   warnedPacks.clear();
 }
 
-/**
- * Resolves a full pack from a locally installed `@iconify-json/<pack>`
- * package, if present. Shares its result across every caller in this
- * process via the module-level pack cache.
- */
+/** Resolves a full pack from a locally installed `@iconify-json/<pack>` package, if present. */
 export function resolveLocalPack(pack: string): Promise<IconifyJSON | undefined> {
   return cachedPackResolution(pack, () =>
     loadCollectionFromFS(pack).catch(() => undefined),
   );
 }
 
-/**
- * Resolves an iconify collection, preferring a locally installed
- * `@iconify-json/<pack>` package and falling back to the public Iconify API.
- *
- * Under `strict`, a pack that isn't installed locally is a hard error
- * instead of a warn + fallback.
- */
+/** Resolves an iconify collection, preferring a local install and falling back to the Iconify API; `strict` turns the fallback into a hard error. */
 export async function resolvePack(
   pack: string,
   icons: string[] | undefined,
@@ -98,9 +73,7 @@ export async function resolvePack(
   }
 
   if (!icons?.length) {
-    // The public Iconify API only returns real data for an explicit `icons=`
-    // subset - there's no way to fetch "the whole pack" from it. A full
-    // pack needs a local install.
+    // The Iconify API can't return "the whole pack"; a full pack needs a local install.
     throw new AstroIconError(
       `"${pack}" isn't installed locally, so the full icon set can't be resolved from the Iconify API.`,
       `Install \`@iconify-json/${pack}\`, or request specific icons by name instead.`,
@@ -123,12 +96,7 @@ export async function resolvePack(
   return remote;
 }
 
-/**
- * The public Iconify API only returns real icon data for a `.json` request
- * that specifies an explicit `icons=` subset - a bare `<pack>.json` request
- * (no `icons` param) responds `200 OK` with the literal body `"404"`
- * instead of an error status. Always pass a subset here.
- */
+/** A bare `<pack>.json` request (no `icons=` param) returns `200 OK` with the literal body `"404"`, so always pass a subset. */
 async function fetchPackFromAPI(
   pack: string,
   icons: string[],

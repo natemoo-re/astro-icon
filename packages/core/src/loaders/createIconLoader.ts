@@ -23,18 +23,24 @@ export interface IconLoaderOptions {
 }
 
 /**
- * A content layer loader around one or more `IconSource`s - the collection
- * always contains exactly what `listIcons()` reports (every icon the
- * source(s) allow), so loading and generated types are always the same set.
- * Restrict that set on a per-source basis (see `iconifySource`'s `icons`
- * option); this loader has no filtering of its own.
+ * Builds a build-time content layer loader around one or more
+ * {@link IconSource}s. Use this to back a custom source, or to combine
+ * several sources into one collection:
  *
- * Passing multiple sources combines them into one collection: each icon is
- * resolved by trying sources in order and using the first one that has it.
+ * ```ts
+ * import { createIconLoader, iconifySource, localSource } from "astro-icon/loaders";
  *
- * Follows the Content Loader API's documented conventions: provides a
- * default Zod `schema` (still overridable via `defineCollection({ loader,
- * schema })`), and runs every entry through `parseData()` before storing it.
+ * export const collections = {
+ *   icons: defineCollection({
+ *     loader: createIconLoader([iconifySource("mdi"), localSource("src/icons")]),
+ *   }),
+ * };
+ * ```
+ *
+ * Each icon is resolved by trying sources in order and using the first one
+ * that has it. The collection always contains exactly what `listIcons()`
+ * reports; restrict that on a per-source basis (see `iconifySource`'s
+ * `icons` option), since this loader does no filtering of its own.
  */
 export function createIconLoader(
   sources: IconSource | IconSource[],
@@ -64,11 +70,7 @@ export function createIconLoader(
       logger.warn(message);
     }
 
-    // If every merged source reports a version (e.g. an iconify pack's npm
-    // version) and it - plus the exact requested icon set - matches what
-    // was recorded last sync, the store (already warm, either from earlier
-    // in this process or restored from a persisted content-layer cache)
-    // already holds the correct result. Skip resolving anything.
+    // Skip resolving if every source's version + the requested icon set matches the last sync.
     const metaKey = `astro-icon:version:${collection}`;
     const versionKey = await getSourceVersionKey(source, names);
     if (versionKey && versionKey === meta.get(metaKey) && names.every((name) => store.has(name))) {
@@ -96,16 +98,7 @@ export function createIconLoader(
     if (versionKey) meta.set(metaKey, versionKey);
     else meta.delete(metaKey);
 
-    // Keyed by the collection's own name (the key it's assigned under in
-    // content.config.ts), not the source's name - those commonly differ
-    // (e.g. `icons: defineCollection({ loader: iconify("mdi") })`), and
-    // generated types need to match what `<Icon name="...">` is checked
-    // against.
-    //
-    // Typed from `resolved` (what actually made it into the store), not
-    // `names` (what listIcons() reported) - an icon that failed to build in
-    // non-strict mode is warned-and-skipped from the store, and must not be
-    // typed as a valid IconName either.
+    // Typed from `resolved`, not `names`: a failed icon is skipped from the store in non-strict mode.
     await recordCollection(
       context.config.root,
       "build",

@@ -1,20 +1,11 @@
 import type { IconEntry } from "../../typings/types";
 
 export interface RenderableIconProps<P> {
-  /**
-   * Props to spread onto the rendered `<svg>` - `size` folded into
-   * `width`/`height`, `viewBox`/`width`/`height` defaulted from `entry`
-   * unless the caller's own props already set them.
-   */
+  /** Props to spread onto the rendered `<svg>`, with `size` folded into `width`/`height`. */
   normalizedProps: Omit<P, "size">;
 }
 
-/**
- * Builds the final `<svg>` props for a single icon occurrence. Shared by
- * `<Icon>` and `<LiveIcon>` so "size wins over an explicit width/height,
- * viewBox/width/height default from the resolved entry" is defined once
- * instead of copy-pasted into both components' frontmatter.
- */
+/** Builds the final `<svg>` props for a single icon occurrence. Shared by `<Icon>` and `<LiveIcon>`. */
 export function renderableIconProps<
   P extends { size?: number | string; width?: unknown; height?: unknown; viewBox?: unknown },
 >(

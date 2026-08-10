@@ -13,10 +13,21 @@ interface AccessibleElementProps {
   value: string;
 }
 
+/**
+ * Renders one icon from a content collection as an inline `<svg>`, resolved
+ * at build time. `IconName` autocompletes from every collection you define
+ * in `content.config.ts`, once you've run `astro sync`, `dev`, or `build`.
+ *
+ * Use `<LiveIcon>` instead when you need to resolve an icon per request.
+ */
 interface Props extends HTMLAttributes<"svg"> {
+  /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
   name: IconName;
+  /** Adds an accessible `<title>` before the icon body. */
   title?: string | AccessibleElementProps;
+  /** Adds an accessible `<desc>` after `title`. */
   desc?: string | AccessibleElementProps;
+  /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
   size?: number | string;
   width?: number | string;
   height?: number | string;
@@ -41,9 +52,7 @@ if (!iconName) {
   );
 }
 
-// Caching is skipped in dev: local icon files (and other loader sources)
-// can change mid-session, and the content store re-syncs live for them -
-// a process-lifetime cache would keep serving the pre-edit icon forever.
+// Skipped in dev, since a process-lifetime cache would keep serving pre-edit icons.
 const cacheKey = `${collection}:${iconName}`;
 let entry: { data: IconEntry } | undefined = import.meta.env.DEV
   ? undefined
@@ -65,7 +74,7 @@ if (!entry) {
     import.meta.env.DEV
       ? hasPrefix
         ? `The "${collection}" collection doesn't have an icon named "${iconName}".\n\nDid you define a collection named "${collection}" in "src/content.config.ts", and does it include this icon?`
-        : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons" - define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`
+        : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`
       : undefined,
   );
 }
