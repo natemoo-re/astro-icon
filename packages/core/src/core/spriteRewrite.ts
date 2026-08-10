@@ -14,6 +14,11 @@ export interface SpriteSymbolData {
 
 const SVG_OPEN_TAG = /<svg\b([^>]*)>/g;
 const DATA_ICON_ATTR = /\bdata-icon="([^"]*)"/;
+// `<LiveIcon>` marks its own output with this alongside `data-icon` - a live
+// entry isn't guaranteed stable, so `Sprite` passes it through untouched
+// instead of deduping it (even if its collection:name happens to collide
+// with a resolved static icon's id - see `rewriteSpriteHtml`).
+const DATA_ICON_LIVE_ATTR = /\bdata-icon-live\b/;
 // `<Icon>` renders `{title && <title>...}{desc && <desc>...}` as separate
 // template expressions, which Astro's compiler surrounds with literal
 // whitespace text nodes in the output - so these tolerate (and preserve)
@@ -23,10 +28,28 @@ const LEADING_TITLE = /^\s*<title>[\s\S]*?<\/title>/;
 const LEADING_DESC = /^\s*<desc>[\s\S]*?<\/desc>/;
 
 /**
+ * Reads an `<svg>` opening tag's attributes and returns its marker info, or
+ * `undefined` if it has no `data-icon` marker or carries `data-icon-live`
+ * (a `<LiveIcon>` - never resolved or deduped, see `extractSpriteIcons` and
+ * `rewriteSpriteHtml`).
+ */
+function markerFrom(openTagAttrs: string): SpriteIconRef | undefined {
+  const dataIconMatch = DATA_ICON_ATTR.exec(openTagAttrs);
+  if (!dataIconMatch) return undefined;
+  if (DATA_ICON_LIVE_ATTR.test(openTagAttrs)) return undefined;
+  const { collection, name } = parseIconName(dataIconMatch[1]);
+  return { collection, name, id: iconId(collection, name) };
+}
+
+/**
  * Finds every unique icon `<Icon>` rendered into `html` (via its
  * `data-icon="collection:name"` marker), in first-seen order. Pure/sync -
  * no fetching, just string scanning, so it's usable independent of
  * `getEntry`.
+ *
+ * Skips `<LiveIcon>` occurrences (marked with `data-icon-live`) entirely -
+ * they're never resolved or deduped, only passed through as-is by
+ * `rewriteSpriteHtml`.
  */
 export function extractSpriteIcons(html: string): SpriteIconRef[] {
   const seen = new Set<string>();
@@ -34,13 +57,10 @@ export function extractSpriteIcons(html: string): SpriteIconRef[] {
   const re = new RegExp(SVG_OPEN_TAG.source, "g");
   let match: RegExpExecArray | null;
   while ((match = re.exec(html))) {
-    const dataIconMatch = DATA_ICON_ATTR.exec(match[1] ?? "");
-    if (!dataIconMatch) continue;
-    const { collection, name } = parseIconName(dataIconMatch[1]);
-    const id = iconId(collection, name);
-    if (seen.has(id)) continue;
-    seen.add(id);
-    refs.push({ collection, name, id });
+    const marker = markerFrom(match[1] ?? "");
+    if (!marker || seen.has(marker.id)) continue;
+    seen.add(marker.id);
+    refs.push(marker);
   }
   return refs;
 }
@@ -70,8 +90,10 @@ function leadingTitleDesc(inner: string): string {
  * `resolvedSymbols` into `<svg ...same attrs.../><use href="#id" /></svg>`,
  * preserving each occurrence's own opening tag (width/height/class/etc.)
  * and any leading title/desc. Occurrences whose id isn't in
- * `resolvedSymbols`, or that have no `data-icon` marker at all (hand
- * authored SVG passed into the slot), are left untouched.
+ * `resolvedSymbols`, that have no `data-icon` marker at all (hand authored
+ * SVG passed into the slot), or that carry `data-icon-live` (a `<LiveIcon>`
+ * - never deduped, even if its collection:name happens to match a resolved
+ * static icon's id) are left untouched.
  *
  * Single forward scan - icon bodies never contain a nested `<svg>` (an
  * existing invariant `<Icon>`'s own `set:html={body}` already relies on),
@@ -86,11 +108,8 @@ export function rewriteSpriteHtml(
   const re = new RegExp(SVG_OPEN_TAG.source, "g");
   let match: RegExpExecArray | null;
   while ((match = re.exec(html))) {
-    const dataIconMatch = DATA_ICON_ATTR.exec(match[1] ?? "");
-    if (!dataIconMatch) continue;
-    const { collection, name } = parseIconName(dataIconMatch[1]);
-    const id = iconId(collection, name);
-    if (!resolvedSymbols.has(id)) continue;
+    const marker = markerFrom(match[1] ?? "");
+    if (!marker || !resolvedSymbols.has(marker.id)) continue;
 
     const openTagEnd = re.lastIndex;
     const closeTagStart = html.indexOf("</svg>", openTagEnd);
@@ -101,7 +120,7 @@ export function rewriteSpriteHtml(
 
     result += html.slice(cursor, openTagEnd);
     result += leadingTitleDesc(inner);
-    result += `<use href="#${id}" />`;
+    result += `<use href="#${marker.id}" />`;
     result += "</svg>";
 
     cursor = closeTagEnd;

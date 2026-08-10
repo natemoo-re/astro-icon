@@ -1,5 +1,5 @@
 ---
-import { Icon, Sprite } from "astro-icon/components";
+import { Icon, LiveIcon, Sprite } from "astro-icon/components";
 import IconRow from "../components/IconRow.astro";
 ---
 
@@ -14,6 +14,9 @@ import IconRow from "../components/IconRow.astro";
       <Icon name="spinners:3-dots-fade" />
       <!-- Icons nested two levels deep inside another Astro component -->
       <IconRow />
+      <!-- A LiveIcon adjacent to static icons -> passed through untouched,
+           never deduped, even though it never throws. -->
+      <LiveIcon name="liveSpinners:3-dots-fade" />
     </Sprite>
     <!-- Outside the Sprite boundary -> always plain, never deduped -->
     <Icon name="3-dots-fade" />

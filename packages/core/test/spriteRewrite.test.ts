@@ -33,6 +33,15 @@ describe("extractSpriteIcons", () => {
       { collection: "icons", name: "home", id: "ai:icons:home" },
     ]);
   });
+
+  it("skips a <LiveIcon> occurrence (data-icon-live) entirely", () => {
+    const html =
+      '<svg data-icon="mdi:home"><path/></svg>' +
+      '<svg data-icon="mdi:search" data-icon-live><path/></svg>';
+    expect(extractSpriteIcons(html)).toEqual([
+      { collection: "mdi", name: "home", id: "ai:mdi:home" },
+    ]);
+  });
 });
 
 describe("rewriteSpriteHtml", () => {
@@ -97,6 +106,15 @@ describe("rewriteSpriteHtml", () => {
   it("leaves an icon whose id isn't in resolvedSymbols untouched", () => {
     const html = '<svg data-icon="mdi:home"><path d="M1 1"/></svg>';
     const out = rewriteSpriteHtml(html, new Map());
+    expect(out).toBe(html);
+  });
+
+  it("leaves a <LiveIcon> occurrence (data-icon-live) untouched, even when its id is resolved", () => {
+    // Same collection:name as a resolved static icon - LiveIcon must not be
+    // rewritten into a <use> pointing at the static icon's symbol, since
+    // live content isn't guaranteed to match it.
+    const html = '<svg data-icon="mdi:home" data-icon-live><path d="M9 9"/></svg>';
+    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
     expect(out).toBe(html);
   });
 });

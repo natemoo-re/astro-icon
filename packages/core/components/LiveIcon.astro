@@ -40,11 +40,11 @@ if (error || !entry) {
 }
 
 const data = entry.data as IconEntry;
-const { id, normalizedProps } = renderableIconProps(data, parsed, props);
+const { normalizedProps } = renderableIconProps(data, props);
 ---
 
-<svg {...normalizedProps} data-icon={name}>
+<svg {...normalizedProps} data-icon={name} data-icon-live>
   {title && <title>{title}</title>}
   {desc && <desc>{desc}</desc>}
-  <Fragment id={id} set:html={data.body} />
+  <Fragment set:html={data.body} />
 </svg>

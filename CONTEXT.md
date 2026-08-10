@@ -10,6 +10,8 @@ The `data-icon="collection:name"` attribute every `<Icon>`-rendered `<svg>` carr
 
 The subtree wrapped by a single `<Sprite>` component (`packages/core/components/Sprite.astro`). Deduping (repeated icons collapsed into one `<symbol>` + many `<use>`s) is scoped entirely to what's inside this boundary - an `<Icon>` rendered outside any `<Sprite>` is never affected.
 
+A `<LiveIcon>` inside the boundary is never deduped, regardless of how many times its `collection:name` repeats - it carries a second marker, `data-icon-live` (alongside the [Icon marker](#icon-marker)), which `Sprite` uses to pass it through untouched instead of resolving/folding it into a shared `<symbol>`. Live data isn't guaranteed stable across resolutions the way a static collection entry is, so `Sprite` doesn't attempt to treat two `<LiveIcon>` occurrences - or a `<LiveIcon>` and a static `<Icon>` that happen to share a `collection:name` - as interchangeable. See `packages/core/src/core/spriteRewrite.ts`.
+
 ## Symbol defs block
 
 The single hidden `<svg style="position:absolute;width:0;height:0" aria-hidden="true">` that a `<Sprite>` emits once, containing one `<symbol>` per unique icon referenced inside its boundary, ahead of the rewritten slot content.

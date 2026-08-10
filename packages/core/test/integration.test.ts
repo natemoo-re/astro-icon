@@ -123,4 +123,10 @@ describe("<Sprite> against a real astro build", () => {
     expect((spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length).toBe(5);
     expect(spriteHtml.match(/<circle/g)?.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("passes a <LiveIcon> inside the Sprite boundary through untouched, never deduped", () => {
+    expect(spriteHtml).toContain('data-icon="liveSpinners:3-dots-fade" data-icon-live');
+    expect(spriteHtml).not.toContain('<use href="#ai:liveSpinners:3-dots-fade" />');
+    expect(spriteHtml).not.toContain('<symbol id="ai:liveSpinners:3-dots-fade"');
+  });
 });
