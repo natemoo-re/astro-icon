@@ -34,18 +34,9 @@ export function mergeSources(sources: IconSource | IconSource[]): IconSource {
     },
     async listIcons() {
       const lists = await Promise.all(
-        sources.map((source) => source.listIcons?.().catch(() => []) ?? Promise.resolve([])),
+        sources.map((source) => (source.listIcons ? source.listIcons().catch(() => []) : [])),
       );
-      const seen = new Set<string>();
-      const merged: string[] = [];
-      for (const list of lists) {
-        for (const iconName of list) {
-          if (seen.has(iconName)) continue;
-          seen.add(iconName);
-          merged.push(iconName);
-        }
-      }
-      return merged;
+      return [...new Set(lists.flat())];
     },
   };
 }

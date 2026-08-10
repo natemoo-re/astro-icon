@@ -139,7 +139,7 @@ function namesHash(names: string[]): string {
     .digest("hex");
 }
 
-async function tryGetHash(path: URL): Promise<string | void> {
+async function tryGetHash(path: URL): Promise<string | undefined> {
   try {
     const text = await readFile(path, { encoding: "utf-8" });
     return text.split("\n", 2)[1]?.replace("// ", "");
