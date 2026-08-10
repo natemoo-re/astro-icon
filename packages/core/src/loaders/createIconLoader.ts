@@ -80,7 +80,17 @@ export function createIconLoader(
     // (e.g. `icons: defineCollection({ loader: iconify("mdi") })`), and
     // generated types need to match what `<Icon name="...">` is checked
     // against.
-    await recordCollection(context.config.root, "build", collection, names);
+    //
+    // Typed from `resolved` (what actually made it into the store), not
+    // `names` (what listIcons() reported) - an icon that failed to build in
+    // non-strict mode is warned-and-skipped from the store, and must not be
+    // typed as a valid IconName either.
+    await recordCollection(
+      context.config.root,
+      "build",
+      collection,
+      resolved.map(({ id }) => id),
+    );
   }
 
   return { name: `astro-icon/loaders/icon/${source.name}`, load, schema: iconEntrySchema };

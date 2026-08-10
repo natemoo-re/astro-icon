@@ -94,6 +94,9 @@ describe("createIconLoader", () => {
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("missing")).toBeUndefined();
     expect(context.logger.warn).toHaveBeenCalled();
+    // The failed icon must not be typed as a valid IconName either - it
+    // isn't in the store, so it can't be in the generated types.
+    expect(recordCollection).toHaveBeenCalledWith(expect.any(URL), "build", "icons", ["home"]);
   });
 
   it("throws under strict instead of warning when building an icon fails", async () => {
