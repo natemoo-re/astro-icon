@@ -2,6 +2,7 @@ import type { Loader } from "astro/loaders";
 import { createIconLoader } from "../loaders/createIconLoader.js";
 import { iconifySource } from "./iconifySource.js";
 import type { IconifySourceOptions } from "../../typings/types";
+import type { IconifyIconName } from "../../typings/names";
 
 /**
  * A content layer loader for one or more Iconify icon packs. This is what
@@ -25,9 +26,28 @@ import type { IconifySourceOptions } from "../../typings/types";
  *
  * Pass an array of packs to combine them into one collection; each keeps its
  * own icon names, and the first pack wins if two share a name.
+ *
+ * The `icons: [...]` option is typed and autocompleted against the pack's
+ * own catalog. A duplicate name in that array is deduped and logged as a
+ * warning at runtime (see `iconifySource`), not rejected at the type level.
+ * This only kicks in once astro-icon has recorded the pack's full icon list
+ * from a previous sync (`astro sync`/`dev`/`build`); until then it falls
+ * back to a plain `string`.
  */
-export function iconify(pack: string, options: IconifySourceOptions): Loader;
-export function iconify(packs: string[], options: IconifySourceOptions): Loader;
+export function iconify<
+  Pack extends string,
+  const Icons extends readonly IconifyIconName<Pack>[] = readonly IconifyIconName<Pack>[],
+>(
+  pack: Pack,
+  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+): Loader;
+export function iconify<
+  Packs extends readonly string[],
+  const Icons extends readonly IconifyIconName<Packs[number]>[] = readonly IconifyIconName<Packs[number]>[],
+>(
+  packs: Packs,
+  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+): Loader;
 export function iconify(
   pack: string | string[],
   options: IconifySourceOptions = {},

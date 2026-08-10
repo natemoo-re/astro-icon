@@ -1,104 +1,76 @@
-# Astro Icon
+# astro-icon
 
-This **[Astro integration](https://docs.astro.build/en/guides/integrations-guide/)** provides a straight-forward `Icon` component for [Astro](https://astro.build).
+Render SVG icons in [Astro](https://astro.build) as inline `<svg>` elements, with full TypeScript autocomplete for every icon name.
 
-- <strong>[Why Astro Icon](#why-astro-icon)</strong>
-- <strong>[Installation](#installation)</strong>
-- <strong>[Usage](#usage)</strong>
-- <strong>[Configuration](#configuration)</strong>
-- <strong>[Examples](#examples)</strong>
-- <strong>[Migrating to v1](#migrating-to-v1)</strong>
-- <strong>[Contributing](#contributing)</strong>
-- <strong>[Changelog](#changelog)</strong>
+astro-icon reads icons through Astro's [content layer](https://docs.astro.build/en/guides/content-collections/): a build-time collection for icons you know ahead of time, or a live collection for icons you resolve per request. It ships loaders for local `.svg` files and [Iconify](https://iconify.design) icon sets, and you can write your own loader for any other source.
 
-## Why Astro Icon
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [The `<Icon>` component](#the-icon-component)
+- [Styling icons](#styling-icons)
+- [Local icons](#local-icons)
+- [Iconify icons](#iconify-icons)
+- [Deduping repeated icons with `<Sprite>`](#deduping-repeated-icons-with-sprite)
+- [Resolving icons per request with `<LiveIcon>`](#resolving-icons-per-request-with-liveicon)
+- [Bringing your own icon source](#bringing-your-own-icon-source)
+- [Using icons in framework components](#using-icons-in-framework-components)
+- [Upgrading from v1](#upgrading-from-v1)
+- [Contributing](#contributing)
+- [Changelog](#changelog)
 
 ## Installation
 
-### Quick Install
-
-The `astro add` command-line tool automates the installation for you. Run one of the following commands in a new terminal window. (If you aren't sure which package manager you're using, run the first command.) Then, follow the prompts, and type "y" in the terminal (meaning "yes") for each one.
-
-```sh
-# Using NPM
-npx astro add astro-icon
-# Using Yarn
-yarn astro add astro-icon
-# Using PNPM
-pnpm astro add astro-icon
-```
-
-If you run into any issues, [feel free to report them to us on GitHub](https://github.com/natemoo-re/astro-icon/issues) and try the manual installation steps below.
-
-### Manual Install
-
-First, install the `astro-icon` package using your package manager. If you're using npm or aren't sure, run this in the terminal:
+Install the package with your package manager:
 
 ```sh
 npm install astro-icon
 ```
 
-Then, apply this integration to your `astro.config.*` file using the `integrations` property:
+astro-icon isn't an Astro integration, so you don't add it to `integrations` in `astro.config.mjs`. Instead, you define one or more icon collections in `src/content.config.ts`, the same way you'd define any other content collection.
 
-**`astro.config.mjs`**
+Then reference the icons astro-icon generates for you by adding this line to `src/env.d.ts`:
 
-```js
-import { defineConfig } from "astro/config";
-import icon from "astro-icon";
-
-export default defineConfig({
-  integrations: [icon()],
-});
+```ts
+/// <reference path="../.astro/astro-icon.d.ts" />
 ```
 
-## Usage
+This gives `<Icon name="...">` and `<LiveIcon name="...">` autocomplete for every icon in your collections, and a type error for a name that doesn't exist. It updates the first time you run `astro sync`, `astro dev`, or `astro build`, so autocomplete won't show your icons until you've run one of those at least once.
 
-Astro Icon is ready to use, with zero additional configuration. The included `Icon` component allows you to inline `svg`s directly into your HTML. Repeasted
+## Quick start
 
-### Local Icons
+Define a collection with the `iconify` loader for an [Iconify icon set](https://icon-sets.iconify.design/), or `localIcons` for a directory of your own `.svg` files:
 
-By default, Astro Icon supports custom local `svg` icons. They are optimized with [`svgo`](https://github.com/svg/svgo) automatically with no extra build step. See ["A Pretty Good SVG Icon System"](https://css-tricks.com/pretty-good-svg-icon-system/#just-include-the-icons-inline) from CSS Tricks.
+```ts
+// src/content.config.ts
+import { defineCollection } from "astro:content";
+import { iconify, localIcons } from "astro-icon/loaders";
 
-1. Create a directory inside of `src/` named `icons/`.
-2. Add each desired icon as an individual `.svg` file to `src/icons/`
-3. Reference a specific icon file using the `name` prop.
+export const collections = {
+  // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
+  mdi: defineCollection({ loader: iconify("mdi") }),
+  // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
+  icons: defineCollection({ loader: localIcons() }),
+};
+```
+
+Then render an icon with the `<Icon>` component:
 
 ```astro
 ---
 import { Icon } from "astro-icon/components";
 ---
 
-<!-- Loads the SVG in `/src/icons/filename.svg` -->
-<Icon name="filename" />
+<Icon name="mdi:home" />
+<Icon name="logo" />
 ```
 
-## Iconify Icons
+`<Icon>` resolves the icon at build time and inlines it as a standalone `<svg>`, with no client-side JavaScript.
 
-Astro Icon also supports [Iconify](https://iconify.design) icon sets out-of-the-box.
-
-1. Find an Icon Set to use on the [Iconify Icon Sets website](https://icon-sets.iconify.design/)
-2. Install the package (eg. `npm i -D @iconify-json/mdi`)
-3. Reference a specific icon using the `name` prop with (eg. `mdi:account`)
-
-```astro
----
-import { Icon } from "astro-icon/components";
----
-
-<!-- Automatically fetches and inlines Material Design Icon's "account" SVG -->
-<Icon name="mdi:account" />
-```
-
-### Props
-
-The `Icon` component allows these custom properties:
+## The `<Icon>` component
 
 ```ts
 interface Props extends HTMLAttributes<"svg"> {
-  /**
-   * References a specific Icon
-   */
-  name: string;
+  name: IconName;
   title?: string;
   desc?: string;
   size?: number | string;
@@ -107,48 +79,122 @@ interface Props extends HTMLAttributes<"svg"> {
 }
 ```
 
-The `Icon` also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
-See the [`Props.ts`](./packages/core/components/Icon.astro#L10-L17) file for more details.
+- `name` is `"collection:icon"` for any collection you define, or a bare icon name if you have a collection named `icons`, as in the example above.
+- `title` and `desc` add an accessible `<title>` and `<desc>` inside the `<svg>`.
+- `size` sets both `width` and `height` at once, and takes priority over either if you set both. Set `width` and `height` individually to render a non-square icon.
 
-### Styling
+`<Icon>` also accepts any global HTML and `aria-*` attribute, and forwards it to the rendered `<svg>`.
 
-Styling your icons is straightforward. Any styles can be targeted to the `[data-icon]` attribute selector. If you want to target a specific icon, you may target it by name using `[data-icon="filename"]`.
+## Styling icons
+
+Every rendered icon carries a `data-icon` attribute set to its `name` prop, so you can target it in CSS without adding a class yourself:
 
 ```astro
 ---
 import { Icon } from "astro-icon/components";
 ---
 
-<style lang="css">
+<style>
   [data-icon] {
     color: blue;
-    /* OR */
-    fill: blue;
   }
-  [data-icon="annotation"] {
+  [data-icon="mdi:heart"] {
     color: red;
-    /* OR */
-    fill: red;
   }
 </style>
 
-<Icon name="adjustment" />
-<!-- will be blue -->
-<Icon name="annotation" />
-<!-- will be red -->
+<Icon name="mdi:home" /> <!-- blue -->
+<Icon name="mdi:heart" /> <!-- red -->
 
-<!-- Example using Tailwind to apply color -->
-<Icon name="annotation" class="text-red-500" />
-<!-- will be red-500 -->
+<!-- Or pass a class directly, e.g. with Tailwind -->
+<Icon name="mdi:heart" class="text-red-500" />
 ```
 
-### Using with Frameworks
+An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses `currentColor`. Most Iconify icon sets do this by default; for your own `.svg` files, replace hardcoded colors with `currentColor` yourself, or strip them with an `optimize` function (see [Iconify icons](#iconify-icons)).
 
-Astro Icon can be used with other frameworks utilizing the [`slot` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot). You can read more about how to use Slots in Astro here. [Passing Children to Framework Components](https://docs.astro.build/en/core-concepts/framework-components/#passing-children-to-framework-components)
+## Local icons
 
-## `<Sprite>`
+`localIcons()` reads every `.svg` file in a directory, `src/icons/` by default, and watches it in dev: add, edit, or remove a file, and the collection updates without a server restart.
 
-`<Icon>` always renders a plain, standalone `<svg>` - no deduping. If you render the same icon many times on a page and want it deduped into one `<symbol>` + many `<use>`s, wrap those `<Icon>` usages in `<Sprite>`:
+```ts
+// src/content.config.ts
+import { defineCollection } from "astro:content";
+import { localIcons } from "astro-icon/loaders";
+
+export const collections = {
+  icons: defineCollection({ loader: localIcons() }),
+};
+```
+
+A file's path relative to the directory, without its extension, becomes its icon name. Subdirectories join with `/`: `src/icons/logos/deno.svg` becomes `<Icon name="logos/deno" />`.
+
+Pass a different directory as the first argument:
+
+```ts
+icons: defineCollection({ loader: localIcons("src/assets/icons") }),
+```
+
+## Iconify icons
+
+`iconify()` resolves icons from any [Iconify icon set](https://icon-sets.iconify.design/), preferring a locally installed pack and falling back to the public Iconify API for icons you request by name.
+
+```sh
+npm install -D @iconify-json/mdi
+```
+
+```ts
+// src/content.config.ts
+import { defineCollection } from "astro:content";
+import { iconify } from "astro-icon/loaders";
+
+export const collections = {
+  mdi: defineCollection({ loader: iconify("mdi") }),
+};
+```
+
+Install the pack for production. The public API only resolves icons you name explicitly, never the whole set, and it adds a network request during your build. Without a local install, `iconify()` still works in dev and in production, as long as you list every icon you use with the `icons` option below.
+
+Pass options as the second argument. This example also plugs in [SVGO](https://github.com/svg/svgo) (`npm install svgo`) to optimize each icon, since astro-icon doesn't run any optimization on its own:
+
+```ts
+import { optimize } from "svgo";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: iconify("mdi", {
+      // Restrict the collection (and its generated types) to exactly these icons,
+      // instead of the whole pack. Useful for a design system's approved icon set.
+      // Once a previous sync has recorded "mdi"'s catalog, each name here is
+      // autocompleted and type-checked against it, and a literal duplicate is
+      // a type error; both fall back to a plain string until that's happened.
+      icons: ["account", "home", "heart"],
+      // Transform each icon's raw SVG before astro-icon stores it.
+      optimize: (svg) => optimize(svg).data,
+      // Turn a missing icon or pack into a build error instead of a warning.
+      strict: true,
+    }),
+  }),
+};
+```
+
+Combine several packs into one collection with `createIconLoader` and `iconifySource`:
+
+```ts
+import { createIconLoader, iconifySource } from "astro-icon/loaders";
+
+export const collections = {
+  social: defineCollection({
+    loader: createIconLoader([
+      iconifySource("mdi", { icons: ["github"] }),
+      iconifySource("simple-icons", { icons: ["discord"] }),
+    ]),
+  }),
+};
+```
+
+## Deduping repeated icons with `<Sprite>`
+
+`<Icon>` always renders a standalone `<svg>`, with no deduping between repeated uses. If you render the same icon many times on a page, wrap those uses in `<Sprite>` to dedupe them into one `<symbol>` and many `<use>` elements:
 
 ```astro
 ---
@@ -156,104 +202,104 @@ import { Icon, Sprite } from "astro-icon/components";
 ---
 
 <Sprite>
-  <Icon name="mdi:home" />
-  <Icon name="mdi:home" />
-  <Icon name="mdi:home" />
+  <Icon name="mdi:star" />
+  <Icon name="mdi:star" />
+  <Icon name="mdi:star" />
 </Sprite>
 ```
 
-`<Sprite>` only affects `<Icon>` usages nested inside it - anything rendered outside a `Sprite` is never deduped, so there's no flag to remember on individual icons. Stick to one `<Sprite>` per page (a dev warning fires if a second one renders); each `Sprite` dedupes independently, so extras won't share defs with each other.
+`<Sprite>` only affects `<Icon>` uses nested inside it. Anything outside a `<Sprite>` renders as before. Use one `<Sprite>` per page; a dev-only warning fires if a second one renders, since each dedupes independently and won't share `<symbol>`s with another.
 
-`<Sprite>` only works on **prerendered pages** (`export const prerender = true`, or an `output: "static"` project). It throws on server-rendered routes, since it has to fully render its contents before rewriting them, which would otherwise break HTML streaming - see [`docs/adr/0002-sprite-requires-prerendering.md`](../../docs/adr/0002-sprite-requires-prerendering.md) for the full reasoning.
+`<Sprite>` requires a prerendered page (`export const prerender = true;`, or a project with `output: "static"`). It has to buffer and rewrite its slot's full HTML, which would otherwise break streaming on a server-rendered route.
 
-## Configuration
+## Resolving icons per request with `<LiveIcon>`
 
-### Configuring the Integration
+Use `<LiveIcon>` instead of `<Icon>` when you can't know your icon names ahead of time, such as a user-driven icon search. It resolves against a live collection at request time rather than at build time.
 
-The Astro Icon integration has its own options for controlling the `Icon` component. Change these in the `astro.config.mjs` file which is where your project's integration settings live.
+Live collections require Astro's `experimental.liveContentCollections` flag:
 
-#### config.include
-
-For users with a project using `output: 'server'` or `output: 'hybrid'`, it is highly recommended to configure the exact icons that should be included in the server bundle. By default, every icon in the set will be bundled into the server JavaScript.
-
-To filter the exact Iconify icons that should be included, set an array of allowed icons inside of the `include` object. Only these icons will be bundled.
-
-**`astro.config.mjs`**
-
-```js
+```ts
+// astro.config.mjs
 import { defineConfig } from "astro/config";
-import icon from "astro-icon";
 
 export default defineConfig({
-  // ...
-  integrations: [
-    icon({
-      include: {
-        mdi: ["*"], // (Default) Loads entire Material Design Icon set
-        mdi: ["account"], // Loads only Material Design Icon's "account" SVG
-      },
-    }),
-  ],
+  experimental: {
+    liveContentCollections: true,
+  },
 });
 ```
 
-#### config.iconDir
+Define one in `src/live.config.ts` with `iconifyLive`, the live equivalent of `iconify()`:
 
-If you want to use a different custom svg icon directory instead of the default `src/icons/`, specify that file path using `config.iconDir`
+```ts
+// src/live.config.ts
+import { defineLiveCollection } from "astro:content";
+import { iconifyLive } from "astro-icon/loaders/live";
 
-```js ins={2}
-import { defineConfig } from "astro/config";
-import icon from "astro-icon";
-
-export default defineConfig({
-  // ...
-  integrations: [
-    icon({
-      iconDir: "src/assets/icons",
-    }),
-  ],
-});
+export const collections = {
+  mdi: defineLiveCollection({ loader: iconifyLive("mdi") }),
+};
 ```
 
-#### config.svgoOptions
+```astro
+---
+import { LiveIcon } from "astro-icon/components";
+---
 
-If you want to behavior of `.svg` optimization, you can configure the `svgo` options rather than using the defaults. Read more about the available [`svgo` options here](https://github.com/svg/svgo#configuration).
-
-```js
-import { defineConfig } from "astro/config";
-import icon from "astro-icon";
-
-export default defineConfig({
-  // ...
-  integrations: [
-    icon({
-      svgoOptions: {
-        multipass: true,
-        plugins: [
-          {
-            name: "preset-default",
-            params: {
-              overrides: {
-                // customize default plugin options
-                inlineStyles: {
-                  onlyMatchedOnce: false,
-                },
-
-                // or disable plugins
-                removeDoctype: false,
-              },
-            },
-          },
-        ],
-      },
-    }),
-  ],
-});
+<LiveIcon name="mdi:account" />
 ```
 
-## Migrating to v1
+Unlike `<Icon>`, `<LiveIcon>`'s `name` always requires the `"collection:icon"` form, since live collections have no default. If an icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing, rather than throwing and failing the whole page.
 
-`astro-icon` v1 contains a number of breaking changes. Please reference the [**Migrate to `astro-icon` v1** guide](https://www.astroicon.dev/guides/upgrade/v1/) to update from older versions of `astro-icon`.
+## Bringing your own icon source
+
+Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `createIconLoader` (build time) or `createLiveIconLoader` (per request):
+
+```ts
+import { defineLiveCollection } from "astro:content";
+import { parseIconSVG } from "astro-icon/loaders";
+import { createLiveIconLoader } from "astro-icon/loaders/live";
+import type { IconSource } from "astro-icon/loaders/live";
+
+const mySource: IconSource = {
+  name: "my-source",
+  async getIcon(name) {
+    const res = await fetch(`https://icons.example.com/${name}.svg`);
+    if (!res.ok) throw new Error(`Icon "${name}" not found`);
+    return parseIconSVG(await res.text(), {
+      collection: "my-source",
+      name,
+      logger: { warn: console.warn },
+    });
+  },
+  async listIcons() {
+    const res = await fetch("https://icons.example.com/list.json");
+    return res.json();
+  },
+};
+
+export const collections = {
+  custom: defineLiveCollection({ loader: createLiveIconLoader(mySource) }),
+};
+```
+
+`getIcon` resolves one icon by name; throw a descriptive error if it can't be found or built. `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete. `parseIconSVG` turns a raw `<svg>...</svg>` string into the shape astro-icon stores, deriving a `viewBox` if one is missing.
+
+## Using icons in framework components
+
+Astro's [`<slot>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot) lets you pass an `<Icon>` rendered in `.astro` into a framework component as a child, the same way you'd pass any other content. See Astro's [guide on framework components](https://docs.astro.build/en/guides/framework-components/) for details.
+
+## Upgrading from v1
+
+astro-icon v2 replaces the `icon()` Astro integration with content collection loaders. If you're on v1:
+
+- Remove `icon()` from `integrations` in `astro.config.mjs`.
+- Replace `config.include` with the `icons` option on `iconify()` or `iconifySource()`.
+- Replace `config.iconDir` with `localIcons("your/dir")`.
+- Replace `config.svgoOptions` with an `optimize` function that runs SVGO yourself; astro-icon no longer bundles SVGO or runs any optimization by default.
+- Define your collections in `src/content.config.ts` as shown in [Quick start](#quick-start), and add the `env.d.ts` reference from [Installation](#installation).
+
+If you're upgrading from v0 to v1, see the [v1 upgrade guide](https://www.astroicon.dev/guides/upgrade/v1/) first.
 
 ## Contributing
 
@@ -261,4 +307,4 @@ You're welcome to submit an issue or PR!
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this integration.
+See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this package.

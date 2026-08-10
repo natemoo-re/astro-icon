@@ -1,16 +1,20 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
+type TypegenKind = "build" | "live" | "packs";
+
 interface TypegenState {
   build: Record<string, string[]>;
   live: Record<string, string[]>;
+  packs: Record<string, string[]>;
 }
 
-// An empty build collection types as `never`; an empty live collection falls back to `string`, since it may just mean the source couldn't list its icons.
+// An empty build collection types as `never`; an empty live collection or pack falls back to `string`, since it may just mean the source couldn't list its icons.
 const KIND_CONFIG = {
   build: { interfaceName: "Collections", emptyValueType: "never" },
   live: { interfaceName: "LiveCollections", emptyValueType: "string" },
-} as const satisfies Record<"build" | "live", { interfaceName: string; emptyValueType: string }>;
+  packs: { interfaceName: "Packs", emptyValueType: "string" },
+} as const satisfies Record<TypegenKind, { interfaceName: string; emptyValueType: string }>;
 
 // Serializes concurrent writes from multiple loaders running in the same sync.
 let chain: Promise<void> = Promise.resolve();
@@ -18,7 +22,7 @@ let chain: Promise<void> = Promise.resolve();
 /** Records a collection's full icon name set to its own declaration file under `.astro/astro-icon/`, for autocomplete. */
 export function recordCollection(
   rootDir: URL,
-  kind: "build" | "live",
+  kind: TypegenKind,
   collection: string,
   names: string[],
 ): Promise<void> {
@@ -26,9 +30,14 @@ export function recordCollection(
   return chain;
 }
 
+/** Records an Iconify pack's full, unfiltered icon name set, so `icons: [...]` options can be typed and autocompleted against it. */
+export function recordPack(rootDir: URL, pack: string, names: string[]): Promise<void> {
+  return recordCollection(rootDir, "packs", pack, names);
+}
+
 async function writeTypes(
   rootDir: URL,
-  kind: "build" | "live",
+  kind: TypegenKind,
   collection: string,
   names: string[],
 ): Promise<void> {
@@ -48,7 +57,7 @@ async function writeTypes(
 
 async function writePartial(
   partialsDir: URL,
-  kind: "build" | "live",
+  kind: TypegenKind,
   collection: string,
   names: string[],
 ): Promise<void> {
@@ -60,14 +69,14 @@ async function writePartial(
   await writeFile(partialFile, renderPartial(kind, collection, names, currentHash));
 }
 
-function partialFilename(kind: "build" | "live", collection: string): string {
-  // Sanitized since collection names are arbitrary user-chosen identifiers; prefixed by kind to avoid a build/live name collision.
+function partialFilename(kind: TypegenKind, collection: string): string {
+  // Sanitized since collection names are arbitrary user-chosen identifiers; prefixed by kind to avoid a name collision across kinds.
   const safeName = collection.replace(/[^a-zA-Z0-9_-]/g, "_");
   return `${kind}-${safeName}.d.ts`;
 }
 
 function renderPartial(
-  kind: "build" | "live",
+  kind: TypegenKind,
   collection: string,
   names: string[],
   hash: string,
@@ -94,6 +103,7 @@ function renderIndex(state: TypegenState): string {
   const references = [
     ...Object.keys(state.build).map((name) => partialFilename("build", name)),
     ...Object.keys(state.live).map((name) => partialFilename("live", name)),
+    ...Object.keys(state.packs).map((name) => partialFilename("packs", name)),
   ]
     .sort()
     .map((file) => `/// <reference path="./astro-icon/${file}" />`)
@@ -110,9 +120,9 @@ async function readState(stateFile: URL): Promise<TypegenState> {
   try {
     const text = await readFile(stateFile, { encoding: "utf-8" });
     const parsed = JSON.parse(text) as Partial<TypegenState>;
-    return { build: parsed.build ?? {}, live: parsed.live ?? {} };
+    return { build: parsed.build ?? {}, live: parsed.live ?? {}, packs: parsed.packs ?? {} };
   } catch {
-    return { build: {}, live: {} };
+    return { build: {}, live: {}, packs: {} };
   }
 }
 

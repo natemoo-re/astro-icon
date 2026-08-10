@@ -8,8 +8,10 @@ import { resolveLocalPack, resolvePack } from "./resolvePack.js";
 import { AstroIconError } from "../core/AstroIconError.js";
 import { consoleLogger } from "../core/logger.js";
 import { parseIconSVG } from "../core/parseIconSVG.js";
+import { recordPack } from "../typegen.js";
 import type { IconSource } from "../core/iconSource.js";
 import type { IconEntry, IconifySourceOptions, OptimizeFn } from "../../typings/types";
+import type { IconifyIconName } from "../../typings/names";
 
 /** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
 async function getPackVersion(pack: string): Promise<string | undefined> {
@@ -25,6 +27,37 @@ async function getPackVersion(pack: string): Promise<string | undefined> {
   }
 }
 
+/** Every icon name (including aliases) in a resolved local pack. */
+function localPackIconNames(data: IconifyJSON): string[] {
+  return Object.keys(data.icons).concat(Object.keys(data.aliases ?? {}));
+}
+
+// Packs already recorded for typegen in this process, so a busy collection doesn't re-run the write chain per icon.
+const recordedPacks = new Set<string>();
+
+/**
+ * Best-effort typegen: records a locally resolved pack's full, unfiltered
+ * catalog so `icons: [...]` can be typed and autocompleted against it on a
+ * later run. Only called with data that already came from a local pack
+ * resolution done for real work (never fetched just for this), so it never
+ * touches the pack on its own — that would break the documented "an
+ * `icons` allowlist alone never requires a local install" contract.
+ */
+function recordPackCatalog(pack: string, data: IconifyJSON): void {
+  if (recordedPacks.has(pack)) return;
+  recordedPacks.add(pack);
+  // `iconifySource` has no access to the project root the way a `LoaderContext` does; mirrors `createLiveIconLoader`'s own `process.cwd()` fallback.
+  const rootDir = new URL(`file://${process.cwd()}/`);
+  recordPack(rootDir, pack, localPackIconNames(data)).catch(() => {});
+}
+
+export function iconifySource<
+  Pack extends string,
+  const Icons extends readonly IconifyIconName<Pack>[] = readonly IconifyIconName<Pack>[],
+>(
+  pack: Pack,
+  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+): IconSource;
 /**
  * An {@link IconSource} backed by a single Iconify icon pack. `iconify()`
  * uses this internally; reach for it directly when you compose sources
@@ -34,6 +67,12 @@ async function getPackVersion(pack: string): Promise<string | undefined> {
  *
  * Prefers a local `@iconify-json/<pack>` install, falling back to fetching
  * each requested icon individually from the public Iconify API.
+ *
+ * The `icons: [...]` option is typed and autocompleted against the pack's
+ * own catalog. A duplicate name in that array is deduped and logged as a
+ * warning at runtime, not rejected at the type level. Both only kick in once
+ * astro-icon has recorded the pack's full icon list from a previous sync
+ * (`astro sync`/`dev`/`build`); until then it falls back to a plain `string`.
  */
 export function iconifySource(
   pack: string,
@@ -42,6 +81,14 @@ export function iconifySource(
   const { icons, optimize, strict = false } = options;
   const allowed = icons && new Set(icons);
   const logger = consoleLogger;
+
+  if (icons && allowed && allowed.size !== icons.length) {
+    const seen = new Set<string>();
+    const duplicates = icons.filter((name) => seen.size === seen.add(name).size);
+    logger.warn(
+      `"${pack}"'s \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+    );
+  }
 
   return {
     name: pack,
@@ -52,9 +99,9 @@ export function iconifySource(
           `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow the whole pack.`,
         );
       }
-      const data =
-        (await resolveLocalPack(pack)) ??
-        (await resolvePack(pack, [name], { strict, logger }));
+      const local = await resolveLocalPack(pack);
+      if (local) recordPackCatalog(pack, local);
+      const data = local ?? (await resolvePack(pack, [name], { strict, logger }));
       const entry = await buildIconEntry(data, name, {
         collection: pack,
         optimize,
@@ -70,8 +117,8 @@ export function iconifySource(
       return entry;
     },
     async listIcons() {
-      // Not verified against the pack upfront, matching getIcon's own lazy check.
-      if (allowed) return [...icons!];
+      // Not verified against the pack upfront, matching getIcon's own lazy check. `allowed` is a Set, so this also dedupes the option.
+      if (allowed) return [...allowed];
 
       const local = await resolveLocalPack(pack);
       if (!local) {
@@ -80,7 +127,8 @@ export function iconifySource(
           `Install "@iconify-json/${pack}", or restrict it with an explicit \`icons: [...]\` list.`,
         );
       }
-      return Object.keys(local.icons).concat(Object.keys(local.aliases ?? {}));
+      recordPackCatalog(pack, local);
+      return localPackIconNames(local);
     },
     getVersion() {
       return getPackVersion(pack);
