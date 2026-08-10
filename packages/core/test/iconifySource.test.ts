@@ -70,6 +70,14 @@ describe("iconifySource / local pack", () => {
   });
 });
 
+describe("iconifySource / getVersion", () => {
+  it("resolves undefined (never crashes) for a pack that isn't installed", async () => {
+    const source = iconifySource("definitely-not-a-real-iconify-pack-xyz");
+
+    await expect(source.getVersion?.()).resolves.toBeUndefined();
+  });
+});
+
 describe("iconifySource / API fallback (pack not installed)", () => {
   it("resolves each requested icon individually, scoped to just that icon", async () => {
     loadCollectionFromFS.mockResolvedValue(undefined);

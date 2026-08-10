@@ -38,5 +38,14 @@ export function mergeSources(sources: IconSource | IconSource[]): IconSource {
       );
       return [...new Set(lists.flat())];
     },
+    async getVersion() {
+      // Only meaningful if every merged source can report one - otherwise
+      // there's no way to tell "nothing changed" for the whole group.
+      const versions = await Promise.all(
+        sources.map((source) => source.getVersion?.().catch(() => undefined) ?? Promise.resolve(undefined)),
+      );
+      if (versions.some((version) => !version)) return undefined;
+      return versions.join("+");
+    },
   };
 }

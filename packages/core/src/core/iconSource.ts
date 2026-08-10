@@ -31,4 +31,16 @@ export interface IconSource {
    * it (e.g. `iconifySource` does, when its pack isn't installed locally).
    */
   listIcons?(): Promise<string[]>;
+  /**
+   * Optionally report a cheap freshness signal for this source as a whole
+   * (e.g. an installed iconify pack's npm `version`). If every merged
+   * source reports one and it matches what was recorded on the previous
+   * sync, `createIconLoader` skips re-resolving any icon at all instead of
+   * rebuilding the collection from scratch. Omit (or resolve `undefined`)
+   * if there's no reliable way to tell "nothing changed" short of actually
+   * re-resolving - this is purely an optimization hook, never required for
+   * correctness, and the loader always falls back to a full resolve when
+   * it's absent.
+   */
+  getVersion?(): Promise<string | undefined>;
 }

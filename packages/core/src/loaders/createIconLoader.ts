@@ -7,6 +7,12 @@ import { resolveAllIcons } from "../core/resolveAllIcons.js";
 import { recordCollection } from "../typegen.js";
 import type { IconSource } from "../core/iconSource.js";
 
+async function getSourceVersionKey(source: IconSource, names: string[]): Promise<string | undefined> {
+  const version = await source.getVersion?.().catch(() => undefined);
+  if (!version) return undefined;
+  return `${version}::${names.slice().sort().join(",")}`;
+}
+
 export interface IconLoaderOptions {
   /**
    * When true, turns warnings (a source couldn't provide a requested icon,
@@ -38,7 +44,7 @@ export function createIconLoader(
   const { strict = false } = options;
 
   async function load(context: LoaderContext): Promise<void> {
-    const { store, logger, parseData, generateDigest, collection } = context;
+    const { store, meta, logger, parseData, generateDigest, collection } = context;
 
     const names = await listIconsOrFallback(source, {
       strict,
@@ -58,6 +64,18 @@ export function createIconLoader(
       logger.warn(message);
     }
 
+    // If every merged source reports a version (e.g. an iconify pack's npm
+    // version) and it - plus the exact requested icon set - matches what
+    // was recorded last sync, the store (already warm, either from earlier
+    // in this process or restored from a persisted content-layer cache)
+    // already holds the correct result. Skip resolving anything.
+    const metaKey = `astro-icon:version:${collection}`;
+    const versionKey = await getSourceVersionKey(source, names);
+    if (versionKey && versionKey === meta.get(metaKey) && names.every((name) => store.has(name))) {
+      await recordCollection(context.config.root, "build", collection, names);
+      return;
+    }
+
     const resolved = await resolveAllIcons(source, names, (name, ex) => {
       const detail = ex instanceof Error ? ex.message : String(ex);
       if (strict) {
@@ -74,6 +92,9 @@ export function createIconLoader(
       const parsedData = await parseData({ id, data });
       store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
     }
+
+    if (versionKey) meta.set(metaKey, versionKey);
+    else meta.delete(metaKey);
 
     // Keyed by the collection's own name (the key it's assigned under in
     // content.config.ts), not the source's name - those commonly differ

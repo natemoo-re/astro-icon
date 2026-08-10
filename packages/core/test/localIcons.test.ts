@@ -36,12 +36,16 @@ function fakeWatcher() {
 }
 
 function fakeContext(overrides: Record<string, unknown> = {}) {
-  const stored = new Map<string, unknown>();
+  // Mirrors Astro's real `DataStore` shape (`get`/`entries` return the full
+  // `{ id, data, digest }` entry, not just `data`) - the loader relies on
+  // that to snapshot/reuse previous entries across syncs.
+  const stored = new Map<string, { id: string; data: unknown; digest?: string | number }>();
   return {
     store: {
       clear: () => stored.clear(),
-      set: (entry: { id: string; data: unknown }) => stored.set(entry.id, entry.data),
+      set: (entry: { id: string; data: unknown; digest?: string | number }) => stored.set(entry.id, entry),
       get: (id: string) => stored.get(id),
+      entries: () => [...stored.entries()],
       keys: () => stored.keys(),
       delete: (id: string) => stored.delete(id),
     },
@@ -120,7 +124,7 @@ describe("localIcons / incremental watching", () => {
     watcher.emit("change", join(dir, "icons", "home.svg"));
 
     await vi.waitFor(() => {
-      expect((context.store.get("home") as any).viewBox).toBe("0 0 32 32");
+      expect((context.store.get("home") as any).data.viewBox).toBe("0 0 32 32");
     });
   });
 
@@ -169,5 +173,45 @@ describe("localIcons / incremental watching", () => {
     await Promise.resolve();
 
     expect([...context.store.keys()]).toEqual(["home"]);
+  });
+});
+
+describe("localIcons / re-sync caching", () => {
+  it("skips re-optimizing an icon whose source file hasn't changed", async () => {
+    await write("home.svg", SQUARE_SVG);
+    await write("logos/deno.svg", SQUARE_SVG);
+
+    const optimize = vi.fn((svg: string) => svg);
+    const loader = localIcons("icons", { optimize });
+    const context = fakeContext();
+
+    await loader.load(context);
+    expect(optimize).toHaveBeenCalledTimes(2);
+
+    // Re-sync with no source changes - as if the process restarted with a
+    // persisted content-layer cache, or the loader ran again in the same
+    // session. Neither icon's file changed, so `optimize` shouldn't run again.
+    await loader.load(context);
+    expect(optimize).toHaveBeenCalledTimes(2);
+    expect([...context.store.keys()].sort()).toEqual(["home", "logos/deno"]);
+  });
+
+  it("re-optimizes only the icon whose source file actually changed", async () => {
+    await write("home.svg", SQUARE_SVG);
+    await write("logos/deno.svg", SQUARE_SVG);
+
+    const optimize = vi.fn((svg: string) => svg);
+    const loader = localIcons("icons", { optimize });
+    const context = fakeContext();
+
+    await loader.load(context);
+    expect(optimize).toHaveBeenCalledTimes(2);
+
+    const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
+    await write("home.svg", updated);
+
+    await loader.load(context);
+    expect(optimize).toHaveBeenCalledTimes(3);
+    expect((context.store.get("home") as any).data.viewBox).toBe("0 0 32 32");
   });
 });

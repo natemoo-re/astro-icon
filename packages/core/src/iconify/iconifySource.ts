@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import { join } from "node:path";
 import type { IconifyJSON } from "@iconify/types";
 import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
@@ -7,6 +10,33 @@ import { consoleLogger } from "../core/logger.js";
 import { parseIconSVG } from "../core/parseIconSVG.js";
 import type { IconSource } from "../core/iconSource.js";
 import type { IconEntry, IconifySourceOptions, OptimizeFn } from "../../typings/types";
+
+/**
+ * The installed `@iconify-json/<pack>`'s own npm `version` - a cheap
+ * freshness signal for `createIconLoader`'s version-based skip (see
+ * `IconSource.getVersion`). Undefined for anything that isn't a plain
+ * local install (not found, or resolved via the API-fallback path, which
+ * has no version to key off of) - the loader always falls back to a full
+ * resolve in that case.
+ *
+ * Resolved from `process.cwd()`, the same base `loadCollectionFromFS` (via
+ * `@iconify/utils`) uses to find the pack itself - `import.meta.resolve`
+ * would instead resolve relative to *this* file's own location, which in
+ * a pnpm workspace can't see a sibling package's dependencies (the pack is
+ * installed for the Astro project consuming astro-icon, not for
+ * astro-icon's own package directory).
+ */
+async function getPackVersion(pack: string): Promise<string | undefined> {
+  try {
+    const require = createRequire(join(process.cwd(), "package.json"));
+    const pkgPath = require.resolve(`@iconify-json/${pack}/package.json`);
+    const raw = await readFile(pkgPath, "utf-8");
+    const version = JSON.parse(raw)?.version;
+    return typeof version === "string" ? version : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * An `IconSource` backed by a single Iconify icon pack. Prefers a locally
@@ -68,6 +98,9 @@ export function iconifySource(
         );
       }
       return Object.keys(local.icons).concat(Object.keys(local.aliases ?? {}));
+    },
+    getVersion() {
+      return getPackVersion(pack);
     },
   };
 }

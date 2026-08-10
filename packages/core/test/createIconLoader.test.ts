@@ -13,12 +13,20 @@ function entryFor(id: string): IconEntry {
 
 function fakeContext(overrides: Record<string, unknown> = {}) {
   const stored = new Map<string, unknown>();
+  const metaStored = new Map<string, string>();
   return {
     store: {
       clear: () => stored.clear(),
       set: (entry: { id: string; data: unknown }) => stored.set(entry.id, entry.data),
       get: (id: string) => stored.get(id),
       keys: () => stored.keys(),
+      has: (id: string) => stored.has(id),
+    },
+    meta: {
+      get: (key: string) => metaStored.get(key),
+      set: (key: string, value: string) => metaStored.set(key, value),
+      delete: (key: string) => metaStored.delete(key),
+      has: (key: string) => metaStored.has(key),
     },
     logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
     config: { root: new URL("file:///tmp/astro-icon-test-root/") },
@@ -188,5 +196,101 @@ describe("createIconLoader / multiple sources", () => {
   it("joins names for a loader built from multiple sources", () => {
     const loader = createIconLoader([fakeSource({ name: "mdi" }), fakeSource({ name: "ic" })]);
     expect(loader.name).toBe("astro-icon/loaders/icon/mdi+ic");
+  });
+});
+
+describe("createIconLoader / version-based skip", () => {
+  it("skips resolving anything when the source's version is unchanged", async () => {
+    const getIcon = vi.fn(async (name: string) => entryFor(name));
+    const source = fakeSource({
+      listIcons: async () => ["home", "menu"],
+      getIcon,
+      getVersion: async () => "1.0.0",
+    });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(2);
+
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(2);
+    expect(context.store.get("home")).toEqual(entryFor("home"));
+    expect(context.store.get("menu")).toEqual(entryFor("menu"));
+  });
+
+  it("re-resolves everything once the source's version changes", async () => {
+    const getIcon = vi.fn(async (name: string) => entryFor(name));
+    let version = "1.0.0";
+    const source = fakeSource({
+      listIcons: async () => ["home"],
+      getIcon,
+      getVersion: async () => version,
+    });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(1);
+
+    version = "2.0.0";
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-resolves everything when the requested icon set changes, even with the same version", async () => {
+    const getIcon = vi.fn(async (name: string) => entryFor(name));
+    let names = ["home"];
+    const source = fakeSource({
+      listIcons: async () => names,
+      getIcon,
+      getVersion: async () => "1.0.0",
+    });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(1);
+
+    names = ["home", "menu"];
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(3);
+  });
+
+  it("never skips when the source doesn't report a version", async () => {
+    const getIcon = vi.fn(async (name: string) => entryFor(name));
+    const source = fakeSource({ listIcons: async () => ["home"], getIcon });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+    await loader.load(context);
+    expect(getIcon).toHaveBeenCalledTimes(2);
+  });
+
+  it("never skips a multi-source loader unless every source reports a version", async () => {
+    // mergeSources tries each source in order for every requested name, so
+    // a fake that resolves anything (like this one) "wins" for every name
+    // regardless of which source actually listed it - the point here is
+    // just that a per-load call count that *doesn't* double on the second
+    // load would mean a skip happened, which shouldn't be possible since
+    // "b" reports no version at all.
+    const getIconA = vi.fn(async (name: string) => entryFor(name));
+    const sourceA = fakeSource({
+      name: "a",
+      listIcons: async () => ["home"],
+      getIcon: getIconA,
+      getVersion: async () => "1.0.0",
+    });
+    const sourceB = fakeSource({ name: "b", listIcons: async () => ["menu"] });
+    const loader = createIconLoader([sourceA, sourceB]);
+    const context = fakeContext();
+
+    await loader.load(context);
+    const afterFirstLoad = getIconA.mock.calls.length;
+    expect(afterFirstLoad).toBeGreaterThan(0);
+
+    await loader.load(context);
+    expect(getIconA).toHaveBeenCalledTimes(afterFirstLoad * 2);
   });
 });
