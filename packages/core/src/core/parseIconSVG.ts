@@ -27,8 +27,8 @@ export interface ParseIconSVGOptions {
  *
  * Generic entry point for any icon source that produces a full `<svg>...
  * </svg>` string per icon - iconify is one such source (see
- * `iconify/buildIconEntry.ts`), but this is also what a custom `IconSource`
- * should reach for.
+ * `buildIconEntry` in `iconify/iconifySource.ts`), but this is also what a
+ * custom `IconSource` should reach for.
  */
 export async function parseIconSVG(
   svg: string,
