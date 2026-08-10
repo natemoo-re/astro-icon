@@ -61,7 +61,7 @@ if (!entry) {
 }
 
 const { body } = entry.data;
-const { normalizedProps } = renderableIconProps(entry.data, parsedName, props);
+const { normalizedProps } = renderableIconProps(entry.data, props);
 ---
 
 <svg {...normalizedProps} data-icon={name}>

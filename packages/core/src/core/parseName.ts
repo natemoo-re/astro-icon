@@ -6,7 +6,8 @@ export interface ParsedName {
 
 /**
  * Shared by an icon's `<symbol>` (if any) and its `<use>`/inline body -
- * the single format `renderableIconProps` and `spriteRewrite` both key off.
+ * the single format `spriteRewrite` keys off when scanning rendered
+ * `data-icon` markers.
  */
 export function iconId(collection: string, name: string): string {
   return `ai:${collection}:${name}`;
