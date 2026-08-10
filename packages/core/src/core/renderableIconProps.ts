@@ -1,4 +1,5 @@
 import type { IconEntry } from "../../typings/types";
+import { iconId, type ParsedName } from "./parseName.js";
 
 export interface RenderableIconProps<P> {
   /** Shared by an icon's `<symbol>` (if any) and its `<use>`/inline body. */
@@ -21,14 +22,13 @@ export function renderableIconProps<
   P extends { size?: number | string; width?: unknown; height?: unknown; viewBox?: unknown },
 >(
   entry: Pick<IconEntry, "width" | "height" | "viewBox">,
-  collection: string,
-  name: string,
+  { collection, name }: Pick<ParsedName, "collection" | "name">,
   props: P,
 ): RenderableIconProps<P> {
   const { size, ...rest } = props;
   const sized = size ? { ...rest, width: size, height: size } : rest;
   return {
-    id: `ai:${collection}:${name}`,
+    id: iconId(collection, name),
     normalizedProps: {
       width: entry.width,
       height: entry.height,

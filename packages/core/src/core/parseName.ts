@@ -5,6 +5,14 @@ export interface ParsedName {
 }
 
 /**
+ * Shared by an icon's `<symbol>` (if any) and its `<use>`/inline body -
+ * the single format `renderableIconProps` and `spriteRewrite` both key off.
+ */
+export function iconId(collection: string, name: string): string {
+  return `ai:${collection}:${name}`;
+}
+
+/**
  * Splits an `<Icon>` name on its *first* colon only, so pack names like
  * `logos:aws-s3` (which themselves contain no further colons) resolve
  * correctly and icon names that legitimately contain a colon aren't

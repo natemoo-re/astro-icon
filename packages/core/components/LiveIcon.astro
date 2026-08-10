@@ -40,7 +40,7 @@ if (error || !entry) {
 }
 
 const data = entry.data as IconEntry;
-const { id, normalizedProps } = renderableIconProps(data, collection, iconName, props);
+const { id, normalizedProps } = renderableIconProps(data, parsed, props);
 ---
 
 <svg {...normalizedProps} data-icon={name}>

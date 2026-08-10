@@ -1,4 +1,4 @@
-import { parseIconName } from "./parseName.js";
+import { iconId, parseIconName } from "./parseName.js";
 
 export interface SpriteIconRef {
   collection: string;
@@ -37,7 +37,7 @@ export function extractSpriteIcons(html: string): SpriteIconRef[] {
     const dataIconMatch = DATA_ICON_ATTR.exec(match[1] ?? "");
     if (!dataIconMatch) continue;
     const { collection, name } = parseIconName(dataIconMatch[1]);
-    const id = `ai:${collection}:${name}`;
+    const id = iconId(collection, name);
     if (seen.has(id)) continue;
     seen.add(id);
     refs.push({ collection, name, id });
@@ -89,7 +89,7 @@ export function rewriteSpriteHtml(
     const dataIconMatch = DATA_ICON_ATTR.exec(match[1] ?? "");
     if (!dataIconMatch) continue;
     const { collection, name } = parseIconName(dataIconMatch[1]);
-    const id = `ai:${collection}:${name}`;
+    const id = iconId(collection, name);
     if (!resolvedSymbols.has(id)) continue;
 
     const openTagEnd = re.lastIndex;
