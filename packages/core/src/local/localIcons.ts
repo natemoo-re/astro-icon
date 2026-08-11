@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Loader } from "astro/loaders";
@@ -15,6 +15,28 @@ import type { LocalSourceOptions } from "./localSource.js";
 /** Cheap (no SVGO) fingerprint of a file's raw contents, to detect whether it actually changed. */
 function hashSource(raw: string): string {
   return createHash("sha1").update(raw).digest("hex");
+}
+
+/**
+ * Cheap fingerprint of the whole directory: `mtime` + `size` per file
+ * (via `stat`, not a content read) so an unchanged sync can be detected
+ * without reading (let alone re-optimizing) a single `.svg`.
+ */
+async function getDirVersionKey(dirPath: string, names: string[]): Promise<string> {
+  const entries = await Promise.all(
+    names
+      .slice()
+      .sort()
+      .map(async (id) => {
+        try {
+          const info = await stat(join(dirPath, `${id}.svg`));
+          return `${id}:${info.mtimeMs}:${info.size}`;
+        } catch {
+          return `${id}:missing`;
+        }
+      }),
+  );
+  return createHash("sha1").update(entries.join(",")).digest("hex");
 }
 
 /**
@@ -37,10 +59,10 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
   const strict = options.strict ?? false;
 
   return {
-    name: "astro-icon/loaders/local",
+    name: "astro-icon/loaders",
     schema: iconEntrySchema,
     load: async (context) => {
-      const { store, logger, parseData, generateDigest, config, watcher, collection } = context;
+      const { store, meta, logger, parseData, generateDigest, config, watcher, collection } = context;
 
       const dirUrl = new URL(dir.replace(/\/?$/, "/"), config.root);
       const dirPath = fileURLToPath(dirUrl);
@@ -114,17 +136,31 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
         failureMessage: (detail) => `Failed to list local icons in "${dirPath}": ${detail}`,
         hint: `Fix the error above, or disable "strict" to skip local icons with a warning instead.`,
       });
-      // Snapshot before clearing so syncIcon can skip unchanged icons.
-      const previousEntries = new Map(store.entries());
-      store.clear();
-      for (const id of names) {
-        await syncIcon(id, previousEntries.get(id));
-      }
-      await updateTypes();
 
-      logger.info(
-        `Loaded ${names.length} icon(s) from "${collection}" in ${formatDuration(performance.now() - syncStart)}.`,
-      );
+      // Skip re-reading/re-optimizing every file if the directory's mtime+size
+      // fingerprint matches the last sync - cheap to check via `stat`, unlike
+      // the per-file content hash `syncIcon` uses once it's already reading a file.
+      const metaKey = `astro-icon:version:${collection}`;
+      const versionKey = await getDirVersionKey(dirPath, names);
+      if (versionKey === meta.get(metaKey) && names.every((name) => store.has(name))) {
+        await updateTypes();
+        logger.debug(
+          `"${collection}" is already up to date (${names.length} icon(s)), skipped in ${formatDuration(performance.now() - syncStart)}.`,
+        );
+      } else {
+        // Snapshot before clearing so syncIcon can skip unchanged icons.
+        const previousEntries = new Map(store.entries());
+        store.clear();
+        for (const id of names) {
+          await syncIcon(id, previousEntries.get(id));
+        }
+        await updateTypes();
+        meta.set(metaKey, versionKey);
+
+        logger.info(
+          `Loaded ${names.length} icon(s) from "${collection}" in ${formatDuration(performance.now() - syncStart)}.`,
+        );
+      }
 
       if (!watcher) return;
 

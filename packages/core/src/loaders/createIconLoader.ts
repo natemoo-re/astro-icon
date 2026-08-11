@@ -124,5 +124,5 @@ export function createIconLoader(
     );
   }
 
-  return { name: `astro-icon/loaders/icon/${source.name}`, load, schema: iconEntrySchema };
+  return { name: "astro-icon/loaders", load, schema: iconEntrySchema };
 }

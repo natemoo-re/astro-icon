@@ -40,6 +40,7 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
   // `{ id, data, digest }` entry, not just `data`) - the loader relies on
   // that to snapshot/reuse previous entries across syncs.
   const stored = new Map<string, { id: string; data: unknown; digest?: string | number }>();
+  const metaStored = new Map<string, string>();
   return {
     store: {
       clear: () => stored.clear(),
@@ -48,6 +49,13 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
       entries: () => [...stored.entries()],
       keys: () => stored.keys(),
       delete: (id: string) => stored.delete(id),
+      has: (id: string) => stored.has(id),
+    },
+    meta: {
+      get: (key: string) => metaStored.get(key),
+      set: (key: string, value: string) => metaStored.set(key, value),
+      delete: (key: string) => metaStored.delete(key),
+      has: (key: string) => metaStored.has(key),
     },
     logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     config: { root },
@@ -78,6 +86,10 @@ describe("localIcons / initial sync", () => {
 
   it("exposes a default schema", () => {
     expect(localIcons("icons").schema).toBeDefined();
+  });
+
+  it("uses a fixed loader identity", () => {
+    expect(localIcons("icons").name).toBe("astro-icon/loaders");
   });
 
   it("warns instead of throwing when the directory doesn't exist", async () => {
@@ -265,6 +277,44 @@ describe("localIcons / re-sync caching", () => {
     await loader.load(context);
     expect(optimize).toHaveBeenCalledTimes(3);
     expect((context.store.get("home") as any).data.viewBox).toBe("0 0 32 32");
+  });
+});
+
+describe("localIcons / whole-directory skip logging", () => {
+  it("logs a debug-level skip instead of an info-level 'Loaded' summary when nothing changed", async () => {
+    await write("home.svg", SQUARE_SVG);
+    await write("logos/deno.svg", SQUARE_SVG);
+
+    const loader = localIcons("icons");
+    const context = fakeContext();
+
+    await loader.load(context);
+    expect(context.logger.info).toHaveBeenCalledOnce();
+
+    context.logger.info.mockClear();
+    context.logger.debug.mockClear();
+
+    await loader.load(context);
+    expect(context.logger.info).not.toHaveBeenCalled();
+    expect(context.logger.debug).toHaveBeenCalledOnce();
+    const [message] = context.logger.debug.mock.calls[0];
+    expect(message).toMatch(/^"icons" is already up to date \(2 icon\(s\)\), skipped in /);
+  });
+
+  it("falls back to a full resync + info log once a file's mtime/size changes", async () => {
+    await write("home.svg", SQUARE_SVG);
+
+    const loader = localIcons("icons");
+    const context = fakeContext();
+    await loader.load(context);
+
+    context.logger.info.mockClear();
+    const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
+    await write("home.svg", updated);
+
+    await loader.load(context);
+    expect(context.logger.info).toHaveBeenCalledOnce();
+    expect(context.logger.debug).not.toHaveBeenCalled();
   });
 });
 

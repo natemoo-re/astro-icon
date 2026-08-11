@@ -187,15 +187,11 @@ describe("createIconLoader / multiple sources", () => {
     );
   });
 
-  it("doesn't wrap a single source, keeping its name as the loader's own", () => {
-    const source = fakeSource({ name: "mdi" });
-    const loader = createIconLoader(source);
-    expect(loader.name).toBe("astro-icon/loaders/icon/mdi");
-  });
-
-  it("joins names for a loader built from multiple sources", () => {
-    const loader = createIconLoader([fakeSource({ name: "mdi" }), fakeSource({ name: "ic" })]);
-    expect(loader.name).toBe("astro-icon/loaders/icon/mdi+ic");
+  it("uses a fixed loader identity regardless of the source(s) it wraps", () => {
+    const single = createIconLoader(fakeSource({ name: "mdi" }));
+    const multi = createIconLoader([fakeSource({ name: "mdi" }), fakeSource({ name: "ic" })]);
+    expect(single.name).toBe("astro-icon/loaders");
+    expect(multi.name).toBe("astro-icon/loaders");
   });
 });
 
