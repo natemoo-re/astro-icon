@@ -176,6 +176,58 @@ describe("localIcons / incremental watching", () => {
   });
 });
 
+describe("localIcons / missing directory doesn't destabilize the watcher", () => {
+  it("still watches the configured dir (so it recovers if created later), warning exactly once", async () => {
+    const loader = localIcons("does-not-exist");
+    const watcher = fakeWatcher();
+    const context = fakeContext({ watcher });
+
+    await loader.load(context);
+
+    expect(watcher.add).toHaveBeenCalledWith(join(dir, "does-not-exist") + "/");
+    expect(context.logger.warn).toHaveBeenCalledTimes(1);
+  });
+
+  // Node's EventEmitter throws synchronously when an "error" event has no
+  // listener. `watcher` here is a plain EventEmitter standing in for
+  // chokidar/Astro's shared dev-server watcher, which emits "error" for fs
+  // errors it can't treat as "not there yet" (e.g. EPERM/EACCES, common on
+  // Windows when a directory is mid-delete). Without a listener, this
+  // `.emit()` call itself throws - taking down the shared watcher (and with
+  // it, live reload for every other file, CSS included). This is a regression
+  // test for https://github.com/natemoo-re/astro-icon/issues/260.
+  it("doesn't crash when the watcher emits 'error' for the missing directory", async () => {
+    const loader = localIcons("does-not-exist");
+    const watcher = fakeWatcher();
+    const context = fakeContext({ watcher });
+    await loader.load(context);
+
+    expect(() => {
+      watcher.emit("error", new Error("EPERM: operation not permitted, lstat 'does-not-exist'"));
+    }).not.toThrow();
+
+    expect(context.logger.warn).toHaveBeenCalledWith(expect.stringContaining("EPERM"));
+  });
+
+  it("keeps handling events for unrelated files after an 'error' event", async () => {
+    await write("home.svg", SQUARE_SVG);
+
+    const loader = localIcons("icons");
+    const watcher = fakeWatcher();
+    const context = fakeContext({ watcher });
+    await loader.load(context);
+
+    watcher.emit("error", new Error("EPERM: transient error"));
+
+    await write("menu.svg", SQUARE_SVG);
+    watcher.emit("add", join(dir, "icons", "menu.svg"));
+
+    await vi.waitFor(() => {
+      expect([...context.store.keys()].sort()).toEqual(["home", "menu"]);
+    });
+  });
+});
+
 describe("localIcons / re-sync caching", () => {
   it("skips re-optimizing an icon whose source file hasn't changed", async () => {
     await write("home.svg", SQUARE_SVG);
