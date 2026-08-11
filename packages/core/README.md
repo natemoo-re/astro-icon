@@ -13,6 +13,7 @@ astro-icon reads icons through Astro's [content layer](https://docs.astro.build/
 - [Deduping repeated icons with `<Sprite>`](#deduping-repeated-icons-with-sprite)
 - [Resolving icons per request with `<LiveIcon>`](#resolving-icons-per-request-with-liveicon)
 - [Bringing your own icon source](#bringing-your-own-icon-source)
+- [Shipping icons from a library](#shipping-icons-from-a-library)
 - [Using icons in framework components](#using-icons-in-framework-components)
 - [Upgrading from v1](#upgrading-from-v1)
 - [Contributing](#contributing)
@@ -284,6 +285,51 @@ export const collections = {
 ```
 
 `getIcon` resolves one icon by name; throw a descriptive error if it can't be found or built. `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete. `parseIconSVG` turns a raw `<svg>...</svg>` string into the shape astro-icon stores, deriving a `viewBox` if one is missing.
+
+## Shipping icons from a library
+
+A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineCollection({ loader })` is a plain, serializable value, not something tied to the project that created it. That means a library — a component library, a Starlight theme, an internal design system package — can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
+
+```ts
+// my-lib/src/icons.ts
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifySource, localSource } from "astro-icon/loaders";
+
+export const myLibIcons = {
+  // Namespace the key so it can't collide with a collection the consumer
+  // defines themselves, e.g. their own "icons" for src/icons/.
+  "my-lib-icons": defineCollection({
+    loader: createIconLoader([
+      // Bundle .svg files that ship inside the library's own package...
+      localSource(new URL("../icons/", import.meta.url)),
+      // ...and/or re-export a curated slice of an Iconify pack.
+      iconifySource("mdi", { icons: ["home", "account"] }),
+    ]),
+  }),
+};
+```
+
+```ts
+// consumer's src/content.config.ts
+import { defineCollection } from "astro:content";
+import { localIcons } from "astro-icon/loaders";
+import { myLibIcons } from "my-lib/icons";
+
+export const collections = {
+  ...myLibIcons,
+  // The consumer's own icons, defined the normal way.
+  icons: defineCollection({ loader: localIcons() }),
+};
+```
+
+The consumer now renders both without adding a loader themselves: `<Icon name="my-lib-icons:home" />` and `<Icon name="logo" />`. Astro's content layer resolves each loader at build/dev time through the `LoaderContext` it passes in, including `config.root`, so the library's loader runs against the *consumer's* project the same way any loader does — there's nothing extra to wire up, and typegen for the library's collection is written into the consumer's own `.astro/astro-icon.d.ts` alongside everything else.
+
+Two things worth knowing when you're the library author:
+
+- **Use `localSource`, not `localIcons()`, for bundled `.svg` files.** `localIcons(dir)` resolves `dir` against the *consuming* project's root (`config.root`), which is correct for a directory the consumer owns but wrong for one that ships inside your package. `localSource` takes a `URL` and resolves it directly, so `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file, no matter who imports it. Wrap it in `createIconLoader([...])` to get a `Loader` you can hand to `defineCollection`.
+- **Pick a collection key that won't collide.** Two collections can't share a key when their objects are spread together; prefix yours with your package name (`"my-lib-icons"`) rather than something generic like `"icons"`.
+
+The same pattern works for a live collection: export an object of `defineLiveCollection({ loader: createLiveIconLoader(...) })` entries for a consumer to spread into their `src/live.config.ts`.
 
 ## Using icons in framework components
 
