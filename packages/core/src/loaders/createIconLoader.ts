@@ -1,5 +1,6 @@
 import type { Loader, LoaderContext } from "astro/loaders";
 import { AstroIconError } from "../core/AstroIconError.js";
+import { formatDuration } from "../core/formatDuration.js";
 import { iconEntrySchema } from "../core/iconEntrySchema.js";
 import { listIconsOrFallback } from "../core/listIconsOrFallback.js";
 import { mergeSources } from "../core/mergeSources.js";
@@ -52,12 +53,16 @@ export function createIconLoader(
   async function load(context: LoaderContext): Promise<void> {
     const { store, meta, logger, parseData, generateDigest, collection } = context;
 
+    const syncStart = performance.now();
+
+    const listStart = syncStart;
     const names = await listIconsOrFallback(source, {
       strict,
       logger,
       failureMessage: (detail) => `"${source.name}" failed to list its icons: ${detail}`,
       hint: `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
     });
+    const listDuration = performance.now() - listStart;
 
     if (names.length === 0) {
       const message = `"${source.name}" has no icons to load for the "${collection}" collection.`;
@@ -75,9 +80,13 @@ export function createIconLoader(
     const versionKey = await getSourceVersionKey(source, names);
     if (versionKey && versionKey === meta.get(metaKey) && names.every((name) => store.has(name))) {
       await recordCollection(context.config.root, "build", collection, names);
+      logger.debug(
+        `"${collection}" is already up to date (${names.length} icon(s) from "${source.name}"), skipped in ${formatDuration(performance.now() - syncStart)}.`,
+      );
       return;
     }
 
+    const resolveStart = performance.now();
     const resolved = await resolveAllIcons(source, names, (name, ex) => {
       const detail = ex instanceof Error ? ex.message : String(ex);
       if (strict) {
@@ -88,6 +97,7 @@ export function createIconLoader(
       }
       logger.warn(`"${source.name}" failed to build "${name}": ${detail}`);
     });
+    const resolveDuration = performance.now() - resolveStart;
 
     store.clear();
     for (const { id, data } of resolved) {
@@ -104,6 +114,13 @@ export function createIconLoader(
       "build",
       collection,
       resolved.map(({ id }) => id),
+    );
+
+    // Split into "listing" (enumerating what's available) vs "resolving" (building
+    // each icon, which for `iconify()` is where a slow Iconify API fallback shows
+    // up) so it's possible to tell which phase actually took the time.
+    logger.info(
+      `Loaded ${resolved.length} icon(s) from "${source.name}" for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)} (list: ${formatDuration(listDuration)}, resolve: ${formatDuration(resolveDuration)}).`,
     );
   }
 

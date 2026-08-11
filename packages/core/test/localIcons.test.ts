@@ -49,7 +49,7 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
       keys: () => stored.keys(),
       delete: (id: string) => stored.delete(id),
     },
-    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     config: { root },
     generateDigest: (data: unknown) => JSON.stringify(data),
     parseData: vi.fn(async ({ data }: { data: unknown }) => data),
@@ -265,5 +265,22 @@ describe("localIcons / re-sync caching", () => {
     await loader.load(context);
     expect(optimize).toHaveBeenCalledTimes(3);
     expect((context.store.get("home") as any).data.viewBox).toBe("0 0 32 32");
+  });
+});
+
+describe("localIcons / timing logs", () => {
+  it("logs a duration + count summary at info level after the initial sync", async () => {
+    await write("home.svg", SQUARE_SVG);
+    await write("logos/deno.svg", SQUARE_SVG);
+
+    const loader = localIcons("icons");
+    const context = fakeContext();
+
+    await loader.load(context);
+
+    expect(context.logger.info).toHaveBeenCalledOnce();
+    const [message] = context.logger.info.mock.calls[0];
+    expect(message).toMatch(/^Loaded 2 icon\(s\) from "icons" in /);
+    expect(message).toMatch(/\d+(ms|\.\d\ds)/);
   });
 });

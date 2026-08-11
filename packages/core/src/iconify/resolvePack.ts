@@ -2,10 +2,11 @@ import type { IconifyJSON } from "@iconify/types";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../core/AstroIconError.js";
+import { formatDuration } from "../core/formatDuration.js";
 
 export interface ResolvePackOptions {
   strict?: boolean;
-  logger: Pick<AstroIntegrationLogger, "warn">;
+  logger: Pick<AstroIntegrationLogger, "warn" | "debug">;
 }
 
 // Shared across every loader instance in this process; keyed by `<pack>` (full local install) or `<pack>:<sorted icons>` (API subset). Failed lookups aren't cached, so they're retried.
@@ -62,8 +63,17 @@ export async function resolvePack(
   icons: string[] | undefined,
   { strict = false, logger }: ResolvePackOptions,
 ): Promise<IconifyJSON> {
+  const localStart = performance.now();
   const local = await resolveLocalPack(pack);
-  if (local) return local;
+  if (local) {
+    logger.debug(
+      `Resolved "${pack}" from a local install in ${formatDuration(performance.now() - localStart)}.`,
+    );
+    return local;
+  }
+  logger.debug(
+    `"${pack}" isn't installed locally (checked in ${formatDuration(performance.now() - localStart)}).`,
+  );
 
   if (strict) {
     throw new AstroIconError(
@@ -82,17 +92,22 @@ export async function resolvePack(
 
   warnMissingLocalPackOnce(pack, logger);
 
+  const apiStart = performance.now();
   const sortedIcons = Array.from(new Set(icons)).sort();
   const remote = await cachedPackResolution(
     `${pack}:${sortedIcons.join(",")}`,
     () => fetchPackFromAPI(pack, sortedIcons),
   );
+  const apiDuration = formatDuration(performance.now() - apiStart);
   if (!remote) {
     throw new AstroIconError(
       `Could not resolve the "${pack}" icon set from the Iconify API.`,
       `Install "@iconify-json/${pack}" locally, or verify the pack and icon names are correct.`,
     );
   }
+  logger.debug(
+    `Resolved ${sortedIcons.length} icon(s) of "${pack}" from the Iconify API in ${apiDuration}.`,
+  );
   return remote;
 }
 

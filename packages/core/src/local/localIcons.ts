@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Loader } from "astro/loaders";
 import { AstroIconError } from "../core/AstroIconError.js";
+import { formatDuration } from "../core/formatDuration.js";
 import { iconEntrySchema } from "../core/iconEntrySchema.js";
 import { listIconsOrFallback } from "../core/listIconsOrFallback.js";
 import { recordCollection } from "../typegen.js";
@@ -105,6 +106,8 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
         await recordCollection(config.root, "build", collection, [...store.keys()]);
       }
 
+      const syncStart = performance.now();
+
       const names = await listIconsOrFallback(source, {
         strict,
         logger,
@@ -118,6 +121,10 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
         await syncIcon(id, previousEntries.get(id));
       }
       await updateTypes();
+
+      logger.info(
+        `Loaded ${names.length} icon(s) from "${collection}" in ${formatDuration(performance.now() - syncStart)}.`,
+      );
 
       if (!watcher) return;
 

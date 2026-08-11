@@ -28,7 +28,7 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
       delete: (key: string) => metaStored.delete(key),
       has: (key: string) => metaStored.has(key),
     },
-    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     config: { root: new URL("file:///tmp/astro-icon-test-root/") },
     generateDigest: (data: unknown) => JSON.stringify(data),
     // Real Astro validates/coerces through the loader's schema; the fake
@@ -292,5 +292,41 @@ describe("createIconLoader / version-based skip", () => {
 
     await loader.load(context);
     expect(getIconA).toHaveBeenCalledTimes(afterFirstLoad * 2);
+  });
+});
+
+describe("createIconLoader / timing logs", () => {
+  it("logs a duration + count summary at info level after a real sync", async () => {
+    const source = fakeSource({ name: "mdi", listIcons: async () => ["home", "menu"] });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+
+    expect(context.logger.info).toHaveBeenCalledOnce();
+    const [message] = context.logger.info.mock.calls[0];
+    expect(message).toMatch(/^Loaded 2 icon\(s\) from "mdi" for the "icons" collection in /);
+    expect(message).toMatch(/\d+(ms|\.\d\ds)/);
+    expect(message).toMatch(/list: \d+(ms|\.\d\ds)/);
+    expect(message).toMatch(/resolve: \d+(ms|\.\d\ds)/);
+  });
+
+  it("does not log the info summary when a sync is skipped as up to date", async () => {
+    const source = fakeSource({
+      listIcons: async () => ["home"],
+      getVersion: async () => "1.0.0",
+    });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+    context.logger.info.mockClear();
+    context.logger.debug.mockClear();
+
+    await loader.load(context);
+
+    expect(context.logger.info).not.toHaveBeenCalled();
+    expect(context.logger.debug).toHaveBeenCalledOnce();
+    expect(context.logger.debug.mock.calls[0][0]).toMatch(/already up to date/);
   });
 });

@@ -135,6 +135,8 @@ Pass a different directory as the first argument:
 icons: defineCollection({ loader: localIcons("src/assets/icons") }),
 ```
 
+Each sync logs how many icons it loaded and how long it took (e.g. `Loaded 42 icon(s) from "icons" in 18ms`), so a slow build step is easy to attribute to icon loading versus everything else.
+
 ## Iconify icons
 
 `iconify()` resolves icons from any [Iconify icon set](https://icon-sets.iconify.design/), preferring a locally installed pack and falling back to the public Iconify API for icons you request by name.
@@ -192,6 +194,8 @@ export const collections = {
   }),
 };
 ```
+
+Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) from "mdi" for the "social" collection in 210ms (list: 5ms, resolve: 205ms)`), splitting out how long listing icons took from how long resolving/building them took - handy for telling apart a slow local pack lookup from a slow Iconify API fallback. Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for finer-grained timing, including whether a pack resolved locally or from the API.
 
 ## Deduping repeated icons with `<Sprite>`
 

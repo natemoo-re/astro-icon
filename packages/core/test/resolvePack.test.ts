@@ -14,7 +14,7 @@ const search: IconifyJSON = {
 };
 
 function logger() {
-  return { warn: vi.fn() };
+  return { warn: vi.fn(), debug: vi.fn() };
 }
 
 afterEach(() => {
@@ -38,7 +38,7 @@ describe("resolvePack", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const warn = vi.fn();
-    const result = await resolvePack("mdi", ["search"], { logger: { warn } });
+    const result = await resolvePack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
 
     expect(warn).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -162,9 +162,9 @@ describe("resolvePack pack cache", () => {
     );
 
     const warn = vi.fn();
-    await resolvePack("mdi", ["search"], { logger: { warn } });
-    await resolvePack("mdi", ["menu"], { logger: { warn } });
-    await resolvePack("mdi", ["home"], { logger: { warn } });
+    await resolvePack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
+    await resolvePack("mdi", ["menu"], { logger: { warn, debug: vi.fn() } });
+    await resolvePack("mdi", ["home"], { logger: { warn, debug: vi.fn() } });
 
     expect(warn).toHaveBeenCalledOnce();
   });
@@ -177,9 +177,38 @@ describe("resolvePack pack cache", () => {
     );
 
     const warn = vi.fn();
-    await resolvePack("mdi", ["search"], { logger: { warn } });
-    await resolvePack("ic", ["search"], { logger: { warn } });
+    await resolvePack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
+    await resolvePack("ic", ["search"], { logger: { warn, debug: vi.fn() } });
 
     expect(warn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("resolvePack timing logs", () => {
+  it("logs a debug timing line for a local resolution, distinct from an API fallback", async () => {
+    loadCollectionFromFS.mockResolvedValueOnce(search);
+    const debug = vi.fn();
+
+    await resolvePack("mdi", undefined, { logger: { warn: vi.fn(), debug } });
+
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug.mock.calls[0][0]).toMatch(/Resolved "mdi" from a local install in/);
+  });
+
+  it("logs separate debug timing lines for the local miss and the API fallback", async () => {
+    loadCollectionFromFS.mockResolvedValueOnce(undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(search), { status: 200 })),
+    );
+    const debug = vi.fn();
+
+    await resolvePack("mdi", ["search"], { logger: { warn: vi.fn(), debug } });
+
+    const messages = debug.mock.calls.map(([message]) => message);
+    expect(messages.some((m) => /isn't installed locally \(checked in/.test(m))).toBe(true);
+    expect(messages.some((m) => /Resolved 1 icon\(s\) of "mdi" from the Iconify API in/.test(m))).toBe(
+      true,
+    );
   });
 });
