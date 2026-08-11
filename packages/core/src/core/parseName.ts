@@ -21,14 +21,3 @@ export function parseIconName(name: string): ParsedName {
     hasPrefix: true,
   };
 }
-
-/** Same split, but for `<LiveIcon>`, which requires an explicit `collection:name` value (no default collection). */
-export function parseLiveIconName(name: string): ParsedName | undefined {
-  const colonIndex = name.indexOf(":");
-  if (colonIndex === -1) return undefined;
-  return {
-    collection: name.slice(0, colonIndex),
-    name: name.slice(colonIndex + 1),
-    hasPrefix: true,
-  };
-}

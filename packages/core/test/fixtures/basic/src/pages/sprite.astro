@@ -16,7 +16,7 @@ import IconRow from "../components/IconRow.astro";
       <IconRow />
       <!-- A LiveIcon adjacent to static icons -> passed through untouched,
            never deduped, even though it never throws. -->
-      <LiveIcon name="liveSpinners:3-dots-fade" />
+      <LiveIcon collection="liveSpinners" icon="3-dots-fade" />
     </Sprite>
     <!-- Outside the Sprite boundary -> always plain, never deduped -->
     <Icon name="3-dots-fade" />

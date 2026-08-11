@@ -36,13 +36,17 @@ export type IconName = [AstroIconPrefixed | AstroIconBare] extends [never]
   : AstroIconPrefixed | AstroIconBare;
 
 /**
- * The type checked against `<LiveIcon name="...">`. Unlike {@link IconName},
- * it always requires the `"collection:icon"` form since live collections
- * have no default. Falls back to a plain `string` until a sync has run.
+ * The type checked against `<LiveIcon collection="...">`. A live collection's
+ * specific icon names are resolved per-request, not recorded at sync time -
+ * validating them against a build-time snapshot would contradict the reason
+ * to reach for `<LiveIcon>` over `<Icon>` in the first place, so only the
+ * collection itself (a real build-time constant, declared in
+ * `live.config.ts`) is checked; `<LiveIcon icon="...">` stays a plain
+ * `string`. Falls back to a plain `string` until a sync has run.
  */
-export type LiveIconName = [keyof AstroIcon.LiveCollections] extends [never]
+export type LiveCollectionName = [keyof AstroIcon.LiveCollections] extends [never]
   ? string
-  : `${keyof AstroIcon.LiveCollections & string}:${string}`;
+  : keyof AstroIcon.LiveCollections & string;
 
 /**
  * The icon names valid for an Iconify `pack`, recorded from that pack's full

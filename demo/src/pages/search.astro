@@ -56,7 +56,7 @@ if (query) {
   <ul class="results" data-results>
     {results.map((name) => (
       <li>
-        <LiveIcon name={name} size={32} />
+        <LiveIcon collection={PACK} icon={name.slice(PACK.length + 1)} size={32} />
         <code>{name}</code>
       </li>
     ))}

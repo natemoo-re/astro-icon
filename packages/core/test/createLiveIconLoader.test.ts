@@ -136,21 +136,17 @@ describe("createLiveIconLoader typegen", () => {
     recordCollection.mockClear();
   });
 
-  it("records the source's listIcons() result, keyed by source.name", async () => {
-    createLiveIconLoader({
-      name: "mdi",
-      getIcon: vi.fn(async () => entry),
-      listIcons: async () => ["home", "search"],
-    });
+  it("records an empty list keyed by source.name, without waiting on listIcons()", async () => {
+    // `LiveCollectionName` only needs the collection key to exist - a live icon's specific name is never
+    // validated against a catalog (see names.d.ts), so this per-collection list stays empty.
+    const listIcons = vi.fn(async () => ["home", "search"]);
+    createLiveIconLoader({ name: "mdi", getIcon: vi.fn(async () => entry), listIcons });
 
     await flush();
 
-    expect(recordCollection).toHaveBeenCalledWith(
-      expect.any(URL),
-      "live",
-      "mdi",
-      ["home", "search"],
-    );
+    expect(recordCollection).toHaveBeenCalledWith(expect.any(URL), "live", "mdi", []);
+    // Still called for its side effect: sources like `iconifySource` use listIcons() to record their own pack catalog.
+    expect(listIcons).toHaveBeenCalledOnce();
   });
 
   it("records an empty list when the source has no listIcons", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseIconName, parseLiveIconName } from "../src/core/parseName.js";
+import { parseIconName } from "../src/core/parseName.js";
 
 describe("parseIconName", () => {
   it("resolves a bare name against the 'icons' collection", () => {
@@ -30,20 +30,6 @@ describe("parseIconName", () => {
     expect(parseIconName(":foo")).toEqual({
       collection: "",
       name: "foo",
-      hasPrefix: true,
-    });
-  });
-});
-
-describe("parseLiveIconName", () => {
-  it("requires a collection prefix", () => {
-    expect(parseLiveIconName("search")).toBeUndefined();
-  });
-
-  it("splits collection:name on the first colon", () => {
-    expect(parseLiveIconName("mdi:search")).toEqual({
-      collection: "mdi",
-      name: "search",
       hasPrefix: true,
     });
   });
