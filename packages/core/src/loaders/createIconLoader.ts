@@ -116,11 +116,14 @@ export function createIconLoader(
       resolved.map(({ id }) => id),
     );
 
-    // Split into "listing" (enumerating what's available) vs "resolving" (building
-    // each icon, which for `iconify()` is where a slow Iconify API fallback shows
-    // up) so it's possible to tell which phase actually took the time.
     logger.info(
-      `Loaded ${resolved.length} icon(s) from "${source.name}" for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)} (list: ${formatDuration(listDuration)}, resolve: ${formatDuration(resolveDuration)}).`,
+      `Loaded ${resolved.length} icon(s) from "${source.name}" for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)}.`,
+    );
+    // "listing" (enumerating what's available) vs "resolving" (building each
+    // icon, which for `iconify()` is where a slow Iconify API fallback or a
+    // deferred local-pack load shows up) - debug-only detail for the total above.
+    logger.debug(
+      `"${collection}" breakdown: list ${formatDuration(listDuration)}, resolve ${formatDuration(resolveDuration)}.`,
     );
   }
 

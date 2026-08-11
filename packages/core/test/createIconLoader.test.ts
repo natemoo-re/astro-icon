@@ -302,9 +302,18 @@ describe("createIconLoader / timing logs", () => {
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];
     expect(message).toMatch(/^Loaded 2 icon\(s\) from "mdi" for the "icons" collection in /);
-    expect(message).toMatch(/\d+(ms|\.\d\ds)/);
-    expect(message).toMatch(/list: \d+(ms|\.\d\ds)/);
-    expect(message).toMatch(/resolve: \d+(ms|\.\d\ds)/);
+    expect(message).toMatch(/\d+(ms|\.\d\ds)\.$/);
+  });
+
+  it("logs the list/resolve breakdown separately, at debug level", async () => {
+    const source = fakeSource({ name: "mdi", listIcons: async () => ["home", "menu"] });
+    const loader = createIconLoader(source);
+    const context = fakeContext();
+
+    await loader.load(context);
+
+    const [message] = context.logger.debug.mock.calls.at(-1)!;
+    expect(message).toMatch(/^"icons" breakdown: list \d+(ms|\.\d\ds), resolve \d+(ms|\.\d\ds)\.$/);
   });
 
   it("does not log the info summary when a sync is skipped as up to date", async () => {
