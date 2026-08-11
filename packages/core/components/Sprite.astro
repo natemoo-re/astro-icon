@@ -16,11 +16,10 @@
  * route. `<LiveIcon>` output always passes through untouched, since a live
  * entry isn't guaranteed stable enough to dedupe.
  */
-import { getEntry } from "astro:content";
 import { renderTimeError } from "../src/core/AstroIconError.js";
 import { extractSpriteIcons, rewriteSpriteHtml } from "../src/core/spriteRewrite.js";
 import { spriteRenderedForRequest } from "../src/core/spriteRequestMarker.js";
-import type { IconEntry } from "../typings/types";
+import { resolveIconEntry } from "./resolveIconEntry.js";
 
 if (!Astro.isPrerendered) {
   throw renderTimeError(
@@ -41,23 +40,20 @@ if (import.meta.env.DEV) {
 const slotHtml = Astro.slots.has("default") ? await Astro.slots.render("default") : "";
 const refs = extractSpriteIcons(slotHtml);
 
-const resolvedSymbols = new Map<string, { viewBox: string; body: string }>();
-for (const { collection, name, id } of refs) {
-  let entry: { data: IconEntry } | undefined;
-  try {
-    entry = (await getEntry(collection as never, name)) as { data: IconEntry } | undefined;
-  } catch {
-    entry = undefined;
-  }
+const resolvedEntries = await Promise.all(
+  refs.map(async (ref) => ({ ref, entry: await resolveIconEntry(ref.collection, ref.name) })),
+);
 
+const resolvedSymbols = new Map<string, { viewBox: string; body: string }>();
+for (const { ref, entry } of resolvedEntries) {
   if (!entry) {
     throw renderTimeError(
-      `Unable to locate "${collection}:${name}" icon!`,
-      `<Sprite> found a "${collection}:${name}" icon rendered in its slot, but couldn't re-resolve it from the "${collection}" collection.`,
+      `Unable to locate "${ref.collection}:${ref.name}" icon!`,
+      `<Sprite> found a "${ref.collection}:${ref.name}" icon rendered in its slot, but couldn't re-resolve it from the "${ref.collection}" collection.`,
     );
   }
 
-  resolvedSymbols.set(id, { viewBox: entry.data.viewBox, body: entry.data.body });
+  resolvedSymbols.set(ref.id, { viewBox: entry.data.viewBox, body: entry.data.body });
 }
 
 const rewrittenHtml = rewriteSpriteHtml(slotHtml, resolvedSymbols);

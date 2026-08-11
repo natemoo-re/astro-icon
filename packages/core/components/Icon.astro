@@ -1,13 +1,11 @@
 ---
-import { getEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
 import { renderTimeError } from "../src/core/AstroIconError.js";
-import { entryCache } from "../src/core/entryCache.js";
 import { iconA11yProps } from "../src/core/iconA11yProps.js";
 import { parseIconName } from "../src/core/parseName.js";
 import { renderableIconProps } from "../src/core/renderableIconProps.js";
+import { resolveIconEntry } from "./resolveIconEntry.js";
 import type { IconName } from "../typings/names";
-import type { IconEntry } from "../typings/types";
 
 /**
  * Renders one icon from a content collection as an inline `<svg>`, resolved
@@ -49,21 +47,7 @@ if (!iconName) {
   );
 }
 
-// Skipped in dev, since a process-lifetime cache would keep serving pre-edit icons.
-const cacheKey = `${collection}:${iconName}`;
-let entry: { data: IconEntry } | undefined = import.meta.env.DEV
-  ? undefined
-  : entryCache.get(cacheKey);
-if (!entry) {
-  try {
-    entry = (await getEntry(collection as never, iconName)) as
-      | { data: IconEntry }
-      | undefined;
-  } catch {
-    entry = undefined;
-  }
-  if (entry && !import.meta.env.DEV) entryCache.set(cacheKey, entry);
-}
+const entry = await resolveIconEntry(collection, iconName);
 
 if (!entry) {
   throw renderTimeError(

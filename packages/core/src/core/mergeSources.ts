@@ -11,16 +11,18 @@ export function mergeSources(sources: IconSource | IconSource[]): IconSource {
   return {
     name,
     async getIcon(iconName) {
+      const failures: string[] = [];
       for (const source of sources) {
         try {
           return await source.getIcon(iconName);
-        } catch {
+        } catch (ex) {
           // Try the next source; only fail if none of them have it.
+          failures.push(`${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`);
         }
       }
       throw new AstroIconError(
-        `No source in "${name}" provided an icon named "${iconName}" (tried: ${sources.map((source) => source.name).join(", ")}).`,
-        `Check that "${iconName}" is spelled correctly and included in every source's icon list, if one is set.`,
+        `No source in "${name}" provided an icon named "${iconName}".`,
+        `Check that "${iconName}" is spelled correctly and included in every source's icon list, if one is set.\n\nTried:\n${failures.map((failure) => `  - ${failure}`).join("\n")}`,
       );
     },
     async listIcons() {

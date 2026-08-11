@@ -99,12 +99,14 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
 
           if (raw !== undefined) {
             const sourceHash = hashSource(raw);
-            if (previous && previous.data._sourceHash === sourceHash) {
+            const sourceHashKey = `sourceHash:${id}`;
+            if (previous && meta.get(sourceHashKey) === sourceHash) {
               store.set({ id, data: previous.data, digest: previous.digest });
               return;
             }
             const data = await source.getIcon(id);
-            const parsedData = await parseData({ id, data: { ...data, _sourceHash: sourceHash } });
+            const parsedData = await parseData({ id, data });
+            meta.set(sourceHashKey, sourceHash);
             store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
             return;
           }
@@ -204,6 +206,7 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
         const id = idFromPath(filePath);
         if (!id) return;
         store.delete(id);
+        meta.delete(`sourceHash:${id}`);
         await updateTypes();
         logger.info(`Removed local icon "${id}"`);
       });

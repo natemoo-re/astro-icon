@@ -45,6 +45,25 @@ export function extractSpriteIcons(html: string): SpriteIconRef[] {
   return refs;
 }
 
+/** Finds the `</svg>` that closes the tag opened just before `searchFrom`, accounting for any `<svg>` nested inside the icon's own body. */
+function findMatchingCloseTag(html: string, searchFrom: number): number {
+  let depth = 1;
+  let cursor = searchFrom;
+  while (depth > 0) {
+    const nextOpen = html.indexOf("<svg", cursor);
+    const nextClose = html.indexOf("</svg>", cursor);
+    if (nextClose === -1) return -1;
+    if (nextOpen !== -1 && nextOpen < nextClose) {
+      depth++;
+      cursor = nextOpen + "<svg".length;
+    } else {
+      depth--;
+      cursor = nextClose + "</svg>".length;
+    }
+  }
+  return cursor - "</svg>".length;
+}
+
 /** Extracts the leading `<title>`/`<desc>` (per-instance text) that must survive Sprite's `<use>` rewrite. */
 function leadingTitleDesc(inner: string): string {
   let prefix = "";
@@ -75,7 +94,7 @@ export function rewriteSpriteHtml(
     if (!marker || !resolvedSymbols.has(marker.id)) continue;
 
     const openTagEnd = re.lastIndex;
-    const closeTagStart = html.indexOf("</svg>", openTagEnd);
+    const closeTagStart = findMatchingCloseTag(html, openTagEnd);
     if (closeTagStart === -1) continue;
     const closeTagEnd = closeTagStart + "</svg>".length;
 

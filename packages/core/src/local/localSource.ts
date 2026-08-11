@@ -44,6 +44,14 @@ export function localSource(dir: URL | string, options: LocalSourceOptions = {})
   const { icons, optimize, strict = false, logger = consoleLogger } = options;
   const allowed = icons && new Set(icons);
 
+  if (icons && allowed && allowed.size !== icons.length) {
+    const seen = new Set<string>();
+    const duplicates = icons.filter((name) => seen.size === seen.add(name).size);
+    logger.warn(
+      `The local source's \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+    );
+  }
+
   return {
     name: "local",
     async getIcon(name) {
