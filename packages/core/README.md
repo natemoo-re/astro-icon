@@ -231,7 +231,7 @@ export const collections = {
 };
 ```
 
-Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) from "mdi" for the "social" collection in 210ms (list: 5ms, resolve: 205ms)`), splitting out how long listing icons took from how long resolving/building them took, so you can tell a slow local pack lookup apart from a slow Iconify API fallback. Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for finer-grained timing, including whether a pack resolved locally or from the API.
+Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of how long listing icons took versus resolving/building them, so you can tell a slow local pack lookup apart from a slow Iconify API fallback, plus whether a pack resolved locally or from the API.
 
 ## Deduping repeated icons with `<Sprite>`
 

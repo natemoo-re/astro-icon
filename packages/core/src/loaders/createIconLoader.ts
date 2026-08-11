@@ -117,7 +117,7 @@ export function createIconLoader(
     );
 
     logger.info(
-      `Loaded ${resolved.length} icon(s) from "${source.name}" for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)}.`,
+      `Loaded ${resolved.length} icon(s) for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)}.`,
     );
     // "listing" (enumerating what's available) vs "resolving" (building each
     // icon, which for `iconify()` is where a slow Iconify API fallback or a

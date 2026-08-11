@@ -301,7 +301,7 @@ describe("createIconLoader / timing logs", () => {
 
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];
-    expect(message).toMatch(/^Loaded 2 icon\(s\) from "mdi" for the "icons" collection in /);
+    expect(message).toMatch(/^Loaded 2 icon\(s\) for the "icons" collection in /);
     expect(message).toMatch(/\d+(ms|\.\d\ds)\.$/);
   });
 
