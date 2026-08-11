@@ -1,0 +1,5 @@
+# This fixture intentionally commits a node_modules/ directory to simulate
+# a hoisted @iconify-json/* pack in a pnpm/npm/yarn monorepo workspace root
+# (see ../../monorepoHoisting.test.ts, regression test for issue #187).
+!node_modules/
+!node_modules/**
