@@ -1,7 +1,8 @@
 ---
 import { getLiveEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
-import { AstroIconError } from "../src/core/AstroIconError.js";
+import { AstroIconError, renderTimeError } from "../src/core/AstroIconError.js";
+import { iconA11yProps } from "../src/core/iconA11yProps.js";
 import { renderableIconProps } from "../src/core/renderableIconProps.js";
 import type { LiveCollectionName } from "../typings/names";
 import type { IconEntry } from "../typings/types";
@@ -16,6 +17,12 @@ import type { IconEntry } from "../typings/types";
  * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
  * one bad icon doesn't take down the page.
  *
+ * Decorative by default (`aria-hidden`, invisible to assistive tech) - the
+ * common case, since most icons sit next to visible text or inside an
+ * already-labeled control. Providing `title`/`desc` (or your own
+ * `aria-label`/`aria-labelledby`/`aria-description`/`aria-describedby`)
+ * opts an icon out of that default into a labeled, standalone graphic.
+ *
  * Use `<Icon>` instead when your icon names are known at build time; it's
  * cheaper since it resolves once, not on every request.
  */
@@ -28,10 +35,12 @@ interface Props extends HTMLAttributes<"svg"> {
    * at runtime (e.g. a user-driven search) and can't be checked at sync time.
    */
   icon: string;
-  /** Adds an accessible `<title>` before the icon body. */
+  /** Adds an accessible `<title>` before the icon body, and takes the icon out of its decorative default. */
   title?: string;
-  /** Adds an accessible `<desc>` after `title`. */
+  /** Adds an accessible `<desc>` after `title`, and takes the icon out of its decorative default. */
   desc?: string;
+  /** Astro's types don't yet include this WAI-ARIA 1.3 attribute; the direct-string analog of `aria-describedby`, same relationship as `aria-label`/`aria-labelledby`. */
+  "aria-description"?: string;
   /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
   size?: number | string;
   width?: number | string;
@@ -41,11 +50,9 @@ interface Props extends HTMLAttributes<"svg"> {
 const { collection, icon, title, desc, ...props } = Astro.props;
 
 if (!collection || !icon) {
-  throw new AstroIconError(
+  throw renderTimeError(
     `Invalid "collection" or "icon" provided!`,
-    import.meta.env.DEV
-      ? `<LiveIcon> requires both a "collection" and an "icon" prop; got collection="${collection}", icon="${icon}".`
-      : undefined,
+    `<LiveIcon> requires both a "collection" and an "icon" prop; got collection="${collection}", icon="${icon}".`,
   );
 }
 
@@ -60,11 +67,12 @@ if (error || !entry) {
 }
 
 const data = entry.data as IconEntry;
-const { normalizedProps } = renderableIconProps(data, props);
+const { a11yProps, titleId, descId } = iconA11yProps(title, desc, props);
+const { normalizedProps } = renderableIconProps(data, { ...a11yProps, ...props });
 ---
 
 <svg {...normalizedProps} data-icon={`${collection}:${icon}`} data-icon-live>
-  {title && <title>{title}</title>}
-  {desc && <desc>{desc}</desc>}
+  {titleId && <title id={titleId}>{title}</title>}
+  {descId && <desc id={descId}>{desc}</desc>}
   <Fragment set:html={data.body} />
 </svg>

@@ -1,32 +1,36 @@
 ---
 import { getEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
-import { AstroIconError } from "../src/core/AstroIconError.js";
+import { renderTimeError } from "../src/core/AstroIconError.js";
 import { entryCache } from "../src/core/entryCache.js";
+import { iconA11yProps } from "../src/core/iconA11yProps.js";
 import { parseIconName } from "../src/core/parseName.js";
 import { renderableIconProps } from "../src/core/renderableIconProps.js";
 import type { IconName } from "../typings/names";
 import type { IconEntry } from "../typings/types";
-
-interface AccessibleElementProps {
-  id?: string;
-  value: string;
-}
 
 /**
  * Renders one icon from a content collection as an inline `<svg>`, resolved
  * at build time. `IconName` autocompletes from every collection you define
  * in `content.config.ts`, once you've run `astro sync`, `dev`, or `build`.
  *
+ * Decorative by default (`aria-hidden`, invisible to assistive tech) - the
+ * common case, since most icons sit next to visible text or inside an
+ * already-labeled control. Providing `title`/`desc` (or your own
+ * `aria-label`/`aria-labelledby`/`aria-description`/`aria-describedby`)
+ * opts an icon out of that default into a labeled, standalone graphic.
+ *
  * Use `<LiveIcon>` instead when you need to resolve an icon per request.
  */
 interface Props extends HTMLAttributes<"svg"> {
   /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
   name: IconName;
-  /** Adds an accessible `<title>` before the icon body. */
-  title?: string | AccessibleElementProps;
-  /** Adds an accessible `<desc>` after `title`. */
-  desc?: string | AccessibleElementProps;
+  /** Adds an accessible `<title>` before the icon body, and takes the icon out of its decorative default. */
+  title?: string;
+  /** Adds an accessible `<desc>` after `title`, and takes the icon out of its decorative default. */
+  desc?: string;
+  /** Astro's types don't yet include this WAI-ARIA 1.3 attribute; the direct-string analog of `aria-describedby`, same relationship as `aria-label`/`aria-labelledby`. */
+  "aria-description"?: string;
   /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
   size?: number | string;
   width?: number | string;
@@ -35,20 +39,13 @@ interface Props extends HTMLAttributes<"svg"> {
 
 const { name = "", title, desc, ...props } = Astro.props;
 
-const normalizeAccessibleElement = (value?: string | AccessibleElementProps) =>
-  typeof value === "string" ? { value } : value;
-const normalizedTitle = normalizeAccessibleElement(title);
-const normalizedDesc = normalizeAccessibleElement(desc);
-
 const parsedName = parseIconName(name as string);
 const { collection, name: iconName, hasPrefix } = parsedName;
 
 if (!iconName) {
-  throw new AstroIconError(
+  throw renderTimeError(
     `Invalid "name" provided!`,
-    import.meta.env.DEV
-      ? `The provided value of "${name}" is invalid.\n\nDid you mean to provide an icon name?`
-      : undefined,
+    `The provided value of "${name}" is invalid.\n\nDid you mean to provide an icon name?`,
   );
 }
 
@@ -69,26 +66,21 @@ if (!entry) {
 }
 
 if (!entry) {
-  throw new AstroIconError(
+  throw renderTimeError(
     `Unable to locate "${name}" icon!`,
-    import.meta.env.DEV
-      ? hasPrefix
-        ? `The "${collection}" collection doesn't have an icon named "${iconName}".\n\nDid you define a collection named "${collection}" in "src/content.config.ts", and does it include this icon?`
-        : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`
-      : undefined,
+    hasPrefix
+      ? `The "${collection}" collection doesn't have an icon named "${iconName}".\n\nDid you define a collection named "${collection}" in "src/content.config.ts", and does it include this icon?`
+      : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`,
   );
 }
 
 const { body } = entry.data;
-const { normalizedProps } = renderableIconProps(entry.data, props);
+const { a11yProps, titleId, descId } = iconA11yProps(title, desc, props);
+const { normalizedProps } = renderableIconProps(entry.data, { ...a11yProps, ...props });
 ---
 
 <svg {...normalizedProps} data-icon={name}>
-  {
-    normalizedTitle && (
-      <title id={normalizedTitle.id}>{normalizedTitle.value}</title>
-    )
-  }
-  {normalizedDesc && <desc id={normalizedDesc.id}>{normalizedDesc.value}</desc>}
+  {titleId && <title id={titleId}>{title}</title>}
+  {descId && <desc id={descId}>{desc}</desc>}
   <Fragment set:html={body} />
 </svg>

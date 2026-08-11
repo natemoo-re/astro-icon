@@ -113,7 +113,9 @@ describe("<Sprite> against a real astro build", () => {
   });
 
   it("preserves per-instance title on a deduped occurrence", () => {
-    expect(spriteHtml).toContain('<title>Third</title><use href="#ai:icons:3-dots-fade" />');
+    expect(spriteHtml).toMatch(
+      /<title id="astro-icon-title-[^"]+">Third<\/title><use href="#ai:icons:3-dots-fade" \/>/,
+    );
   });
 
   it("leaves the icon rendered outside the Sprite boundary as a plain, non-deduped svg", () => {
