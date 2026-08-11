@@ -111,7 +111,19 @@ import { Icon } from "astro-icon/components";
 <Icon name="mdi:heart" class="text-red-500" />
 ```
 
-An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses `currentColor`. Most Iconify icon sets do this by default; for your own `.svg` files, replace hardcoded colors with `currentColor` yourself, or strip them with an `optimize` function (see [Iconify icons](#iconify-icons)).
+An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses `currentColor` instead of a hardcoded color. Most Iconify icon sets do this by default. Local, hand-authored `.svg` files often don't:
+
+```svg
+<!-- Won't respond to [data-icon] { color: ... } -->
+<svg viewBox="0 0 24 24"><path fill="#000" d="..." /></svg>
+
+<!-- Will -->
+<svg viewBox="0 0 24 24"><path fill="currentColor" d="..." /></svg>
+```
+
+Fix this by editing the `.svg` file directly, or by stripping hardcoded colors for every icon in a collection with an `optimize` function (see [Iconify icons](#iconify-icons)) — for example SVGO's `convertColors` plugin with `currentColor: true`.
+
+If `[data-icon] { color: ... }` isn't working, your source SVG almost certainly hardcodes a `fill`/`stroke` instead of using `currentColor` — open the raw `.svg` file and check.
 
 ## Local icons
 
@@ -175,6 +187,23 @@ export const collections = {
       optimize: (svg) => optimize(svg).data,
       // Turn a missing icon or pack into a build error instead of a warning.
       strict: true,
+    }),
+  }),
+};
+```
+
+`optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once outside `<Sprite>` (see [below](#deduping-repeated-icons-with-sprite)) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+
+```ts
+import { optimize } from "svgo";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: iconify("mdi", {
+      optimize: (svg, { collection, name }) =>
+        optimize(svg, {
+          plugins: [{ name: "prefixIds", params: { prefix: `${collection}-${name}` } }],
+        }).data,
     }),
   }),
 };
