@@ -59,7 +59,7 @@
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "peerDependencies": {
-    "astro": ">=5.0.0 <8.0.0"
+    "astro": ">=5.0.0"
   },
   "dependencies": {
     "@iconify/tools": "^5.0.12",
