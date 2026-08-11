@@ -35,9 +35,9 @@ export function createLiveIconLoader(
   const cache = new Map<string, IconEntry>();
 
   // Best-effort typegen at construction time, since `LiveLoader`'s context exposes no project root or collection name.
-  // `LiveCollectionName` only needs the collection key to exist (a live collection's specific icons resolve
-  // per-request and are never validated against a catalog - see names.d.ts), so this records an empty list rather
-  // than resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
+  // `LiveCollectionName` only needs the collection key to exist: a live collection's specific icons resolve per
+  // request and are never validated against a catalog (see names.d.ts), so this records an empty list rather than
+  // resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
   // sources like `iconifySource` use it to record their own full pack catalog for typing the `icons: [...]` option.
   const rootDir = new URL(`file://${process.cwd()}/`);
   if (source.listIcons) source.listIcons().catch(() => {});

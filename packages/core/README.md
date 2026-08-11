@@ -35,7 +35,7 @@ Then reference the icons astro-icon generates for you by adding this line to `sr
 /// <reference path="../.astro/astro-icon.d.ts" />
 ```
 
-This gives `<Icon name="...">` and `<LiveIcon name="...">` autocomplete for every icon in your collections, and a type error for a name that doesn't exist. It updates the first time you run `astro sync`, `astro dev`, or `astro build`, so autocomplete won't show your icons until you've run one of those at least once.
+This gives `<Icon name="...">` autocomplete for every icon in your collections, `<LiveIcon collection="...">` autocomplete for every live collection, and a type error for a name that doesn't exist. It updates the first time you run `astro sync`, `astro dev`, or `astro build`, so autocomplete won't show your icons until you've run one of those at least once.
 
 ## Quick start
 
@@ -86,6 +86,16 @@ interface Props extends HTMLAttributes<"svg"> {
 
 `<Icon>` also accepts any global HTML and `aria-*` attribute, and forwards it to the rendered `<svg>`.
 
+By default, `<Icon>` renders as decorative: `aria-hidden="true"`, invisible to assistive tech. That's the common case, since most icons sit next to visible text or inside an already-labeled control. Set `title`, `desc`, or your own `aria-label`, `aria-labelledby`, `aria-description`, or `aria-describedby` to render it instead as a labeled, standalone graphic:
+
+```astro
+<!-- Decorative: assistive tech skips it, the button's own label is enough -->
+<button><Icon name="mdi:close" /> Close</button>
+
+<!-- Labeled: title becomes the icon's accessible name -->
+<Icon name="mdi:warning" title="Warning" />
+```
+
 ## Styling icons
 
 Every rendered icon carries a `data-icon` attribute set to its `name` prop, so you can target it in CSS without adding a class yourself:
@@ -121,9 +131,9 @@ An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses
 <svg viewBox="0 0 24 24"><path fill="currentColor" d="..." /></svg>
 ```
 
-Fix this by editing the `.svg` file directly, or by stripping hardcoded colors for every icon in a collection with an `optimize` function (see [Iconify icons](#iconify-icons)) — for example SVGO's `convertColors` plugin with `currentColor: true`.
+Fix this by editing the `.svg` file directly, or by stripping hardcoded colors for every icon in a collection with an `optimize` function (see [Iconify icons](#iconify-icons)), for example SVGO's `convertColors` plugin with `currentColor: true`.
 
-If `[data-icon] { color: ... }` isn't working, your source SVG almost certainly hardcodes a `fill`/`stroke` instead of using `currentColor` — open the raw `.svg` file and check.
+If `[data-icon] { color: ... }` isn't working, your source SVG almost certainly hardcodes a `fill`/`stroke` instead of using `currentColor`. Open the raw `.svg` file and check.
 
 ## Local icons
 
@@ -178,10 +188,7 @@ export const collections = {
   mdi: defineCollection({
     loader: iconify("mdi", {
       // Restrict the collection (and its generated types) to exactly these icons,
-      // instead of the whole pack. Useful for a design system's approved icon set.
-      // Once a previous sync has recorded "mdi"'s catalog, each name here is
-      // autocompleted and type-checked against it, and a literal duplicate is
-      // a type error; both fall back to a plain string until that's happened.
+      // typed and autocompleted against "mdi"'s catalog once a sync has recorded it.
       icons: ["account", "home", "heart"],
       // Transform each icon's raw SVG before astro-icon stores it.
       optimize: (svg) => optimize(svg).data,
@@ -224,7 +231,7 @@ export const collections = {
 };
 ```
 
-Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) from "mdi" for the "social" collection in 210ms (list: 5ms, resolve: 205ms)`), splitting out how long listing icons took from how long resolving/building them took - handy for telling apart a slow local pack lookup from a slow Iconify API fallback. Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for finer-grained timing, including whether a pack resolved locally or from the API.
+Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) from "mdi" for the "social" collection in 210ms (list: 5ms, resolve: 205ms)`), splitting out how long listing icons took from how long resolving/building them took, so you can tell a slow local pack lookup apart from a slow Iconify API fallback. Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for finer-grained timing, including whether a pack resolved locally or from the API.
 
 ## Deduping repeated icons with `<Sprite>`
 
@@ -280,10 +287,12 @@ export const collections = {
 import { LiveIcon } from "astro-icon/components";
 ---
 
-<LiveIcon name="mdi:account" />
+<LiveIcon collection="mdi" icon="account" />
 ```
 
-Unlike `<Icon>`, `<LiveIcon>`'s `name` always requires the `"collection:icon"` form, since live collections have no default. If an icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing, rather than throwing and failing the whole page.
+Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props instead of one `name`. `collection` autocompletes against every live collection you define; `icon` stays a plain `string`, since a live collection's icon names resolve per request and aren't known at sync time. If an icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing, rather than throwing and failing the whole page.
+
+`<LiveIcon>` accepts the same `title`, `desc`, `size`, `width`, and `height` props as `<Icon>`, with the same decorative-by-default behavior described [above](#the-icon-component).
 
 ## Bringing your own icon source
 
@@ -321,7 +330,7 @@ export const collections = {
 
 ## Shipping icons from a library
 
-A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineCollection({ loader })` is a plain, serializable value, not something tied to the project that created it. That means a library — a component library, a Starlight theme, an internal design system package — can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
+A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineCollection({ loader })` is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
 
 ```ts
 // my-lib/src/icons.ts
@@ -355,7 +364,7 @@ export const collections = {
 };
 ```
 
-The consumer now renders both without adding a loader themselves: `<Icon name="my-lib-icons:home" />` and `<Icon name="logo" />`. Astro's content layer resolves each loader at build/dev time through the `LoaderContext` it passes in, including `config.root`, so the library's loader runs against the *consumer's* project the same way any loader does — there's nothing extra to wire up, and typegen for the library's collection is written into the consumer's own `.astro/astro-icon.d.ts` alongside everything else.
+The consumer now renders both without adding a loader themselves: `<Icon name="my-lib-icons:home" />` and `<Icon name="logo" />`. Astro's content layer resolves each loader at build/dev time through the `LoaderContext` it passes in, including `config.root`, so the library's loader runs against the *consumer's* project the same way any loader does. There's nothing extra to wire up, and typegen for the library's collection is written into the consumer's own `.astro/astro-icon.d.ts` alongside everything else.
 
 Two things worth knowing when you're the library author:
 

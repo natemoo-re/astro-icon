@@ -13,11 +13,11 @@ type AstroIconPrefixed = {
 
 // `"icons" extends keyof T ? T["icons"] : never` fails to narrow the indexed
 // access when T is a concrete (non-generic) type: TypeScript only defers a
-// conditional type's evaluation - and carries the `extends` narrowing into
-// its branches - when the checked type is a naked generic parameter.
-// Routing through this generic keeps `AstroIcon.Collections` as a type
-// argument so the narrowing actually applies; inlined, it silently resolves
-// to `any` instead of erroring, collapsing all of `IconName` to `any`.
+// conditional type's evaluation, carrying the `extends` narrowing into its
+// branches, when the checked type is a naked generic parameter. Routing
+// through this generic keeps `AstroIcon.Collections` as a type argument so
+// the narrowing actually applies; inlined, it silently resolves to `any`
+// instead of erroring, collapsing all of `IconName` to `any`.
 type KeyOrNever<T, K extends PropertyKey> = K extends keyof T ? T[K] : never;
 
 type AstroIconBare = KeyOrNever<AstroIcon.Collections, "icons"> & string;
@@ -37,9 +37,9 @@ export type IconName = [AstroIconPrefixed | AstroIconBare] extends [never]
 
 /**
  * The type checked against `<LiveIcon collection="...">`. A live collection's
- * specific icon names are resolved per-request, not recorded at sync time -
+ * specific icon names are resolved per request, not recorded at sync time, so
  * validating them against a build-time snapshot would contradict the reason
- * to reach for `<LiveIcon>` over `<Icon>` in the first place, so only the
+ * to reach for `<LiveIcon>` over `<Icon>` in the first place. Only the
  * collection itself (a real build-time constant, declared in
  * `live.config.ts`) is checked; `<LiveIcon icon="...">` stays a plain
  * `string`. Falls back to a plain `string` until a sync has run.

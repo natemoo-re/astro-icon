@@ -40,8 +40,8 @@ const recordedPacks = new Set<string>();
  * catalog so `icons: [...]` can be typed and autocompleted against it on a
  * later run. Only called with data that already came from a local pack
  * resolution done for real work (never fetched just for this), so it never
- * touches the pack on its own — that would break the documented "an
- * `icons` allowlist alone never requires a local install" contract.
+ * touches the pack on its own. Fetching it here would break the documented
+ * "an `icons` allowlist alone never requires a local install" contract.
  */
 function recordPackCatalog(pack: string, data: IconifyJSON): void {
   if (recordedPacks.has(pack)) return;

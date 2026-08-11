@@ -9,7 +9,7 @@ import Base from "../layouts/base.astro";
   <h1>Welcome to Astro Icon!</h1>
 
   <p>
-    The <code>icons</code> collection is backed by <code>localIcons()</code> -
+    The <code>icons</code> collection is backed by <code>localIcons()</code>:
     it picks up every <code>.svg</code> in <code>src/icons/</code>
     automatically (subdirectories become part of the name), and watches that
     directory in dev the same way Astro's built-in file-backed collections do.
@@ -29,7 +29,7 @@ import Base from "../layouts/base.astro";
     <h2>Icons from Iconify</h2>
     <p>
       If you can find it on <a href="https://icones.js.org/">Icones</a>, you can
-      render it here - each pack is its own collection defined in
+      render it here. Each pack is its own collection defined in
       <code>src/content.config.ts</code>.
     </p>
   </article>
@@ -47,7 +47,7 @@ import Base from "../layouts/base.astro";
     <h2>A collection combined from multiple packs</h2>
     <p>
       <code>combined</code> is one collection built from an icon in <code>fe</code>
-      and an icon in <code>ri</code> via <code>createIconLoader([...])</code> - see
+      and an icon in <code>ri</code> via <code>createIconLoader([...])</code>. See
       <code>src/content.config.ts</code>.
     </p>
     <Icon size={32} name="combined:activity" />

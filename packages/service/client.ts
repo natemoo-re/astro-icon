@@ -33,7 +33,7 @@ export function serviceSource(
     const res = await fetch(`${url}/api/v1/icon?${query}`);
     if (!res.ok) {
       throw new Error(
-        `[service] API returned ${res.status} for "${query}" - is \`pnpm --filter service dev\` running?`,
+        `[service] API returned ${res.status} for "${query}": is \`pnpm --filter service dev\` running?`,
       );
     }
     return res;

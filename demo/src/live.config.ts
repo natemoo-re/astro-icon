@@ -10,7 +10,7 @@ const mdiLive = iconifyLive("mdi");
 const phLive = iconifyLive("ph");
 
 // A `serviceSource` wired to `packages/service`; run `pnpm --filter service dev` first.
-// `name` must match the "service" key below - a `LiveLoader` isn't told its own collection name.
+// `name` must match the "service" key below, since a `LiveLoader` isn't told its own collection name.
 const serviceLive = createLiveIconLoader(
   serviceSource("tabler", { name: "service" }),
 );

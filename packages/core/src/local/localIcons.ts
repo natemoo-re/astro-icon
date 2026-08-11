@@ -129,13 +129,14 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
       if (!watcher) return;
 
       // chokidar (the watcher Astro hands loaders) emits "error" for fs errors
-      // it can't treat as "path doesn't exist yet" (ENOENT/ENOTDIR) - e.g. an
-      // EPERM/EACCES while a directory is mid-delete, which Windows produces
-      // far more readily than POSIX. `watcher` is shared with the rest of
-      // Astro's dev server, and Node's EventEmitter throws synchronously when
-      // an "error" event has no listener - so an unlucky fs error here could
-      // otherwise take down watching for every other file (CSS included).
-      // Adding a listener, even just to warn, prevents that crash.
+      // it can't treat as "path doesn't exist yet" (ENOENT/ENOTDIR), for
+      // example an EPERM/EACCES while a directory is mid-delete, which
+      // Windows produces far more readily than POSIX. `watcher` is shared
+      // with the rest of Astro's dev server, and Node's EventEmitter throws
+      // synchronously when an "error" event has no listener, so an unlucky
+      // fs error here could otherwise take down watching for every other
+      // file (CSS included). Adding a listener, even just to warn, prevents
+      // that crash.
       watcher.on("error", (error: unknown) => {
         const detail = error instanceof Error ? error.message : String(error);
         logger.warn(`The local icon directory watcher for "${dirPath}" reported an error: ${detail}`);
