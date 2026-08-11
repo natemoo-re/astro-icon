@@ -2,6 +2,9 @@
   "name": "service",
   "private": true,
   "version": "0.1.0",
+  "exports": {
+    "./client": "./client.ts"
+  },
   "author": {
     "name": "Nate Moore",
     "email": "nate@natemoo.re",
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@vercel/node": "^1.12.1",
+    "astro-icon": "workspace:*",
     "tsx": "^4.23.11"
   }
 }

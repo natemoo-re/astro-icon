@@ -1,43 +1,22 @@
 import { defineLiveCollection } from "astro:content";
-import { parseIconSVG } from "astro-icon/loaders";
 import { createLiveIconLoader, iconifyLive } from "astro-icon/loaders/live";
-import type { IconSource } from "astro-icon/loaders/live";
+import { serviceSource } from "service/client";
 
+// "mdi" is installed locally (see package.json), so this resolves from disk.
 const mdiLive = iconifyLive("mdi");
 
-// A from-scratch `IconSource` wired to `packages/service`; run `pnpm --filter service dev` first.
-const SERVICE_URL = process.env.ASTRO_ICON_SERVICE_URL ?? "http://localhost:3001";
-const SERVICE_PACK = "tabler";
+// "ph" isn't installed, so this falls back to fetching each requested icon
+// individually from the public Iconify API (https://api.iconify.design).
+const phLive = iconifyLive("ph");
 
-const serviceSource: IconSource = {
-  // Must match the "service" key below; LiveLoaders aren't told their own collection name.
-  name: "service",
-  async getIcon(name) {
-    const res = await fetch(
-      `${SERVICE_URL}/api/v1/icon?pack=${SERVICE_PACK}&name=${encodeURIComponent(name)}`,
-    );
-    if (!res.ok) {
-      throw new Error(
-        `[demo] service API returned ${res.status} for "${SERVICE_PACK}:${name}" - is \`pnpm --filter service dev\` running?`,
-      );
-    }
-    const svg = await res.text();
-    return parseIconSVG(svg, {
-      collection: SERVICE_PACK,
-      name,
-      logger: { warn: (msg) => console.warn(msg) },
-    });
-  },
-  async listIcons() {
-    const res = await fetch(`${SERVICE_URL}/api/v1/icon?pack=${SERVICE_PACK}`);
-    if (!res.ok) {
-      throw new Error(`[demo] service API returned ${res.status} listing "${SERVICE_PACK}"`);
-    }
-    return res.json();
-  },
-};
+// A `serviceSource` wired to `packages/service`; run `pnpm --filter service dev` first.
+// `name` must match the "service" key below - a `LiveLoader` isn't told its own collection name.
+const serviceLive = createLiveIconLoader(
+  serviceSource("tabler", { name: "service" }),
+);
 
 export const collections = {
   mdi: defineLiveCollection({ loader: mdiLive }),
-  service: defineLiveCollection({ loader: createLiveIconLoader(serviceSource) }),
+  ph: defineLiveCollection({ loader: phLive }),
+  service: defineLiveCollection({ loader: serviceLive }),
 };
