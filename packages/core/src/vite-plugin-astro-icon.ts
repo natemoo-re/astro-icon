@@ -49,15 +49,6 @@ export function createPlugin(
       }
     },
     configureServer({ watcher, moduleGraph }) {
-      // Vite's dev server watcher is created with `disableGlobbing: true`,
-      // so a glob string like `${iconDir}/**/*.svg` is treated as a literal
-      // (non-existent) path rather than a glob pattern. Chokidar's internal
-      // fallback logic for that missing path ends up re-adding `iconDir`
-      // with a broken, non-recursive filter, which silently stops emitting
-      // `add`/`change`/`unlink` events for the whole directory (including
-      // existing and new subfolders) until the dev server is restarted.
-      // Watching the resolved directory itself avoids that failure mode and
-      // ensures `iconDir` is watched even when it lives outside `root`.
       watcher.add(resolve(root.pathname, iconDir));
       watcher.on("all", async (_, filepath: string) => {
         const parsedPath = parse(filepath);
