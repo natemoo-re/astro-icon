@@ -26,12 +26,12 @@ class AstroIconError extends Error {
   }
 }
 
-const req = Astro.request;
+const localsKey = Astro.locals;
 const { name = "", title, desc, "is:inline": inline = false, ...props } = Astro.props;
-const map = cache.get(req) ?? new Map();
+const map = cache.get(localsKey) ?? new Map();
 const i = map.get(name) ?? 0;
 map.set(name, i + 1);
-cache.set(req, map);
+cache.set(localsKey, map);
 
 const { include = {} } = config;
 const sets = Object.keys(include);
