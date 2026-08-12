@@ -49,7 +49,7 @@ export function createPlugin(
       }
     },
     configureServer({ watcher, moduleGraph }) {
-      watcher.add(`${iconDir}/**/*.svg`);
+      watcher.add(resolve(root.pathname, iconDir));
       watcher.on("all", async (_, filepath: string) => {
         const parsedPath = parse(filepath);
         const resolvedIconDir = resolve(root.pathname, iconDir);
