@@ -116,7 +116,7 @@ const normalizedProps = { ...renderData.attributes as Partial<IconifyIconBuildRe
 const normalizedBody = renderData.body;
 
 const { viewBox } = normalizedProps;
-if (includeSymbol) {
+if (!inline) {
   delete normalizedProps.viewBox;
 }
 ---
