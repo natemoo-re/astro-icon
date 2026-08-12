@@ -43,7 +43,9 @@ export function createPlugin(
           logCollections(collections, { ...ctx, iconDir });
           await generateIconTypeDefinitions(Object.values(collections), root);
         } catch (ex) {
-          // Failed to load the local collection
+          ctx.logger.warn(
+            `Failed to load icons from "${iconDir}": ${ex instanceof Error ? ex.message : ex}`,
+          );
         }
         return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
       }
@@ -69,7 +71,9 @@ export function createPlugin(
           await generateIconTypeDefinitions(Object.values(collections), root);
           moduleGraph.invalidateAll();
         } catch (ex) {
-          // Failed to load the local collection
+          ctx.logger.warn(
+            `Failed to load icons from "${iconDir}": ${ex instanceof Error ? ex.message : ex}`,
+          );
         }
         return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
       });
