@@ -1,3 +1,4 @@
+import { sanitizeSVGBody } from "./sanitizeSVG.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
@@ -15,7 +16,11 @@ export async function buildIcons(
   const results = await Promise.all(
     names.map(async (name) => {
       try {
-        return { name, data: await source.getIcon(name) };
+        const data = await source.getIcon(name);
+        // Every `IconSource`, custom ones included, funnels through here before being stored -
+        // the one choke point that can't be bypassed by a source that builds its own `IconEntry`
+        // without going through `parseIconSVG`.
+        return { name, data: { ...data, body: sanitizeSVGBody(data.body) } };
       } catch (ex) {
         onError(name, ex);
         return undefined;

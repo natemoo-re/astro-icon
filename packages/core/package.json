@@ -64,7 +64,8 @@
   "dependencies": {
     "@iconify/tools": "^5.0.12",
     "@iconify/types": "^2.0.0",
-    "@iconify/utils": "^3.1.4"
+    "@iconify/utils": "^3.1.4",
+    "ultrahtml": "^1.6.0"
   },
   "devDependencies": {
     "@astrojs/node": "^11.1.2",

@@ -68,6 +68,27 @@ describe("createLiveIconLoader / loadEntry", () => {
 
     expect(loader.name).toBe("astro-icon/loaders/live/iconify:mdi");
   });
+
+  it("sanitizes a custom source's entry even though it never calls parseIconSVG", async () => {
+    // A custom IconSource builds its IconEntry directly (see the IconSource contract) - it
+    // never has to go through parseIconSVG, so sanitization can't be allowed to live there.
+    const loader = createLiveIconLoader({
+      name: "untrusted",
+      getIcon: vi.fn(async () => ({
+        body: '<path d="M0 0" onload="alert(1)"/><script>alert(1)</script>',
+        viewBox: "0 0 24 24",
+        width: 24,
+        height: 24,
+      })),
+    });
+
+    const result = await loader.loadEntry({ filter: { id: "evil" }, collection: "icons" });
+
+    expect(result).toEqual({
+      id: "evil",
+      data: expect.objectContaining({ body: '<path d="M0 0" />' }),
+    });
+  });
 });
 
 describe("createLiveIconLoader / loadCollection", () => {
