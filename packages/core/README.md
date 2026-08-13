@@ -75,14 +75,15 @@ interface Props extends HTMLAttributes<"svg"> {
   title?: string;
   desc?: string;
   size?: number | string;
-  width?: number | string;
-  height?: number | string;
+  width?: number | string | null;
+  height?: number | string | null;
 }
 ```
 
 - `name` is `"collection:icon"` for any collection you define, or a bare icon name if you have a collection named `icons`, as in the example above.
 - `title` and `desc` add an accessible `<title>` and `<desc>` inside the `<svg>`.
 - `size` sets both `width` and `height` at once, and takes priority over either if you set both. Set `width` and `height` individually to render a non-square icon.
+- By default, `<Icon>` renders with `width`/`height` set from the icon's intrinsic size. Pass `width={null}`/`height={null}` to omit the attribute entirely, e.g. to size the icon from CSS instead.
 
 `<Icon>` also accepts any global HTML and `aria-*` attribute, and forwards it to the rendered `<svg>`.
 

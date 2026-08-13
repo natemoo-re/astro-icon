@@ -43,8 +43,10 @@ interface Props extends HTMLAttributes<"svg"> {
   "aria-description"?: string;
   /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
   size?: number | string;
-  width?: number | string;
-  height?: number | string;
+  /** Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
+  width?: number | string | null;
+  /** Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
+  height?: number | string | null;
 }
 
 const { collection, icon, title, desc, ...props } = Astro.props;

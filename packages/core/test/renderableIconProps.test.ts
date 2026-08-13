@@ -29,6 +29,11 @@ describe("renderableIconProps", () => {
     expect(normalizedProps).toEqual({ width: 32, height: 32, viewBox: "0 0 24 24" });
   });
 
+  it("lets an explicit null width/height override the entry's, to omit the attribute", () => {
+    const { normalizedProps } = renderableIconProps(entry, { width: null, height: null });
+    expect(normalizedProps).toEqual({ width: null, height: null, viewBox: "0 0 24 24" });
+  });
+
   it("passes through unrelated props untouched", () => {
     const { normalizedProps } = renderableIconProps(entry, {
       class: "icon",
