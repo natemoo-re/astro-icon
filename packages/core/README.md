@@ -180,10 +180,10 @@ export const collections = {
 
 Install the pack for production. The public API only resolves icons you name explicitly, never the whole set, and it adds a network request during your build. Without a local install, `iconify()` still works in dev and in production, as long as you list every icon you use with the `icons` option below.
 
-Pass options as the second argument. This example also plugs in [SVGO](https://github.com/svg/svgo) (`npm install svgo`) to optimize each icon, since astro-icon doesn't run any optimization on its own:
+Pass options as the second argument. astro-icon doesn't run any optimization on its own, but `astro-icon/optimize` ships an `svgo()` helper ([SVGO](https://github.com/svg/svgo) is an optional peer dependency: `npm install svgo`) for the `optimize` option:
 
 ```ts
-import { optimize } from "svgo";
+import { svgo } from "astro-icon/optimize";
 
 export const collections = {
   mdi: defineCollection({
@@ -192,7 +192,7 @@ export const collections = {
       // typed and autocompleted against "mdi"'s catalog once a sync has recorded it.
       icons: ["account", "home", "heart"],
       // Transform each icon's raw SVG before astro-icon stores it.
-      optimize: (svg) => optimize(svg).data,
+      optimize: svgo(),
       // Turn a missing icon or pack into a build error instead of a warning.
       strict: true,
     }),
@@ -200,18 +200,44 @@ export const collections = {
 };
 ```
 
+`svgo()` with no arguments runs SVGO's `preset-default` with astro-icon's own `defaultOverrides` layered on top: mechanical cleanup only (whitespace, numeric precision, structurally-empty nodes), nothing that changes an icon's color or DOM shape (see `defaultOverrides`' own doc comment for the full list and reasoning). Pass SVGO's own config through as-is - a `plugins` option replaces the default list entirely rather than merging with it:
+
+```ts
+import { svgo } from "astro-icon/optimize";
+
+optimize: svgo({ plugins: ["preset-default"] }); // SVGO's own untouched default
+```
+
+To keep most of astro-icon's defaults and adjust one plugin, build on `defaultOverrides` yourself instead of retyping the whole list:
+
+```ts
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+optimize: svgo({
+  plugins: [
+    {
+      name: "preset-default",
+      params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+    },
+  ],
+});
+```
+
 `optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once outside `<Sprite>` (see [below](#deduping-repeated-icons-with-sprite)) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts
-import { optimize } from "svgo";
+import { svgo, defaultOverrides } from "astro-icon/optimize";
 
 export const collections = {
   mdi: defineCollection({
     loader: iconify("mdi", {
       optimize: (svg, { collection, name }) =>
-        optimize(svg, {
-          plugins: [{ name: "prefixIds", params: { prefix: `${collection}-${name}` } }],
-        }).data,
+        svgo({
+          plugins: [
+            { name: "prefixIds", params: { prefix: `${collection}-${name}` } },
+            { name: "preset-default", params: { overrides: defaultOverrides } },
+          ],
+        })(svg, { collection, name }),
     }),
   }),
 };
@@ -385,7 +411,7 @@ astro-icon v2 replaces the `icon()` Astro integration with content collection lo
 - Remove `icon()` from `integrations` in `astro.config.mjs`.
 - Replace `config.include` with the `icons` option on `iconify()` or `iconifySource()`.
 - Replace `config.iconDir` with `localIcons("your/dir")`.
-- Replace `config.svgoOptions` with an `optimize` function that runs SVGO yourself; astro-icon no longer bundles SVGO or runs any optimization by default.
+- Replace `config.svgoOptions` with the `optimize` option - astro-icon no longer runs any optimization by default. `svgo()` from `astro-icon/optimize` (see [Iconify icons](#iconify-icons)) covers the common case; for full control, `npm install svgo` and write your own `optimize` function.
 - Define your collections in `src/content.config.ts` as shown in [Quick start](#quick-start), and add the `env.d.ts` reference from [Installation](#installation).
 
 If you're upgrading from v0 to v1, see the [v1 upgrade guide](https://www.astroicon.dev/guides/upgrade/v1/) first.

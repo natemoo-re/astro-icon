@@ -19,6 +19,10 @@
     "./loaders/live": {
       "types": "./dist/content/live.d.ts",
       "default": "./dist/content/live.js"
+    },
+    "./optimize": {
+      "types": "./dist/optimize.d.ts",
+      "default": "./dist/optimize.js"
     }
   },
   "files": [
@@ -59,7 +63,13 @@
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
   "peerDependencies": {
-    "astro": ">=5.0.0"
+    "astro": ">=5.0.0",
+    "svgo": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "svgo": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@iconify/tools": "^5.0.12",
@@ -72,6 +82,7 @@
     "@iconify-json/svg-spinners": "^1.2.4",
     "@types/node": "^22.20.1",
     "astro": "^7.2.2",
+    "svgo": "^4.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vitest": "^2.1.9"
