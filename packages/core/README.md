@@ -122,7 +122,7 @@ import { Icon } from "astro-icon/components";
 <Icon name="mdi:heart" class="text-red-500" />
 ```
 
-An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses `currentColor` instead of a hardcoded color. Most Iconify icon sets do this by default. Local, hand-authored `.svg` files often don't:
+An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses `currentColor` instead of a hardcoded color. Most Iconify icon sets do this by default - their maintainers clean up each icon before publishing it. Local, hand-authored `.svg` files usually haven't been through that step:
 
 ```svg
 <!-- Won't respond to [data-icon] { color: ... } -->
@@ -132,9 +132,28 @@ An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses
 <svg viewBox="0 0 24 24"><path fill="currentColor" d="..." /></svg>
 ```
 
-Fix this by editing the `.svg` file directly, or by stripping hardcoded colors for every icon in a collection with an `optimize` function (see [Iconify icons](#iconify-icons)), for example SVGO's `convertColors` plugin with `currentColor: true`.
+`localIcons()` never rewrites a file's colors for you - only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships. What it does do: after each sync, if any icon looks like a single-color glyph (no `currentColor` anywhere, and no more than one distinct explicit `fill`/`stroke`) that would benefit, it logs a warning naming how many - so the fix is one build away from being found instead of a support issue away. Multi-color icons (two or more distinct explicit colors, read as a deliberate graphic) are never flagged.
 
-If `[data-icon] { color: ... }` isn't working, your source SVG almost certainly hardcodes a `fill`/`stroke` instead of using `currentColor`. Open the raw `.svg` file and check.
+Fix it by editing the `.svg` file directly, or convert every icon in a collection at once with `svgo()`'s `convertColors` override:
+
+```ts
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+icons: defineCollection({
+  loader: localIcons("src/icons", {
+    optimize: svgo({
+      plugins: [
+        {
+          name: "preset-default",
+          params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+        },
+      ],
+    }),
+  }),
+}),
+```
+
+If `[data-icon] { color: ... }` isn't working, your source SVG almost certainly hardcodes a `fill`/`stroke` instead of using `currentColor` - check the build output for the warning above, or open the raw `.svg` file.
 
 ## Local icons
 

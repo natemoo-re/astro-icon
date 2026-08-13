@@ -3,14 +3,37 @@ import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Loader } from "astro/loaders";
+import type { AstroIntegrationLogger } from "astro";
+import type { Loader, LoaderContext } from "astro/loaders";
 import { AstroIconError } from "../../internal/error.js";
 import { formatDuration } from "../duration.js";
 import { iconEntrySchema } from "../entrySchema.js";
 import { listIconsOrFallback } from "../listIconsOrFallback.js";
 import { recordCollection } from "../typegen/index.js";
+import { looksLikeItNeedsCurrentColor } from "./currentColorHint.js";
 import { localSource } from "./source.js";
 import type { LocalSourceOptions } from "./source.js";
+import type { IconEntry } from "../../../typings/types";
+
+/**
+ * A one-time, best-effort nudge (never a mutation - see the "Styling icons" README section for
+ * why astro-icon doesn't rewrite colors automatically) toward the `svgo()` currentColor recipe,
+ * logged when local icons look like they won't respond to CSS `color`.
+ */
+function warnAboutMissingCurrentColor(
+  store: LoaderContext["store"],
+  collection: string,
+  logger: Pick<AstroIntegrationLogger, "warn">,
+): void {
+  const candidates = (store.values() as unknown as { data: IconEntry }[]).filter(({ data }) =>
+    looksLikeItNeedsCurrentColor(data.body),
+  );
+  if (candidates.length === 0) return;
+
+  logger.warn(
+    `${candidates.length} icon(s) in "${collection}" don't appear to use "currentColor" and won't respond to CSS \`color\`. See the "Styling icons" section of the README, or pass \`optimize: svgo({ plugins: [{ name: "preset-default", params: { overrides: { convertColors: { currentColor: true } } } }] })\` from "astro-icon/optimize" to convert them.`,
+  );
+}
 
 /** Cheap (no SVGO) fingerprint of a file's raw contents, to detect whether it actually changed. */
 function hashSource(raw: string): string {
@@ -162,6 +185,7 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
         logger.info(
           `Loaded ${names.length} icon(s) from "${collection}" in ${formatDuration(performance.now() - syncStart)}.`,
         );
+        warnAboutMissingCurrentColor(store, collection, logger);
       }
 
       if (!watcher) return;

@@ -47,6 +47,7 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
       set: (entry: { id: string; data: unknown; digest?: string | number }) => stored.set(entry.id, entry),
       get: (id: string) => stored.get(id),
       entries: () => [...stored.entries()],
+      values: () => [...stored.values()],
       keys: () => stored.keys(),
       delete: (id: string) => stored.delete(id),
       has: (id: string) => stored.has(id),
@@ -100,6 +101,46 @@ describe("localIcons / initial sync", () => {
 
     expect(context.logger.warn).toHaveBeenCalled();
     expect([...context.store.keys()]).toEqual([]);
+  });
+});
+
+describe("localIcons / currentColor discoverability nudge", () => {
+  it("warns once, naming the count, when synced icons don't use currentColor", async () => {
+    // No fill attribute at all - relies on SVG's default black, the same shape #136 hit.
+    await write("home.svg", SQUARE_SVG);
+    await write("logos/deno.svg", `<svg viewBox="0 0 24 24"><rect fill="#000" width="24" height="24"/></svg>`);
+
+    const context = fakeContext();
+    await localIcons("icons").load(context);
+
+    expect(context.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('2 icon(s) in "icons"'),
+    );
+    expect(context.logger.warn).toHaveBeenCalledWith(expect.stringContaining("currentColor"));
+  });
+
+  it("doesn't warn when icons already use currentColor", async () => {
+    await write(
+      "home.svg",
+      `<svg viewBox="0 0 24 24"><rect fill="currentColor" width="24" height="24"/></svg>`,
+    );
+
+    const context = fakeContext();
+    await localIcons("icons").load(context);
+
+    expect(context.logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("doesn't warn about a multi-color icon (reads as a deliberate graphic, not a miss)", async () => {
+    await write(
+      "logo.svg",
+      `<svg viewBox="0 0 24 24"><rect fill="#ff0000" width="12" height="24"/><rect fill="#0000ff" x="12" width="12" height="24"/></svg>`,
+    );
+
+    const context = fakeContext();
+    await localIcons("icons").load(context);
+
+    expect(context.logger.warn).not.toHaveBeenCalled();
   });
 });
 
