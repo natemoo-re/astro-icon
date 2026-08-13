@@ -1,8 +1,8 @@
 import type { Loader } from "astro/loaders";
-import { createIconLoader } from "../loaders/createIconLoader.js";
-import { iconifySource } from "./iconifySource.js";
-import type { IconifySourceOptions } from "../../typings/types";
-import type { IconifyIconName } from "../../typings/names";
+import { createIconLoader } from "../loader.js";
+import { iconifySource } from "./source.js";
+import type { IconifySourceOptions } from "../../../typings/types";
+import type { IconifyIconName } from "../../../typings/names";
 
 /**
  * A content layer loader for one or more Iconify icon packs. This is what

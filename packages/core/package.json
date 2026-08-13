@@ -13,12 +13,12 @@
     },
     "./components": "./components/index.ts",
     "./loaders": {
-      "types": "./dist/loaders/index.d.ts",
-      "default": "./dist/loaders/index.js"
+      "types": "./dist/content/loaders.d.ts",
+      "default": "./dist/content/loaders.js"
     },
     "./loaders/live": {
-      "types": "./dist/loaders/live.d.ts",
-      "default": "./dist/loaders/live.js"
+      "types": "./dist/content/live.d.ts",
+      "default": "./dist/content/live.js"
     }
   },
   "files": [

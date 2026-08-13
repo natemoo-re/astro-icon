@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderableIconProps } from "../src/core/renderableIconProps.js";
+import { renderableIconProps } from "../src/render/props.js";
 
 const entry = { width: 24, height: 24, viewBox: "0 0 24 24" };
 

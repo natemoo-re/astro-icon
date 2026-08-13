@@ -1,12 +1,12 @@
 import type { Loader, LoaderContext } from "astro/loaders";
-import { AstroIconError } from "../core/AstroIconError.js";
-import { formatDuration } from "../core/formatDuration.js";
-import { iconEntrySchema } from "../core/iconEntrySchema.js";
-import { listIconsOrFallback } from "../core/listIconsOrFallback.js";
-import { mergeSources } from "../core/mergeSources.js";
-import { resolveAllIcons } from "../core/resolveAllIcons.js";
-import { recordCollection } from "../typegen.js";
-import type { IconSource } from "../core/iconSource.js";
+import { AstroIconError } from "../internal/error.js";
+import { buildIcons } from "./buildIcons.js";
+import { formatDuration } from "./duration.js";
+import { iconEntrySchema } from "./entrySchema.js";
+import { listIconsOrFallback } from "./listIconsOrFallback.js";
+import { mergeSources } from "./compositeSource.js";
+import { recordCollection } from "./typegen/index.js";
+import type { IconSource } from "./source.js";
 
 async function getSourceVersionKey(source: IconSource, names: string[]): Promise<string | undefined> {
   const version = await source.getVersion?.().catch(() => undefined);
@@ -86,8 +86,8 @@ export function createIconLoader(
       return;
     }
 
-    const resolveStart = performance.now();
-    const resolved = await resolveAllIcons(source, names, (name, ex) => {
+    const buildStart = performance.now();
+    const built = await buildIcons(source, names, (name, ex) => {
       const detail = ex instanceof Error ? ex.message : String(ex);
       if (strict) {
         throw new AstroIconError(
@@ -97,33 +97,35 @@ export function createIconLoader(
       }
       logger.warn(`"${source.name}" failed to build "${name}": ${detail}`);
     });
-    const resolveDuration = performance.now() - resolveStart;
+    const buildDuration = performance.now() - buildStart;
 
     store.clear();
-    for (const { id, data } of resolved) {
-      const parsedData = await parseData({ id, data });
-      store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
+    // `name` becomes the content-layer entry's `id` here - the one point where astro-icon's
+    // own vocabulary (a source's icon name) crosses into Astro's content-layer vocabulary (id).
+    for (const { name, data } of built) {
+      const parsedData = await parseData({ id: name, data });
+      store.set({ id: name, data: parsedData, digest: generateDigest(parsedData) });
     }
 
     if (versionKey) meta.set(metaKey, versionKey);
     else meta.delete(metaKey);
 
-    // Typed from `resolved`, not `names`: a failed icon is skipped from the store in non-strict mode.
+    // Typed from `built`, not `names`: a failed icon is skipped from the store in non-strict mode.
     await recordCollection(
       context.config.root,
       "build",
       collection,
-      resolved.map(({ id }) => id),
+      built.map(({ name }) => name),
     );
 
     logger.info(
-      `Loaded ${resolved.length} icon(s) for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)}.`,
+      `Loaded ${built.length} icon(s) for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)}.`,
     );
-    // "listing" (enumerating what's available) vs "resolving" (building each
+    // "listing" (enumerating what's available) vs "building" (building each
     // icon, which for `iconify()` is where a slow Iconify API fallback or a
     // deferred local-pack load shows up) - debug-only detail for the total above.
     logger.debug(
-      `"${collection}" breakdown: list ${formatDuration(listDuration)}, resolve ${formatDuration(resolveDuration)}.`,
+      `"${collection}" breakdown: list ${formatDuration(listDuration)}, build ${formatDuration(buildDuration)}.`,
     );
   }
 

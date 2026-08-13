@@ -4,13 +4,13 @@ import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Loader } from "astro/loaders";
-import { AstroIconError } from "../core/AstroIconError.js";
-import { formatDuration } from "../core/formatDuration.js";
-import { iconEntrySchema } from "../core/iconEntrySchema.js";
-import { listIconsOrFallback } from "../core/listIconsOrFallback.js";
-import { recordCollection } from "../typegen.js";
-import { localSource } from "./localSource.js";
-import type { LocalSourceOptions } from "./localSource.js";
+import { AstroIconError } from "../../internal/error.js";
+import { formatDuration } from "../duration.js";
+import { iconEntrySchema } from "../entrySchema.js";
+import { listIconsOrFallback } from "../listIconsOrFallback.js";
+import { recordCollection } from "../typegen/index.js";
+import { localSource } from "./source.js";
+import type { LocalSourceOptions } from "./source.js";
 
 /** Cheap (no SVGO) fingerprint of a file's raw contents, to detect whether it actually changed. */
 function hashSource(raw: string): string {

@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { recordCollection } from "../src/typegen.js";
+import { recordCollection } from "../src/content/typegen/index.js";
 
 let dir: string;
 let root: URL;

@@ -1,8 +1,16 @@
-import { AstroIconError } from "./AstroIconError.js";
-import type { IconSource } from "./iconSource.js";
+import { AstroIconError } from "../internal/error.js";
+import type { IconSource } from "./source.js";
 
-/** Normalizes one-or-more `IconSource`s into a single one, trying each in order per icon (first match wins). */
-export function mergeSources(sources: IconSource | IconSource[]): IconSource {
+/**
+ * An `IconSource` composed from an ordered list of member sources, tried in
+ * turn per icon (first match wins); `getVersion()` only reports a value if
+ * every member does. Structurally identical to a plain `IconSource` - the
+ * ordering/fallback/aggregation contract is behavioral, not a distinct shape.
+ */
+export type CompositeSource = IconSource;
+
+/** Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per icon (first match wins). */
+export function mergeSources(sources: IconSource | IconSource[]): CompositeSource {
   if (!Array.isArray(sources)) return sources;
   if (sources.length === 1) return sources[0];
 

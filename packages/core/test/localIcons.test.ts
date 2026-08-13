@@ -5,9 +5,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const recordCollection = vi.fn(async () => {});
-vi.mock("../src/typegen.js", () => ({ recordCollection }));
+vi.mock("../src/content/typegen/index.js", () => ({ recordCollection }));
 
-const { localIcons } = await import("../src/local/localIcons.js");
+const { localIcons } = await import("../src/content/local/loader.js");
 
 const SQUARE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`;
 

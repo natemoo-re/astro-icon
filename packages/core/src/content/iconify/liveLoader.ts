@@ -1,8 +1,8 @@
 import type { LiveLoader } from "astro/loaders";
-import { createLiveIconLoader } from "./createLiveIconLoader.js";
-import { iconifySource } from "../iconify/iconifySource.js";
-import type { IconEntry, IconifySourceOptions } from "../../typings/types";
-import type { IconifyIconName } from "../../typings/names";
+import { createLiveIconLoader } from "../liveLoader.js";
+import { iconifySource } from "./source.js";
+import type { IconEntry, IconifySourceOptions } from "../../../typings/types";
+import type { IconifyIconName } from "../../../typings/names";
 
 /**
  * A live content collection loader for one or more Iconify icon packs,
@@ -38,7 +38,3 @@ export function iconifyLive(
   const packs = Array.isArray(pack) ? pack : [pack];
   return createLiveIconLoader(packs.map((name) => iconifySource(name, options)));
 }
-
-export { createLiveIconLoader, iconifySource };
-export { AstroIconError } from "../core/AstroIconError.js";
-export type { IconSource } from "../core/iconSource.js";

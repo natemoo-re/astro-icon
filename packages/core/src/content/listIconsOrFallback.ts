@@ -1,6 +1,6 @@
 import type { AstroIntegrationLogger } from "astro";
-import { AstroIconError } from "./AstroIconError.js";
-import type { IconSource } from "./iconSource.js";
+import { AstroIconError } from "../internal/error.js";
+import type { IconSource } from "./source.js";
 
 export interface ListIconsOrFallbackOptions {
   /** Turns a failed `listIcons()` into a build error instead of a warning + empty list. */

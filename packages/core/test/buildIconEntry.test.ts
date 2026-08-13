@@ -1,6 +1,6 @@
 import type { IconifyJSON } from "@iconify/types";
 import { describe, expect, it, vi } from "vitest";
-import { buildIconEntry } from "../src/iconify/iconifySource.js";
+import { buildIconEntry } from "../src/content/iconify/source.js";
 
 const search: IconifyJSON = {
   prefix: "mdi",

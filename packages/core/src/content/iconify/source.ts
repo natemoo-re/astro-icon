@@ -4,14 +4,14 @@ import { join } from "node:path";
 import type { IconifyJSON } from "@iconify/types";
 import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
-import { resolveLocalPack, resolvePack } from "./resolvePack.js";
-import { AstroIconError } from "../core/AstroIconError.js";
-import { consoleLogger } from "../core/logger.js";
-import { parseIconSVG } from "../core/parseIconSVG.js";
-import { recordPack } from "../typegen.js";
-import type { IconSource } from "../core/iconSource.js";
-import type { IconEntry, IconifySourceOptions, OptimizeFn } from "../../typings/types";
-import type { IconifyIconName } from "../../typings/names";
+import { loadLocalPack, loadPack } from "./pack.js";
+import { AstroIconError } from "../../internal/error.js";
+import { consoleLogger } from "../logger.js";
+import { parseIconSVG } from "../parseIconSVG.js";
+import { recordCatalog } from "../typegen/index.js";
+import type { IconSource } from "../source.js";
+import type { IconEntry, IconifySourceOptions, OptimizeFn } from "../../../typings/types";
+import type { IconifyIconName } from "../../../typings/names";
 
 /** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
 async function getPackVersion(pack: string): Promise<string | undefined> {
@@ -27,7 +27,7 @@ async function getPackVersion(pack: string): Promise<string | undefined> {
   }
 }
 
-/** Every icon name (including aliases) in a resolved local pack. */
+/** Every icon name (including aliases) in a loaded local pack. */
 function localPackIconNames(data: IconifyJSON): string[] {
   return Object.keys(data.icons).concat(Object.keys(data.aliases ?? {}));
 }
@@ -36,10 +36,10 @@ function localPackIconNames(data: IconifyJSON): string[] {
 const recordedPacks = new Set<string>();
 
 /**
- * Best-effort typegen: records a locally resolved pack's full, unfiltered
+ * Best-effort typegen: records a locally loaded pack's full, unfiltered
  * catalog so `icons: [...]` can be typed and autocompleted against it on a
  * later run. Only called with data that already came from a local pack
- * resolution done for real work (never fetched just for this), so it never
+ * load done for real work (never fetched just for this), so it never
  * touches the pack on its own. Fetching it here would break the documented
  * "an `icons` allowlist alone never requires a local install" contract.
  */
@@ -48,7 +48,7 @@ function recordPackCatalog(pack: string, data: IconifyJSON): void {
   recordedPacks.add(pack);
   // `iconifySource` has no access to the project root the way a `LoaderContext` does; mirrors `createLiveIconLoader`'s own `process.cwd()` fallback.
   const rootDir = new URL(`file://${process.cwd()}/`);
-  recordPack(rootDir, pack, localPackIconNames(data)).catch(() => {});
+  recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }
 
 export function iconifySource<
@@ -99,9 +99,9 @@ export function iconifySource(
           `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow the whole pack.`,
         );
       }
-      const local = await resolveLocalPack(pack);
+      const local = await loadLocalPack(pack);
       if (local) recordPackCatalog(pack, local);
-      const data = local ?? (await resolvePack(pack, [name], { strict, logger }));
+      const data = local ?? (await loadPack(pack, [name], { strict, logger }));
       const entry = await buildIconEntry(data, name, {
         collection: pack,
         optimize,
@@ -120,10 +120,10 @@ export function iconifySource(
       // Not verified against the pack upfront, matching getIcon's own lazy check. `allowed` is a Set, so this also dedupes the option.
       if (allowed) return [...allowed];
 
-      const local = await resolveLocalPack(pack);
+      const local = await loadLocalPack(pack);
       if (!local) {
         throw new AstroIconError(
-          `"${pack}" isn't installed locally, so its full icon list can't be resolved from the Iconify API.`,
+          `"${pack}" isn't installed locally, so its full icon list can't be loaded from the Iconify API.`,
           `Install "@iconify-json/${pack}", or restrict it with an explicit \`icons: [...]\` list.`,
         );
       }
@@ -144,7 +144,7 @@ export interface BuildIconEntryOptions {
 }
 
 /**
- * Renders a single icon out of a resolved iconify pack (see `resolvePack`)
+ * Renders a single icon out of a loaded iconify pack (see `loadPack`)
  * into an `IconEntry`, running it through `optimize` if given.
  */
 export async function buildIconEntry(

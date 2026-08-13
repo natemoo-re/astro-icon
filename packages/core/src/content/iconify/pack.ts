@@ -1,10 +1,10 @@
 import type { IconifyJSON } from "@iconify/types";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import type { AstroIntegrationLogger } from "astro";
-import { AstroIconError } from "../core/AstroIconError.js";
-import { formatDuration } from "../core/formatDuration.js";
+import { AstroIconError } from "../../internal/error.js";
+import { formatDuration } from "../duration.js";
 
-export interface ResolvePackOptions {
+export interface LoadPackOptions {
   strict?: boolean;
   logger: Pick<AstroIntegrationLogger, "warn" | "debug">;
 }
@@ -12,13 +12,13 @@ export interface ResolvePackOptions {
 // Shared across every loader instance in this process; keyed by `<pack>` (full local install) or `<pack>:<sorted icons>` (API subset). Failed lookups aren't cached, so they're retried.
 const packCache = new Map<string, Promise<IconifyJSON | undefined>>();
 
-function cachedPackResolution(
+function cachedPackLoad(
   key: string,
-  resolve: () => Promise<IconifyJSON | undefined>,
+  load: () => Promise<IconifyJSON | undefined>,
 ): Promise<IconifyJSON | undefined> {
   let promise = packCache.get(key);
   if (!promise) {
-    promise = resolve();
+    promise = load();
     packCache.set(key, promise);
     promise.then(
       (result) => {
@@ -50,24 +50,22 @@ export function __clearPackCache(): void {
   warnedPacks.clear();
 }
 
-/** Resolves a full pack from a locally installed `@iconify-json/<pack>` package, if present. */
-export function resolveLocalPack(pack: string): Promise<IconifyJSON | undefined> {
-  return cachedPackResolution(pack, () =>
-    loadCollectionFromFS(pack).catch(() => undefined),
-  );
+/** Loads a full pack from a locally installed `@iconify-json/<pack>` package, if present. */
+export function loadLocalPack(pack: string): Promise<IconifyJSON | undefined> {
+  return cachedPackLoad(pack, () => loadCollectionFromFS(pack).catch(() => undefined));
 }
 
-/** Resolves an iconify collection, preferring a local install and falling back to the Iconify API; `strict` turns the fallback into a hard error. */
-export async function resolvePack(
+/** Loads an iconify pack, preferring a local install and falling back to the Iconify API; `strict` turns the fallback into a hard error. */
+export async function loadPack(
   pack: string,
   icons: string[] | undefined,
-  { strict = false, logger }: ResolvePackOptions,
+  { strict = false, logger }: LoadPackOptions,
 ): Promise<IconifyJSON> {
   const localStart = performance.now();
-  const local = await resolveLocalPack(pack);
+  const local = await loadLocalPack(pack);
   if (local) {
     logger.debug(
-      `Resolved "${pack}" from a local install in ${formatDuration(performance.now() - localStart)}.`,
+      `Loaded "${pack}" from a local install in ${formatDuration(performance.now() - localStart)}.`,
     );
     return local;
   }
@@ -85,7 +83,7 @@ export async function resolvePack(
   if (!icons?.length) {
     // The Iconify API can't return "the whole pack"; a full pack needs a local install.
     throw new AstroIconError(
-      `"${pack}" isn't installed locally, so the full icon set can't be resolved from the Iconify API.`,
+      `"${pack}" isn't installed locally, so the full icon set can't be loaded from the Iconify API.`,
       `Install \`@iconify-json/${pack}\`, or request specific icons by name instead.`,
     );
   }
@@ -94,19 +92,19 @@ export async function resolvePack(
 
   const apiStart = performance.now();
   const sortedIcons = Array.from(new Set(icons)).sort();
-  const remote = await cachedPackResolution(
+  const remote = await cachedPackLoad(
     `${pack}:${sortedIcons.join(",")}`,
     () => fetchPackFromAPI(pack, sortedIcons),
   );
   const apiDuration = formatDuration(performance.now() - apiStart);
   if (!remote) {
     throw new AstroIconError(
-      `Could not resolve the "${pack}" icon set from the Iconify API.`,
+      `Could not load the "${pack}" icon set from the Iconify API.`,
       `Install "@iconify-json/${pack}" locally, or verify the pack and icon names are correct.`,
     );
   }
   logger.debug(
-    `Resolved ${sortedIcons.length} icon(s) of "${pack}" from the Iconify API in ${apiDuration}.`,
+    `Loaded ${sortedIcons.length} icon(s) of "${pack}" from the Iconify API in ${apiDuration}.`,
   );
   return remote;
 }

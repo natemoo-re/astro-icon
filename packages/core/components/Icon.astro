@@ -1,10 +1,9 @@
 ---
 import type { HTMLAttributes } from "astro/types";
-import { renderTimeError } from "../src/core/AstroIconError.js";
-import { iconA11yProps } from "../src/core/iconA11yProps.js";
-import { parseIconName } from "../src/core/parseName.js";
-import { renderableIconProps } from "../src/core/renderableIconProps.js";
-import { resolveIconEntry } from "./resolveIconEntry.js";
+import { renderTimeError } from "../src/render/error.js";
+import { iconA11yProps, renderableIconProps } from "../src/render/props.js";
+import { parseIconName } from "../src/render/parseIconName.js";
+import { resolveIconEntry } from "../src/render/lookupEntry.js";
 import type { IconName } from "../typings/names";
 
 /**

@@ -16,10 +16,10 @@
  * route. `<LiveIcon>` output always passes through untouched, since a live
  * entry isn't guaranteed stable enough to dedupe.
  */
-import { renderTimeError } from "../src/core/AstroIconError.js";
-import { extractSpriteIcons, rewriteSpriteHtml } from "../src/core/spriteRewrite.js";
-import { spriteRenderedForRequest } from "../src/core/spriteRequestMarker.js";
-import { resolveIconEntry } from "./resolveIconEntry.js";
+import { renderTimeError } from "../src/render/error.js";
+import { extractSpriteIcons, rewriteSpriteHtml } from "../src/render/sprite/rewrite.js";
+import { spriteRenderedForRequest } from "../src/render/sprite/marker.js";
+import { resolveIconEntry } from "../src/render/lookupEntry.js";
 
 if (!Astro.isPrerendered) {
   throw renderTimeError(

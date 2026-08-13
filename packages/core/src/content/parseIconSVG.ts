@@ -1,6 +1,6 @@
 import type { AstroIntegrationLogger } from "astro";
-import { AstroIconError } from "./AstroIconError.js";
-import type { IconSource } from "./iconSource.js";
+import { AstroIconError } from "../internal/error.js";
+import type { IconSource } from "./source.js";
 import type { IconEntry, OptimizeFn } from "../../typings/types";
 
 export interface ParseIconSVGOptions {

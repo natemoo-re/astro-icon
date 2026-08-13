@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { AstroIconError } from "../src/core/AstroIconError.js";
-import { listIconsOrFallback } from "../src/core/listIconsOrFallback.js";
+import { AstroIconError } from "../src/internal/error.js";
+import { listIconsOrFallback } from "../src/content/listIconsOrFallback.js";
 
 function options(overrides: Partial<Parameters<typeof listIconsOrFallback>[1]> = {}) {
   return {

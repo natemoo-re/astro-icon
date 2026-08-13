@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { iconA11yProps } from "../src/core/iconA11yProps.js";
+import { iconA11yProps } from "../src/render/props.js";
 
 afterEach(() => {
   vi.restoreAllMocks();

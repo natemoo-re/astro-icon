@@ -3,14 +3,14 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   __clearPackCache,
-  resolveLocalPack,
-} from "../src/iconify/resolvePack.js";
+  loadLocalPack,
+} from "../src/content/iconify/pack.js";
 
 // Regression test for https://github.com/natemoo-re/astro-icon/issues/187:
 // "Installed icon packs are not detected in a monorepo setup, particularly
 // when there's only a single package.json in the root directory."
 //
-// `resolveLocalPack` calls `loadCollectionFromFS(pack)` with no explicit
+// `loadLocalPack` calls `loadCollectionFromFS(pack)` with no explicit
 // `cwd`, so it resolves relative to `process.cwd()` at call time (the
 // content-layer loader runs from the consuming project, not from
 // astro-icon's own install location). `@iconify/utils`'s `loadCollectionFromFS`
@@ -25,7 +25,7 @@ const fixtureRoot = path.resolve(
 );
 const consumerDir = path.join(fixtureRoot, "apps/consumer");
 
-describe("resolveLocalPack in a monorepo with hoisted deps", () => {
+describe("loadLocalPack in a monorepo with hoisted deps", () => {
   const originalCwd = process.cwd();
 
   afterEach(() => {
@@ -39,7 +39,7 @@ describe("resolveLocalPack in a monorepo with hoisted deps", () => {
     // root's node_modules (simulating pnpm/npm/yarn hoisting).
     process.chdir(consumerDir);
 
-    const result = await resolveLocalPack("test-pack");
+    const result = await loadLocalPack("test-pack");
 
     expect(result).toBeDefined();
     expect(result?.prefix).toBe("test-pack");

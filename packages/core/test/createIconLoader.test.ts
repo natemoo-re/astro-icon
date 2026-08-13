@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { IconSource } from "../src/core/iconSource.js";
+import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
 
 const recordCollection = vi.fn(async () => {});
-vi.mock("../src/typegen.js", () => ({ recordCollection }));
+vi.mock("../src/content/typegen/index.js", () => ({ recordCollection }));
 
-const { createIconLoader } = await import("../src/loaders/createIconLoader.js");
+const { createIconLoader } = await import("../src/content/loader.js");
 
 function entryFor(id: string): IconEntry {
   return { body: id, viewBox: "0 0 24 24", width: 24, height: 24 };
@@ -305,7 +305,7 @@ describe("createIconLoader / timing logs", () => {
     expect(message).toMatch(/\d+(ms|\.\d\ds)\.$/);
   });
 
-  it("logs the list/resolve breakdown separately, at debug level", async () => {
+  it("logs the list/build breakdown separately, at debug level", async () => {
     const source = fakeSource({ name: "mdi", listIcons: async () => ["home", "menu"] });
     const loader = createIconLoader(source);
     const context = fakeContext();
@@ -313,7 +313,7 @@ describe("createIconLoader / timing logs", () => {
     await loader.load(context);
 
     const [message] = context.logger.debug.mock.calls.at(-1)!;
-    expect(message).toMatch(/^"icons" breakdown: list \d+(ms|\.\d\ds), resolve \d+(ms|\.\d\ds)\.$/);
+    expect(message).toMatch(/^"icons" breakdown: list \d+(ms|\.\d\ds), build \d+(ms|\.\d\ds)\.$/);
   });
 
   it("does not log the info summary when a sync is skipped as up to date", async () => {

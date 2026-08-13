@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { mergeSources } from "../src/core/mergeSources.js";
-import type { IconSource } from "../src/core/iconSource.js";
+import { mergeSources } from "../src/content/compositeSource.js";
+import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
 
 function entryFor(id: string): IconEntry {

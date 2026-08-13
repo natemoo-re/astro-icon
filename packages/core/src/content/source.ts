@@ -1,5 +1,5 @@
-import type { createIconLoader } from "../loaders/createIconLoader.js";
-import type { createLiveIconLoader } from "../loaders/createLiveIconLoader.js";
+import type { createIconLoader } from "./loader.js";
+import type { createLiveIconLoader } from "./liveLoader.js";
 import type { IconEntry } from "../../typings/types";
 
 /**
@@ -20,13 +20,13 @@ export interface IconSource {
    */
   name: string;
   /**
-   * Resolves one icon by name. Throw (or reject) with a descriptive error if
+   * Builds one icon by name. Throw (or reject) with a descriptive error if
    * the icon can't be found or built. A loader turns that into `{ error }`
    * for a live collection, or a warning plus a skipped icon for a build one.
    */
   getIcon(name: string): Promise<IconEntry>;
   /**
-   * Lists every icon name this source can resolve. Required for a build
+   * Lists every icon name this source can build. Required for a build
    * collection: `createIconLoader` loads exactly this list. Optional for a
    * live one, where it additionally enables `getLiveCollection()` and full
    * autocomplete instead of a plain `string` type.
@@ -35,9 +35,9 @@ export interface IconSource {
   /**
    * Reports a cheap freshness signal for this source, such as an installed
    * pack's npm version. If every source in a collection reports one and it
-   * matches the last sync, `createIconLoader` skips re-resolving anything.
+   * matches the last sync, `createIconLoader` skips re-building anything.
    * Omit it if there's no reliable way to tell "nothing changed" short of
-   * resolving; the loader always falls back to a full resolve.
+   * building; the loader always falls back to a full build.
    */
   getVersion?(): Promise<string | undefined>;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseIconName } from "../src/core/parseName.js";
+import { parseIconName } from "../src/render/parseIconName.js";
 
 describe("parseIconName", () => {
   it("resolves a bare name against the 'icons' collection", () => {

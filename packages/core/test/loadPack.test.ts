@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const loadCollectionFromFS = vi.fn();
 vi.mock("@iconify/utils/lib/loader/fs", () => ({ loadCollectionFromFS }));
 
-const { resolvePack, __clearPackCache } = await import(
-  "../src/iconify/resolvePack.js"
+const { loadPack, __clearPackCache } = await import(
+  "../src/content/iconify/pack.js"
 );
 
 const search: IconifyJSON = {
@@ -23,10 +23,10 @@ afterEach(() => {
   __clearPackCache();
 });
 
-describe("resolvePack", () => {
+describe("loadPack", () => {
   it("returns the locally loaded collection when available", async () => {
     loadCollectionFromFS.mockResolvedValueOnce(search);
-    const result = await resolvePack("mdi", undefined, { logger: logger() });
+    const result = await loadPack("mdi", undefined, { logger: logger() });
     expect(result).toBe(search);
   });
 
@@ -38,7 +38,7 @@ describe("resolvePack", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const warn = vi.fn();
-    const result = await resolvePack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
+    const result = await loadPack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
 
     expect(warn).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -56,7 +56,7 @@ describe("resolvePack", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      resolvePack("mdi", undefined, { logger: logger() }),
+      loadPack("mdi", undefined, { logger: logger() }),
     ).rejects.toThrow(/mdi/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -68,7 +68,7 @@ describe("resolvePack", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await resolvePack("mdi", ["search", "menu"], { logger: logger() });
+    await loadPack("mdi", ["search", "menu"], { logger: logger() });
 
     // Requested icons are sorted before being cached/queried, so the URL's
     // exact ordering doesn't matter here - just that both were requested.
@@ -80,7 +80,7 @@ describe("resolvePack", () => {
   it("throws instead of falling back under strict", async () => {
     loadCollectionFromFS.mockResolvedValueOnce(undefined);
     await expect(
-      resolvePack("mdi", undefined, { strict: true, logger: logger() }),
+      loadPack("mdi", undefined, { strict: true, logger: logger() }),
     ).rejects.toThrow(/mdi/);
   });
 
@@ -91,7 +91,7 @@ describe("resolvePack", () => {
       vi.fn(async () => new Response("Not Found", { status: 404 })),
     );
     await expect(
-      resolvePack("mdi", ["search"], { logger: logger() }),
+      loadPack("mdi", ["search"], { logger: logger() }),
     ).rejects.toThrow(/mdi/);
   });
 
@@ -102,17 +102,17 @@ describe("resolvePack", () => {
       vi.fn(async () => new Response("404", { status: 200 })),
     );
     await expect(
-      resolvePack("not-a-real-pack", ["search"], { logger: logger() }),
+      loadPack("not-a-real-pack", ["search"], { logger: logger() }),
     ).rejects.toThrow(/not-a-real-pack/);
   });
 });
 
-describe("resolvePack pack cache", () => {
-  it("shares a locally resolved pack across separate resolvePack calls", async () => {
+describe("loadPack pack cache", () => {
+  it("shares a locally resolved pack across separate loadPack calls", async () => {
     loadCollectionFromFS.mockResolvedValueOnce(search);
 
-    await resolvePack("mdi", undefined, { logger: logger() });
-    await resolvePack("mdi", ["search"], { logger: logger() });
+    await loadPack("mdi", undefined, { logger: logger() });
+    await loadPack("mdi", ["search"], { logger: logger() });
 
     expect(loadCollectionFromFS).toHaveBeenCalledOnce();
   });
@@ -124,8 +124,8 @@ describe("resolvePack pack cache", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await resolvePack("mdi", ["search"], { logger: logger() });
-    await resolvePack("mdi", ["search"], { logger: logger() });
+    await loadPack("mdi", ["search"], { logger: logger() });
+    await loadPack("mdi", ["search"], { logger: logger() });
 
     expect(fetchMock).toHaveBeenCalledOnce();
   });
@@ -138,7 +138,7 @@ describe("resolvePack pack cache", () => {
     );
 
     await expect(
-      resolvePack("mdi", ["search"], { logger: logger() }),
+      loadPack("mdi", ["search"], { logger: logger() }),
     ).rejects.toThrow();
 
     vi.stubGlobal(
@@ -147,7 +147,7 @@ describe("resolvePack pack cache", () => {
     );
 
     await expect(
-      resolvePack("mdi", ["search"], { logger: logger() }),
+      loadPack("mdi", ["search"], { logger: logger() }),
     ).resolves.toEqual(search);
   });
 
@@ -162,9 +162,9 @@ describe("resolvePack pack cache", () => {
     );
 
     const warn = vi.fn();
-    await resolvePack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
-    await resolvePack("mdi", ["menu"], { logger: { warn, debug: vi.fn() } });
-    await resolvePack("mdi", ["home"], { logger: { warn, debug: vi.fn() } });
+    await loadPack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
+    await loadPack("mdi", ["menu"], { logger: { warn, debug: vi.fn() } });
+    await loadPack("mdi", ["home"], { logger: { warn, debug: vi.fn() } });
 
     expect(warn).toHaveBeenCalledOnce();
   });
@@ -177,22 +177,22 @@ describe("resolvePack pack cache", () => {
     );
 
     const warn = vi.fn();
-    await resolvePack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
-    await resolvePack("ic", ["search"], { logger: { warn, debug: vi.fn() } });
+    await loadPack("mdi", ["search"], { logger: { warn, debug: vi.fn() } });
+    await loadPack("ic", ["search"], { logger: { warn, debug: vi.fn() } });
 
     expect(warn).toHaveBeenCalledTimes(2);
   });
 });
 
-describe("resolvePack timing logs", () => {
+describe("loadPack timing logs", () => {
   it("logs a debug timing line for a local resolution, distinct from an API fallback", async () => {
     loadCollectionFromFS.mockResolvedValueOnce(search);
     const debug = vi.fn();
 
-    await resolvePack("mdi", undefined, { logger: { warn: vi.fn(), debug } });
+    await loadPack("mdi", undefined, { logger: { warn: vi.fn(), debug } });
 
     expect(debug).toHaveBeenCalledOnce();
-    expect(debug.mock.calls[0][0]).toMatch(/Resolved "mdi" from a local install in/);
+    expect(debug.mock.calls[0][0]).toMatch(/Loaded "mdi" from a local install in/);
   });
 
   it("logs separate debug timing lines for the local miss and the API fallback", async () => {
@@ -203,11 +203,11 @@ describe("resolvePack timing logs", () => {
     );
     const debug = vi.fn();
 
-    await resolvePack("mdi", ["search"], { logger: { warn: vi.fn(), debug } });
+    await loadPack("mdi", ["search"], { logger: { warn: vi.fn(), debug } });
 
     const messages = debug.mock.calls.map(([message]) => message);
     expect(messages.some((m) => /isn't installed locally \(checked in/.test(m))).toBe(true);
-    expect(messages.some((m) => /Resolved 1 icon\(s\) of "mdi" from the Iconify API in/.test(m))).toBe(
+    expect(messages.some((m) => /Loaded 1 icon\(s\) of "mdi" from the Iconify API in/.test(m))).toBe(
       true,
     );
   });

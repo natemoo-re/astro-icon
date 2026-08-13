@@ -1,9 +1,9 @@
 ---
 import { getLiveEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
-import { AstroIconError, renderTimeError } from "../src/core/AstroIconError.js";
-import { iconA11yProps } from "../src/core/iconA11yProps.js";
-import { renderableIconProps } from "../src/core/renderableIconProps.js";
+import { AstroIconError } from "../src/internal/error.js";
+import { renderTimeError } from "../src/render/error.js";
+import { iconA11yProps, renderableIconProps } from "../src/render/props.js";
 import type { LiveCollectionName } from "../typings/names";
 import type { IconEntry } from "../typings/types";
 

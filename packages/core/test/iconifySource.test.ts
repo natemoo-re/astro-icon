@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const loadCollectionFromFS = vi.fn();
 vi.mock("@iconify/utils/lib/loader/fs", () => ({ loadCollectionFromFS }));
 
-const { iconifySource } = await import("../src/iconify/iconifySource.js");
+const { iconifySource } = await import("../src/content/iconify/source.js");
 const { __clearPackCache } = await import(
-  "../src/iconify/resolvePack.js"
+  "../src/content/iconify/pack.js"
 );
 
 const pack: IconifyJSON = {

@@ -2,13 +2,13 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AstroIntegrationLogger } from "astro";
-import { AstroIconError } from "../core/AstroIconError.js";
-import { consoleLogger } from "../core/logger.js";
-import { parseIconSVG } from "../core/parseIconSVG.js";
-import type { IconSource } from "../core/iconSource.js";
-import type { createIconLoader } from "../loaders/createIconLoader.js";
-import type { createLiveIconLoader } from "../loaders/createLiveIconLoader.js";
-import type { IconifySourceOptions, OptimizeFn } from "../../typings/types";
+import { AstroIconError } from "../../internal/error.js";
+import { consoleLogger } from "../logger.js";
+import { parseIconSVG } from "../parseIconSVG.js";
+import type { IconSource } from "../source.js";
+import type { createIconLoader } from "../loader.js";
+import type { createLiveIconLoader } from "../liveLoader.js";
+import type { IconifySourceOptions, OptimizeFn } from "../../../typings/types";
 
 export interface LocalSourceOptions {
   /**

@@ -1,10 +1,10 @@
 import type { LiveLoader } from "astro/loaders";
-import { AstroIconError } from "../core/AstroIconError.js";
-import { consoleLogger } from "../core/logger.js";
-import { mergeSources } from "../core/mergeSources.js";
-import { resolveAllIcons } from "../core/resolveAllIcons.js";
-import { recordCollection } from "../typegen.js";
-import type { IconSource } from "../core/iconSource.js";
+import { AstroIconError } from "../internal/error.js";
+import { buildIcons } from "./buildIcons.js";
+import { consoleLogger } from "./logger.js";
+import { mergeSources } from "./compositeSource.js";
+import { recordCollection } from "./typegen/index.js";
+import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
 /**
@@ -72,12 +72,13 @@ export function createLiveIconLoader(
       }
       try {
         const names = await source.listIcons();
-        const entries = await resolveAllIcons({ getIcon: getCachedIcon }, names, (name, ex) => {
+        const built = await buildIcons({ getIcon: getCachedIcon }, names, (name, ex) => {
           consoleLogger.warn(
             `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
           );
         });
-        return { entries };
+        // `name` -> `id` only here, where astro-icon's own vocabulary crosses into `LiveLoader`'s.
+        return { entries: built.map(({ name, data }) => ({ id: name, data })) };
       } catch (ex) {
         return { error: ex instanceof Error ? ex : new Error(String(ex)) };
       }

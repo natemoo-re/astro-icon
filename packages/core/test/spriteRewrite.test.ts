@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractSpriteIcons, rewriteSpriteHtml } from "../src/core/spriteRewrite.js";
+import { extractSpriteIcons, rewriteSpriteHtml } from "../src/render/sprite/rewrite.js";
 
 const home = { viewBox: "0 0 24 24", body: "<path d=\"M1 1\"/>" };
 const search = { viewBox: "0 0 24 24", body: "<path d=\"M2 2\"/>" };
