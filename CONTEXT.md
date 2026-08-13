@@ -9,7 +9,7 @@ Terms specific to this codebase, for anyone (human or agent) navigating it.
 - **`src/content/`** - turning a backend (a local directory, an Iconify pack, a custom `IconSource`) into Astro content-collection data. Everything about [sources](#icon-source), [packs](#pack), [catalogs](#catalog), and [loaders](#loader-vs-source) lives here.
 - **`src/render/`** - turning an `IconEntry` already sitting in the content store into markup on a page. `<Icon>`/`<LiveIcon>`/`<Sprite>`'s supporting code (a11y/render props, sprite rewriting, name parsing, entry lookup) lives here.
 
-They meet at exactly one point: an `IconEntry`. `src/internal/` holds the one piece genuinely shared by both - `AstroIconError` (see [Resolve vs Build vs Load vs Look up](#resolve-vs-build-vs-load-vs-look-up) for why `renderTimeError`, despite living next to it before, is `render/`-only). `src/index.ts` (the package's `"."` entry) and `typings/` stay outside both, since they're the whole-package public surface, not a context-specific concern.
+They meet at exactly one point: an `IconEntry`. `src/internal/` holds the one piece genuinely shared by both - `AstroIconError` (see [Resolve vs Build vs Load vs Look up](#resolve-vs-build-vs-load-vs-look-up) for why `renderTimeError`, despite living next to it before, is `render/`-only). `src/index.ts` (the package's `"."` entry), `src/optimize.ts` (transforms an already-built SVG string; independent of both contexts), and `typings/` stay outside both, since they're the whole-package public surface, not a context-specific concern.
 
 ## Icon marker
 
@@ -27,7 +27,7 @@ The single hidden `<svg style="position:absolute;width:0;height:0" aria-hidden="
 
 ## Request-scoped Sprite marker
 
-`spriteRenderedForRequest`, a `WeakMap<Request, boolean>` (`packages/core/src/render/sprite/marker.ts`) used purely to power a dev-only warning if more than one `<Sprite>` renders on the same page. It carries no icon identity - deliberately simpler than the per-icon dedup cache it replaced (see ADR 0001).
+`spriteRenderedForRequest`, a `WeakMap<Request, boolean>` (`packages/core/src/render/sprite/marker.ts`) used purely to power a dev-only warning if more than one `<Sprite>` renders on the same page. It carries no icon identity - deliberately simpler than the per-icon dedup cache it replaced.
 
 ## Icon Inspector
 
@@ -43,7 +43,7 @@ An optional, best-effort link on each Icon Inspector list row pointing back to a
 
 ## Icon Source
 
-The `IconSource` contract (`packages/core/src/content/source.ts`): `name`, `getIcon(name)`, optional `listIcons()`, optional `getVersion()`. The plug point for a backend - a local directory (`localSource`), an Iconify pack (`iconifySource`), or a custom implementation. Distinct from a [Loader](#loader-vs-source) - `IconSource` is astro-icon's own contract, never seen directly by Astro.
+The `IconSource` contract (`packages/core/src/content/source.ts`): `name`, `getIcon(name)`, optional `listIcons()`, optional `getVersion()`. The plug point for a backend - a local directory (`localSource`), an Iconify pack (`iconifyLocalSource`/`iconifyApiSource`), or a custom implementation. Distinct from a [Loader](#loader-vs-source) - `IconSource` is astro-icon's own contract, never seen directly by Astro.
 
 ## Pack
 
@@ -62,7 +62,7 @@ Four related but distinct nouns that frequently collide in practice because they
 - **Catalog** - the full name list a pack/source offers (see [Catalog](#catalog)).
 - **Source** - astro-icon's `IconSource` (see [Icon Source](#icon-source)), which may back a fraction of a collection, all of it, or be one of several merged into one.
 
-Nothing enforces that a collection's key, its source's `name`, and any underlying pack name line up - `iconify("mdi")` keyed as collection `mdi` is convention, not a rule. The demo's `combined` collection (`createIconLoader([iconifySource("fe"), iconifySource("ri")])`) is the concrete case where they don't: one collection, two packs, two sources, no shared name at all. This is a real "gotcha you'll hit the first time you try to merge two packs into one collection," not just terminology pedantry.
+Nothing enforces that a collection's key, its source's `name`, and any underlying pack name line up - `iconifyLocalSource("mdi")` keyed as collection `mdi` is convention, not a rule. The demo's `combined` collection (`createIconLoader([iconifyLocalSource("fe"), iconifyLocalSource("ri")])`) is the concrete case where they don't: one collection, two packs, two sources, no shared name at all. This is a real "gotcha you'll hit the first time you try to merge two packs into one collection," not just terminology pedantry.
 
 ## Loader vs Source
 
@@ -87,7 +87,7 @@ The accessibility state every `<Icon>`/`<LiveIcon>` computes (`packages/core/src
 "Resolve" used to be used for four different operations; now split by what actually happens, and by which context owns it:
 
 - **Build** (`content/`) - source data → a fresh `IconEntry`. `buildIcons` (`packages/core/src/content/buildIcons.ts`, was `resolveAllIcons`) builds many at once from an `IconSource`; `IconSource.getIcon` builds one.
-- **Load** (`content/`) - fetch/read a whole Iconify pack's raw `IconifyJSON`, local-install-first with an API fallback. `loadPack`/`loadLocalPack` (`packages/core/src/content/iconify/pack.ts`, was `resolvePack`/`resolveLocalPack`).
+- **Load** (`content/`) - fetch/read a whole Iconify pack's raw `IconifyJSON`, either from a local install or the public API, never both in one call (that composition now lives one layer up, at the `IconSource` level - see [Composite source](#composite-source)). `loadLocalPack`/`loadPackFromAPI` (`packages/core/src/content/iconify/pack.ts`, was `resolveLocalPack`/part of a single `resolvePack`).
 - **Resolve** (`render/`, now reserved for exactly this) - read something already materialized. `resolveIconEntry` (`packages/core/src/render/lookupEntry.ts`) looks up an already-synced entry from Astro's content store via `getEntry()`.
 
 `BuiltIcon` (was `ResolvedIcon`) uses `.name` for the bare icon name throughout astro-icon's own (`content/`) layer; it's translated to Astro's `id` vocabulary only at the two points that cross into Astro's own interfaces - `store.set({ id: name, ... })` in `content/loader.ts`, and the `{ id: name, data }` mapping in `content/liveLoader.ts`'s `loadCollection`.
@@ -106,4 +106,4 @@ Three caches existed; only two survived review, on the principle that a cache is
 
 ## Public/internal boundary
 
-Resolved structurally, not just by convention: `package.json`'s `exports` map has exactly four entries (`.`, `./components`, `./loaders`, `./loaders/live`), each pointing at one specific file - never a wildcard into `src/content/`, `src/render/`, or `src/internal/`. Node throws `ERR_PACKAGE_PATH_NOT_EXPORTED` for anything else, so "not listed in `exports`" is an enforced boundary, not a documentation-only one. `./loaders` and `./loaders/live` are barrel files (`src/content/loaders.ts`, `src/content/live.ts`) that only re-export the intentionally public pieces (`iconify`, `iconifySource`, `localIcons`, `localSource`, `createIconLoader`, `createLiveIconLoader`, `iconifyLive`, `AstroIconError`, `IconSource`, `parseIconSVG`) - everything else under `content/`/`render/`/`internal/` (`mergeSources`, `buildIcons`, `loadPack`, typegen, sprite rewriting, a11y/render props, etc.) is invisible to consumers by never appearing in one of those four entries. **Do not add a wildcard export into `content/`, `render/`, or `internal/`** - that would silently remove this enforcement.
+Resolved structurally, not just by convention: `package.json`'s `exports` map has exactly five entries (`.`, `./components`, `./loaders`, `./loaders/live`, `./optimize`), each pointing at one specific file - never a wildcard into `src/content/`, `src/render/`, or `src/internal/`. Node throws `ERR_PACKAGE_PATH_NOT_EXPORTED` for anything else, so "not listed in `exports`" is an enforced boundary, not a documentation-only one. `./loaders` and `./loaders/live` are barrel files (`src/content/loaders.ts`, `src/content/live.ts`) that only re-export the intentionally public pieces (`iconifyLocalSource`, `iconifyApiSource`, `localIcons`, `localSource`, `createIconLoader`, `createLiveIconLoader`, `mergeSources`, `AstroIconError`, `IconSource`, `parseIconSVG`) - everything else under `content/`/`render/`/`internal/` (`buildIcons`, `loadLocalPack`/`loadPackFromAPI`, typegen, sprite rewriting, a11y/render props, etc.) is invisible to consumers by never appearing in one of those five entries. `./optimize` (`src/optimize.ts`) is its own top-level module, not part of either bounded context - it transforms an already-built SVG string, independent of source/loader/render concerns. **Do not add a wildcard export into `content/`, `render/`, or `internal/`** - that would silently remove this enforcement.

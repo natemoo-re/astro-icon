@@ -1,8 +1,7 @@
 import { defineCollection } from "astro:content";
 import {
   createIconLoader,
-  iconify,
-  iconifySource,
+  iconifyLocalSource,
   localIcons,
 } from "astro-icon/loaders";
 
@@ -10,25 +9,28 @@ import {
 export const collections = {
   icons: defineCollection({ loader: localIcons() }),
   ic: defineCollection({
-    loader: iconify("ic", {
-      icons: [
-        "baseline-account-box",
-        "baseline-directions-run",
-        "outline-star",
-      ],
-    }),
+    loader: createIconLoader(
+      iconifyLocalSource("ic", {
+        icons: [
+          "baseline-account-box",
+          "baseline-directions-run",
+          "outline-star",
+        ],
+      }),
+    ),
   }),
-  fe: defineCollection({ loader: iconify("fe", {}) }),
+  fe: defineCollection({ loader: createIconLoader(iconifyLocalSource("fe", {})) }),
+  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
   ri: defineCollection({
-    loader: iconify("ri", {
-      icons: ["aliens-fill"],
-    }),
+    loader: createIconLoader(iconifyLocalSource("ri", { icons: ["aliens-fill"] })),
   }),
-  bi: defineCollection({ loader: iconify("bi", { icons: ["stars"] }) }),
+  bi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("bi", { icons: ["stars"] })),
+  }),
   combined: defineCollection({
     loader: createIconLoader([
-      iconifySource("fe", { icons: ["activity"] }),
-      iconifySource("ri", { icons: ["star-fill"] }),
+      iconifyLocalSource("fe", { icons: ["activity"] }),
+      iconifyLocalSource("ri", { icons: ["star-fill"] }),
     ]),
   }),
 };

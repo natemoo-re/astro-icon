@@ -29,19 +29,37 @@ export interface IconLoaderOptions {
  * several sources into one collection:
  *
  * ```ts
- * import { createIconLoader, iconifySource, localSource } from "astro-icon/loaders";
+ * import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
  *
  * export const collections = {
  *   icons: defineCollection({
- *     loader: createIconLoader([iconifySource("mdi"), localSource("src/icons")]),
+ *     loader: createIconLoader([iconifyLocalSource("mdi"), localSource("src/icons")]),
  *   }),
  * };
  * ```
  *
  * Each icon is resolved by trying sources in order and using the first one
  * that has it. The collection always contains exactly what `listIcons()`
- * reports; restrict that on a per-source basis (see `iconifySource`'s
+ * reports; restrict that on a per-source basis (see `iconifyLocalSource`'s
  * `icons` option), since this loader does no filtering of its own.
+ *
+ * For a local-preferred, API-fallback Iconify source, compose
+ * `iconifyLocalSource` and `iconifyApiSource` with `mergeSources` yourself:
+ *
+ * ```ts
+ * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+ *
+ * export const collections = {
+ *   mdi: defineCollection({
+ *     loader: createIconLoader(
+ *       mergeSources([
+ *         iconifyLocalSource("mdi", { icons: ["home"] }),
+ *         iconifyApiSource("mdi", { icons: ["home"] }),
+ *       ]),
+ *     ),
+ *   }),
+ * };
+ * ```
  */
 export function createIconLoader(
   sources: IconSource | IconSource[],
@@ -122,7 +140,7 @@ export function createIconLoader(
       `Loaded ${built.length} icon(s) for the "${collection}" collection in ${formatDuration(performance.now() - syncStart)}.`,
     );
     // "listing" (enumerating what's available) vs "building" (building each
-    // icon, which for `iconify()` is where a slow Iconify API fallback or a
+    // icon, which for an iconify-backed source is where a slow Iconify API fallback or a
     // deferred local-pack load shows up) - debug-only detail for the total above.
     logger.debug(
       `"${collection}" breakdown: list ${formatDuration(listDuration)}, build ${formatDuration(buildDuration)}.`,

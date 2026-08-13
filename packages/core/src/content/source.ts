@@ -4,7 +4,7 @@ import type { IconEntry } from "../../typings/types";
 
 /**
  * The interface for plugging a custom icon backend into astro-icon.
- * `iconifySource` (Iconify packs) and `localSource` (a directory of `.svg`
+ * `iconifyLocalSource`/`iconifyApiSource` (Iconify packs) and `localSource` (a directory of `.svg`
  * files) are astro-icon's own implementations; write your own to fetch icons
  * from a design tool, a database, or an internal API.
  *

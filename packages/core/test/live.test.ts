@@ -30,7 +30,7 @@ async function getFreePort(): Promise<number> {
   });
 }
 
-describe("iconifyLive() + <LiveIcon> against a real astro server build", () => {
+describe("createLiveIconLoader(iconifyLocalSource()) + <LiveIcon> against a real astro server build", () => {
   let server: ChildProcess;
   let html = "";
 

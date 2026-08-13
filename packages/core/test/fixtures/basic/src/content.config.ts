@@ -1,5 +1,5 @@
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconify, iconifySource } from "astro-icon/loaders";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 import type { IconSource } from "astro-icon/loaders";
 
 // A hand-written, non-iconify source - proves `createIconLoader` isn't
@@ -26,15 +26,15 @@ export const collections = {
   // Bare `<Icon name="..." />` resolves against a collection literally
   // named "icons" - this is pure convention, not something astro-icon
   // enforces.
-  icons: defineCollection({ loader: iconify("svg-spinners") }),
+  icons: defineCollection({ loader: createIconLoader(iconifyLocalSource("svg-spinners")) }),
   spinners: defineCollection({
-    loader: iconify("svg-spinners", { icons: ["3-dots-fade"] }),
+    loader: createIconLoader(iconifyLocalSource("svg-spinners", { icons: ["3-dots-fade"] })),
   }),
   // Combines an icon from the svg-spinners pack (explicitly limited) with
   // an icon from a completely custom source, into one collection.
   combined: defineCollection({
     loader: createIconLoader([
-      iconifySource("svg-spinners", { icons: ["180-ring"] }),
+      iconifyLocalSource("svg-spinners", { icons: ["180-ring"] }),
       customSource,
     ]),
   }),

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { IconifyJSON } from "@iconify/types";
 import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
-import { loadLocalPack, loadPack } from "./pack.js";
+import { loadLocalPack, loadPackFromAPI } from "./pack.js";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
 import { parseIconSVG } from "../parseIconSVG.js";
@@ -46,12 +46,30 @@ const recordedPacks = new Set<string>();
 function recordPackCatalog(pack: string, data: IconifyJSON): void {
   if (recordedPacks.has(pack)) return;
   recordedPacks.add(pack);
-  // `iconifySource` has no access to the project root the way a `LoaderContext` does; mirrors `createLiveIconLoader`'s own `process.cwd()` fallback.
+  // No access to the project root the way a `LoaderContext` does; mirrors `createLiveIconLoader`'s own `process.cwd()` fallback.
   const rootDir = new URL(`file://${process.cwd()}/`);
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }
 
-export function iconifySource<
+function checkForDuplicateIcons(
+  pack: string,
+  sourceLabel: string,
+  icons: readonly string[] | undefined,
+  logger: Pick<AstroIntegrationLogger, "warn">,
+): Set<string> | undefined {
+  if (!icons) return undefined;
+  const allowed = new Set(icons);
+  if (allowed.size !== icons.length) {
+    const seen = new Set<string>();
+    const duplicates = icons.filter((name) => seen.size === seen.add(name).size);
+    logger.warn(
+      `"${pack}"'s \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")} (${sourceLabel}). Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+    );
+  }
+  return allowed;
+}
+
+export function iconifyLocalSource<
   Pack extends string,
   const Icons extends readonly IconifyIconName<Pack>[] = readonly IconifyIconName<Pack>[],
 >(
@@ -59,39 +77,27 @@ export function iconifySource<
   options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
 ): IconSource;
 /**
- * An {@link IconSource} backed by a single Iconify icon pack. `iconify()`
- * uses this internally; reach for it directly when you compose sources
- * yourself, for example combining two packs into one collection with
- * `createIconLoader` or building a custom {@link IconSource}-based live
- * loader with `createLiveIconLoader`.
- *
- * Prefers a local `@iconify-json/<pack>` install, falling back to fetching
- * each requested icon individually from the public Iconify API.
+ * An {@link IconSource} backed by a locally installed `@iconify-json/<pack>`
+ * package only - never the public Iconify API. Throws if the pack isn't
+ * installed; there's no fallback built in, by design (see
+ * {@link iconifyApiSource} and `mergeSources` for composing one yourself).
  *
  * The `icons: [...]` option is typed and autocompleted against the pack's
- * own catalog. A duplicate name in that array is deduped and logged as a
- * warning at runtime, not rejected at the type level. Both only kick in once
- * astro-icon has recorded the pack's full icon list from a previous sync
- * (`astro sync`/`dev`/`build`); until then it falls back to a plain `string`.
+ * own catalog, once astro-icon has recorded it from a previous sync
+ * (`astro sync`/`dev`/`build`); until then it falls back to a plain
+ * `string`. A duplicate name in that array is deduped and logged as a
+ * warning at runtime, not rejected at the type level.
  */
-export function iconifySource(
+export function iconifyLocalSource(
   pack: string,
   options: IconifySourceOptions = {},
 ): IconSource {
   const { icons, optimize, strict = false } = options;
-  const allowed = icons && new Set(icons);
   const logger = consoleLogger;
-
-  if (icons && allowed && allowed.size !== icons.length) {
-    const seen = new Set<string>();
-    const duplicates = icons.filter((name) => seen.size === seen.add(name).size);
-    logger.warn(
-      `"${pack}"'s \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
-    );
-  }
+  const allowed = checkForDuplicateIcons(pack, "iconifyLocalSource", icons, logger);
 
   return {
-    name: pack,
+    name: `iconify-local:${pack}`,
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
         throw new AstroIconError(
@@ -99,15 +105,15 @@ export function iconifySource(
           `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow the whole pack.`,
         );
       }
-      const local = await loadLocalPack(pack);
-      if (local) recordPackCatalog(pack, local);
-      const data = local ?? (await loadPack(pack, [name], { strict, logger }));
-      const entry = await buildIconEntry(data, name, {
-        collection: pack,
-        optimize,
-        strict,
-        logger,
-      });
+      const data = await loadLocalPack(pack);
+      if (!data) {
+        throw new AstroIconError(
+          `"${pack}" isn't installed locally.`,
+          `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
+        );
+      }
+      recordPackCatalog(pack, data);
+      const entry = await buildIconEntry(data, name, { collection: pack, optimize, strict, logger });
       if (!entry) {
         throw new AstroIconError(
           `"${pack}" does not include an icon named "${name}".`,
@@ -120,18 +126,87 @@ export function iconifySource(
       // Not verified against the pack upfront, matching getIcon's own lazy check. `allowed` is a Set, so this also dedupes the option.
       if (allowed) return [...allowed];
 
-      const local = await loadLocalPack(pack);
-      if (!local) {
+      const data = await loadLocalPack(pack);
+      if (!data) {
         throw new AstroIconError(
-          `"${pack}" isn't installed locally, so its full icon list can't be loaded from the Iconify API.`,
+          `"${pack}" isn't installed locally.`,
           `Install "@iconify-json/${pack}", or restrict it with an explicit \`icons: [...]\` list.`,
         );
       }
-      recordPackCatalog(pack, local);
-      return localPackIconNames(local);
+      recordPackCatalog(pack, data);
+      return localPackIconNames(data);
     },
     getVersion() {
       return getPackVersion(pack);
+    },
+  };
+}
+
+export function iconifyApiSource<
+  Pack extends string,
+  const Icons extends readonly IconifyIconName<Pack>[] = readonly IconifyIconName<Pack>[],
+>(
+  pack: Pack,
+  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+): IconSource;
+/**
+ * An {@link IconSource} backed by the public Iconify API only - never a
+ * local install. `getIcon` resolves any icon name from the pack one at a
+ * time regardless of `icons`, useful for `<LiveIcon>` against a pack you
+ * don't want to install; the API can't return "the whole pack" the way a
+ * local install can, so omitting `icons` (an explicit allowlist) also
+ * means `listIcons()` throws instead of pretending to enumerate one.
+ *
+ * Meant either standalone (e.g. deliberately avoiding an install) or
+ * composed with `iconifyLocalSource` via `mergeSources` for a
+ * local-preferred, API-fallback source:
+ *
+ * ```ts
+ * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+ *
+ * const mdi = mergeSources([
+ *   iconifyLocalSource("mdi", { icons: ["home"] }),
+ *   iconifyApiSource("mdi", { icons: ["home"] }),
+ * ]);
+ *
+ * export const collections = {
+ *   mdi: defineCollection({ loader: createIconLoader(mdi) }),
+ * };
+ * ```
+ */
+export function iconifyApiSource(
+  pack: string,
+  options: IconifySourceOptions = {},
+): IconSource {
+  const { icons, optimize, strict = false } = options;
+  const logger = consoleLogger;
+  const allowed = checkForDuplicateIcons(pack, "iconifyApiSource", icons, logger);
+
+  return {
+    name: `iconify-api:${pack}`,
+    async getIcon(name) {
+      if (allowed && !allowed.has(name)) {
+        throw new AstroIconError(
+          `"${name}" isn't in the allowed icon list for "${pack}" (${icons!.length} icon(s) allowed).`,
+          `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow any icon name.`,
+        );
+      }
+      const data = await loadPackFromAPI(pack, [name], { logger });
+      const entry = await buildIconEntry(data, name, { collection: pack, optimize, strict, logger });
+      if (!entry) {
+        throw new AstroIconError(
+          `"${pack}" does not include an icon named "${name}".`,
+          `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
+        );
+      }
+      return entry;
+    },
+    async listIcons() {
+      if (allowed) return [...allowed];
+      throw new AstroIconError(
+        `"${pack}" has no \`icons: [...]\` list, so its full icon set can't be enumerated from the Iconify API.`,
+        `Add an explicit \`icons: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
+      );
     },
   };
 }
@@ -144,7 +219,7 @@ export interface BuildIconEntryOptions {
 }
 
 /**
- * Renders a single icon out of a loaded iconify pack (see `loadPack`)
+ * Renders a single icon out of a loaded iconify pack (see `loadLocalPack`/`loadPackFromAPI`)
  * into an `IconEntry`, running it through `optimize` if given.
  */
 export async function buildIconEntry(

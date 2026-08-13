@@ -22,7 +22,7 @@ export interface ParseIconSVGOptions {
  * stripped it.
  *
  * A generic entry point for any {@link IconSource} that produces a full
- * `<svg>...</svg>` string per icon. `iconifySource` is one such source; reach
+ * `<svg>...</svg>` string per icon. `iconifyLocalSource`/`iconifyApiSource` are one such source; reach
  * for this directly when you write your own.
  */
 export async function parseIconSVG(

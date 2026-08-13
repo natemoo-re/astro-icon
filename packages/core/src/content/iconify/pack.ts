@@ -4,9 +4,8 @@ import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
 import { formatDuration } from "../duration.js";
 
-export interface LoadPackOptions {
-  strict?: boolean;
-  logger: Pick<AstroIntegrationLogger, "warn" | "debug">;
+export interface LoadPackFromAPIOptions {
+  logger: Pick<AstroIntegrationLogger, "debug">;
 }
 
 // Shared across every loader instance in this process; keyed by `<pack>` (full local install) or `<pack>:<sorted icons>` (API subset). Failed lookups aren't cached, so they're retried.
@@ -30,24 +29,9 @@ function cachedPackLoad(
   return promise;
 }
 
-// Packs already warned about, so the notice doesn't repeat per icon requested.
-const warnedPacks = new Set<string>();
-
-function warnMissingLocalPackOnce(
-  pack: string,
-  logger: Pick<AstroIntegrationLogger, "warn">,
-): void {
-  if (warnedPacks.has(pack)) return;
-  warnedPacks.add(pack);
-  logger.warn(
-    `"${pack}" icon set was not found locally, falling back to the Iconify API for individual icon lookups (works, but slower, and it can only ever resolve icons you specifically request). Install it for better performance: \`npm install @iconify-json/${pack}\`. (Logged once per pack.)`,
-  );
-}
-
-/** Clears the shared pack cache and warning state; for tests only. */
+/** Clears the shared pack cache; for tests only. */
 export function __clearPackCache(): void {
   packCache.clear();
-  warnedPacks.clear();
 }
 
 /** Loads a full pack from a locally installed `@iconify-json/<pack>` package, if present. */
@@ -55,52 +39,33 @@ export function loadLocalPack(pack: string): Promise<IconifyJSON | undefined> {
   return cachedPackLoad(pack, () => loadCollectionFromFS(pack).catch(() => undefined));
 }
 
-/** Loads an iconify pack, preferring a local install and falling back to the Iconify API; `strict` turns the fallback into a hard error. */
-export async function loadPack(
+/**
+ * Loads a pack from the public Iconify API, scoped to `icons` - the API can't return "the whole
+ * pack" the way a local install can, only an explicit `icons=` subset, so `icons` is required
+ * and empty is rejected outright rather than silently resolving nothing.
+ */
+export async function loadPackFromAPI(
   pack: string,
-  icons: string[] | undefined,
-  { strict = false, logger }: LoadPackOptions,
+  icons: string[],
+  { logger }: LoadPackFromAPIOptions,
 ): Promise<IconifyJSON> {
-  const localStart = performance.now();
-  const local = await loadLocalPack(pack);
-  if (local) {
-    logger.debug(
-      `Loaded "${pack}" from a local install in ${formatDuration(performance.now() - localStart)}.`,
-    );
-    return local;
-  }
-  logger.debug(
-    `"${pack}" isn't installed locally (checked in ${formatDuration(performance.now() - localStart)}).`,
-  );
-
-  if (strict) {
+  if (!icons.length) {
     throw new AstroIconError(
-      `Could not find the "${pack}" icon set locally.`,
-      `Install it with \`npm install @iconify-json/${pack}\`, or disable "strict" to allow falling back to the Iconify API.`,
+      `"${pack}" was requested from the Iconify API with no icons named.`,
+      `The Iconify API can only resolve icons you name explicitly. Pass an \`icons: [...]\` option, or use \`iconifyLocalSource\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
     );
   }
-
-  if (!icons?.length) {
-    // The Iconify API can't return "the whole pack"; a full pack needs a local install.
-    throw new AstroIconError(
-      `"${pack}" isn't installed locally, so the full icon set can't be loaded from the Iconify API.`,
-      `Install \`@iconify-json/${pack}\`, or request specific icons by name instead.`,
-    );
-  }
-
-  warnMissingLocalPackOnce(pack, logger);
 
   const apiStart = performance.now();
   const sortedIcons = Array.from(new Set(icons)).sort();
-  const remote = await cachedPackLoad(
-    `${pack}:${sortedIcons.join(",")}`,
-    () => fetchPackFromAPI(pack, sortedIcons),
+  const remote = await cachedPackLoad(`${pack}:${sortedIcons.join(",")}`, () =>
+    fetchPackFromAPI(pack, sortedIcons),
   );
   const apiDuration = formatDuration(performance.now() - apiStart);
   if (!remote) {
     throw new AstroIconError(
       `Could not load the "${pack}" icon set from the Iconify API.`,
-      `Install "@iconify-json/${pack}" locally, or verify the pack and icon names are correct.`,
+      `Verify the pack and icon names are correct, or install "@iconify-json/${pack}" locally and use \`iconifyLocalSource\` instead.`,
     );
   }
   logger.debug(

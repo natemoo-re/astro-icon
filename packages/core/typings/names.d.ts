@@ -50,7 +50,7 @@ export type LiveCollectionName = [keyof AstroIcon.LiveCollections] extends [neve
 
 /**
  * The icon names valid for an Iconify `pack`, recorded from that pack's full
- * (unfiltered) catalog the first time `iconify()`/`iconifySource()` resolves
+ * (unfiltered) catalog the first time `iconifyLocalSource()` resolves
  * it locally. Used to type and autocomplete the `icons: [...]` option
  * against the real pack contents. Falls back to a plain `string` until a
  * sync has run, or if `pack` isn't a literal known to have been recorded.

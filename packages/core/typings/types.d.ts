@@ -22,15 +22,15 @@ export interface IconEntry {
  * Common uses: running it through SVGO, stripping hardcoded `fill`/`stroke`
  * colors so CSS can control them, or adding `aria-hidden`.
  *
- * Pass one via the `optimize` option on {@link iconify}, {@link iconifySource},
- * {@link localIcons}, or {@link localSource}.
+ * Pass one via the `optimize` option on {@link iconifyLocalSource},
+ * {@link iconifyApiSource}, {@link localIcons}, or {@link localSource}.
  */
 export type OptimizeFn = (
   svg: string,
   ctx: { collection: string; name: string },
 ) => string | Promise<string>;
 
-/** Options shared by {@link iconify} and {@link iconifySource} for configuring an Iconify pack. */
+/** Options shared by {@link iconifyLocalSource} and {@link iconifyApiSource} for configuring an Iconify pack. */
 export interface IconifySourceOptions {
   /**
    * Restricts this source to a fixed list of icon names. Both what's loaded

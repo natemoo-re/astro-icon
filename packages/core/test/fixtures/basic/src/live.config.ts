@@ -1,6 +1,8 @@
 import { defineLiveCollection } from "astro:content";
-import { iconifyLive } from "astro-icon/loaders/live";
+import { createLiveIconLoader, iconifyLocalSource } from "astro-icon/loaders/live";
 
 export const collections = {
-  liveSpinners: defineLiveCollection({ loader: iconifyLive("svg-spinners") }),
+  liveSpinners: defineLiveCollection({
+    loader: createLiveIconLoader(iconifyLocalSource("svg-spinners")),
+  }),
 };

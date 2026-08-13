@@ -166,7 +166,7 @@ describe("createLiveIconLoader typegen", () => {
     await flush();
 
     expect(recordCollection).toHaveBeenCalledWith(expect.any(URL), "live", "mdi", []);
-    // Still called for its side effect: sources like `iconifySource` use listIcons() to record their own pack catalog.
+    // Still called for its side effect: sources like `iconifyLocalSource` use listIcons() to record their own pack catalog.
     expect(listIcons).toHaveBeenCalledOnce();
   });
 
