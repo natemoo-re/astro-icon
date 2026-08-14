@@ -59,6 +59,40 @@ describe("iconA11yProps / title and desc wiring", () => {
   });
 });
 
+describe("iconA11yProps / custom title & desc ids", () => {
+  it("uses the caller's id instead of generating one", () => {
+    const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
+      { id: "my-title", value: "Search" },
+      { id: "my-desc", value: "More detail" },
+      {},
+    );
+    expect(titleId).toBe("my-title");
+    expect(descId).toBe("my-desc");
+    expect(titleText).toBe("Search");
+    expect(descText).toBe("More detail");
+    expect(a11yProps).toEqual({
+      focusable: "false",
+      role: "img",
+      "aria-labelledby": "my-title",
+      "aria-describedby": "my-desc",
+    });
+  });
+
+  it("falls back to a generated id when the caller omits it", () => {
+    const { titleId } = iconA11yProps({ value: "Search" }, undefined, {});
+    expect(titleId).toMatch(/^astro-icon-title-/);
+  });
+
+  it("still defers to the caller's own aria-labelledby, ignoring a custom title id", () => {
+    const { titleId } = iconA11yProps(
+      { id: "my-title", value: "Search" },
+      undefined,
+      { "aria-labelledby": "external-id" },
+    );
+    expect(titleId).toBeUndefined();
+  });
+});
+
 describe("iconA11yProps / explicit overrides win", () => {
   it("skips generating a title id when the caller already set aria-label", () => {
     const { a11yProps, titleId } = iconA11yProps("Search", undefined, { "aria-label": "Look" });

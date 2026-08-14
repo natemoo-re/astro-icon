@@ -54,6 +54,26 @@ import Base from "../layouts/base.astro";
     <Icon size={32} name="combined:star-fill" />
   </article>
 
+  <article>
+    <h2>Accessible Icons</h2>
+    <p>
+      <code>title</code>/<code>desc</code> auto-wire <code>aria-labelledby</code>/
+      <code>aria-describedby</code> on the icon itself. Pass
+      <code>{"{ id, value }"}</code> instead of a plain string when something
+      <em>outside</em> the icon needs to reference the same id, e.g. a button
+      that wraps an icon and wants to reuse its title as the button's name
+      instead of duplicating the text.
+    </p>
+    <Icon size={24} name="adjustment" title="Adjustment" desc="An icon representing adjustment controls" />
+    <button aria-labelledby="adjustment-title">
+      <Icon
+        size={24}
+        name="adjustment"
+        title={{ id: "adjustment-title", value: "Adjustment" }}
+      />
+    </button>
+  </article>
+
   <p><a href="/live/">See the &lt;LiveIcon&gt; demo &rarr;</a></p>
   <p><a href="/sprite/">See the &lt;Sprite&gt; demo &rarr;</a></p>
 </Base>

@@ -2,6 +2,7 @@
 import type { HTMLAttributes } from "astro/types";
 import { renderTimeError } from "../src/render/error.js";
 import { iconA11yProps, renderableIconProps } from "../src/render/props.js";
+import type { AccessibleElementInput } from "../src/render/props.js";
 import { parseIconName } from "../src/render/parseIconName.js";
 import { resolveIconEntry } from "../src/render/lookupEntry.js";
 import type { IconName } from "../typings/names";
@@ -22,10 +23,20 @@ import type { IconName } from "../typings/names";
 interface Props extends HTMLAttributes<"svg"> {
   /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
   name: IconName;
-  /** Adds an accessible `<title>` before the icon body, and takes the icon out of its decorative default. */
-  title?: string;
-  /** Adds an accessible `<desc>` after `title`, and takes the icon out of its decorative default. */
-  desc?: string;
+  /**
+   * Adds an accessible `<title>` before the icon body, and takes the icon out
+   * of its decorative default. Pass `{ id, value }` instead of a plain string
+   * to control the `<title>`'s id, e.g. so something outside the icon can
+   * reference it directly.
+   */
+  title?: string | AccessibleElementInput;
+  /**
+   * Adds an accessible `<desc>` after `title`, and takes the icon out of its
+   * decorative default. Pass `{ id, value }` instead of a plain string to
+   * control the `<desc>`'s id, e.g. so something outside the icon can
+   * reference it directly.
+   */
+  desc?: string | AccessibleElementInput;
   /** Astro's types don't yet include this WAI-ARIA 1.3 attribute; the direct-string analog of `aria-describedby`, same relationship as `aria-label`/`aria-labelledby`. */
   "aria-description"?: string;
   /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
@@ -60,12 +71,12 @@ if (!entry) {
 }
 
 const { body } = entry.data;
-const { a11yProps, titleId, descId } = iconA11yProps(title, desc, props);
+const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(title, desc, props);
 const { normalizedProps } = renderableIconProps(entry.data, { ...a11yProps, ...props });
 ---
 
 <svg {...normalizedProps} data-icon={name}>
-  {titleId && <title id={titleId}>{title}</title>}
-  {descId && <desc id={descId}>{desc}</desc>}
+  {titleId && <title id={titleId}>{titleText}</title>}
+  {descId && <desc id={descId}>{descText}</desc>}
   <Fragment set:html={body} />
 </svg>

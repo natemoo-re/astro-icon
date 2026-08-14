@@ -8,6 +8,19 @@ export interface IconA11yProps {
   focusable: "false";
 }
 
+/**
+ * The object form of `title`/`desc`, for callers that need a stable, known
+ * id on the generated `<title>`/`<desc>` — e.g. so a wrapping element's own
+ * `aria-labelledby` can reference the icon's title without duplicating the
+ * text. Doesn't change how the icon labels *itself*: that's still wired up
+ * automatically via separate `aria-labelledby`/`aria-describedby`.
+ */
+export interface AccessibleElementInput {
+  /** Overrides the id astro-icon would otherwise generate. */
+  id?: string;
+  value: string;
+}
+
 export interface IconA11yResult {
   /**
    * Attributes to spread onto the rendered `<svg>` *before* the caller's own
@@ -20,6 +33,10 @@ export interface IconA11yResult {
   titleId: string | undefined;
   /** The id for `<desc>`, or `undefined` to omit it entirely. */
   descId: string | undefined;
+  /** The resolved `<title>` text, unwrapped from the `{ id, value }` form if used. */
+  titleText: string | undefined;
+  /** The resolved `<desc>` text, unwrapped from the `{ id, value }` form if used. */
+  descText: string | undefined;
 }
 
 interface IconA11yInputProps {
@@ -37,6 +54,13 @@ function shortId(kind: "title" | "desc"): string {
 
 function isTruthyAriaHidden(value: unknown): boolean {
   return value === true || value === "true";
+}
+
+function normalizeAccessibleElement(
+  input: string | AccessibleElementInput | undefined,
+): AccessibleElementInput | undefined {
+  if (input == null) return undefined;
+  return typeof input === "string" ? { value: input } : input;
 }
 
 /**
@@ -58,24 +82,29 @@ function isTruthyAriaHidden(value: unknown): boolean {
  * overridden by spreading the caller's own props afterward.
  */
 export function iconA11yProps(
-  title: string | undefined,
-  desc: string | undefined,
+  title: string | AccessibleElementInput | undefined,
+  desc: string | AccessibleElementInput | undefined,
   props: IconA11yInputProps,
 ): IconA11yResult {
+  const normalizedTitle = normalizeAccessibleElement(title);
+  const normalizedDesc = normalizeAccessibleElement(desc);
+
   const hasOwnName = props["aria-label"] != null || props["aria-labelledby"] != null;
   const hasOwnDesc = props["aria-description"] != null || props["aria-describedby"] != null;
-  const isLabeled = Boolean(title || desc || hasOwnName || hasOwnDesc || props.role != null);
+  const isLabeled = Boolean(
+    normalizedTitle || normalizedDesc || hasOwnName || hasOwnDesc || props.role != null,
+  );
 
-  const titleId = title && !hasOwnName ? shortId("title") : undefined;
-  const descId = desc && !hasOwnDesc ? shortId("desc") : undefined;
+  const titleId = normalizedTitle && !hasOwnName ? (normalizedTitle.id ?? shortId("title")) : undefined;
+  const descId = normalizedDesc && !hasOwnDesc ? (normalizedDesc.id ?? shortId("desc")) : undefined;
 
   if (import.meta.env.DEV) {
-    if (title && hasOwnName) {
+    if (normalizedTitle && hasOwnName) {
       console.warn(
         `[astro-icon] Received both "title" and an explicit "aria-label"/"aria-labelledby": "title" won't be linked to anything, so it's omitted. Remove "title", or remove your own aria-label/aria-labelledby to let astro-icon wire it up automatically.`,
       );
     }
-    if (desc && hasOwnDesc) {
+    if (normalizedDesc && hasOwnDesc) {
       console.warn(
         `[astro-icon] Received both "desc" and an explicit "aria-description"/"aria-describedby": "desc" won't be linked to anything, so it's omitted. Remove "desc", or remove your own aria-description/aria-describedby to let astro-icon wire it up automatically.`,
       );
@@ -100,6 +129,8 @@ export function iconA11yProps(
     },
     titleId,
     descId,
+    titleText: normalizedTitle?.value,
+    descText: normalizedDesc?.value,
   };
 }
 
