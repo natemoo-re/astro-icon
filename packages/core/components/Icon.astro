@@ -8,11 +8,16 @@ import type { HTMLAttributes } from "astro/types";
 import { cache } from "./cache.js";
 import type { IconifyIconBuildResult } from "@iconify/utils/lib/svg/build.js";
 
+interface AccessibleElementProps {
+  id?: string;
+  value: string;
+}
+
 interface Props extends HTMLAttributes<"svg"> {
   name: Icon;
   "is:inline"?: boolean;
-  title?: string;
-  desc?: string;
+  title?: string | AccessibleElementProps;
+  desc?: string | AccessibleElementProps;
   size?: number | string;
   width?: number | string;
   height?: number | string;
@@ -28,6 +33,11 @@ class AstroIconError extends Error {
 
 const localsKey = Astro.locals;
 const { name = "", title, desc, "is:inline": inline = false, ...props } = Astro.props;
+
+const normalizeAccessibleElement = (value?: string | AccessibleElementProps) =>
+  typeof value === "string" ? { value } : value;
+const normalizedTitle = normalizeAccessibleElement(title);
+const normalizedDesc = normalizeAccessibleElement(desc);
 const map = cache.get(localsKey) ?? new Map();
 const i = map.get(name) ?? 0;
 map.set(name, i + 1);
@@ -122,8 +132,8 @@ if (!inline) {
 ---
 
 <svg {...normalizedProps} data-icon={name}>
-  {title && <title>{title}</title>}
-  {desc && <desc>{desc}</desc>}
+  {normalizedTitle && <title id={normalizedTitle.id}>{normalizedTitle.value}</title>}
+  {normalizedDesc && <desc id={normalizedDesc.id}>{normalizedDesc.value}</desc>}
   {
     inline ? (
       <Fragment id={id} set:html={normalizedBody} />
