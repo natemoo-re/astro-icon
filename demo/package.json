@@ -9,13 +9,13 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@iconify-json/bi": "^1.1.15",
-    "@iconify-json/fe": "^1.1.6",
-    "@iconify-json/ic": "^1.1.13",
-    "@iconify-json/ri": "^1.1.5"
+    "@iconify-json/bi": "^1.2.7",
+    "@iconify-json/fe": "^1.2.4",
+    "@iconify-json/ic": "^1.2.4",
+    "@iconify-json/ri": "^1.2.10"
   },
   "devDependencies": {
-    "astro": "^4.0.7",
+    "astro": "^7.2.2",
     "astro-icon": "workspace:*"
   }
 }

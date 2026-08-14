@@ -5,9 +5,9 @@
     "allowJs": true,
     "module": "ES2022",
     "outDir": "./dist",
+    "rootDir": "./src",
     "target": "ES2021",
-    "jsx": "preserve",
-    "baseUrl": "./"
+    "jsx": "preserve"
   },
   // NEW: Options for file/directory watching
   "watchOptions": {
