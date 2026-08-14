@@ -65,7 +65,7 @@ By default, Astro Icon supports custom local `svg` icons. They are optimized wit
 
 ```astro
 ---
-import { Icon } from 'astro-icon/components';
+import { Icon } from "astro-icon/components";
 ---
 
 <!-- Loads the SVG in `/src/icons/filename.svg` -->
@@ -82,7 +82,7 @@ Astro Icon also supports [Iconify](https://iconify.design) icon sets out-of-the-
 
 ```astro
 ---
-import { Icon } from 'astro-icon/components'
+import { Icon } from "astro-icon/components";
 ---
 
 <!-- Automatically fetches and inlines Material Design Icon's "account" SVG -->
@@ -117,27 +117,30 @@ Styling your icons is straightforward. Any styles can be targeted to the `[data-
 
 ```astro
 ---
-import { Icon } from 'astro-icon/components';
+import { Icon } from "astro-icon/components";
 ---
 
 <style lang="css">
-    [data-icon] {
-        color: blue;
-        /* OR */
-        fill: blue;
-    }
-    [data-icon="annotation"] {
-        color: red;
-        /* OR */
-        fill: red;
-    }
+  [data-icon] {
+    color: blue;
+    /* OR */
+    fill: blue;
+  }
+  [data-icon="annotation"] {
+    color: red;
+    /* OR */
+    fill: red;
+  }
 </style>
 
-<Icon name="adjustment" /> <!-- will be blue -->
-<Icon name="annotation" /> <!-- will be red -->
+<Icon name="adjustment" />
+<!-- will be blue -->
+<Icon name="annotation" />
+<!-- will be red -->
 
 <!-- Example using Tailwind to apply color -->
-<Icon name="annotation" class="text-red-500" /> <!-- will be red-500 -->
+<Icon name="annotation" class="text-red-500" />
+<!-- will be red-500 -->
 ```
 
 ### Using with Frameworks

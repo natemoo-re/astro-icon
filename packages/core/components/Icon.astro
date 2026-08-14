@@ -24,7 +24,7 @@ interface Props extends HTMLAttributes<"svg"> {
 }
 
 class AstroIconError extends Error {
-  public hint: string = '';
+  public hint: string = "";
 
   constructor(message: string) {
     super(message);
@@ -32,7 +32,13 @@ class AstroIconError extends Error {
 }
 
 const localsKey = Astro.locals;
-const { name = "", title, desc, "is:inline": inline = false, ...props } = Astro.props;
+const {
+  name = "",
+  title,
+  desc,
+  "is:inline": inline = false,
+  ...props
+} = Astro.props;
 
 const normalizeAccessibleElement = (value?: string | AccessibleElementProps) =>
   typeof value === "string" ? { value } : value;
@@ -122,7 +128,10 @@ if (props.size) {
   delete props.size;
 }
 const renderData = iconToSVG(iconData);
-const normalizedProps = { ...renderData.attributes as Partial<IconifyIconBuildResult['attributes']>, ...props };
+const normalizedProps = {
+  ...(renderData.attributes as Partial<IconifyIconBuildResult["attributes"]>),
+  ...props,
+};
 const normalizedBody = replaceIDs(renderData.body);
 
 const { viewBox } = normalizedProps;
@@ -132,14 +141,20 @@ if (!inline) {
 ---
 
 <svg {...normalizedProps} data-icon={name}>
-  {normalizedTitle && <title id={normalizedTitle.id}>{normalizedTitle.value}</title>}
+  {
+    normalizedTitle && (
+      <title id={normalizedTitle.id}>{normalizedTitle.value}</title>
+    )
+  }
   {normalizedDesc && <desc id={normalizedDesc.id}>{normalizedDesc.value}</desc>}
   {
     inline ? (
       <Fragment id={id} set:html={normalizedBody} />
     ) : (
       <Fragment>
-        {includeSymbol && <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />}
+        {includeSymbol && (
+          <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />
+        )}
         <use href={`#${id}`} />
       </Fragment>
     )
