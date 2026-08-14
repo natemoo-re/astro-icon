@@ -43,13 +43,15 @@ export function createPlugin(
           logCollections(collections, { ...ctx, iconDir });
           await generateIconTypeDefinitions(Object.values(collections), root);
         } catch (ex) {
-          // Failed to load the local collection
+          ctx.logger.warn(
+            `Failed to load icons from "${iconDir}": ${ex instanceof Error ? ex.message : ex}`,
+          );
         }
         return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
       }
     },
     configureServer({ watcher, moduleGraph }) {
-      watcher.add(`${iconDir}/**/*.svg`);
+      watcher.add(resolve(root.pathname, iconDir));
       watcher.on("all", async (_, filepath: string) => {
         const parsedPath = parse(filepath);
         const resolvedIconDir = resolve(root.pathname, iconDir);
@@ -69,7 +71,9 @@ export function createPlugin(
           await generateIconTypeDefinitions(Object.values(collections), root);
           moduleGraph.invalidateAll();
         } catch (ex) {
-          // Failed to load the local collection
+          ctx.logger.warn(
+            `Failed to load icons from "${iconDir}": ${ex instanceof Error ? ex.message : ex}`,
+          );
         }
         return `export default ${JSON.stringify(collections)};\nexport const config = ${JSON.stringify({ include })}`;
       });
