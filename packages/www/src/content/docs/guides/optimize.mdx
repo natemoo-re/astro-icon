@@ -1,0 +1,117 @@
+---
+title: SVGO & optimize()
+description: Transform an icon's raw SVG before Astro Icon stores it.
+---
+
+Astro Icon doesn't run any optimization on its own — every source's `optimize` option is a plain function you provide: `(svg, { collection, name }) => string | Promise<string>`. `astro-icon/optimize` ships an `svgo()` helper for the common case of running [SVGO](https://github.com/svg/svgo) over it.
+
+## Installing SVGO
+
+SVGO is an optional peer dependency — install it yourself:
+
+```sh
+npm install svgo
+```
+
+## Using `svgo()`
+
+Pass it as the `optimize` option to any source:
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { svgo } from "astro-icon/optimize";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi", { optimize: svgo() })),
+  }),
+};
+```
+
+`svgo()` with no arguments runs SVGO's `preset-default` with astro-icon's own `defaultOverrides` layered on top: mechanical cleanup only (whitespace, numeric precision, structurally-empty nodes), nothing that changes an icon's color or DOM shape.
+
+## Why `defaultOverrides` exists
+
+SVGO's own `preset-default` also strips things a reasonable author could disagree with by default — license-bearing comments/metadata, colors, ids other tooling might reference, elements it judges "unused" by static analysis it can get wrong. `defaultOverrides` turns those specific plugins back off, keeping only the parts of `preset-default` that are safe cleanup for *any* icon:
+
+```ts
+export const defaultOverrides: Record<string, false> = {
+  removeComments: false,
+  removeMetadata: false,
+  convertColors: false,
+  removeUselessStrokeAndFill: false,
+  cleanupIds: false,
+  removeDesc: false,
+  removeUselessDefs: false,
+  removeUnknownsAndDefaults: false,
+  removeNonInheritableGroupAttrs: false,
+  removeHiddenElems: false,
+  mergeStyles: false,
+  inlineStyles: false,
+  minifyStyles: false,
+  convertShapeToPath: false,
+  convertEllipseToCircle: false,
+  moveElemsAttrsToGroup: false,
+  moveGroupAttrsToElems: false,
+  collapseGroups: false,
+  convertPathData: false,
+  convertTransform: false,
+  mergePaths: false,
+};
+```
+
+## Passing your own SVGO config
+
+`options` is SVGO's own config object, passed through as-is on top of that default — a `plugins` option **replaces** the default list entirely rather than merging with it:
+
+```ts
+import { svgo } from "astro-icon/optimize";
+
+optimize: svgo({ plugins: ["preset-default"] }); // SVGO's own untouched default
+```
+
+To keep most of astro-icon's defaults and adjust one plugin, build on `defaultOverrides` yourself instead of retyping the whole list — this is also the recipe for the [`currentColor` fix](/guides/troubleshooting/#an-icon-ignores-css-color):
+
+```ts
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+optimize: svgo({
+  plugins: [
+    {
+      name: "preset-default",
+      params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+    },
+  ],
+});
+```
+
+## Prefixing ids to avoid collisions
+
+`optimize` also receives the icon's `collection` and `name`, useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once outside [`<Sprite>`](/guides/sprite/) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: createIconLoader(
+      iconifyLocalSource("mdi", {
+        optimize: (svg, { collection, name }) =>
+          svgo({
+            plugins: [
+              { name: "prefixIds", params: { prefix: `${collection}-${name}` } },
+              { name: "preset-default", params: { overrides: defaultOverrides } },
+            ],
+          })(svg, { collection, name }),
+      }),
+    ),
+  }),
+};
+```
+
+## Writing your own `optimize`
+
+You don't need SVGO at all — `optimize` is just a function over the raw SVG string, so a targeted string replacement works too (see the [redeclared-attributes fix](/guides/troubleshooting/#an-icon-ignores-stroke-width-or-another-presentation-attribute) for an example).

@@ -1,0 +1,70 @@
+---
+title: Bringing Your Own Source
+description: Write a custom IconSource to fetch icons from anywhere.
+---
+
+Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `createIconLoader` (build time) or `createLiveIconLoader` (per request):
+
+```ts title="src/live.config.ts"
+import { defineLiveCollection } from "astro:content";
+import { parseIconSVG } from "astro-icon/loaders";
+import { createLiveIconLoader } from "astro-icon/loaders/live";
+import type { IconSource } from "astro-icon/loaders/live";
+
+const mySource: IconSource = {
+  name: "my-source",
+  async getIcon(name) {
+    const res = await fetch(`https://icons.example.com/${name}.svg`);
+    if (!res.ok) throw new Error(`Icon "${name}" not found`);
+    return parseIconSVG(await res.text(), {
+      collection: "my-source",
+      name,
+      logger: { warn: console.warn },
+    });
+  },
+  async listIcons() {
+    const res = await fetch("https://icons.example.com/list.json");
+    return res.json();
+  },
+};
+
+export const collections = {
+  custom: defineLiveCollection({ loader: createLiveIconLoader(mySource) }),
+};
+```
+
+## The `IconSource` interface
+
+```ts
+interface IconSource {
+  name: string;
+  getIcon(name: string): Promise<IconEntry>;
+  listIcons?(): Promise<string[]>;
+  getVersion?(): Promise<string | undefined>;
+}
+```
+
+- **`name`** identifies the source in error messages and, for a live collection, generated types.
+- **`getIcon`** resolves one icon by name; throw (or reject) with a descriptive error if it can't be found or built. A loader turns that into a warning plus a skipped icon for a build collection, or `{ error }` for a live one.
+- **`listIcons`** lists every icon name this source can build. Required for a build collection — `createIconLoader` loads exactly this list. Optional for a live one, where it additionally enables `getLiveCollection()` and full autocomplete instead of a plain `string` type.
+- **`getVersion`** reports a cheap freshness signal, such as an installed pack's npm version. If every source in a collection reports one and it matches the last sync, `createIconLoader` skips re-building anything. Omit it if there's no reliable way to tell "nothing changed" short of building.
+
+## `parseIconSVG`
+
+Turns a raw `<svg>...</svg>` string into the `IconEntry` shape astro-icon stores, deriving a `viewBox` if one is missing:
+
+```ts
+function parseIconSVG(
+  svg: string,
+  options: {
+    collection: string;
+    name: string;
+    optimize?: OptimizeFn;
+    strict?: boolean;
+    logger: Pick<AstroIntegrationLogger, "warn">;
+    fallbackSize?: { width: number; height: number };
+  },
+): Promise<IconEntry>;
+```
+
+Use it inside your own `getIcon` once you have a raw SVG string, as in the example above. See the full [`IconSource` reference](/reference/icon-source/) for every option.

@@ -1,0 +1,83 @@
+---
+/**
+ * Pairs a code sample with the output astro-icon actually produced for it on
+ * this page. The result pane is a slot, so what a reader sees is rendered by
+ * the same library the code describes — it can't drift from the docs.
+ */
+import { Code } from "@astrojs/starlight/components";
+
+interface Props {
+  code: string;
+  lang?: string;
+  /** Label for the rendered pane; useful when the output isn't literally "the icon". */
+  resultLabel?: string;
+}
+
+const { code, lang = "astro", resultLabel = "Result" } = Astro.props;
+---
+
+<div class="showcase not-content">
+  <div class="showcase__code">
+    <Code code={code.trim()} lang={lang} />
+  </div>
+  <div class="showcase__result">
+    <span class="showcase__label">{resultLabel}</span>
+    <div class="showcase__output"><slot /></div>
+  </div>
+</div>
+
+<style>
+  .showcase {
+    display: grid;
+    gap: 0;
+    margin: 1.5rem 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .showcase__code :global(.expressive-code) {
+    margin: 0;
+  }
+
+  .showcase__code :global(.frame) {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .showcase__result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem;
+    background: var(--sl-color-gray-6);
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+
+  .showcase__label {
+    font-size: var(--sl-text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: var(--sl-color-gray-3);
+  }
+
+  .showcase__output {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    color: var(--sl-color-white);
+  }
+
+  @media (min-width: 60rem) {
+    .showcase {
+      grid-template-columns: 1fr minmax(12rem, 0.5fr);
+    }
+
+    .showcase__result {
+      border-top: none;
+      border-inline-start: 1px solid var(--sl-color-gray-5);
+    }
+  }
+</style>

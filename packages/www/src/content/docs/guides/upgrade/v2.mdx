@@ -1,0 +1,114 @@
+---
+title: Upgrading to Astro Icon v2
+description: Migrate from astro-icon v1's integration to v2's content collection loaders.
+prev: false
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Astro Icon v2 replaces the `icon()` Astro integration with content collection loaders. This is a breaking change to how every project configures its icons.
+
+## Upgrade `astro-icon`
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh ins="latest"
+npm install astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh ins="latest"
+pnpm add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh ins="latest"
+yarn add astro-icon@latest
+```
+
+</TabItem>
+</Tabs>
+
+## Remove the integration
+
+Remove `icon()` from `integrations` in `astro.config.mjs`:
+
+```diff lang="js" title="astro.config.mjs"
+  import { defineConfig } from "astro/config";
+- import icon from "astro-icon";
+
+  export default defineConfig({
+-   integrations: [icon()],
+  });
+```
+
+## Move configuration into `content.config.ts`
+
+Every `icon({ ... })` option maps to something in `src/content.config.ts` now:
+
+| v1 (`icon()` option) | v2 |
+| --- | --- |
+| `include` | The `icons` option on `iconifyLocalSource()`/`iconifyApiSource()` — see [“Iconify Icons”](/guides/iconify-icons/) |
+| `iconDir` | The first argument to `localIcons("your/dir")` — see [“Local Icons”](/guides/local-icons/) |
+| `svgoOptions` | The `optimize` option, with the `svgo()` helper from `astro-icon/optimize` — see [“SVGO & optimize()”](/guides/optimize/) |
+
+```diff lang="ts" title="src/content.config.ts"
++ import { defineCollection } from "astro:content";
++ import { createIconLoader, iconifyLocalSource, localIcons } from "astro-icon/loaders";
++
++ export const collections = {
++   mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi", { icons: ["home"] })) }),
++   icons: defineCollection({ loader: localIcons("src/assets/icons") }),
++ };
+```
+
+### Optimization is no longer automatic
+
+v1 ran SVGO over local `.svg` files by default. v2 runs no optimization unless you ask for it — pass `optimize: svgo()` explicitly if you relied on that behavior:
+
+```ts title="src/content.config.ts" ins="optimize: svgo()"
+import { defineCollection } from "astro:content";
+import { localIcons } from "astro-icon/loaders";
+import { svgo } from "astro-icon/optimize";
+
+export const collections = {
+  icons: defineCollection({ loader: localIcons("src/assets/icons", { optimize: svgo() }) }),
+};
+```
+
+## Enable typed autocomplete
+
+Add this reference to `src/env.d.ts` — new in v2, this is what gives `<Icon name="...">` autocomplete and a type error for a name that doesn't exist:
+
+```ts title="src/env.d.ts" ins="/// <reference path=\"../.astro/astro-icon.d.ts\" />"
+/// <reference path="../.astro/astro-icon.d.ts" />
+```
+
+It's generated the first time you run `astro sync`, `astro dev`, or `astro build`.
+
+## Sprites are now opt-in
+
+v1 automatically deduped repeated `<Icon>` uses into a shared sprite. v2 never does this on its own — every `<Icon>` renders as a standalone `<svg>`. Wrap repeated uses in the new `<Sprite>` component to opt back in; see [“Deduping with `<Sprite>`”](/guides/sprite/).
+
+## What didn't change
+
+- The `<Icon>` component's core props (`name`, `title`, `desc`, `size`, `width`, `height`, and any `HTMLAttributes<"svg">`/`aria-*` attribute) — see [“The `<Icon>` Component”](/guides/components/).
+- The `data-icon` attribute and `[data-icon]` CSS styling pattern — see [“Styling Icons”](/guides/styling/).
+- Referencing an Iconify icon set's icons as `"<pack>:<name>"`, and local `.svg` files by their path-derived name.
+
+## New in v2
+
+- **`<LiveIcon>`** — resolve an icon per request instead of at build time, for icon names you can't know ahead of build. See [“Live Icons with `<LiveIcon>`”](/guides/live-icon/).
+- **Custom `IconSource`s** — bring your own backend (a design tool, a database, an internal API). See [“Bringing Your Own Source”](/guides/bring-your-own-source/).
+- **Library-shipped collections** — a package can export a ready-made collection for consumers to spread into their own `content.config.ts`. See [“Shipping Icons from a Library”](/guides/shipping-icons-from-a-library/).
+
+## History
+
+The original version of `astro-icon` was built in December 2021, when Astro had not even released a stable v1. v1 refactored it onto Astro's integration API. v2 refactors it again, onto Astro's [content layer](https://docs.astro.build/en/guides/content-collections/) — the same foundation Astro's own content collections use — trading the single global `icon()` config surface for per-collection loaders with full type safety.
+
+If you're upgrading from v0, see the [v0 to v1 upgrade guide](/guides/upgrade/v1/) first.

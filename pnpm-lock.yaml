@@ -179,9 +179,18 @@ importers:
       "@astrojs/starlight":
         specifier: ^0.41.7
         version: 0.41.7(astro@7.2.2)(typescript@6.0.3)
+      '@iconify-json/mdi':
+        specifier: ^1.2.3
+        version: 1.2.3
+      '@iconify-json/ri':
+        specifier: ^1.2.10
+        version: 1.2.10
       astro:
         specifier: ^7.2.2
         version: 7.2.2(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@22.20.1)
+      astro-icon:
+        specifier: workspace:*
+        version: link:../core
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@22.20.1)

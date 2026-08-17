@@ -1,0 +1,67 @@
+---
+title: Deduping with <Sprite>
+description: Collapse repeated icon uses into one symbol and many use elements.
+---
+
+import { Icon, Sprite } from 'astro-icon/components';
+import Showcase from '../../../components/Showcase.astro';
+
+`<Icon>` always renders a standalone `<svg>`, with no deduping between repeated uses. If you render the same icon many times on a page, wrap those uses in `<Sprite>` to dedupe them into one `<symbol>` and many `<use>` elements:
+
+<Showcase resultLabel="Rendered from one <symbol>" code={`---
+import { Icon, Sprite } from "astro-icon/components";
+---
+
+<Sprite>
+  <Icon name="mdi:star" />
+  <Icon name="mdi:star" />
+  <Icon name="mdi:star" />
+</Sprite>`}>
+  <Sprite>
+    <Icon name="mdi:star" size={28} />
+    <Icon name="mdi:star" size={28} />
+    <Icon name="mdi:star" size={28} />
+  </Sprite>
+</Showcase>
+
+This renders one `<symbol>` for `mdi:star`, referenced three times by `<use>`, instead of three full copies of the icon's markup. The stars above are the real thing — view source and you'll find a single `<symbol id="ai:mdi:star">` plus three `<use href="#ai:mdi:star" />` refs.
+
+## What the output looks like
+
+```html
+<!-- Emitted once, ahead of the sprite's content -->
+<svg style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false">
+  <symbol id="ai:mdi:star" viewBox="0 0 24 24"><path d="…" /></symbol>
+</svg>
+
+<!-- Each <Icon> becomes a lightweight reference -->
+<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star"><use href="#ai:mdi:star" /></svg>
+<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star"><use href="#ai:mdi:star" /></svg>
+<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star"><use href="#ai:mdi:star" /></svg>
+```
+
+The more times an icon repeats, the more the savings compound — the icon's path data is paid for exactly once, no matter how many instances follow.
+
+## Only affects icons inside it
+
+`<Sprite>` only affects `<Icon>` uses nested inside it. Anything outside a `<Sprite>` renders as before, as a standalone `<svg>`.
+
+```astro
+<Sprite>
+  <Icon name="mdi:star" /> <!-- deduped -->
+</Sprite>
+
+<Icon name="mdi:star" /> <!-- not deduped, renders in full -->
+```
+
+## One `<Sprite>` per page
+
+Use one `<Sprite>` per page. A dev-only warning fires if a second one renders, since each dedupes independently and won't share `<symbol>`s with another.
+
+## Requires a prerendered page
+
+`<Sprite>` requires a prerendered page (`export const prerender = true;`, or a project with `output: "static"`). It has to buffer and rewrite its slot's full HTML, which would otherwise break streaming on a server-rendered route. Use plain `<Icon>` on a server-rendered route instead — each one already renders as a self-contained `<svg>`, so there's nothing to buffer.
+
+## `<LiveIcon>` passes through untouched
+
+A `<LiveIcon>` inside a `<Sprite>` boundary is never deduped, regardless of how many times its `collection`/`icon` repeats, or whether it shares a name with a static `<Icon>`. Live data isn't guaranteed stable across resolutions the way a build-time collection entry is, so `<Sprite>` leaves it alone instead of folding it into a shared `<symbol>`.
