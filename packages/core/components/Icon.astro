@@ -134,20 +134,24 @@ const attributes = renderData.attributes as Partial<
 const normalizedProps = { ...attributes, ...props };
 const normalizedBody = replaceIDs(renderData.body);
 
-// A single <symbol> is shared by every instance of the icon, so it describes the
-// icon's own coordinate space rather than `normalizedProps.viewBox`, which would
-// leak a per-instance override onto every other instance of the same icon.
-const viewBox = attributes.viewBox;
 const [minX, minY, vbWidth, vbHeight] =
-  viewBox?.split(/[\s,]+/).map(Number) ?? [];
-// A <use> generates its viewport at user-space (0,0) sized to 100% of the wrapper's
-// viewport, which is already the symbol's viewBox rect for the usual `0 0 W H` icon.
-// An icon whose viewBox has a non-zero min-x/min-y has to say so explicitly, or its
-// artwork renders offset by that origin and clipped
-// (https://github.com/natemoo-re/astro-icon/issues/212).
+  attributes.viewBox?.split(/[\s,]+/).map(Number) ?? [];
+// The wrapper's `viewBox` scales the icon, so a `0 0 W H` icon needs nothing further:
+// the viewport a bare <use> generates already covers the whole wrapper, and the artwork
+// lands on it 1:1.
+//
+// An icon whose viewBox has a non-zero min-x/min-y does need more, or its artwork
+// renders offset by that origin and clipped
+// (https://github.com/natemoo-re/astro-icon/issues/212). Positioning <use> cannot fix
+// that on its own, because `x`/`y` translate the referenced content along with the
+// viewport. Giving the <symbol> a viewBox is what decouples where the viewport sits
+// from the coordinates the artwork is drawn in, which makes the pair an identity
+// placement. Sourcing it from the icon data rather than `normalizedProps` also keeps a
+// per-instance `viewBox` override off the <symbol>, which every instance shares.
 const hasOffsetOrigin =
   [minX, minY, vbWidth, vbHeight].every(Number.isFinite) &&
   (minX !== 0 || minY !== 0);
+const symbolViewBox = hasOffsetOrigin ? attributes.viewBox : undefined;
 const useRect = hasOffsetOrigin
   ? { x: minX, y: minY, width: vbWidth, height: vbHeight }
   : {};
@@ -166,7 +170,7 @@ const useRect = hasOffsetOrigin
     ) : (
       <Fragment>
         {includeSymbol && (
-          <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />
+          <symbol id={id} viewBox={symbolViewBox} set:html={normalizedBody} />
         )}
         <use href={`#${id}`} {...useRect} />
       </Fragment>
