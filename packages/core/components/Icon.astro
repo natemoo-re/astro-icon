@@ -128,13 +128,26 @@ if (props.size) {
   delete props.size;
 }
 const renderData = iconToSVG(iconData);
-const normalizedProps = {
-  ...(renderData.attributes as Partial<IconifyIconBuildResult["attributes"]>),
-  ...props,
-};
+const attributes = renderData.attributes as Partial<
+  IconifyIconBuildResult["attributes"]
+>;
+const normalizedProps = { ...attributes, ...props };
 const normalizedBody = replaceIDs(renderData.body);
 
-const { viewBox } = normalizedProps;
+// A single <symbol> is shared by every instance of the icon, so it describes the
+// icon's own coordinate space rather than `normalizedProps.viewBox`, which would
+// leak a per-instance override onto every other instance of the same icon.
+const viewBox = attributes.viewBox;
+const [minX, minY, vbWidth, vbHeight] =
+  viewBox?.split(/[\s,]+/).map(Number) ?? [];
+// A <use> without x/y/width/height generates its viewport at user-space (0,0) sized
+// to 100% of the wrapper's viewport, which shifts and clips icons whose viewBox has a
+// non-zero min-x/min-y (https://github.com/natemoo-re/astro-icon/issues/212).
+// Pinning it to the symbol's viewBox rect makes the reference an identity placement,
+// which leaves the wrapper's `viewBox` free to scale and window the icon.
+const useRect = [minX, minY, vbWidth, vbHeight].every(Number.isFinite)
+  ? { x: minX, y: minY, width: vbWidth, height: vbHeight }
+  : {};
 ---
 
 <svg {...normalizedProps} data-icon={name}>
@@ -152,7 +165,7 @@ const { viewBox } = normalizedProps;
         {includeSymbol && (
           <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />
         )}
-        <use href={`#${id}`} />
+        <use href={`#${id}`} {...useRect} />
       </Fragment>
     )
   }
