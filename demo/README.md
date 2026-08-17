@@ -1,43 +1,27 @@
-# Astro Starter Kit: Minimal
+# astro-icon bench
 
-```
-npm init astro -- --template minimal
-```
+A manual test bed for `astro-icon`. Each page is a bench: controls on top, live output below, and
+the real rendered markup where it's useful. Nothing here is mocked — counts, byte sizes and error
+messages all come from the library actually running.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```sh
+pnpm --filter demo dev
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+The color swatches in the top bar set `--icon-color` globally, so every icon on every bench
+recolors at once. Anything that *doesn't* react isn't using `currentColor`.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+| Bench           | What it exercises                                                                  |
+| :-------------- | :--------------------------------------------------------------------------------- |
+| `/`             | `currentColor` inheritance, attribute vs. CSS sizing                                 |
+| `/props/`       | `<Icon>` output per prop combo, with the emitted markup and generated a11y ids       |
+| `/collections/` | Every source composition in `content.config.ts`, with real `getCollection()` counts  |
+| `/live/`        | `<LiveIcon>` per-request resolution, including the miss path; live search            |
+| `/optimize/`    | `svgo()` before/after byte counts, and the `currentColor` warning                    |
 
-Any static assets, like images, can be placed in the `public/` directory.
+`/live/` needs `pnpm --filter service dev` running for its custom-source tab.
 
-## 🧞 Commands
+## Deliberately broken
 
-All commands are run from the root of the project, from a terminal:
-
-| Command           | Action                                       |
-| :---------------- | :------------------------------------------- |
-| `npm install`     | Installs dependencies                        |
-| `npm run dev`     | Starts local dev server at `localhost:3000`  |
-| `npm run build`   | Build your production site to `./dist/`      |
-| `npm run preview` | Preview your build locally, before deploying |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://github.com/withastro/astro) or jump into our [Discord server](https://astro.build/chat).
+`src/icons/lock.svg` is authored with a hardcoded `fill` and no `currentColor`, so `localSource()`
+warns about it on every sync. It's the control case for `/optimize/` — don't "fix" it.

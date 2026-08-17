@@ -1,0 +1,100 @@
+---
+export const prerender = true;
+
+import { Icon } from "astro-icon/components";
+import { svgo } from "astro-icon/optimize";
+import Base from "../../layouts/base.astro";
+
+// Vite inlines each icon's source at build time, so the numbers below are measured against the
+// real files rather than quoted - and there's no filesystem read left in the built output.
+const sources = import.meta.glob<string>("../../icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const optimize = svgo();
+
+const results = await Promise.all(
+  Object.entries(sources)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(async ([path, raw]) => {
+      const name = path.slice(path.lastIndexOf("/") + 1, -".svg".length);
+      const out = await optimize(raw, { collection: "icons", name });
+      return { name, before: raw.length, after: out.length, out };
+    }),
+);
+
+const before = results.reduce((n, r) => n + r.before, 0);
+const after = results.reduce((n, r) => n + r.after, 0);
+const saved = Math.round(((before - after) / before) * 100);
+const sample = results.find((r) => r.name === "lock")!;
+---
+
+<Base title="Optimize" sub="astro-icon/optimize">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">svgo() across src/icons/</span>
+      <span class="stat">
+        <strong>{before.toLocaleString()}</strong> → <strong>{after.toLocaleString()}</strong> bytes
+        (<strong>{saved}%</strong> smaller)
+      </span>
+    </div>
+    <ul class="rows">
+      {
+        results.map((r) => (
+          <li>
+            <span class="icons">
+              <Icon name={r.name} size={20} />
+            </span>
+            <span class="name">{r.name}</span>
+            <span class="src">
+              {r.before} → {r.after} bytes
+            </span>
+            <span class="count">−{Math.max(0, Math.round(((r.before - r.after) / r.before) * 100))}%</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Optimized output</span>
+      <span class="bench__note">lock.svg after the default svgo() pass</span>
+    </div>
+    <pre class="inspector">{sample.out}</pre>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">The currentColor warning</span>
+      <span class="bench__note">Logged every sync; never mutates the icon</span>
+    </div>
+    <div class="bench__stage">
+      <div class="grid-2">
+        <div class="icon-cell">
+          <Icon name="lock" size={44} />
+          <code>icons:lock — flagged, ignores color</code>
+        </div>
+        <div class="icon-cell">
+          <Icon name="lockFixed:lock" size={44} />
+          <code>lockFixed:lock — converted, follows color</code>
+        </div>
+      </div>
+    </div>
+    <div class="bench__body">
+      <pre class="console"><code><span class="tok-warn">{`[WARN] [astro-icon/loaders] 1 icon(s) in "icons" don't appear to use "currentColor" and won't respond to CSS \`color\`.`}</span>{`\n`}<span class="tok-dim">{`  lock.svg is authored with fill="#4338ca" and no currentColor.`}</span>{`\n\n`}{`// the fix, per collection:
+optimize: svgo({
+  plugins: [{
+    name: "preset-default",
+    params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+  }],
+})`}</code></pre>
+      <p class="hint" style="margin-top:.6rem">
+        The default <code>svgo()</code> deliberately leaves color and DOM shape alone &mdash; add an
+        icon with a hardcoded fill to <code>src/icons/</code> and the warning count above should go up.
+      </p>
+    </div>
+  </div>
+</Base>

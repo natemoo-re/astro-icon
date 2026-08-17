@@ -1,0 +1,41 @@
+---
+// Sets `--icon-color` on :root, which every bench's icons inherit through CSS `color`.
+// Nothing here touches the SVGs themselves - if an icon stops responding, it isn't using
+// `currentColor` (see /optimize/).
+const swatches = ["#6d28d9", "#0f766e", "#b91c1c", "#0369a1", "#c2410c", "#18181b"];
+---
+
+<div class="swatches" data-color-control>
+  {
+    swatches.map((color) => (
+      <button
+        class="swatch-btn"
+        type="button"
+        style={`background:${color}`}
+        data-color={color}
+        aria-pressed="false"
+        aria-label={`Icon color ${color}`}
+      />
+    ))
+  }
+</div>
+
+<script>
+  const KEY = "astro-icon-demo:color";
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-color-control] button");
+
+  function apply(color: string) {
+    document.documentElement.style.setProperty("--icon-color", color);
+    buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.color === color)));
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const color = btn.dataset.color!;
+      localStorage.setItem(KEY, color);
+      apply(color);
+    });
+  });
+
+  apply(localStorage.getItem(KEY) ?? buttons[0]?.dataset.color ?? "#6d28d9");
+</script>
