@@ -13,7 +13,10 @@
   "dependencies": {
     "@astrojs/check": "^0.9.10",
     "@astrojs/starlight": "^0.41.7",
+    "@iconify-json/mdi": "^1.2.3",
+    "@iconify-json/ri": "^1.2.10",
     "astro": "^7.2.2",
+    "astro-icon": "workspace:*",
     "sharp": "^0.35.3"
   },
   "devDependencies": {

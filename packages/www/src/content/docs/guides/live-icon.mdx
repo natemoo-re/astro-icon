@@ -1,0 +1,54 @@
+---
+title: Live Icons with <LiveIcon>
+description: Resolve icons per request instead of at build time.
+---
+
+Use `<LiveIcon>` instead of `<Icon>` when you can't know your icon names ahead of time, such as a user-driven icon search. It resolves against a live collection at request time rather than at build time.
+
+## Define a live collection
+
+Live collections are defined in their own `src/live.config.ts` file, separate from `src/content.config.ts`. Use `createLiveIconLoader`, the live equivalent of `createIconLoader`:
+
+```ts title="src/live.config.ts"
+import { defineLiveCollection } from "astro:content";
+import { createLiveIconLoader, iconifyLocalSource } from "astro-icon/loaders/live";
+
+export const collections = {
+  mdi: defineLiveCollection({ loader: createLiveIconLoader(iconifyLocalSource("mdi")) }),
+};
+```
+
+For a pack you'd rather not install, `iconifyApiSource` (with no `icons` option) resolves any icon name from the public Iconify API one at a time — exactly what a live collection needs, since its icon names aren't known ahead of time:
+
+```ts title="src/live.config.ts"
+import { createLiveIconLoader, iconifyApiSource } from "astro-icon/loaders/live";
+
+export const collections = {
+  ph: defineLiveCollection({ loader: createLiveIconLoader(iconifyApiSource("ph")) }),
+};
+```
+
+## Render a live icon
+
+```astro
+---
+import { LiveIcon } from "astro-icon/components";
+---
+
+<LiveIcon collection="mdi" icon="account" />
+```
+
+Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props instead of one `name`:
+
+- **`collection`** autocompletes against every live collection you define. Live collections have no bare-name default the way `<Icon>` has an `icons` collection default — always pass it.
+- **`icon`** stays a plain `string`, since a live collection's icon names resolve per request and aren't known at sync time.
+
+`<LiveIcon>` accepts the same `title`, `desc`, `size`, `width`, and `height` props as `<Icon>`, with the same decorative-by-default behavior described in [“The `<Icon>` Component”](/guides/components/#accessibility-decorative-vs-labeled).
+
+## Failure behavior
+
+If an icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing, rather than throwing and failing the whole page — a single bad request-time lookup (a typo, an unreachable API) shouldn't take the rest of the page down with it.
+
+## A source doesn't have to be Iconify
+
+`<LiveIcon>` works against any `IconSource`, not just Iconify — see [“Bringing Your Own Source”](/guides/bring-your-own-source/) to back a live collection with your own API, design tool, or database.

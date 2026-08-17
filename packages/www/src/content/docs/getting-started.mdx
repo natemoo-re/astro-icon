@@ -1,12 +1,14 @@
 ---
 title: Getting Started
 description: Learn how to add Astro Icon to your existing Astro project.
-next: 
-  link: /guides/customization/
-  label: Customizing Icons
+next:
+  link: /guides/local-icons/
+  label: Local Icons
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Tabs, TabItem, Steps, FileTree } from '@astrojs/starlight/components';
+import { Icon } from 'astro-icon/components';
+import Showcase from '../../components/Showcase.astro';
 
 Astro Icon is a straightforward icon system for the [Astro](https://astro.build) framework.
 This guide assumes that you have an existing Astro project.
@@ -15,108 +17,123 @@ See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if
 
 ## Installation
 
-### Quick Install
+<Steps>
 
-The `astro add` command-line tool automates the installation for you. Run one of the following commands in a new terminal window. (If you aren't sure which package manager you're using, run the first command.) Then, follow the prompts, and type "y" in the terminal (meaning "yes") for each one.
+1. Install the `astro-icon` package using your package manager:
 
-<Tabs>
-<TabItem label="npm">
+   <Tabs syncKey="pkg">
+   <TabItem label="npm">
 
-```sh
-npx astro add astro-icon
+   ```sh
+   npm install astro-icon
+   ```
+
+   </TabItem>
+   <TabItem label="pnpm">
+
+   ```sh
+   pnpm add astro-icon
+   ```
+
+   </TabItem>
+   <TabItem label="Yarn">
+
+   ```sh
+   yarn add astro-icon
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   Astro Icon isn't an Astro integration, so there's nothing to add to `integrations` in `astro.config.mjs`.
+
+2. Define an icon collection in `src/content.config.ts`, the same way you'd define any other [content collection](https://docs.astro.build/en/guides/content-collections/):
+
+   ```ts title="src/content.config.ts"
+   import { defineCollection } from "astro:content";
+   import { localIcons } from "astro-icon/loaders";
+
+   export const collections = {
+     icons: defineCollection({ loader: localIcons() }),
+   };
+   ```
+
+3. Add your `.svg` files to `src/icons/`:
+
+   <FileTree>
+   - src
+     - icons
+       - logo.svg
+       - logos
+         - astro.svg
+     - content.config.ts
+     - pages/
+   </FileTree>
+
+4. Render one with the `<Icon>` component:
+
+   ```astro
+   ---
+   import { Icon } from "astro-icon/components";
+   ---
+
+   <Icon name="logo" />
+   ```
+
+</Steps>
+
+### Enable autocomplete
+
+Add this line to `src/env.d.ts` so `<Icon name="...">` autocompletes against every icon in your collections, and gives you a type error for a name that doesn't exist:
+
+```ts title="src/env.d.ts" ins="/// <reference path=\"../.astro/astro-icon.d.ts\" />"
+/// <reference path="../.astro/astro-icon.d.ts" />
 ```
 
-</TabItem>
-<TabItem label="pnpm">
+This file is generated the first time you run `astro sync`, `astro dev`, or `astro build`, so autocomplete won't show your icons until you've run one of those at least once.
 
-```sh
-pnpm astro add astro-icon
+## Quick start
+
+Define a collection in `src/content.config.ts`. Use `createIconLoader` with `iconifyLocalSource` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localIcons` for a directory of your own `.svg` files:
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifyLocalSource, localIcons } from "astro-icon/loaders";
+
+export const collections = {
+  // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
+  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
+  icons: defineCollection({ loader: localIcons() }),
+};
 ```
 
-</TabItem>
-<TabItem label="Yarn">
+Then render an icon with the `<Icon>` component. Both of these are rendered live on this page, from the collections above:
 
-```sh
-yarn astro add astro-icon
-```
-
-</TabItem>
-
-</Tabs>
-
-If you run into any issues, [feel free to report them to us on GitHub](https://github.com/natemoo-re/astro-icon/issues) and try the manual installation steps below.
-
-### Manual Install
-
-First, install the `astro-icon` package using your package manager. Run one of the following commands in the terminal:
-
-<Tabs>
-<TabItem label="npm">
-
-```sh
-npm install astro-icon
-```
-
-</TabItem>
-<TabItem label="pnpm">
-
-```sh
-pnpm add astro-icon
-```
-
-</TabItem>
-<TabItem label="Yarn">
-
-```sh
-yarn add astro-icon
-```
-
-</TabItem>
-
-</Tabs>
-
-Then, apply this integration to your `astro.config.*` file using the `integrations` property:
-
-```diff title="astro.config.mjs" lang="js" ins="icon()"
-import { defineConfig } from "astro/config";
-+ import icon from "astro-icon";
-
-export default defineConfig({
-  integrations: [icon()],
-});
-```
-
-### Add Icons
-
-Add new icons to your site by creating `.svg` files in `/src/icons/`.
-Use sub-folders to organize your files and create multiple sets of icons.
-
-Icons in the `/src/icons/` directory can be automatically referenced by their slug, for example:
-
-```astro mark="/src/icons/logo.svg" mark="logo" mark="/src/icons/logos/astro.svg" mark="logos/astro"
+<Showcase code={`---
+import { Icon } from "astro-icon/components";
 ---
-import { Icon } from 'astro-icon/components'
----
 
-<!-- Embed the contents of the `/src/icons/logo.svg` file -->
-<Icon name="logo" />
+<Icon name="mdi:home" size={32} />
+<Icon name="logo" size={32} />`}>
+  <Icon name="mdi:home" size={32} />
+  <Icon name="logo" size={32} />
+</Showcase>
 
-<!-- Embed the contents of the `/src/icons/logos/astro.svg` file -->
-<Icon name="logos/astro" />
-```
-
+`<Icon>` resolves the icon at build time and inlines it as a standalone `<svg>`, with no client-side JavaScript.
 
 ### Next steps
 
-- **Configure:** Learn about additional icon options in [“Customizing Icons”](/guides/customization/).
-- **Components:** Understand the built-in `Icon` component in the [“Components”](/guides/components/) guide.
+- **Add local icons:** Learn how `localIcons()` picks up `.svg` files in [“Local Icons”](/guides/local-icons/).
+- **Add an icon set:** Browse [Iconify Icon Sets](https://icon-sets.iconify.design/) and wire one up in [“Iconify Icons”](/guides/iconify-icons/).
+- **Components:** Understand `<Icon>`'s full prop surface in [“The `<Icon>` Component”](/guides/components/).
 - **Deploy:** Before you publish your project, refer to the [“Deployment”](/guides/deployment/) guide.
 
 ## Updating Astro Icon
 
-Astro Icon is a third-party Astro integration, which are not yet supported by `@astrojs/upgrade`. Instead, you can upgrade `astro-icon` by running the following command in your terminal:
+Astro Icon is a third-party package, not yet supported by `@astrojs/upgrade`. Update it the same way as any other dependency:
 
-<Tabs>
+<Tabs syncKey="pkg">
 <TabItem label="npm">
 
 ```sh
@@ -140,14 +157,14 @@ yarn add astro-icon@latest
 </TabItem>
 </Tabs>
 
-See the [Astro Icon changelog](https://github.com/natemoo-re/astro-icon/blob/main/packages/core/CHANGELOG.md) for a full list of the changes made in each release.
+See the [Astro Icon changelog](https://github.com/natemoo-re/astro-icon/blob/main/packages/core/CHANGELOG.md) for a full list of the changes made in each release. Coming from v1? See [“Upgrading to v2”](/guides/upgrade/v2/).
 
 ## Troubleshooting Astro Icon
 
-Use the [Customizing Icons](/guides/customization/) guide and [project configuration](/reference/configuration/) reference pages to ensure that Astro Icon is configured and functioning properly.
+Use the [Local Icons](/guides/local-icons/) and [Iconify Icons](/guides/iconify-icons/) guides and the [Reference](/reference/loaders/) pages to ensure Astro Icon is configured correctly.
 See the guides in the sidebar for help with additional topics.
 
 If your answer cannot be found in these docs, please visit the [full Astro Docs](https://docs.astro.build) for complete Astro documentation.
-Your question may be answered by understanding how Astro works in general.
+Your question may be answered by understanding how Astro's content layer works in general.
 
 You can also check for any known [Astro Icon issues on GitHub](https://github.com/natemoo-re/astro-icon/issues). Although this is not an official Astro package, we encourage you to join the [Astro Discord](https://astro.build/chat/) and chat with the active, friendly Astro community!
