@@ -245,9 +245,9 @@ All three are the same root cause: **the definition's location is a function of 
 
 ## Sequencing
 
-1. Manifest module + `<Icon>` three-branch rendering + integration skeleton. Proves the model; no rewrite yet.
-2. Asset emission + `spriteAssetId` + the path-agreement test. Dev route.
-3. The rewrite (ultrahtml) at `build:generated`.
+1. ~~Manifest module + `<Icon>` three-branch rendering + integration skeleton. Proves the model; no rewrite yet.~~ **Done.**
+2. ~~Asset emission + `spriteAssetId` + the path-agreement test. Dev route.~~ **Done.** Verified against a real build (asset on disk, `<Icon>`'s href, and what the server serves at that href all agree) and manually against a real dev daemon.
+3. The rewrite (ultrahtml) at `build:generated`. **Next.**
 4. Warnings, build summary, dev toolbar reporting.
 5. Browser fixture confirming the island-slot and transition-persist conclusions.
 
