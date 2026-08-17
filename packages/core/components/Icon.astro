@@ -136,18 +136,7 @@ const normalizedBody = replaceIDs(renderData.body);
 
 const [minX, minY, vbWidth, vbHeight] =
   attributes.viewBox?.split(/[\s,]+/).map(Number) ?? [];
-// The wrapper's `viewBox` scales the icon, so a `0 0 W H` icon needs nothing further:
-// the viewport a bare <use> generates already covers the whole wrapper, and the artwork
-// lands on it 1:1.
-//
-// An icon whose viewBox has a non-zero min-x/min-y does need more, or its artwork
-// renders offset by that origin and clipped
-// (https://github.com/natemoo-re/astro-icon/issues/212). Positioning <use> cannot fix
-// that on its own, because `x`/`y` translate the referenced content along with the
-// viewport. Giving the <symbol> a viewBox is what decouples where the viewport sits
-// from the coordinates the artwork is drawn in, which makes the pair an identity
-// placement. Sourcing it from the icon data rather than `normalizedProps` also keeps a
-// per-instance `viewBox` override off the <symbol>, which every instance shares.
+// Without this the artwork renders offset by its origin and clipped (https://github.com/natemoo-re/astro-icon/issues/212).
 const hasOffsetOrigin =
   [minX, minY, vbWidth, vbHeight].every(Number.isFinite) &&
   (minX !== 0 || minY !== 0);
