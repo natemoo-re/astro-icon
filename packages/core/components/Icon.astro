@@ -140,12 +140,15 @@ const normalizedBody = replaceIDs(renderData.body);
 const viewBox = attributes.viewBox;
 const [minX, minY, vbWidth, vbHeight] =
   viewBox?.split(/[\s,]+/).map(Number) ?? [];
-// A <use> without x/y/width/height generates its viewport at user-space (0,0) sized
-// to 100% of the wrapper's viewport, which shifts and clips icons whose viewBox has a
-// non-zero min-x/min-y (https://github.com/natemoo-re/astro-icon/issues/212).
-// Pinning it to the symbol's viewBox rect makes the reference an identity placement,
-// which leaves the wrapper's `viewBox` free to scale and window the icon.
-const useRect = [minX, minY, vbWidth, vbHeight].every(Number.isFinite)
+// A <use> generates its viewport at user-space (0,0) sized to 100% of the wrapper's
+// viewport, which is already the symbol's viewBox rect for the usual `0 0 W H` icon.
+// An icon whose viewBox has a non-zero min-x/min-y has to say so explicitly, or its
+// artwork renders offset by that origin and clipped
+// (https://github.com/natemoo-re/astro-icon/issues/212).
+const hasOffsetOrigin =
+  [minX, minY, vbWidth, vbHeight].every(Number.isFinite) &&
+  (minX !== 0 || minY !== 0);
+const useRect = hasOffsetOrigin
   ? { x: minX, y: minY, width: vbWidth, height: vbHeight }
   : {};
 ---
