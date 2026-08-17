@@ -1,0 +1,87 @@
+---
+title: Loaders Reference
+description: The loaders you hand to defineCollection() and defineLiveCollection().
+sidebar:
+  order: 1
+---
+
+A **loader** is what a collection is defined with. It's the value Astro itself sees as `loader:`, and there is exactly one per collection.
+
+Most loaders wrap one or more [sources](/reference/sources/), which are what actually produce icons. `localIcons()` is the exception — it's a loader with a source already built in.
+
+## `createIconLoader(sources, options?)`
+
+Builds a build-time content layer `Loader` around one or more [`IconSource`](/reference/icon-source/)s, for `defineCollection({ loader })`.
+
+```ts
+function createIconLoader(sources: IconSource | IconSource[], options?: IconLoaderOptions): Loader;
+```
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+
+export const collections = {
+  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+};
+```
+
+Passing an array tries each source in order per icon, first match wins — equivalent to wrapping them in [`mergeSources`](/reference/sources/#mergesourcessources) yourself.
+
+The collection always contains exactly what the source's `listIcons()` reports; this loader does no filtering of its own, so restrict the icon set per source instead (see [`icons`](/reference/sources/#iconifysourceoptions)).
+
+### `IconLoaderOptions`
+
+```ts
+interface IconLoaderOptions {
+  /** Turns warnings (a source couldn't provide or list its icons) into build errors. @default false */
+  strict?: boolean;
+}
+```
+
+## `createLiveIconLoader(sources)`
+
+The live equivalent of `createIconLoader`, for `defineLiveCollection({ loader })` in `src/live.config.ts`. Imported from `astro-icon/loaders/live`.
+
+```ts
+function createLiveIconLoader(sources: IconSource | IconSource[]): LiveLoader;
+```
+
+```ts title="src/live.config.ts"
+import { defineLiveCollection } from "astro:content";
+import { createLiveIconLoader, iconifyApiSource } from "astro-icon/loaders/live";
+
+export const collections = {
+  ph: defineLiveCollection({ loader: createLiveIconLoader(iconifyApiSource("ph")) }),
+};
+```
+
+Resolved entries are cached for the lifetime of the server process. Errors thrown by a source are returned as `{ error }` to `getLiveEntry()`/`getLiveCollection()` instead of thrown, so one failed icon doesn't take down a page.
+
+If the source implements `listIcons()`, the loader can also fulfil whole-collection loads via `getLiveCollection()`. It calls `listIcons()` once at construction to record the source's catalog for typegen, even though a live collection's specific icon names are never validated against it at request time.
+
+See [Live Icons with `<LiveIcon>`](/guides/live-icon/) for the full guide.
+
+## `localIcons(dir?, options?)`
+
+A build-time `Loader` for a directory of local `.svg` files, watched in dev. Unlike the two loaders above, it takes no source — it builds one internally from `dir`.
+
+```ts
+function localIcons(dir?: string, options?: LocalSourceOptions): Loader;
+```
+
+- **`dir`** — defaults to `"src/icons"`, resolved against the project root.
+- **`options`** — see [`LocalSourceOptions`](/reference/sources/#localsourceoptions).
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { localIcons } from "astro-icon/loaders";
+
+export const collections = {
+  icons: defineCollection({ loader: localIcons() }),
+};
+```
+
+Adding, editing, or removing a `.svg` file updates the collection without a dev server restart. To compose a local directory *with* other sources, use [`localSource`](/reference/sources/#localsourcedir-options) inside `createIconLoader` instead.
+
+See [Local Icons](/guides/local-icons/) for the full guide.
