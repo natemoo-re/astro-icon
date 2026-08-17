@@ -135,9 +135,6 @@ const normalizedProps = {
 const normalizedBody = replaceIDs(renderData.body);
 
 const { viewBox } = normalizedProps;
-if (!inline) {
-  delete normalizedProps.viewBox;
-}
 ---
 
 <svg {...normalizedProps} data-icon={name}>
