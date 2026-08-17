@@ -1,0 +1,30 @@
+---
+// TEMPORARY - manual verification page for the sprite manifest wiring
+// (feat/sprite-v2, step 1). Delete once confirmed. Deliberately no
+// `export const prerender = true` - this app's default output is "server",
+// so this route is server-rendered.
+import { Icon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+---
+
+<Base>
+  <h1>Sprite check - server-rendered</h1>
+  <p>
+    Each icon below should reference the collection's sprite asset via
+    <code>&lt;use href="/_astro/ic.ic.svg#..."&gt;</code> (the hash is a
+    placeholder - just the collection name - until real asset emission
+    lands), except the last one, which opts out via <code>inline</code> and
+    should render its full body instead.
+  </p>
+
+  <article>
+    <h2>Sprite-eligible collection (ic), repeated</h2>
+    <Icon size={24} name="ic:baseline-account-box" />
+    <Icon size={24} name="ic:baseline-account-box" />
+  </article>
+
+  <article>
+    <h2>Same collection, opted out via inline</h2>
+    <Icon size={24} name="ic:outline-star" inline />
+  </article>
+</Base>
