@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - 'main'
+      - 'next'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   id-token: write
@@ -34,7 +38,7 @@ jobs:
         uses: changesets/action@v2
         with:
           version-script: pnpm run version
-          publish-script: pnpm changeset publish
+          publish-script: node scripts/publish.mjs
           commit-message: 'chore: release'
           pr-title: 'chore: release'
           github-token: ${{ secrets.GITHUB_TOKEN }}
