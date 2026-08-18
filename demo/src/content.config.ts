@@ -21,7 +21,9 @@ export const collections = {
   // iconifyLocalSource() with no `allowed` allowlist: the whole installed pack (~14k icons).
   // Named "pack", not "mdi", because live.config.ts already has a live collection named "mdi"
   // and the two share one namespace.
-  pack: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  pack: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
 
   // iconifyLocalSource() restricted to an explicit allowlist. Asking for anything outside
   // this list is an error, not a silent miss.
@@ -71,7 +73,12 @@ export const collections = {
           plugins: [
             {
               name: "preset-default",
-              params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+              params: {
+                overrides: {
+                  ...defaultOverrides,
+                  convertColors: { currentColor: true },
+                },
+              },
             },
           ],
         }),

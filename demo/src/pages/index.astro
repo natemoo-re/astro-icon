@@ -27,7 +27,9 @@ const local = [
   <div class="bench">
     <div class="bench__head">
       <span class="bench__title">Local icons follow CSS color and size</span>
-      <span class="bench__note">Swatches in the top bar recolor everything at once</span>
+      <span class="bench__note"
+        >Swatches in the top bar recolor everything at once</span
+      >
     </div>
     <div class="bench__controls">
       <label class="knob">
@@ -57,7 +59,9 @@ const local = [
   <div class="bench">
     <div class="bench__head">
       <span class="bench__title">currentColor vs. hardcoded fill</span>
-      <span class="bench__note">Only the left two should react to the swatches</span>
+      <span class="bench__note"
+        >Only the left two should react to the swatches</span
+      >
     </div>
     <div class="bench__stage">
       <div class="grid-2">
@@ -84,7 +88,9 @@ const local = [
   <div class="bench">
     <div class="bench__head">
       <span class="bench__title">Sizing paths</span>
-      <span class="bench__note">Attribute-sized vs. CSS-sized (width={"{null}"})</span>
+      <span class="bench__note"
+        >Attribute-sized vs. CSS-sized (width={"{null}"})</span
+      >
     </div>
     <div class="bench__stage">
       <div class="icon-strip">
@@ -93,7 +99,9 @@ const local = [
         <Icon name="bell" size={32} />
         <Icon name="bell" size={48} />
         <Icon name="bell" width={64} height={32} />
-        <span class="css-sized"><Icon name="bell" width={null} height={null} /></span>
+        <span class="css-sized"
+          ><Icon name="bell" width={null} height={null} /></span
+        >
         <span class="chip">width=64 height=32 · then CSS-sized at 3rem</span>
       </div>
     </div>
@@ -104,7 +112,8 @@ const local = [
   const size = document.querySelector<HTMLInputElement>("[data-size]")!;
   const out = document.querySelector<HTMLOutputElement>("[data-size-out]")!;
   const grid = document.querySelector<HTMLElement>("[data-grid]")!;
-  const labelToggle = document.querySelector<HTMLInputElement>("[data-labels]")!;
+  const labelToggle =
+    document.querySelector<HTMLInputElement>("[data-labels]")!;
 
   // The icons in this grid render with `width={null} height={null}`, so they have no size
   // attributes at all and are sized purely from CSS here.

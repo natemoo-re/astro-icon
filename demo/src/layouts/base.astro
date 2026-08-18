@@ -20,7 +20,8 @@ const { title, sub } = Astro.props;
     <script is:inline>
       // Applied before first paint so the saved color doesn't flash from the default.
       const saved = localStorage.getItem("astro-icon-demo:color");
-      if (saved) document.documentElement.style.setProperty("--icon-color", saved);
+      if (saved)
+        document.documentElement.style.setProperty("--icon-color", saved);
     </script>
   </head>
 

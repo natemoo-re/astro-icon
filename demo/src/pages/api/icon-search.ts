@@ -19,7 +19,9 @@ interface IconResult {
 export const GET: APIRoute = async ({ url }) => {
   const query = url.searchParams.get("q")?.trim() ?? "";
   const packParam = url.searchParams.get("pack") ?? "mdi";
-  const pack: Pack = PACKS.includes(packParam as Pack) ? (packParam as Pack) : "mdi";
+  const pack: Pack = PACKS.includes(packParam as Pack)
+    ? (packParam as Pack)
+    : "mdi";
 
   if (!query) {
     return Response.json({ results: [] satisfies IconResult[] });
@@ -44,10 +46,17 @@ export const GET: APIRoute = async ({ url }) => {
 
   const resolved = await Promise.all(
     names.map(async (fullName): Promise<IconResult | undefined> => {
-      const iconName = fullName.startsWith(`${pack}:`) ? fullName.slice(pack.length + 1) : fullName;
+      const iconName = fullName.startsWith(`${pack}:`)
+        ? fullName.slice(pack.length + 1)
+        : fullName;
       const { entry, error } = await getLiveEntry(pack, iconName);
       if (error || !entry) return undefined;
-      const icon = entry.data as { body: string; viewBox: string; width: number; height: number };
+      const icon = entry.data as {
+        body: string;
+        viewBox: string;
+        width: number;
+        height: number;
+      };
       return { name: `${pack}:${iconName}`, ...icon };
     }),
   );

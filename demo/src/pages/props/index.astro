@@ -21,11 +21,13 @@ const cases = [
 ];
 ---
 
-<Base title="Props & a11y" sub="&lt;Icon&gt; output">
+<Base title="Props & a11y" sub="<Icon> output">
   <div class="bench">
     <div class="bench__head">
       <span class="bench__title">Rendered output per prop combination</span>
-      <span class="bench__note">Decorative by default; title/desc/aria opt into a labeled graphic</span>
+      <span class="bench__note"
+        >Decorative by default; title/desc/aria opt into a labeled graphic</span
+      >
     </div>
     <div class="split">
       <div class="cases" role="tablist" aria-label="Prop cases">
@@ -47,22 +49,46 @@ const cases = [
         <div class="stage-center">
           <div data-case="default"><Icon name="bell" /></div>
           <div data-case="size" hidden><Icon name="bell" size={32} /></div>
-          <div data-case="wh" hidden><Icon name="bell" width={64} height={32} /></div>
-          <div data-case="null" hidden class="css-sized"><Icon name="bell" width={null} height={null} /></div>
-          <div data-case="title" hidden><Icon name="bell" size={32} title="Notifications" /></div>
+          <div data-case="wh" hidden>
+            <Icon name="bell" width={64} height={32} />
+          </div>
+          <div data-case="null" hidden class="css-sized">
+            <Icon name="bell" width={null} height={null} />
+          </div>
+          <div data-case="title" hidden>
+            <Icon name="bell" size={32} title="Notifications" />
+          </div>
           <div data-case="title-desc" hidden>
-            <Icon name="bell" size={32} title="Notifications" desc="Three unread messages" />
+            <Icon
+              name="bell"
+              size={32}
+              title="Notifications"
+              desc="Three unread messages"
+            />
           </div>
           <div data-case="title-id" hidden>
             <button class="chip" aria-labelledby="bell-title">
-              <Icon name="bell" size={20} title={{ id: "bell-title", value: "Notifications" }} />
+              <Icon
+                name="bell"
+                size={20}
+                title={{ id: "bell-title", value: "Notifications" }}
+              />
               button reuses the icon's title id
             </button>
           </div>
-          <div data-case="aria-label" hidden><Icon name="bell" size={32} aria-label="Notifications" /></div>
-          <div data-case="aria-hidden" hidden><Icon name="bell" size={32} aria-hidden={false} /></div>
+          <div data-case="aria-label" hidden>
+            <Icon name="bell" size={32} aria-label="Notifications" />
+          </div>
+          <div data-case="aria-hidden" hidden>
+            <Icon name="bell" size={32} aria-hidden={false} />
+          </div>
           <div data-case="passthrough" hidden>
-            <Icon name="bell" size={32} class="custom-class" data-testid="bell" />
+            <Icon
+              name="bell"
+              size={32}
+              class="custom-class"
+              data-testid="bell"
+            />
           </div>
         </div>
         <pre class="inspector" data-inspector></pre>
@@ -72,7 +98,8 @@ const cases = [
 </Base>
 
 <script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-case-btn]");
+  const buttons =
+    document.querySelectorAll<HTMLButtonElement>("[data-case-btn]");
   const panels = document.querySelectorAll<HTMLElement>("[data-case]");
   const inspector = document.querySelector<HTMLElement>("[data-inspector]")!;
 
@@ -88,7 +115,9 @@ const cases = [
   }
 
   function select(id: string) {
-    buttons.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.caseBtn === id)));
+    buttons.forEach((b) =>
+      b.setAttribute("aria-selected", String(b.dataset.caseBtn === id)),
+    );
     let active: HTMLElement | undefined;
     panels.forEach((p) => {
       const match = p.dataset.case === id;
@@ -98,7 +127,9 @@ const cases = [
     inspector.textContent = active ? format(active.innerHTML) : "";
   }
 
-  buttons.forEach((btn) => btn.addEventListener("click", () => select(btn.dataset.caseBtn!)));
+  buttons.forEach((btn) =>
+    btn.addEventListener("click", () => select(btn.dataset.caseBtn!)),
+  );
   select("default");
 </script>
 
