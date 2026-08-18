@@ -3,8 +3,8 @@ title: Troubleshooting
 description: Fixes for the problems people most often hit with Astro Icon.
 ---
 
-import { Icon } from 'astro-icon/components';
-import Showcase from '../../../components/Showcase.astro';
+import { Icon } from "astro-icon/components";
+import Showcase from "../../../components/Showcase.astro";
 
 ## An icon ignores CSS `color`
 
@@ -14,6 +14,7 @@ An icon's `fill`/`stroke` only responds to CSS `color` if the source SVG uses `c
 <svg viewBox="0 0 24 24"><path fill="#64748b" d="..." /></svg>
 
 <!-- Will -->
+
 <svg viewBox="0 0 24 24"><path fill="currentColor" d="..." /></svg>`}>
   <figure style="margin:0;display:flex;flex-direction:column;align-items:center;gap:0.35rem">
     <svg width="32" height="32" viewBox="0 0 24 24" style="color:#e11d48" aria-hidden="true"><path fill="#64748b" d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54Z"/></svg>
@@ -49,7 +50,12 @@ export const collections = {
         plugins: [
           {
             name: "preset-default",
-            params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+            params: {
+              overrides: {
+                ...defaultOverrides,
+                convertColors: { currentColor: true },
+              },
+            },
           },
         ],
       }),
@@ -101,11 +107,11 @@ export const collections = {
 
 ## Masks or gradients render inconsistently
 
-Icons with internal `id` references (`<mask id="a">`, `url(#a)`) duplicate those ids when the same icon renders more than once outside a [`<Sprite>`](/guides/sprite/), which can make them resolve against the wrong element. Prefix each icon's ids with its name — see [the `prefixIds` recipe](/guides/optimize/#prefixing-ids-to-avoid-collisions).
+Icons with internal `id` references (`<mask id="a">`, `url(#a)`) duplicate those ids when the same icon renders more than once without [automatic sprite optimization](/guides/sprite/), which can make them resolve against the wrong element. Prefix each icon's ids with its name — see [the `prefixIds` recipe](/guides/optimize/#prefixing-ids-to-avoid-collisions).
 
-## `<Sprite>` throws on a server-rendered route
+## Sprite optimization does nothing
 
-`<Sprite>` buffers and rewrites its slot's HTML, which would break streaming on an on-demand rendered route, so it requires a prerendered page. Add `export const prerender = true;` to the page, or use plain `<Icon>` — each renders as a self-contained `<svg>` and is safe anywhere. See [Deduping with `<Sprite>`](/guides/sprite/#requires-a-prerendered-page).
+Check that the `icon()` integration is added to `integrations` in `astro.config.mjs` — without it, every `<Icon>` renders as a plain, standalone `<svg>`, same as if no icon repeated. Also check the collection's loader wasn't configured with `sprite: false`, and that the specific usage doesn't pass the `inline` prop, which opts a single `<Icon>` out. See [“Automatic sprite optimization”](/guides/sprite/).
 
 ## Still stuck?
 

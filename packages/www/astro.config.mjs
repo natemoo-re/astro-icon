@@ -1,10 +1,12 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import { icon } from "astro-icon/integration";
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://www.astroicon.dev",
   integrations: [
+    icon(),
     starlight({
       title: "Astro Icon",
       description:
@@ -65,7 +67,7 @@ export default defineConfig({
             { label: "The <Icon> Component", link: "/guides/components/" },
             { label: "Styling Icons", link: "/guides/styling/" },
             {
-              label: "Deduping with <Sprite>",
+              label: "Automatic Sprite Optimization",
               link: "/guides/sprite/",
               badge: { text: "New", variant: "success" },
             },
@@ -74,7 +76,10 @@ export default defineConfig({
               link: "/guides/live-icon/",
               badge: { text: "New", variant: "success" },
             },
-            { label: "Framework Components", link: "/guides/framework-components/" },
+            {
+              label: "Framework Components",
+              link: "/guides/framework-components/",
+            },
           ],
         },
         {
