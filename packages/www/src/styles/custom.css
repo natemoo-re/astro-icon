@@ -30,7 +30,9 @@
 
 .hero > img,
 .hero > .hero-html {
-  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--sl-color-accent) 35%, transparent));
+  filter: drop-shadow(
+    0 8px 24px color-mix(in srgb, var(--sl-color-accent) 35%, transparent)
+  );
 }
 
 /*
