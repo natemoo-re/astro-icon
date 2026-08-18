@@ -52,15 +52,11 @@ function shortId(kind: "title" | "desc"): string {
   return `astro-icon-${kind}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-function isTruthyAriaHidden(value: unknown): boolean {
-  return value === true || value === "true";
-}
-
 function normalizeAccessibleElement(
   input: string | AccessibleElementInput | undefined,
 ): AccessibleElementInput | undefined {
   if (input == null) return undefined;
-  return typeof input === "string" ? { value: input } : input;
+  return input instanceof Object ? input : { value: input };
 }
 
 /**
@@ -121,24 +117,25 @@ export function iconA11yProps(
         `[astro-icon] Received both "desc" and an explicit "aria-description"/"aria-describedby": "desc" won't be linked to anything, so it's omitted. Remove "desc", or remove your own aria-description/aria-describedby to let astro-icon wire it up automatically.`,
       );
     }
-    if (isLabeled && isTruthyAriaHidden(props["aria-hidden"])) {
+    const ariaHidden = props["aria-hidden"];
+    if (isLabeled && (ariaHidden === true || ariaHidden === "true")) {
       console.warn(
         `[astro-icon] This icon has an accessible name or description (title, desc, aria-label, aria-labelledby, aria-description, or aria-describedby) but is also "aria-hidden": it will stay invisible to assistive tech despite being labeled. Remove "aria-hidden", or remove the labeling if this icon is meant to be purely decorative.`,
       );
     }
   }
 
+  const a11yProps: IconA11yProps = { focusable: "false" };
+  if (isLabeled) {
+    a11yProps.role = "img";
+    if (titleId) a11yProps["aria-labelledby"] = titleId;
+    if (descId) a11yProps["aria-describedby"] = descId;
+  } else {
+    a11yProps["aria-hidden"] = "true";
+  }
+
   return {
-    a11yProps: {
-      focusable: "false",
-      ...(isLabeled
-        ? {
-            role: "img" as const,
-            ...(titleId ? { "aria-labelledby": titleId } : {}),
-            ...(descId ? { "aria-describedby": descId } : {}),
-          }
-        : { "aria-hidden": "true" as const }),
-    },
+    a11yProps,
     titleId,
     descId,
     titleText: normalizedTitle?.value,

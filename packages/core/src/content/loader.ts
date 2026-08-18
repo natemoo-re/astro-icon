@@ -17,6 +17,21 @@ async function getSourceVersionKey(
   return `${version}::${names.slice().sort().join(",")}`;
 }
 
+/**
+ * The subset of Astro's `LoaderContext` this loader actually reads. Exported so a test fixture
+ * only has to implement these methods, not Astro's full real interfaces for `store`, `meta`,
+ * and `config`.
+ */
+export interface IconLoaderSyncContext {
+  store: Pick<LoaderContext["store"], "clear" | "set" | "get" | "keys" | "has">;
+  meta: Pick<LoaderContext["meta"], "get" | "set" | "delete" | "has">;
+  logger: Pick<LoaderContext["logger"], "warn" | "info" | "error" | "debug">;
+  parseData: LoaderContext["parseData"];
+  generateDigest: LoaderContext["generateDigest"];
+  collection: LoaderContext["collection"];
+  config: Pick<LoaderContext["config"], "root">;
+}
+
 export interface IconLoaderOptions {
   /**
    * When true, turns warnings (a source couldn't provide a requested icon,
@@ -27,51 +42,15 @@ export interface IconLoaderOptions {
 }
 
 /**
- * Builds a build-time content layer loader around one or more
- * {@link IconSource}s. Use this to back a custom source, or to combine
- * several sources into one collection:
- *
- * ```ts
- * import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
- *
- * export const collections = {
- *   icons: defineCollection({
- *     loader: createIconLoader([iconifyLocalSource("mdi"), localSource("src/icons")]),
- *   }),
- * };
- * ```
- *
- * Each icon is resolved by trying sources in order and using the first one
- * that has it. The collection always contains exactly what `listIcons()`
- * reports; restrict that on a per-source basis (see `iconifyLocalSource`'s
- * `icons` option), since this loader does no filtering of its own.
- *
- * For a local-preferred, API-fallback Iconify source, compose
- * `iconifyLocalSource` and `iconifyApiSource` with `mergeSources` yourself:
- *
- * ```ts
- * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
- *
- * export const collections = {
- *   mdi: defineCollection({
- *     loader: createIconLoader(
- *       mergeSources([
- *         iconifyLocalSource("mdi", { icons: ["home"] }),
- *         iconifyApiSource("mdi", { icons: ["home"] }),
- *       ]),
- *     ),
- *   }),
- * };
- * ```
+ * The sync logic behind `createIconLoader`, taking only {@link IconLoaderSyncContext} instead of
+ * Astro's full `LoaderContext`; exported for tests only, so a fixture doesn't have to implement
+ * every unused field of the real interface.
  */
-export function createIconLoader(
-  sources: IconSource | IconSource[],
-  options: IconLoaderOptions = {},
-): Loader {
-  const source = mergeSources(sources);
-  const { strict = false } = options;
-
-  async function load(context: LoaderContext): Promise<void> {
+export function __syncIcons(
+  source: IconSource,
+  strict: boolean,
+): (context: IconLoaderSyncContext) => Promise<void> {
+  return async function load(context: IconLoaderSyncContext): Promise<void> {
     const { store, meta, logger, parseData, generateDigest, collection } =
       context;
 
@@ -158,7 +137,57 @@ export function createIconLoader(
     logger.debug(
       `"${collection}" breakdown: list ${formatDuration(listDuration)}, build ${formatDuration(buildDuration)}.`,
     );
-  }
+  };
+}
 
-  return { name: "astro-icon/loaders", load, schema: iconEntrySchema };
+/**
+ * Builds a build-time content layer loader around one or more
+ * {@link IconSource}s. Use this to back a custom source, or to combine
+ * several sources into one collection:
+ *
+ * ```ts
+ * import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+ *
+ * export const collections = {
+ *   icons: defineCollection({
+ *     loader: createIconLoader([iconifyLocalSource("mdi"), localSource("src/icons")]),
+ *   }),
+ * };
+ * ```
+ *
+ * Each icon is resolved by trying sources in order and using the first one
+ * that has it. The collection always contains exactly what `listIcons()`
+ * reports; restrict that on a per-source basis (see `iconifyLocalSource`'s
+ * `icons` option), since this loader does no filtering of its own.
+ *
+ * For a local-preferred, API-fallback Iconify source, compose
+ * `iconifyLocalSource` and `iconifyApiSource` with `mergeSources` yourself:
+ *
+ * ```ts
+ * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+ *
+ * export const collections = {
+ *   mdi: defineCollection({
+ *     loader: createIconLoader(
+ *       mergeSources([
+ *         iconifyLocalSource("mdi", { icons: ["home"] }),
+ *         iconifyApiSource("mdi", { icons: ["home"] }),
+ *       ]),
+ *     ),
+ *   }),
+ * };
+ * ```
+ */
+export function createIconLoader(
+  sources: IconSource | IconSource[],
+  options: IconLoaderOptions = {},
+): Loader {
+  const source = mergeSources(sources);
+  const { strict = false } = options;
+
+  return {
+    name: "astro-icon/loaders",
+    load: __syncIcons(source, strict),
+    schema: iconEntrySchema,
+  };
 }

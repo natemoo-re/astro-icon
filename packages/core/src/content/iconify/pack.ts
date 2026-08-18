@@ -34,11 +34,16 @@ export function __clearPackCache(): void {
   packCache.clear();
 }
 
+let loadFromFS: typeof loadCollectionFromFS = loadCollectionFromFS;
+
+/** Swaps the local-pack filesystem loader for a fake, so a test doesn't need a real `@iconify-json/*` package installed; for tests only. */
+export function __setLoadFromFS(fn: typeof loadCollectionFromFS): void {
+  loadFromFS = fn;
+}
+
 /** Loads a full pack from a locally installed `@iconify-json/<pack>` package, if present. */
 export function loadLocalPack(pack: string): Promise<IconifyJSON | undefined> {
-  return cachedPackLoad(pack, () =>
-    loadCollectionFromFS(pack).catch(() => undefined),
-  );
+  return cachedPackLoad(pack, () => loadFromFS(pack).catch(() => undefined));
 }
 
 /**
@@ -87,15 +92,8 @@ async function fetchPackFromAPI(
   ).catch(() => undefined);
   if (!res || !res.ok) return undefined;
   const data = await res.json().catch(() => undefined);
-  if (!isIconifyJSON(data)) return undefined;
+  if (data == null || !Object.prototype.hasOwnProperty.call(data, "icons"))
+    return undefined;
+  if (!(data as { icons: unknown }).icons) return undefined;
   return data;
-}
-
-function isIconifyJSON(data: unknown): data is IconifyJSON {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    "icons" in data &&
-    typeof (data as { icons: unknown }).icons === "object"
-  );
 }

@@ -8,12 +8,7 @@ export interface TypegenState {
   packs: Record<string, string[]>;
 }
 
-export function typegenPaths(rootDir: URL): {
-  astroDir: URL;
-  partialsDir: URL;
-  stateFile: URL;
-  indexFile: URL;
-} {
+export function typegenPaths(rootDir: URL) {
   const astroDir = new URL("./.astro/", rootDir);
   const partialsDir = new URL("./astro-icon/", astroDir);
   const stateFile = new URL("./astro-icon.json", astroDir);

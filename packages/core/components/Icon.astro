@@ -71,8 +71,15 @@ if (!entry) {
 }
 
 const { body } = entry.data;
-const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(title, desc, props);
-const { normalizedProps } = renderableIconProps(entry.data, { ...a11yProps, ...props });
+const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
+  title,
+  desc,
+  props,
+);
+const { normalizedProps } = renderableIconProps(entry.data, {
+  ...a11yProps,
+  ...props,
+});
 ---
 
 <svg {...normalizedProps} data-icon={name}>

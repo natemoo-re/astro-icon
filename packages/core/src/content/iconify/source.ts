@@ -24,8 +24,8 @@ async function getPackVersion(pack: string): Promise<string | undefined> {
     const require = createRequire(join(process.cwd(), "package.json"));
     const pkgPath = require.resolve(`@iconify-json/${pack}/package.json`);
     const raw = await readFile(pkgPath, "utf-8");
-    const version = JSON.parse(raw)?.version;
-    return typeof version === "string" ? version : undefined;
+    const version: unknown = JSON.parse(raw)?.version;
+    return version == null ? undefined : String(version);
   } catch {
     return undefined;
   }

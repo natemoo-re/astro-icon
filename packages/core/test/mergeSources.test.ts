@@ -13,15 +13,16 @@ function fakeSource(
   listIcons: (() => Promise<string[]>) | null = () =>
     Promise.resolve(Object.keys(icons)),
 ): IconSource {
-  return {
+  const source: IconSource = {
     name,
     getIcon: vi.fn(async (iconName: string) => {
       const entry = icons[iconName];
       if (!entry) throw new Error(`"${name}" has no icon named "${iconName}"`);
       return entry;
     }),
-    ...(listIcons ? { listIcons } : {}),
   };
+  if (listIcons) source.listIcons = listIcons;
+  return source;
 }
 
 describe("mergeSources / single source", () => {

@@ -1,11 +1,14 @@
 import type { IconifyJSON } from "@iconify/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  __clearPackCache,
+  __setLoadFromFS,
+  loadLocalPack,
+  loadPackFromAPI,
+} from "../src/content/iconify/pack.js";
 
 const loadCollectionFromFS = vi.fn();
-vi.mock("@iconify/utils/lib/loader/fs", () => ({ loadCollectionFromFS }));
-
-const { loadLocalPack, loadPackFromAPI, __clearPackCache } =
-  await import("../src/content/iconify/pack.js");
+__setLoadFromFS(loadCollectionFromFS);
 
 const search: IconifyJSON = {
   prefix: "mdi",

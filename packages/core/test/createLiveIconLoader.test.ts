@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createLiveIconLoader } from "../src/content/liveLoader.js";
+import { __setRecordCollection } from "../src/content/typegen/index.js";
 import type { IconEntry } from "../../typings/types";
 
 const recordCollection = vi.fn(async () => {});
-vi.mock("../src/content/typegen/index.js", () => ({ recordCollection }));
-
-const { createLiveIconLoader } = await import("../src/content/liveLoader.js");
+__setRecordCollection(recordCollection);
 
 const entry: IconEntry = {
   body: "<path/>",

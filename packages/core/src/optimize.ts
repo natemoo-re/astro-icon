@@ -1,6 +1,14 @@
 import { AstroIconError } from "./internal/error.js";
 import type { OptimizeFn } from "../typings/types";
 
+/** Any value SVGO's own JSON-like config format can hold, for the plugin-specific options this module doesn't otherwise type. */
+export type SvgoOptionValue =
+  | boolean
+  | number
+  | string
+  | readonly SvgoOptionValue[]
+  | { readonly [key: string]: SvgoOptionValue };
+
 // SVGO's own config shape, kept loose here rather than importing SVGO's types: this module must
 // load without `svgo` installed (it's an optional peer, only required once `svgo()` is called),
 // and pulling in its types would pull in a hard dependency on its presence for type-checking too.
@@ -8,7 +16,7 @@ export interface SvgoOptions {
   multipass?: boolean;
   floatPrecision?: number;
   plugins?: unknown[];
-  [key: string]: unknown;
+  [key: string]: SvgoOptionValue | SvgoOptions["plugins"];
 }
 
 /**
@@ -40,7 +48,7 @@ export interface SvgoOptions {
  *   change element types or DOM shape (breaking an external `rect`/`circle`/`g` CSS selector) or
  *   recompute geometry (a real, if usually small, rendering risk).
  */
-export const defaultOverrides: Record<string, false> = {
+export const defaultOverrides = {
   removeComments: false,
   removeMetadata: false,
   convertColors: false,
@@ -54,7 +62,7 @@ export const defaultOverrides: Record<string, false> = {
   mergeStyles: false,
   inlineStyles: false,
   minifyStyles: false,
-  convertShapeToPath: false,
+  ["convertShapeToPath"]: false,
   convertEllipseToCircle: false,
   moveElemsAttrsToGroup: false,
   moveGroupAttrsToElems: false,
@@ -62,7 +70,7 @@ export const defaultOverrides: Record<string, false> = {
   convertPathData: false,
   convertTransform: false,
   mergePaths: false,
-};
+} satisfies Record<string, boolean>;
 
 // `floatPrecision` lives inside the preset's own `params`, not SVGO's top-level config: a
 // preset's `fn` only reads `floatPrecision`/`overrides` off the params it was itself given.

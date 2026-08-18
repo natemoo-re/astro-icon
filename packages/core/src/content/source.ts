@@ -1,5 +1,3 @@
-import type { createIconLoader } from "./loader.js";
-import type { createLiveIconLoader } from "./liveLoader.js";
 import type { IconEntry } from "../../typings/types";
 
 /**

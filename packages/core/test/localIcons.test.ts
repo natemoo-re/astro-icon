@@ -3,11 +3,16 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  __syncLocalIcons,
+  localIcons,
+  type LocalIconsSyncContext,
+} from "../src/content/local/loader.js";
+import { __setRecordCollection } from "../src/content/typegen/index.js";
+import type { IconEntry } from "../../typings/types";
 
 const recordCollection = vi.fn(async () => {});
-vi.mock("../src/content/typegen/index.js", () => ({ recordCollection }));
-
-const { localIcons } = await import("../src/content/local/loader.js");
+__setRecordCollection(recordCollection);
 
 const SQUARE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`;
 
@@ -35,24 +40,29 @@ function fakeWatcher() {
   return Object.assign(emitter, { add: vi.fn() });
 }
 
-function fakeContext(overrides: Record<string, unknown> = {}) {
+interface StoredEntry {
+  id: string;
+  data: IconEntry;
+  digest?: string | number;
+}
+
+function fakeContext(watcher?: ReturnType<typeof fakeWatcher>) {
   // Mirrors Astro's real `DataStore` shape (`get`/`entries` return the full
   // `{ id, data, digest }` entry, not just `data`) - the loader relies on
   // that to snapshot/reuse previous entries across syncs.
-  const stored = new Map<
-    string,
-    { id: string; data: unknown; digest?: string | number }
-  >();
+  const stored = new Map<string, StoredEntry>();
   const metaStored = new Map<string, string>();
   return {
     store: {
       clear: () => stored.clear(),
-      set: (entry: { id: string; data: unknown; digest?: string | number }) =>
-        stored.set(entry.id, entry),
+      set: (entry: StoredEntry) => {
+        stored.set(entry.id, entry);
+        return true;
+      },
       get: (id: string) => stored.get(id),
       entries: () => [...stored.entries()],
       values: () => [...stored.values()],
-      keys: () => stored.keys(),
+      keys: () => [...stored.keys()],
       delete: (id: string) => stored.delete(id),
       has: (id: string) => stored.has(id),
     },
@@ -64,11 +74,15 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
     },
     logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     config: { root },
-    generateDigest: (data: unknown) => JSON.stringify(data),
-    parseData: vi.fn(async ({ data }: { data: unknown }) => data),
+    generateDigest: (data: IconEntry) => JSON.stringify(data),
+    parseData: vi.fn(async ({ data }: { data: IconEntry }) => data),
     collection: "icons",
-    ...overrides,
-  } as any;
+    watcher,
+  };
+}
+
+function storedData(context: LocalIconsSyncContext, id: string): IconEntry {
+  return (context.store.get(id) as StoredEntry).data;
 }
 
 describe("localIcons / initial sync", () => {
@@ -76,9 +90,8 @@ describe("localIcons / initial sync", () => {
     await write("home.svg", SQUARE_SVG);
     await write("logos/deno.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const context = fakeContext();
-    await loader.load(context);
+    await __syncLocalIcons("icons", {})(context);
 
     expect([...context.store.keys()].sort()).toEqual(["home", "logos/deno"]);
     expect(recordCollection).toHaveBeenCalledWith(
@@ -98,10 +111,9 @@ describe("localIcons / initial sync", () => {
   });
 
   it("warns instead of throwing when the directory doesn't exist", async () => {
-    const loader = localIcons("does-not-exist");
     const context = fakeContext();
 
-    await loader.load(context);
+    await __syncLocalIcons("does-not-exist", {})(context);
 
     expect(context.logger.warn).toHaveBeenCalled();
     expect([...context.store.keys()]).toEqual([]);
@@ -118,7 +130,7 @@ describe("localIcons / currentColor discoverability nudge", () => {
     );
 
     const context = fakeContext();
-    await localIcons("icons").load(context);
+    await __syncLocalIcons("icons", {})(context);
 
     expect(context.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('2 icon(s) in "icons"'),
@@ -135,7 +147,7 @@ describe("localIcons / currentColor discoverability nudge", () => {
     );
 
     const context = fakeContext();
-    await localIcons("icons").load(context);
+    await __syncLocalIcons("icons", {})(context);
 
     expect(context.logger.warn).not.toHaveBeenCalled();
   });
@@ -147,7 +159,7 @@ describe("localIcons / currentColor discoverability nudge", () => {
     );
 
     const context = fakeContext();
-    await localIcons("icons").load(context);
+    await __syncLocalIcons("icons", {})(context);
 
     expect(context.logger.warn).not.toHaveBeenCalled();
   });
@@ -157,10 +169,9 @@ describe("localIcons / incremental watching", () => {
   it("adds a new icon on 'add' without touching existing entries", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("icons", {})(context);
 
     expect(watcher.add).toHaveBeenCalledWith(join(dir, "icons") + "/");
     expect([...context.store.keys()]).toEqual(["home"]);
@@ -176,17 +187,16 @@ describe("localIcons / incremental watching", () => {
   it("reloads a changed icon's contents on 'change'", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("icons", {})(context);
 
     const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
     await write("home.svg", updated);
     watcher.emit("change", join(dir, "icons", "home.svg"));
 
     await vi.waitFor(() => {
-      expect((context.store.get("home") as any).data.viewBox).toBe("0 0 32 32");
+      expect(storedData(context, "home").viewBox).toBe("0 0 32 32");
     });
   });
 
@@ -194,10 +204,9 @@ describe("localIcons / incremental watching", () => {
     await write("home.svg", SQUARE_SVG);
     await write("menu.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("icons", {})(context);
     expect([...context.store.keys()].sort()).toEqual(["home", "menu"]);
 
     watcher.emit("unlink", join(dir, "icons", "menu.svg"));
@@ -210,10 +219,9 @@ describe("localIcons / incremental watching", () => {
   it("ignores events for files outside the watched directory", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("icons", {})(context);
 
     watcher.emit("add", "/some/unrelated/file.svg");
     await Promise.resolve();
@@ -225,10 +233,9 @@ describe("localIcons / incremental watching", () => {
   it("ignores non-.svg files inside the watched directory", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("icons", {})(context);
 
     watcher.emit("add", join(dir, "icons", "readme.md"));
     await Promise.resolve();
@@ -240,11 +247,10 @@ describe("localIcons / incremental watching", () => {
 
 describe("localIcons / missing directory doesn't destabilize the watcher", () => {
   it("still watches the configured dir (so it recovers if created later), warning exactly once", async () => {
-    const loader = localIcons("does-not-exist");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
+    const context = fakeContext(watcher);
 
-    await loader.load(context);
+    await __syncLocalIcons("does-not-exist", {})(context);
 
     expect(watcher.add).toHaveBeenCalledWith(join(dir, "does-not-exist") + "/");
     expect(context.logger.warn).toHaveBeenCalledTimes(1);
@@ -259,10 +265,9 @@ describe("localIcons / missing directory doesn't destabilize the watcher", () =>
   // it, live reload for every other file, CSS included). This is a regression
   // test for https://github.com/natemoo-re/astro-icon/issues/260.
   it("doesn't crash when the watcher emits 'error' for the missing directory", async () => {
-    const loader = localIcons("does-not-exist");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("does-not-exist", {})(context);
 
     expect(() => {
       watcher.emit(
@@ -279,10 +284,9 @@ describe("localIcons / missing directory doesn't destabilize the watcher", () =>
   it("keeps handling events for unrelated files after an 'error' event", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const watcher = fakeWatcher();
-    const context = fakeContext({ watcher });
-    await loader.load(context);
+    const context = fakeContext(watcher);
+    await __syncLocalIcons("icons", {})(context);
 
     watcher.emit("error", new Error("EPERM: transient error"));
 
@@ -301,16 +305,16 @@ describe("localIcons / re-sync caching", () => {
     await write("logos/deno.svg", SQUARE_SVG);
 
     const optimize = vi.fn((svg: string) => svg);
-    const loader = localIcons("icons", { optimize });
+    const sync = __syncLocalIcons("icons", { optimize });
     const context = fakeContext();
 
-    await loader.load(context);
+    await sync(context);
     expect(optimize).toHaveBeenCalledTimes(2);
 
     // Re-sync with no source changes - as if the process restarted with a
     // persisted content-layer cache, or the loader ran again in the same
     // session. Neither icon's file changed, so `optimize` shouldn't run again.
-    await loader.load(context);
+    await sync(context);
     expect(optimize).toHaveBeenCalledTimes(2);
     expect([...context.store.keys()].sort()).toEqual(["home", "logos/deno"]);
   });
@@ -320,18 +324,18 @@ describe("localIcons / re-sync caching", () => {
     await write("logos/deno.svg", SQUARE_SVG);
 
     const optimize = vi.fn((svg: string) => svg);
-    const loader = localIcons("icons", { optimize });
+    const sync = __syncLocalIcons("icons", { optimize });
     const context = fakeContext();
 
-    await loader.load(context);
+    await sync(context);
     expect(optimize).toHaveBeenCalledTimes(2);
 
     const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
     await write("home.svg", updated);
 
-    await loader.load(context);
+    await sync(context);
     expect(optimize).toHaveBeenCalledTimes(3);
-    expect((context.store.get("home") as any).data.viewBox).toBe("0 0 32 32");
+    expect(storedData(context, "home").viewBox).toBe("0 0 32 32");
   });
 });
 
@@ -340,16 +344,16 @@ describe("localIcons / whole-directory skip logging", () => {
     await write("home.svg", SQUARE_SVG);
     await write("logos/deno.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
+    const sync = __syncLocalIcons("icons", {});
     const context = fakeContext();
 
-    await loader.load(context);
+    await sync(context);
     expect(context.logger.info).toHaveBeenCalledOnce();
 
     context.logger.info.mockClear();
     context.logger.debug.mockClear();
 
-    await loader.load(context);
+    await sync(context);
     expect(context.logger.info).not.toHaveBeenCalled();
     expect(context.logger.debug).toHaveBeenCalledOnce();
     const [message] = context.logger.debug.mock.calls[0];
@@ -361,15 +365,15 @@ describe("localIcons / whole-directory skip logging", () => {
   it("falls back to a full resync + info log once a file's mtime/size changes", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
+    const sync = __syncLocalIcons("icons", {});
     const context = fakeContext();
-    await loader.load(context);
+    await sync(context);
 
     context.logger.info.mockClear();
     const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
     await write("home.svg", updated);
 
-    await loader.load(context);
+    await sync(context);
     expect(context.logger.info).toHaveBeenCalledOnce();
     expect(context.logger.debug).not.toHaveBeenCalled();
   });
@@ -380,10 +384,9 @@ describe("localIcons / timing logs", () => {
     await write("home.svg", SQUARE_SVG);
     await write("logos/deno.svg", SQUARE_SVG);
 
-    const loader = localIcons("icons");
     const context = fakeContext();
 
-    await loader.load(context);
+    await __syncLocalIcons("icons", {})(context);
 
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];

@@ -25,7 +25,9 @@ async function getFreePort(): Promise<number> {
     server.listen(0, () => {
       const address = server.address();
       const port =
-        typeof address === "object" && address ? address.port : undefined;
+        address != null && Object.prototype.hasOwnProperty.call(address, "port")
+          ? (address as { port: number }).port
+          : undefined;
       server.close(() =>
         port
           ? resolve(port)

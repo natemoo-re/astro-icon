@@ -11,7 +11,7 @@ export interface BuiltIcon {
 export async function buildIcons(
   source: Pick<IconSource, "getIcon">,
   names: string[],
-  onError: (name: string, error: unknown) => void,
+  onError: (name: string, cause: unknown) => void,
 ): Promise<BuiltIcon[]> {
   const results = await Promise.all(
     names.map(async (name) => {
@@ -21,8 +21,8 @@ export async function buildIcons(
         // the one choke point that can't be bypassed by a source that builds its own `IconEntry`
         // without going through `parseIconSVG`.
         return { name, data: { ...data, body: sanitizeSVGBody(data.body) } };
-      } catch (ex) {
-        onError(name, ex);
+      } catch (cause) {
+        onError(name, cause);
         return undefined;
       }
     }),
