@@ -1,0 +1,59 @@
+---
+import type { IconName } from "astro-icon";
+import { Icon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+
+// The user's saved choices, as they'd come back from a database: arbitrary names
+// from anywhere in the mdi pack, not a curated shortlist.
+const SAVED = [
+  "rocket-launch",
+  "penguin",
+  "coffee",
+  "guitar-electric",
+  "weather-lightning",
+  "cactus",
+  "sail-boat",
+  "ufo",
+];
+---
+
+<Base title="Catalog picker">
+  <h1>Icon names from an open catalog</h1>
+
+  <p class="note">
+    <strong>UC5, the harder half.</strong> An end user picking from the full
+    catalog can land on any of 7,000+ <code>mdi</code> icons, so the
+    <code>catalog</code> collection has no <code>icons: [...]</code> allowlist.
+    That collection sets <code>sprite: false</code>: an unbounded collection on
+    an SSR route would otherwise emit a sprite asset containing the entire pack,
+    which every page touching it would fetch - megabytes to save bytes. Opting
+    out means these render as plain inline <code>&lt;svg&gt;</code>, which for
+    icons that mostly appear once each is what you'd want anyway.
+  </p>
+
+  <div class="grid">
+    {SAVED.map((name) => (
+      <div class="cell">
+        {/*
+          The cast is unavoidable here, and it's the real cost of an open catalog.
+          `IconName` is a union of concrete names, so a string assembled at runtime
+          can never satisfy it. On the nav page the same data-driven pattern still
+          type-checks, because its set is small enough to write down; once the set
+          is "any of 7,000", a typo stops being a compile error and becomes a
+          missing icon at request time.
+        */}
+        <Icon name={`catalog:${name}` as IconName} size={28} />
+        <code>{name}</code>
+      </div>
+    ))}
+  </div>
+
+  <p class="note">
+    It also costs you the type check. <code>IconName</code> is a union of
+    concrete names, so a string built at runtime can't satisfy it and this page
+    needs a cast - a typo here surfaces as a missing icon on a request, not as a
+    build failure. Compare with <a href="/">the CMS-driven nav</a>: same "names
+    from data" problem, opposite right answer on both counts, decided entirely
+    by whether the set of possible names is small enough to write down.
+  </p>
+</Base>

@@ -1,0 +1,80 @@
+---
+import type { IconName } from "astro-icon";
+import { Icon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+
+// Stands in for a CMS query. The icon names arrive as data - nothing below is a
+// literal <Icon name="nav:home" />.
+//
+// Typing the field as `IconName` is what keeps this type-safe: `IconName` is a
+// union of every name astro-icon generated for this project, so each string here
+// is checked at the point the data is defined. Rename an icon in the collection
+// and this file stops compiling, which is the whole benefit a literal would have
+// given - it just moves from the template to the data.
+const menu: { label: string; icon: IconName; href: string }[] = [
+  { label: "Overview", icon: "nav:home", href: "#" },
+  { label: "Members", icon: "nav:account-group", href: "#" },
+  { label: "Insights", icon: "nav:chart-line", href: "#" },
+  { label: "Billing", icon: "nav:credit-card", href: "#" },
+  { label: "Security", icon: "nav:shield-check", href: "#" },
+  { label: "Docs", icon: "nav:book-open-variant", href: "#" },
+  { label: "Support", icon: "nav:lifebuoy", href: "#" },
+  { label: "Settings", icon: "nav:cog", href: "#" },
+];
+
+// Rendered twice, as a sidebar and a footer, so the same data-driven names repeat
+// on one page - the dedup case, reached without a single literal icon name.
+const sections = ["Sidebar", "Footer"];
+---
+
+<Base title="CMS-driven nav">
+  <h1>Icon names from data</h1>
+
+  <p class="note">
+    <strong>UC5, the common half.</strong> These names come from data, but the
+    set they're drawn from is curated - the CMS only offers the eight icons in
+    the <code>nav</code> collection's <code>icons: [...]</code> allowlist. That
+    makes the collection bounded, so <code>&lt;Icon name={"{row.icon}"}&gt;</code>
+    behaves exactly like a literal: it resolves at build time, type-checks, and
+    still gets deduped into a sprite when it repeats.
+  </p>
+
+  {sections.map((section) => (
+    <section>
+      <h2>{section}</h2>
+      <ul class="menu">
+        {menu.map((item) => (
+          <li>
+            <a href={item.href}>
+              <Icon name={item.icon} size={18} />
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  <p class="note">
+    Each icon appears twice on this page, so view-source shows
+    <code>&lt;use href="/_astro/nav.&lt;hash&gt;.svg#..."&gt;</code> against the
+    shared asset - dynamic names cost nothing here.
+  </p>
+</Base>
+
+<style>
+  .menu {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .menu a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    color: inherit;
+  }
+</style>

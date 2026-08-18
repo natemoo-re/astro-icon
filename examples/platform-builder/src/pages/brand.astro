@@ -1,0 +1,51 @@
+---
+import { getLiveCollection } from "astro:content";
+import { LiveIcon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+
+// `listIcons()` on the custom source is what makes this possible: the page asks
+// the backend what it holds instead of hardcoding names. A source that only
+// implements `getIcon` still works with <LiveIcon>, it just can't be enumerated.
+const { entries, error } = await getLiveCollection("brand");
+---
+
+<Base title="Brand kits">
+  <h1>Icons from a custom source</h1>
+
+  <p class="note">
+    <strong>A backend astro-icon doesn't ship.</strong> The <code>brand</code>
+    collection is served by <code>src/lib/brandKitSource.ts</code>, a custom
+    <code>IconSource</code> - three methods (<code>name</code>,
+    <code>getIcon</code>, and an optional <code>listIcons</code>). It stands in
+    for a per-tenant brand kit: a design-tool export or a database table, where
+    the icons aren't yours and can change without a deploy.
+  </p>
+
+  {error && <p class="error">Couldn't load the brand kit: {error.message}</p>}
+
+  {entries && (
+    <div class="grid">
+      {entries.map((entry) => (
+        <div class="cell">
+          <LiveIcon collection="brand" icon={entry.id} size={32} />
+          <code>{entry.id}</code>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <p class="note">
+    The source's <code>name</code> has to match the key it's registered under in
+    <code>src/live.config.ts</code>. A <code>LiveLoader</code> is never told its
+    own collection name, so typegen records the live collection under the
+    source's name instead - if they drift,
+    <code>&lt;LiveIcon collection="brand"&gt;</code> stops type-checking against
+    a collection that appears not to exist.
+  </p>
+</Base>
+
+<style>
+  .error {
+    color: #b00;
+  }
+</style>

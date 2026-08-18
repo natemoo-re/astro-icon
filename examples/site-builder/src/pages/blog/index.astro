@@ -1,0 +1,20 @@
+---
+import { Icon } from "astro-icon/components";
+import Base from "../../layouts/base.astro";
+
+const posts = [
+  { slug: "hello-world", title: "Hello, world", date: "2026-01-12" },
+];
+---
+
+<Base title="Blog">
+  <h1>Blog</h1>
+  <ul class="posts">
+    {posts.map((post) => (
+      <li>
+        <a href={`/blog/${post.slug}`}>{post.title}</a>
+        <span><Icon name="calendar" size={14} /> {post.date}</span>
+      </li>
+    ))}
+  </ul>
+</Base>

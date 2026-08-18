@@ -1,0 +1,101 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title} · Dashboard</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <a class="brand" href="/dashboard">
+          <Icon name="brand:logo" size={20} /> Acme Admin
+        </a>
+        <nav>
+          <a href="/dashboard"><Icon name="mdi:view-dashboard" size={18} /> Dashboard</a>
+          <a href="/dashboard"><Icon name="mdi:account-group" size={18} /> Users</a>
+          <a href="/dashboard"><Icon name="mdi:chart-line" size={18} /> Reports</a>
+          <a href="/dashboard"><Icon name="mdi:cog" size={18} /> Settings</a>
+        </nav>
+      </aside>
+      <div class="main">
+        <header>
+          <Icon name="mdi:magnify" size={18} />
+          <span class="spacer" />
+          <Icon name="mdi:bell" size={18} />
+          <Icon name="mdi:logout" size={18} />
+        </header>
+        <main>
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    color: #1a1a1a;
+  }
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+  aside {
+    width: 14rem;
+    border-right: 1px solid #e2e2e2;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: inherit;
+  }
+  nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #444;
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #e2e2e2;
+  }
+  .spacer {
+    flex: 1;
+  }
+  main {
+    padding: 1.5rem;
+  }
+</style>

@@ -1,0 +1,91 @@
+---
+import { LiveIcon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+
+const RESULT_LIMIT = 12;
+const PACK = "ph";
+
+const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+
+let results: string[] = [];
+let error: string | undefined;
+
+if (query) {
+  try {
+    const res = await fetch(
+      `https://api.iconify.design/search?query=${encodeURIComponent(query)}&prefix=${PACK}&limit=${RESULT_LIMIT}`,
+    );
+    if (!res.ok) {
+      error = `Iconify search returned ${res.status}.`;
+    } else {
+      const data = (await res.json()) as { icons?: string[] };
+      // Results come back prefixed ("ph:heart"); <LiveIcon> wants the bare name.
+      results = (data.icons ?? []).map((icon) => icon.split(":").pop()!);
+    }
+  } catch {
+    error = "Couldn't reach the Iconify search API.";
+  }
+}
+---
+
+<Base title="Live search">
+  <h1>Icon names nobody can know at build time</h1>
+
+  <p class="note">
+    <strong>Where <code>&lt;Icon&gt;</code> genuinely can't help.</strong> These
+    names depend on what a visitor just typed, so no build-time collection could
+    contain them without enumerating the pack up front. The <code>ph</code> live
+    collection uses <code>iconifyApiSource</code> with no allowlist: each result
+    below is fetched individually from <code>api.iconify.design</code> at request
+    time. Only the {RESULT_LIMIT} icons shown are ever resolved.
+  </p>
+
+  <form method="get">
+    <input
+      type="search"
+      name="q"
+      value={query}
+      placeholder="e.g. heart, cloud, arrow..."
+      autocomplete="off"
+    />
+    <button type="submit">Search</button>
+  </form>
+
+  {error && <p class="error">{error}</p>}
+
+  {query && !error && results.length === 0 && (
+    <p>No <code>{PACK}</code> icons matched "{query}".</p>
+  )}
+
+  {results.length > 0 && (
+    <div class="grid">
+      {results.map((name) => (
+        <div class="cell">
+          <LiveIcon collection={PACK} icon={name} size={28} />
+          <code>{name}</code>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <p class="note">
+    A name that doesn't resolve makes <code>&lt;LiveIcon&gt;</code> log a warning
+    and render nothing, rather than throwing - one bad row from a data source
+    can't take down the page around it.
+  </p>
+</Base>
+
+<style>
+  form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+  }
+  .error {
+    color: #b00;
+  }
+</style>

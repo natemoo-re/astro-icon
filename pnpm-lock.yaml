@@ -59,6 +59,56 @@ importers:
         specifier: workspace:*
         version: link:../packages/service
 
+  examples/app-builder:
+    dependencies:
+      '@iconify-json/mdi':
+        specifier: ^1.2.3
+        version: 1.2.3
+    devDependencies:
+      '@astrojs/node':
+        specifier: ^11.1.2
+        version: 11.1.2(astro@7.2.2)
+      astro:
+        specifier: ^7.2.2
+        version: 7.2.2(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@22.20.1)
+      astro-icon:
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  examples/library-author:
+    devDependencies:
+      astro:
+        specifier: ^7.2.2
+        version: 7.2.2(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@22.20.1)
+      astro-icon:
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  examples/platform-builder:
+    dependencies:
+      '@iconify-json/mdi':
+        specifier: ^1.2.3
+        version: 1.2.3
+    devDependencies:
+      '@astrojs/node':
+        specifier: ^11.1.2
+        version: 11.1.2(astro@7.2.2)
+      astro:
+        specifier: ^7.2.2
+        version: 7.2.2(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@22.20.1)
+      astro-icon:
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  examples/site-builder:
+    devDependencies:
+      astro:
+        specifier: ^7.2.2
+        version: 7.2.2(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@22.20.1)
+      astro-icon:
+        specifier: workspace:*
+        version: link:../../packages/core
+
   packages/core:
     dependencies:
       "@iconify/tools":
