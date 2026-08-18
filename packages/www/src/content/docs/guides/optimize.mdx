@@ -33,7 +33,7 @@ export const collections = {
 
 ## Why `defaultOverrides` exists
 
-SVGO's own `preset-default` also strips things a reasonable author could disagree with by default — license-bearing comments/metadata, colors, ids other tooling might reference, elements it judges "unused" by static analysis it can get wrong. `defaultOverrides` turns those specific plugins back off, keeping only the parts of `preset-default` that are safe cleanup for *any* icon:
+SVGO's own `preset-default` also strips things a reasonable author could disagree with by default — license-bearing comments/metadata, colors, ids other tooling might reference, elements it judges "unused" by static analysis it can get wrong. `defaultOverrides` turns those specific plugins back off, keeping only the parts of `preset-default` that are safe cleanup for _any_ icon:
 
 ```ts
 export const defaultOverrides: Record<string, false> = {
@@ -80,7 +80,12 @@ optimize: svgo({
   plugins: [
     {
       name: "preset-default",
-      params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+      params: {
+        overrides: {
+          ...defaultOverrides,
+          convertColors: { currentColor: true },
+        },
+      },
     },
   ],
 });
@@ -88,7 +93,7 @@ optimize: svgo({
 
 ## Prefixing ids to avoid collisions
 
-`optimize` also receives the icon's `collection` and `name`, useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once outside [`<Sprite>`](/guides/sprite/) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+`optimize` also receives the icon's `collection` and `name`, useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once without [automatic sprite optimization](/guides/sprite/) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts title="src/content.config.ts"
 import { defineCollection } from "astro:content";
@@ -102,8 +107,14 @@ export const collections = {
         optimize: (svg, { collection, name }) =>
           svgo({
             plugins: [
-              { name: "prefixIds", params: { prefix: `${collection}-${name}` } },
-              { name: "preset-default", params: { overrides: defaultOverrides } },
+              {
+                name: "prefixIds",
+                params: { prefix: `${collection}-${name}` },
+              },
+              {
+                name: "preset-default",
+                params: { overrides: defaultOverrides },
+              },
             ],
           })(svg, { collection, name }),
       }),

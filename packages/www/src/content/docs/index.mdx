@@ -17,10 +17,15 @@ hero:
       variant: minimal
 ---
 
-import { CardGrid, LinkCard, Tabs, TabItem } from '@astrojs/starlight/components';
-import { Icon } from 'astro-icon/components';
-import Showcase from '../../components/Showcase.astro';
-import Features from '../../components/Features.astro';
+import {
+  CardGrid,
+  LinkCard,
+  Tabs,
+  TabItem,
+} from "@astrojs/starlight/components";
+import { Icon } from "astro-icon/components";
+import Showcase from "../../components/Showcase.astro";
+import Features from "../../components/Features.astro";
 
 ## Declare a collection, render an icon
 
@@ -31,7 +36,9 @@ import { defineCollection } from "astro:content";
 import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 
 export const collections = {
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
 };
 ```
 
@@ -60,7 +67,9 @@ Install any of [Iconify's](https://icon-sets.iconify.design/) 200,000+ icons and
 import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 
 export const collections = {
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
 };
 ```
 
@@ -85,8 +94,12 @@ Fetch icons from a design tool, a database, or an internal API by implementing `
 ```ts title="src/content.config.ts"
 const mySource: IconSource = {
   name: "my-source",
-  async getIcon(name) { /* ...return an IconEntry */ },
-  async listIcons() { /* ...return every name */ },
+  async getIcon(name) {
+    /* ...return an IconEntry */
+  },
+  async listIcons() {
+    /* ...return every name */
+  },
 };
 ```
 
@@ -95,15 +108,14 @@ const mySource: IconSource = {
 
 ## Repeat an icon without repeating the markup
 
-Wrap repeated icons in `<Sprite>` and they collapse into a single `<symbol>` plus one `<use>` per instance — the more you repeat, the more you save.
+Install the `icon()` integration and repeated icons collapse into a single `<symbol>` plus one `<use>` per instance automatically — no wrapper component needed. The more you repeat, the more you save. See [“Automatic sprite optimization”](/guides/sprite/).
 
-<Showcase resultLabel="Rendered (5 icons, 1 symbol)" code={`<Sprite>
-  <Icon name="mdi:star" /> <Icon name="mdi:star" />
-  <Icon name="mdi:star" /> <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-</Sprite>
+<Showcase resultLabel="Rendered (5 icons, 1 symbol)" code={`<Icon name="mdi:star" /> <Icon name="mdi:star" />
+<Icon name="mdi:star" /> <Icon name="mdi:star" />
+<Icon name="mdi:star" />
 
 <!-- Output: one <symbol>, five lightweight <use> refs -->
+
 <svg style="position:absolute;width:0;height:0" aria-hidden="true">
   <symbol id="ai:mdi:star" viewBox="0 0 24 24">…</symbol>
 </svg>
@@ -122,8 +134,24 @@ Wrap repeated icons in `<Sprite>` and they collapse into a single `<symbol>` plu
 ## Where to next
 
 <CardGrid>
-  <LinkCard title="Get Started" description="Install the package and render your first icon." href="/getting-started/" />
-  <LinkCard title="Upgrading from v1?" description="v2 replaces the icon() integration with content collection loaders." href="/guides/upgrade/v2/" />
-  <LinkCard title="Live Icons" description="Resolve icons per request for names you can't know at build time." href="/guides/live-icon/" />
-  <LinkCard title="Reference" description="Every loader, source, and component option in one place." href="/reference/loaders/" />
+  <LinkCard
+    title="Get Started"
+    description="Install the package and render your first icon."
+    href="/getting-started/"
+  />
+  <LinkCard
+    title="Upgrading from v1?"
+    description="v2 replaces the icon() integration with content collection loaders."
+    href="/guides/upgrade/v2/"
+  />
+  <LinkCard
+    title="Live Icons"
+    description="Resolve icons per request for names you can't know at build time."
+    href="/guides/live-icon/"
+  />
+  <LinkCard
+    title="Reference"
+    description="Every loader, source, and component option in one place."
+    href="/reference/loaders/"
+  />
 </CardGrid>
