@@ -128,16 +128,22 @@ if (props.size) {
   delete props.size;
 }
 const renderData = iconToSVG(iconData);
-const normalizedProps = {
-  ...(renderData.attributes as Partial<IconifyIconBuildResult["attributes"]>),
-  ...props,
-};
+const attributes = renderData.attributes as Partial<
+  IconifyIconBuildResult["attributes"]
+>;
+const normalizedProps = { ...attributes, ...props };
 const normalizedBody = replaceIDs(renderData.body);
 
-const { viewBox } = normalizedProps;
-if (!inline) {
-  delete normalizedProps.viewBox;
-}
+const [minX, minY, vbWidth, vbHeight] =
+  attributes.viewBox?.split(/[\s,]+/).map(Number) ?? [];
+// Without this the artwork renders offset by its origin and clipped (https://github.com/natemoo-re/astro-icon/issues/212).
+const hasOffsetOrigin =
+  [minX, minY, vbWidth, vbHeight].every(Number.isFinite) &&
+  (minX !== 0 || minY !== 0);
+const symbolViewBox = hasOffsetOrigin ? attributes.viewBox : undefined;
+const useRect = hasOffsetOrigin
+  ? { x: minX, y: minY, width: vbWidth, height: vbHeight }
+  : {};
 ---
 
 <svg {...normalizedProps} data-icon={name}>
@@ -153,9 +159,9 @@ if (!inline) {
     ) : (
       <Fragment>
         {includeSymbol && (
-          <symbol id={id} viewBox={viewBox} set:html={normalizedBody} />
+          <symbol id={id} viewBox={symbolViewBox} set:html={normalizedBody} />
         )}
-        <use href={`#${id}`} />
+        <use href={`#${id}`} {...useRect} />
       </Fragment>
     )
   }
