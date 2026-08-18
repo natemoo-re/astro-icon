@@ -25,7 +25,10 @@ export const GET: APIRoute = async ({ url }) => {
 
   if (!searchRes || !searchRes.ok) {
     return Response.json(
-      { results: [], error: `Iconify search returned ${searchRes?.status ?? "an error"}.` },
+      {
+        results: [],
+        error: `Iconify search returned ${searchRes?.status ?? "an error"}.`,
+      },
       { status: 502 },
     );
   }
@@ -35,13 +38,22 @@ export const GET: APIRoute = async ({ url }) => {
 
   const resolved = await Promise.all(
     names.map(async (fullName): Promise<IconResult | undefined> => {
-      const iconName = fullName.startsWith(`${PACK}:`) ? fullName.slice(PACK.length + 1) : fullName;
+      const iconName = fullName.startsWith(`${PACK}:`)
+        ? fullName.slice(PACK.length + 1)
+        : fullName;
       const { entry, error } = await getLiveEntry(PACK, iconName);
       if (error || !entry) return undefined;
-      const icon = entry.data as { body: string; viewBox: string; width: number; height: number };
+      const icon = entry.data as {
+        body: string;
+        viewBox: string;
+        width: number;
+        height: number;
+      };
       return { name: `${PACK}:${iconName}`, ...icon };
     }),
   );
 
-  return Response.json({ results: resolved.filter((icon) => icon !== undefined) });
+  return Response.json({
+    results: resolved.filter((icon) => icon !== undefined),
+  });
 };

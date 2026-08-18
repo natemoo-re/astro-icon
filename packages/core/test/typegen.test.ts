@@ -77,8 +77,8 @@ describe("recordCollection", () => {
 
     const build = await readPartial("build", "mdi");
     const live = await readPartial("live", "mdi");
-    expect(build).toContain('interface Collections');
-    expect(live).toContain('interface LiveCollections');
+    expect(build).toContain("interface Collections");
+    expect(live).toContain("interface LiveCollections");
   });
 
   it("skips rewriting a collection's file when its content hash is unchanged", async () => {

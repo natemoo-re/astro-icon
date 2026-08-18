@@ -50,7 +50,10 @@ describe("localSource / listIcons", () => {
     await write("logo.svg", SQUARE_SVG);
     const source = localSource(dir, { icons: ["logo", "not-on-disk"] });
 
-    await expect(source.listIcons?.()).resolves.toEqual(["logo", "not-on-disk"]);
+    await expect(source.listIcons?.()).resolves.toEqual([
+      "logo",
+      "not-on-disk",
+    ]);
   });
 });
 
@@ -81,13 +84,17 @@ describe("localSource / getIcon", () => {
     await write("logo.svg", SQUARE_SVG);
     const source = localSource(dir, { icons: ["logo"] });
 
-    await expect(source.getIcon("other")).rejects.toThrow(/isn't in the allowed/i);
+    await expect(source.getIcon("other")).rejects.toThrow(
+      /isn't in the allowed/i,
+    );
   });
 
   it("accepts a file:// URL for the directory, same as a plain path", async () => {
     await write("logo.svg", SQUARE_SVG);
     const source = localSource(new URL(`file://${dir}/`));
 
-    await expect(source.getIcon("logo")).resolves.toMatchObject({ viewBox: "0 0 24 24" });
+    await expect(source.getIcon("logo")).resolves.toMatchObject({
+      viewBox: "0 0 24 24",
+    });
   });
 });

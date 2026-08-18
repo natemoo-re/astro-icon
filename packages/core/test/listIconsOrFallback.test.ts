@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { AstroIconError } from "../src/internal/error.js";
 import { listIconsOrFallback } from "../src/content/listIconsOrFallback.js";
 
-function options(overrides: Partial<Parameters<typeof listIconsOrFallback>[1]> = {}) {
+function options(
+  overrides: Partial<Parameters<typeof listIconsOrFallback>[1]> = {},
+) {
   return {
     strict: false,
     logger: { warn: vi.fn() },

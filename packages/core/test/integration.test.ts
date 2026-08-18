@@ -26,7 +26,10 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
       cwd: packageRoot,
     });
     html = await readFile(join(fixtureRoot, "dist/index.html"), "utf-8");
-    spriteHtml = await readFile(join(fixtureRoot, "dist/sprite/index.html"), "utf-8");
+    spriteHtml = await readFile(
+      join(fixtureRoot, "dist/sprite/index.html"),
+      "utf-8",
+    );
     index = await readFile(
       join(fixtureRoot, ".astro/astro-icon.d.ts"),
       "utf-8",
@@ -55,9 +58,9 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
   });
 
   it("renders a viewBox on every icon occurrence", () => {
-    expect(
-      html.match(/viewBox="0 0 24 24"/g)?.length,
-    ).toBeGreaterThanOrEqual(5);
+    expect(html.match(/viewBox="0 0 24 24"/g)?.length).toBeGreaterThanOrEqual(
+      5,
+    );
   });
 
   it("renders every occurrence of a repeated icon fully inline, no symbol/use", () => {
@@ -101,15 +104,24 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
 
 describe("<Sprite> against a real astro build", () => {
   it("emits exactly one <symbol> per unique icon inside the Sprite boundary", () => {
-    expect((spriteHtml.match(/<symbol id="ai:icons:3-dots-fade"/g) ?? []).length).toBe(1);
-    expect((spriteHtml.match(/<symbol id="ai:spinners:3-dots-fade"/g) ?? []).length).toBe(1);
+    expect(
+      (spriteHtml.match(/<symbol id="ai:icons:3-dots-fade"/g) ?? []).length,
+    ).toBe(1);
+    expect(
+      (spriteHtml.match(/<symbol id="ai:spinners:3-dots-fade"/g) ?? []).length,
+    ).toBe(1);
   });
 
   it("rewrites every occurrence inside the Sprite boundary into a <use>, including ones nested inside another Astro component", () => {
     // 3 direct <Icon> children + 2 rendered inside <IconRow /> (a nested
     // Astro component, not a direct child of <Sprite>) = 5.
-    expect((spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length).toBe(5);
-    expect((spriteHtml.match(/<use href="#ai:spinners:3-dots-fade" \/>/g) ?? []).length).toBe(1);
+    expect(
+      (spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length,
+    ).toBe(5);
+    expect(
+      (spriteHtml.match(/<use href="#ai:spinners:3-dots-fade" \/>/g) ?? [])
+        .length,
+    ).toBe(1);
   });
 
   it("preserves per-instance title on a deduped occurrence", () => {
@@ -122,13 +134,21 @@ describe("<Sprite> against a real astro build", () => {
     // Six total occurrences of the icon marker: 5 inside the Sprite
     // (now <use>s) + 1 outside (still fully inline).
     expect((spriteHtml.match(/data-icon="3-dots-fade"/g) ?? []).length).toBe(6);
-    expect((spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length).toBe(5);
+    expect(
+      (spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length,
+    ).toBe(5);
     expect(spriteHtml.match(/<circle/g)?.length).toBeGreaterThanOrEqual(1);
   });
 
   it("passes a <LiveIcon> inside the Sprite boundary through untouched, never deduped", () => {
-    expect(spriteHtml).toContain('data-icon="liveSpinners:3-dots-fade" data-icon-live');
-    expect(spriteHtml).not.toContain('<use href="#ai:liveSpinners:3-dots-fade" />');
-    expect(spriteHtml).not.toContain('<symbol id="ai:liveSpinners:3-dots-fade"');
+    expect(spriteHtml).toContain(
+      'data-icon="liveSpinners:3-dots-fade" data-icon-live',
+    );
+    expect(spriteHtml).not.toContain(
+      '<use href="#ai:liveSpinners:3-dots-fade" />',
+    );
+    expect(spriteHtml).not.toContain(
+      '<symbol id="ai:liveSpinners:3-dots-fade"',
+    );
   });
 });

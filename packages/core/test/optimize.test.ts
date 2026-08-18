@@ -93,7 +93,10 @@ describe("svgo() / options replace the default wholesale", () => {
         {
           name: "preset-default",
           params: {
-            overrides: { ...defaultOverrides, convertColors: { currentColor: true } },
+            overrides: {
+              ...defaultOverrides,
+              convertColors: { currentColor: true },
+            },
           },
         },
       ],

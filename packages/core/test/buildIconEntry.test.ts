@@ -40,18 +40,18 @@ describe("buildIconEntry", () => {
   });
 
   it("passes the raw svg and context to optimize, and uses its result", async () => {
-    const optimize = vi.fn(
-      async (svg: string) => svg.replace("<path", '<path fill="red"'),
+    const optimize = vi.fn(async (svg: string) =>
+      svg.replace("<path", '<path fill="red"'),
     );
     const entry = await buildIconEntry(search, "search", {
       collection: "mdi",
       optimize,
       logger: logger(),
     });
-    expect(optimize).toHaveBeenCalledWith(
-      expect.stringContaining("<svg"),
-      { collection: "mdi", name: "search" },
-    );
+    expect(optimize).toHaveBeenCalledWith(expect.stringContaining("<svg"), {
+      collection: "mdi",
+      name: "search",
+    });
     expect(entry?.body).toContain('fill="red"');
   });
 

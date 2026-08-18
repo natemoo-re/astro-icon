@@ -11,7 +11,9 @@ Rebuilt astro-icon on top of Astro's Content Layer instead of a custom Vite reso
   import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 
   export const collections = {
-    mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+    mdi: defineCollection({
+      loader: createIconLoader(iconifyLocalSource("mdi")),
+    }),
   };
   ```
   `<Icon name="mdi:search" />` resolves the `mdi` collection's `search` entry. `<Icon name="search" />` (no prefix) resolves a collection literally named `icons` - that's just a naming convention, not something astro-icon enforces, so you must define a collection called `icons` yourself for bare names to work.
@@ -24,7 +26,10 @@ Rebuilt astro-icon on top of Astro's Content Layer instead of a custom Vite reso
 
   export const collections = {
     icons: defineCollection({
-      loader: createIconLoader([iconifyLocalSource("mdi", { icons: ["account"] }), myCustomSource]),
+      loader: createIconLoader([
+        iconifyLocalSource("mdi", { icons: ["account"] }),
+        myCustomSource,
+      ]),
     }),
   };
   ```

@@ -4,9 +4,7 @@ import type { IconEntry } from "../../typings/types";
 const recordCollection = vi.fn(async () => {});
 vi.mock("../src/content/typegen/index.js", () => ({ recordCollection }));
 
-const { createLiveIconLoader } = await import(
-  "../src/content/liveLoader.js"
-);
+const { createLiveIconLoader } = await import("../src/content/liveLoader.js");
 
 const entry: IconEntry = {
   body: "<path/>",
@@ -57,7 +55,9 @@ describe("createLiveIconLoader / loadEntry", () => {
       collection: "icons",
     });
 
-    expect(result).toEqual({ error: expect.objectContaining({ message: "nope" }) });
+    expect(result).toEqual({
+      error: expect.objectContaining({ message: "nope" }),
+    });
   });
 
   it("namespaces the loader name with the source name", () => {
@@ -82,7 +82,10 @@ describe("createLiveIconLoader / loadEntry", () => {
       })),
     });
 
-    const result = await loader.loadEntry({ filter: { id: "evil" }, collection: "icons" });
+    const result = await loader.loadEntry({
+      filter: { id: "evil" },
+      collection: "icons",
+    });
 
     expect(result).toEqual({
       id: "evil",
@@ -161,17 +164,29 @@ describe("createLiveIconLoader typegen", () => {
     // `LiveCollectionName` only needs the collection key to exist - a live icon's specific name is never
     // validated against a catalog (see names.d.ts), so this per-collection list stays empty.
     const listIcons = vi.fn(async () => ["home", "search"]);
-    createLiveIconLoader({ name: "mdi", getIcon: vi.fn(async () => entry), listIcons });
+    createLiveIconLoader({
+      name: "mdi",
+      getIcon: vi.fn(async () => entry),
+      listIcons,
+    });
 
     await flush();
 
-    expect(recordCollection).toHaveBeenCalledWith(expect.any(URL), "live", "mdi", []);
+    expect(recordCollection).toHaveBeenCalledWith(
+      expect.any(URL),
+      "live",
+      "mdi",
+      [],
+    );
     // Still called for its side effect: sources like `iconifyLocalSource` use listIcons() to record their own pack catalog.
     expect(listIcons).toHaveBeenCalledOnce();
   });
 
   it("records an empty list when the source has no listIcons", async () => {
-    createLiveIconLoader({ name: "no-listing", getIcon: vi.fn(async () => entry) });
+    createLiveIconLoader({
+      name: "no-listing",
+      getIcon: vi.fn(async () => entry),
+    });
 
     await flush();
 

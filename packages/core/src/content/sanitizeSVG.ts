@@ -51,7 +51,10 @@ export function sanitizeSVGBody(body: string): string {
       if (lower.startsWith("on")) {
         delete element.attributes[attrName];
         changed = true;
-      } else if (URI_ATTRS.has(lower) && isDangerousUri(element.attributes[attrName])) {
+      } else if (
+        URI_ATTRS.has(lower) &&
+        isDangerousUri(element.attributes[attrName])
+      ) {
         delete element.attributes[attrName];
         changed = true;
       }
@@ -71,5 +74,7 @@ export function sanitizeSVGBody(body: string): string {
     parent.children = parent.children.filter((child) => child !== node);
   }
 
-  return renderSync(root).replace(/^<svg>/, "").replace(/<\/svg>$/, "");
+  return renderSync(root)
+    .replace(/^<svg>/, "")
+    .replace(/<\/svg>$/, "");
 }

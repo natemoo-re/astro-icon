@@ -25,13 +25,20 @@ export async function readState(stateFile: URL): Promise<TypegenState> {
   try {
     const text = await readFile(stateFile, { encoding: "utf-8" });
     const parsed = JSON.parse(text) as Partial<TypegenState>;
-    return { build: parsed.build ?? {}, live: parsed.live ?? {}, packs: parsed.packs ?? {} };
+    return {
+      build: parsed.build ?? {},
+      live: parsed.live ?? {},
+      packs: parsed.packs ?? {},
+    };
   } catch {
     return { build: {}, live: {}, packs: {} };
   }
 }
 
-export async function writeState(stateFile: URL, state: TypegenState): Promise<void> {
+export async function writeState(
+  stateFile: URL,
+  state: TypegenState,
+): Promise<void> {
   await writeFile(stateFile, JSON.stringify(state));
 }
 

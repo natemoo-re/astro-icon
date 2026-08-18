@@ -36,7 +36,9 @@ export function __clearPackCache(): void {
 
 /** Loads a full pack from a locally installed `@iconify-json/<pack>` package, if present. */
 export function loadLocalPack(pack: string): Promise<IconifyJSON | undefined> {
-  return cachedPackLoad(pack, () => loadCollectionFromFS(pack).catch(() => undefined));
+  return cachedPackLoad(pack, () =>
+    loadCollectionFromFS(pack).catch(() => undefined),
+  );
 }
 
 /**

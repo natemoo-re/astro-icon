@@ -1,5 +1,9 @@
 import { defineLiveCollection } from "astro:content";
-import { createLiveIconLoader, iconifyLocalSource, iconifyApiSource } from "astro-icon/loaders/live";
+import {
+  createLiveIconLoader,
+  iconifyLocalSource,
+  iconifyApiSource,
+} from "astro-icon/loaders/live";
 import { serviceSource } from "service/client";
 
 // "mdi" is installed locally (see package.json), so this resolves from disk.

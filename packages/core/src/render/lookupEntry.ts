@@ -13,7 +13,8 @@ export async function resolveIconEntry(
   name: string,
 ): Promise<{ data: IconEntry } | undefined> {
   try {
-    return (await getEntry(collection as never, name)) as { data: IconEntry } | undefined;
+    return (await getEntry(collection as never, name)) as
+      { data: IconEntry } | undefined;
   } catch {
     return undefined;
   }

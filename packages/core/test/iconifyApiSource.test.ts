@@ -18,12 +18,16 @@ afterEach(() => {
 });
 
 function fetchReturning(requested: () => IconifyJSON) {
-  return vi.fn(async () => new Response(JSON.stringify(requested()), { status: 200 }));
+  return vi.fn(
+    async () => new Response(JSON.stringify(requested()), { status: 200 }),
+  );
 }
 
 describe("iconifyApiSource naming", () => {
   it("namespaces the source name with the pack", () => {
-    expect(iconifyApiSource("mdi", { icons: ["search"] }).name).toBe("iconify-api:mdi");
+    expect(iconifyApiSource("mdi", { icons: ["search"] }).name).toBe(
+      "iconify-api:mdi",
+    );
   });
 });
 
@@ -32,7 +36,10 @@ describe("iconifyApiSource / resolves each requested icon individually", () => {
     const fetchMock = vi.fn(async (url: string) => {
       const requested = new URL(url).searchParams.get("icons");
       return new Response(
-        JSON.stringify({ prefix: "mdi", icons: { [requested!]: pack.icons[requested!] } }),
+        JSON.stringify({
+          prefix: "mdi",
+          icons: { [requested!]: pack.icons[requested!] },
+        }),
         { status: 200 },
       );
     });
@@ -45,8 +52,14 @@ describe("iconifyApiSource / resolves each requested icon individually", () => {
     expect(first.viewBox).toBe("0 0 24 24");
     expect(second.viewBox).toBe("0 0 24 24");
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock).toHaveBeenNthCalledWith(1, expect.stringContaining("icons=search"));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, expect.stringContaining("icons=menu"));
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("icons=search"),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("icons=menu"),
+    );
   });
 });
 
@@ -56,7 +69,9 @@ describe("iconifyApiSource / icons allowlist is required", () => {
     vi.stubGlobal("fetch", fetchMock);
     const source = iconifyApiSource("mdi", { icons: ["search"] });
 
-    await expect(source.getIcon("menu")).rejects.toThrow(/isn't in the allowed/i);
+    await expect(source.getIcon("menu")).rejects.toThrow(
+      /isn't in the allowed/i,
+    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -74,14 +89,19 @@ describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against
       vi.fn(async (url: string) => {
         const requested = new URL(url).searchParams.get("icons");
         return new Response(
-          JSON.stringify({ prefix: "mdi", icons: { [requested!]: pack.icons[requested!] } }),
+          JSON.stringify({
+            prefix: "mdi",
+            icons: { [requested!]: pack.icons[requested!] },
+          }),
           { status: 200 },
         );
       }),
     );
     const source = iconifyApiSource("mdi");
 
-    await expect(source.getIcon("search")).resolves.toMatchObject({ viewBox: "0 0 24 24" });
+    await expect(source.getIcon("search")).resolves.toMatchObject({
+      viewBox: "0 0 24 24",
+    });
   });
 
   it("throws from listIcons instead of pretending to enumerate the whole pack", async () => {
@@ -93,7 +113,10 @@ describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against
 
 describe("iconifyApiSource / failure modes", () => {
   it("throws when the API fallback fails to resolve", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("Not Found", { status: 404 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Not Found", { status: 404 })),
+    );
     const source = iconifyApiSource("mdi", { icons: ["search"] });
 
     await expect(source.getIcon("search")).rejects.toThrow(/mdi/);

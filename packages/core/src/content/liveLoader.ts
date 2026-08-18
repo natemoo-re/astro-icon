@@ -80,11 +80,15 @@ export function createLiveIconLoader(
       }
       try {
         const names = await source.listIcons();
-        const built = await buildIcons({ getIcon: getCachedIcon }, names, (name, ex) => {
-          consoleLogger.warn(
-            `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
-          );
-        });
+        const built = await buildIcons(
+          { getIcon: getCachedIcon },
+          names,
+          (name, ex) => {
+            consoleLogger.warn(
+              `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
+            );
+          },
+        );
         // `name` -> `id` only here, where astro-icon's own vocabulary crosses into `LiveLoader`'s.
         return { entries: built.map(({ name, data }) => ({ id: name, data })) };
       } catch (ex) {

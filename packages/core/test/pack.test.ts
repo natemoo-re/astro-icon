@@ -4,9 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const loadCollectionFromFS = vi.fn();
 vi.mock("@iconify/utils/lib/loader/fs", () => ({ loadCollectionFromFS }));
 
-const { loadLocalPack, loadPackFromAPI, __clearPackCache } = await import(
-  "../src/content/iconify/pack.js"
-);
+const { loadLocalPack, loadPackFromAPI, __clearPackCache } =
+  await import("../src/content/iconify/pack.js");
 
 const search: IconifyJSON = {
   prefix: "mdi",
@@ -51,7 +50,9 @@ describe("loadPackFromAPI", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await loadPackFromAPI("mdi", ["search"], { logger: logger() });
+    const result = await loadPackFromAPI("mdi", ["search"], {
+      logger: logger(),
+    });
 
     expect(result).toEqual(search);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -65,7 +66,9 @@ describe("loadPackFromAPI", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(loadPackFromAPI("mdi", [], { logger: logger() })).rejects.toThrow(/mdi/);
+    await expect(
+      loadPackFromAPI("mdi", [], { logger: logger() }),
+    ).rejects.toThrow(/mdi/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -85,12 +88,20 @@ describe("loadPackFromAPI", () => {
   });
 
   it("throws when the fetch fails to resolve", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("Not Found", { status: 404 })));
-    await expect(loadPackFromAPI("mdi", ["search"], { logger: logger() })).rejects.toThrow(/mdi/);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Not Found", { status: 404 })),
+    );
+    await expect(
+      loadPackFromAPI("mdi", ["search"], { logger: logger() }),
+    ).rejects.toThrow(/mdi/);
   });
 
   it("throws when the API returns its 200-with-body-'404' sentinel for an unrecognized pack", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("404", { status: 200 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("404", { status: 200 })),
+    );
     await expect(
       loadPackFromAPI("not-a-real-pack", ["search"], { logger: logger() }),
     ).rejects.toThrow(/not-a-real-pack/);
@@ -109,16 +120,21 @@ describe("loadPackFromAPI", () => {
   });
 
   it("does not cache a failed resolution - a later call can still succeed", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("Not Found", { status: 404 })));
-    await expect(loadPackFromAPI("mdi", ["search"], { logger: logger() })).rejects.toThrow();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Not Found", { status: 404 })),
+    );
+    await expect(
+      loadPackFromAPI("mdi", ["search"], { logger: logger() }),
+    ).rejects.toThrow();
 
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(JSON.stringify(search), { status: 200 })),
     );
-    await expect(loadPackFromAPI("mdi", ["search"], { logger: logger() })).resolves.toEqual(
-      search,
-    );
+    await expect(
+      loadPackFromAPI("mdi", ["search"], { logger: logger() }),
+    ).resolves.toEqual(search);
   });
 
   it("logs a debug timing line", async () => {
@@ -131,6 +147,8 @@ describe("loadPackFromAPI", () => {
     await loadPackFromAPI("mdi", ["search"], { logger: { debug } });
 
     expect(debug).toHaveBeenCalledOnce();
-    expect(debug.mock.calls[0][0]).toMatch(/Loaded 1 icon\(s\) of "mdi" from the Iconify API in/);
+    expect(debug.mock.calls[0][0]).toMatch(
+      /Loaded 1 icon\(s\) of "mdi" from the Iconify API in/,
+    );
   });
 });

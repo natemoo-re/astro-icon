@@ -21,7 +21,9 @@ export async function listIconsOrFallback(
   try {
     return await source.listIcons();
   } catch (ex) {
-    const message = failureMessage(ex instanceof Error ? ex.message : String(ex));
+    const message = failureMessage(
+      ex instanceof Error ? ex.message : String(ex),
+    );
     if (strict) {
       throw new AstroIconError(message, hint);
     }

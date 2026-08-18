@@ -66,7 +66,7 @@ Nothing enforces that a collection's key, its source's `name`, and any underlyin
 
 ## Loader vs Source
 
-"Loader" is Astro's own vocabulary - an object satisfying Astro's `Loader`/`LiveLoader` interface (`load`/`loadEntry`/`loadCollection`), and the *only* thing Astro itself ever sees or names as a collection's `loader:` value. "Source" is astro-icon's own vocabulary - an object satisfying [`IconSource`](#icon-source) (`getIcon`/`listIcons`/`getVersion`). The two are structurally unrelated interfaces, bridged only by astro-icon's `createIconLoader`/`createLiveIconLoader` adapters (`packages/core/src/content/loader.ts`, `liveLoader.ts`).
+"Loader" is Astro's own vocabulary - an object satisfying Astro's `Loader`/`LiveLoader` interface (`load`/`loadEntry`/`loadCollection`), and the _only_ thing Astro itself ever sees or names as a collection's `loader:` value. "Source" is astro-icon's own vocabulary - an object satisfying [`IconSource`](#icon-source) (`getIcon`/`listIcons`/`getVersion`). The two are structurally unrelated interfaces, bridged only by astro-icon's `createIconLoader`/`createLiveIconLoader` adapters (`packages/core/src/content/loader.ts`, `liveLoader.ts`).
 
 The relationship is **N sources → 1 loader → 1 collection**, not 1:1 - `mergeSources` (see [Composite source](#composite-source)) can fan multiple sources into a single loader. Every backend follows the same two-file shape under `content/`: a `source.ts` (implements `IconSource`) paired with a `loader.ts` (adapts it into an Astro `Loader`) - see `content/local/{source,loader}.ts` and `content/iconify/{source,loader}.ts`.
 

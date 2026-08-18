@@ -24,8 +24,13 @@ async function getFreePort(): Promise<number> {
     server.on("error", reject);
     server.listen(0, () => {
       const address = server.address();
-      const port = typeof address === "object" && address ? address.port : undefined;
-      server.close(() => (port ? resolve(port) : reject(new Error("Could not determine a free port"))));
+      const port =
+        typeof address === "object" && address ? address.port : undefined;
+      server.close(() =>
+        port
+          ? resolve(port)
+          : reject(new Error("Could not determine a free port")),
+      );
     });
   });
 }
@@ -53,7 +58,10 @@ describe("createLiveIconLoader(iconifyLocalSource()) + <LiveIcon> against a real
 
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(
-        () => reject(new Error("Timed out waiting for the live fixture server to start")),
+        () =>
+          reject(
+            new Error("Timed out waiting for the live fixture server to start"),
+          ),
         15_000,
       );
       server.stdout?.on("data", (chunk: Buffer) => {

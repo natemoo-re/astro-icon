@@ -8,7 +8,10 @@ import { mergeSources } from "./compositeSource.js";
 import { recordCollection } from "./typegen/index.js";
 import type { IconSource } from "./source.js";
 
-async function getSourceVersionKey(source: IconSource, names: string[]): Promise<string | undefined> {
+async function getSourceVersionKey(
+  source: IconSource,
+  names: string[],
+): Promise<string | undefined> {
   const version = await source.getVersion?.().catch(() => undefined);
   if (!version) return undefined;
   return `${version}::${names.slice().sort().join(",")}`;
@@ -69,7 +72,8 @@ export function createIconLoader(
   const { strict = false } = options;
 
   async function load(context: LoaderContext): Promise<void> {
-    const { store, meta, logger, parseData, generateDigest, collection } = context;
+    const { store, meta, logger, parseData, generateDigest, collection } =
+      context;
 
     const syncStart = performance.now();
 
@@ -77,7 +81,8 @@ export function createIconLoader(
     const names = await listIconsOrFallback(source, {
       strict,
       logger,
-      failureMessage: (detail) => `"${source.name}" failed to list its icons: ${detail}`,
+      failureMessage: (detail) =>
+        `"${source.name}" failed to list its icons: ${detail}`,
       hint: `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
     });
     const listDuration = performance.now() - listStart;
@@ -96,7 +101,11 @@ export function createIconLoader(
     // Skip resolving if every source's version + the requested icon set matches the last sync.
     const metaKey = `astro-icon:version:${collection}`;
     const versionKey = await getSourceVersionKey(source, names);
-    if (versionKey && versionKey === meta.get(metaKey) && names.every((name) => store.has(name))) {
+    if (
+      versionKey &&
+      versionKey === meta.get(metaKey) &&
+      names.every((name) => store.has(name))
+    ) {
       await recordCollection(context.config.root, "build", collection, names);
       logger.debug(
         `"${collection}" is already up to date (${names.length} icon(s) from "${source.name}"), skipped in ${formatDuration(performance.now() - syncStart)}.`,
@@ -122,7 +131,11 @@ export function createIconLoader(
     // own vocabulary (a source's icon name) crosses into Astro's content-layer vocabulary (id).
     for (const { name, data } of built) {
       const parsedData = await parseData({ id: name, data });
-      store.set({ id: name, data: parsedData, digest: generateDigest(parsedData) });
+      store.set({
+        id: name,
+        data: parsedData,
+        digest: generateDigest(parsedData),
+      });
     }
 
     if (versionKey) meta.set(metaKey, versionKey);

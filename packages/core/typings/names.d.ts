@@ -8,7 +8,9 @@ declare global {
 }
 
 type AstroIconPrefixed = {
-  [K in keyof AstroIcon.Collections & string]: `${K}:${AstroIcon.Collections[K] & string}`;
+  [
+    K in keyof AstroIcon.Collections & string
+  ]: `${K}:${AstroIcon.Collections[K] & string}`;
 }[keyof AstroIcon.Collections & string];
 
 // `"icons" extends keyof T ? T["icons"] : never` fails to narrow the indexed
@@ -44,7 +46,9 @@ export type IconName = [AstroIconPrefixed | AstroIconBare] extends [never]
  * `live.config.ts`) is checked; `<LiveIcon icon="...">` stays a plain
  * `string`. Falls back to a plain `string` until a sync has run.
  */
-export type LiveCollectionName = [keyof AstroIcon.LiveCollections] extends [never]
+export type LiveCollectionName = [keyof AstroIcon.LiveCollections] extends [
+  never,
+]
   ? string
   : keyof AstroIcon.LiveCollections & string;
 
@@ -55,6 +59,5 @@ export type LiveCollectionName = [keyof AstroIcon.LiveCollections] extends [neve
  * against the real pack contents. Falls back to a plain `string` until a
  * sync has run, or if `pack` isn't a literal known to have been recorded.
  */
-export type IconifyIconName<Pack extends string> = Pack extends keyof AstroIcon.Packs
-  ? AstroIcon.Packs[Pack] & string
-  : string;
+export type IconifyIconName<Pack extends string> =
+  Pack extends keyof AstroIcon.Packs ? AstroIcon.Packs[Pack] & string : string;

@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { extractSpriteIcons, rewriteSpriteHtml } from "../src/render/sprite/rewrite.js";
+import {
+  extractSpriteIcons,
+  rewriteSpriteHtml,
+} from "../src/render/sprite/rewrite.js";
 
-const home = { viewBox: "0 0 24 24", body: "<path d=\"M1 1\"/>" };
-const search = { viewBox: "0 0 24 24", body: "<path d=\"M2 2\"/>" };
+const home = { viewBox: "0 0 24 24", body: '<path d="M1 1"/>' };
+const search = { viewBox: "0 0 24 24", body: '<path d="M2 2"/>' };
 
 describe("extractSpriteIcons", () => {
   it("returns nothing for markup with no data-icon marker", () => {
-    expect(extractSpriteIcons('<div><svg><path/></svg></div>')).toEqual([]);
+    expect(extractSpriteIcons("<div><svg><path/></svg></div>")).toEqual([]);
   });
 
   it("finds a single icon", () => {
-    const html = '<svg width="24" height="24" data-icon="mdi:home"><path/></svg>';
+    const html =
+      '<svg width="24" height="24" data-icon="mdi:home"><path/></svg>';
     expect(extractSpriteIcons(html)).toEqual([
       { collection: "mdi", name: "home", id: "ai:mdi:home" },
     ]);
@@ -46,7 +50,8 @@ describe("extractSpriteIcons", () => {
 
 describe("rewriteSpriteHtml", () => {
   it("rewrites a single occurrence into a <use>", () => {
-    const html = '<svg width="24" height="24" data-icon="mdi:home"><path d="M1 1"/></svg>';
+    const html =
+      '<svg width="24" height="24" data-icon="mdi:home"><path d="M1 1"/></svg>';
     const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
     expect(out).toBe(
       '<svg width="24" height="24" data-icon="mdi:home"><use href="#ai:mdi:home" /></svg>',
@@ -113,7 +118,8 @@ describe("rewriteSpriteHtml", () => {
     // Same collection:name as a resolved static icon - LiveIcon must not be
     // rewritten into a <use> pointing at the static icon's symbol, since
     // live content isn't guaranteed to match it.
-    const html = '<svg data-icon="mdi:home" data-icon-live><path d="M9 9"/></svg>';
+    const html =
+      '<svg data-icon="mdi:home" data-icon-live><path d="M9 9"/></svg>';
     const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
     expect(out).toBe(html);
   });

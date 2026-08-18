@@ -29,7 +29,11 @@ export function recordCollection(
 }
 
 /** Records an Iconify pack's full, unfiltered catalog, so `icons: [...]` options can be typed and autocompleted against it. Not a collection - kept as a separate entry point so `recordCollection`'s `kind` can never be "packs". */
-export function recordCatalog(rootDir: URL, pack: string, names: string[]): Promise<void> {
+export function recordCatalog(
+  rootDir: URL,
+  pack: string,
+  names: string[],
+): Promise<void> {
   return enqueueWrite(rootDir, "packs", pack, names);
 }
 

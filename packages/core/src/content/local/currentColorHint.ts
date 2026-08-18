@@ -1,5 +1,10 @@
 const COLOR_ATTR_RE = /\b(?:fill|stroke)="([^"]*)"/g;
-const IGNORED_VALUES = new Set(["none", "transparent", "currentcolor", "inherit"]);
+const IGNORED_VALUES = new Set([
+  "none",
+  "transparent",
+  "currentcolor",
+  "inherit",
+]);
 
 /**
  * A cheap, deliberately conservative signal for "this icon probably won't

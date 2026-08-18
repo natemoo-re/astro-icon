@@ -39,12 +39,16 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
   // Mirrors Astro's real `DataStore` shape (`get`/`entries` return the full
   // `{ id, data, digest }` entry, not just `data`) - the loader relies on
   // that to snapshot/reuse previous entries across syncs.
-  const stored = new Map<string, { id: string; data: unknown; digest?: string | number }>();
+  const stored = new Map<
+    string,
+    { id: string; data: unknown; digest?: string | number }
+  >();
   const metaStored = new Map<string, string>();
   return {
     store: {
       clear: () => stored.clear(),
-      set: (entry: { id: string; data: unknown; digest?: string | number }) => stored.set(entry.id, entry),
+      set: (entry: { id: string; data: unknown; digest?: string | number }) =>
+        stored.set(entry.id, entry),
       get: (id: string) => stored.get(id),
       entries: () => [...stored.entries()],
       values: () => [...stored.values()],
@@ -108,7 +112,10 @@ describe("localIcons / currentColor discoverability nudge", () => {
   it("warns once, naming the count, when synced icons don't use currentColor", async () => {
     // No fill attribute at all - relies on SVG's default black, the same shape #136 hit.
     await write("home.svg", SQUARE_SVG);
-    await write("logos/deno.svg", `<svg viewBox="0 0 24 24"><rect fill="#000" width="24" height="24"/></svg>`);
+    await write(
+      "logos/deno.svg",
+      `<svg viewBox="0 0 24 24"><rect fill="#000" width="24" height="24"/></svg>`,
+    );
 
     const context = fakeContext();
     await localIcons("icons").load(context);
@@ -116,7 +123,9 @@ describe("localIcons / currentColor discoverability nudge", () => {
     expect(context.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('2 icon(s) in "icons"'),
     );
-    expect(context.logger.warn).toHaveBeenCalledWith(expect.stringContaining("currentColor"));
+    expect(context.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("currentColor"),
+    );
   });
 
   it("doesn't warn when icons already use currentColor", async () => {
@@ -256,10 +265,15 @@ describe("localIcons / missing directory doesn't destabilize the watcher", () =>
     await loader.load(context);
 
     expect(() => {
-      watcher.emit("error", new Error("EPERM: operation not permitted, lstat 'does-not-exist'"));
+      watcher.emit(
+        "error",
+        new Error("EPERM: operation not permitted, lstat 'does-not-exist'"),
+      );
     }).not.toThrow();
 
-    expect(context.logger.warn).toHaveBeenCalledWith(expect.stringContaining("EPERM"));
+    expect(context.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("EPERM"),
+    );
   });
 
   it("keeps handling events for unrelated files after an 'error' event", async () => {
@@ -339,7 +353,9 @@ describe("localIcons / whole-directory skip logging", () => {
     expect(context.logger.info).not.toHaveBeenCalled();
     expect(context.logger.debug).toHaveBeenCalledOnce();
     const [message] = context.logger.debug.mock.calls[0];
-    expect(message).toMatch(/^"icons" is already up to date \(2 icon\(s\)\), skipped in /);
+    expect(message).toMatch(
+      /^"icons" is already up to date \(2 icon\(s\)\), skipped in /,
+    );
   });
 
   it("falls back to a full resync + info log once a file's mtime/size changes", async () => {

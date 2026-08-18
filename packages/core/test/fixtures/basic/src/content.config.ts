@@ -26,9 +26,13 @@ export const collections = {
   // Bare `<Icon name="..." />` resolves against a collection literally
   // named "icons" - this is pure convention, not something astro-icon
   // enforces.
-  icons: defineCollection({ loader: createIconLoader(iconifyLocalSource("svg-spinners")) }),
+  icons: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("svg-spinners")),
+  }),
   spinners: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("svg-spinners", { icons: ["3-dots-fade"] })),
+    loader: createIconLoader(
+      iconifyLocalSource("svg-spinners", { icons: ["3-dots-fade"] }),
+    ),
   }),
   // Combines an icon from the svg-spinners pack (explicitly limited) with
   // an icon from a completely custom source, into one collection.

@@ -39,14 +39,19 @@ export interface LocalSourceOptions {
  * Each file's path relative to `dir` becomes its icon name, the same
  * convention `localIcons()` uses: `<dir>/logos/deno.svg` is `"logos/deno"`.
  */
-export function localSource(dir: URL | string, options: LocalSourceOptions = {}): IconSource {
+export function localSource(
+  dir: URL | string,
+  options: LocalSourceOptions = {},
+): IconSource {
   const dirPath = dir instanceof URL ? fileURLToPath(dir) : dir;
   const { icons, optimize, strict = false, logger = consoleLogger } = options;
   const allowed = icons && new Set(icons);
 
   if (icons && allowed && allowed.size !== icons.length) {
     const seen = new Set<string>();
-    const duplicates = icons.filter((name) => seen.size === seen.add(name).size);
+    const duplicates = icons.filter(
+      (name) => seen.size === seen.add(name).size,
+    );
     logger.warn(
       `The local source's \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
     );
@@ -68,7 +73,13 @@ export function localSource(dir: URL | string, options: LocalSourceOptions = {})
           `Add a ".svg" file at that path, or check for a typo in the icon name.`,
         );
       });
-      return parseIconSVG(svg, { collection: "local", name, optimize, strict, logger });
+      return parseIconSVG(svg, {
+        collection: "local",
+        name,
+        optimize,
+        strict,
+        logger,
+      });
     },
     async listIcons() {
       if (allowed) return [...icons!];
@@ -90,7 +101,12 @@ async function walkSvgFiles(dir: string, prefix = ""): Promise<string[]> {
     if (entry.name.startsWith(".")) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      names.push(...(await walkSvgFiles(full, prefix ? `${prefix}/${entry.name}` : entry.name)));
+      names.push(
+        ...(await walkSvgFiles(
+          full,
+          prefix ? `${prefix}/${entry.name}` : entry.name,
+        )),
+      );
     } else if (entry.name.endsWith(".svg")) {
       const name = entry.name.slice(0, -".svg".length);
       names.push(prefix ? `${prefix}/${name}` : name);

@@ -19,10 +19,16 @@ export const collections = {
       }),
     ),
   }),
-  fe: defineCollection({ loader: createIconLoader(iconifyLocalSource("fe", {})) }),
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  fe: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("fe", {})),
+  }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
   ri: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("ri", { icons: ["aliens-fill"] })),
+    loader: createIconLoader(
+      iconifyLocalSource("ri", { icons: ["aliens-fill"] }),
+    ),
   }),
   bi: defineCollection({
     loader: createIconLoader(iconifyLocalSource("bi", { icons: ["stars"] })),

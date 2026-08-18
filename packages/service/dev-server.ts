@@ -1,4 +1,8 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import handler from "./api/v1/icon.js";
 
 // A minimal local stand-in for the Vercel dev runtime, just enough to run

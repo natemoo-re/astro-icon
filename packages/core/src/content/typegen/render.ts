@@ -7,7 +7,10 @@ const KIND_CONFIG = {
   build: { interfaceName: "Collections", emptyValueType: "never" },
   live: { interfaceName: "LiveCollections", emptyValueType: "string" },
   packs: { interfaceName: "Packs", emptyValueType: "string" },
-} as const satisfies Record<TypegenKind, { interfaceName: string; emptyValueType: string }>;
+} as const satisfies Record<
+  TypegenKind,
+  { interfaceName: string; emptyValueType: string }
+>;
 
 export function partialFilename(kind: TypegenKind, collection: string): string {
   // Sanitized since collection names are arbitrary user-chosen identifiers; prefixed by kind to avoid a name collision across kinds.
@@ -59,12 +62,18 @@ export async function writePartial(
   collection: string,
   names: string[],
 ): Promise<void> {
-  const partialFile = new URL(`./${partialFilename(kind, collection)}`, partialsDir);
+  const partialFile = new URL(
+    `./${partialFilename(kind, collection)}`,
+    partialsDir,
+  );
   const currentHash = namesHash(names);
   const oldHash = await tryGetHash(partialFile);
   if (currentHash === oldHash) return;
 
-  await writeFile(partialFile, renderPartial(kind, collection, names, currentHash));
+  await writeFile(
+    partialFile,
+    renderPartial(kind, collection, names, currentHash),
+  );
 }
 
 /** Renders the aggregating index that references every kind/collection's own partial. */

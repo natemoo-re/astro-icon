@@ -10,7 +10,9 @@ import type { IconSource } from "./source.js";
 export type CompositeSource = IconSource;
 
 /** Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per icon (first match wins). */
-export function mergeSources(sources: IconSource | IconSource[]): CompositeSource {
+export function mergeSources(
+  sources: IconSource | IconSource[],
+): CompositeSource {
   if (!Array.isArray(sources)) return sources;
   if (sources.length === 1) return sources[0];
 
@@ -25,7 +27,9 @@ export function mergeSources(sources: IconSource | IconSource[]): CompositeSourc
           return await source.getIcon(iconName);
         } catch (ex) {
           // Try the next source; only fail if none of them have it.
-          failures.push(`${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`);
+          failures.push(
+            `${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`,
+          );
         }
       }
       throw new AstroIconError(
@@ -35,14 +39,20 @@ export function mergeSources(sources: IconSource | IconSource[]): CompositeSourc
     },
     async listIcons() {
       const lists = await Promise.all(
-        sources.map((source) => (source.listIcons ? source.listIcons().catch(() => []) : [])),
+        sources.map((source) =>
+          source.listIcons ? source.listIcons().catch(() => []) : [],
+        ),
       );
       return [...new Set(lists.flat())];
     },
     async getVersion() {
       // Only meaningful if every merged source can report one.
       const versions = await Promise.all(
-        sources.map((source) => source.getVersion?.().catch(() => undefined) ?? Promise.resolve(undefined)),
+        sources.map(
+          (source) =>
+            source.getVersion?.().catch(() => undefined) ??
+            Promise.resolve(undefined),
+        ),
       );
       if (versions.some((version) => !version)) return undefined;
       return versions.join("+");

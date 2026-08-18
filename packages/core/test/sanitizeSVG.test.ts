@@ -14,7 +14,9 @@ describe("sanitizeSVGBody / removes active content", () => {
 
   it("removes a <foreignObject> element and its contents", () => {
     expect(
-      sanitizeSVGBody('<foreignObject><div onclick="alert(1)">hi</div></foreignObject>'),
+      sanitizeSVGBody(
+        '<foreignObject><div onclick="alert(1)">hi</div></foreignObject>',
+      ),
     ).toBe("");
   });
 
@@ -23,19 +25,27 @@ describe("sanitizeSVGBody / removes active content", () => {
   });
 
   it("strips on* event handler attributes but keeps the element", () => {
-    expect(sanitizeSVGBody('<path d="M0 0" onload="alert(1)"/>')).toBe('<path d="M0 0" />');
+    expect(sanitizeSVGBody('<path d="M0 0" onload="alert(1)"/>')).toBe(
+      '<path d="M0 0" />',
+    );
   });
 
   it("strips event handler attributes regardless of case", () => {
-    expect(sanitizeSVGBody('<path d="M0 0" OnLoad="alert(1)"/>')).toBe('<path d="M0 0" />');
+    expect(sanitizeSVGBody('<path d="M0 0" OnLoad="alert(1)"/>')).toBe(
+      '<path d="M0 0" />',
+    );
   });
 
   it("strips a javascript: URI from href but keeps the element", () => {
-    expect(sanitizeSVGBody('<a href="javascript:alert(1)">x</a>')).toBe("<a>x</a>");
+    expect(sanitizeSVGBody('<a href="javascript:alert(1)">x</a>')).toBe(
+      "<a>x</a>",
+    );
   });
 
   it("strips a javascript: URI obfuscated with whitespace/control characters", () => {
-    expect(sanitizeSVGBody('<a href="jav\tascript:alert(1)">x</a>')).toBe("<a>x</a>");
+    expect(sanitizeSVGBody('<a href="jav\tascript:alert(1)">x</a>')).toBe(
+      "<a>x</a>",
+    );
   });
 
   it("strips a data:text/html URI from xlink:href", () => {
@@ -47,7 +57,9 @@ describe("sanitizeSVGBody / removes active content", () => {
   });
 
   it("strips a javascript: URI from src", () => {
-    expect(sanitizeSVGBody('<image src="javascript:alert(1)"/>')).toBe("<image />");
+    expect(sanitizeSVGBody('<image src="javascript:alert(1)"/>')).toBe(
+      "<image />",
+    );
   });
 });
 

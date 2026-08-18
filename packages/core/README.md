@@ -44,11 +44,17 @@ Define a collection with `createIconLoader` and `iconifyLocalSource` for an [Ico
 ```ts
 // src/content.config.ts
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource, localIcons } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyLocalSource,
+  localIcons,
+} from "astro-icon/loaders";
 
 export const collections = {
   // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
   // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
   icons: defineCollection({ loader: localIcons() }),
 };
@@ -115,8 +121,10 @@ import { Icon } from "astro-icon/components";
   }
 </style>
 
-<Icon name="mdi:home" /> <!-- blue -->
-<Icon name="mdi:heart" /> <!-- red -->
+<Icon name="mdi:home" />
+<!-- blue -->
+<Icon name="mdi:heart" />
+<!-- red -->
 
 <!-- Or pass a class directly, e.g. with Tailwind -->
 <Icon name="mdi:heart" class="text-red-500" />
@@ -193,7 +201,9 @@ import { defineCollection } from "astro:content";
 import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 
 export const collections = {
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
 };
 ```
 
@@ -206,7 +216,9 @@ export const collections = {
   // The API only resolves icons you name explicitly, never the whole pack,
   // and it adds a network request per icon during your build.
   mdi: defineCollection({
-    loader: createIconLoader(iconifyApiSource("mdi", { icons: ["account", "home", "heart"] })),
+    loader: createIconLoader(
+      iconifyApiSource("mdi", { icons: ["account", "home", "heart"] }),
+    ),
   }),
 };
 ```
@@ -214,7 +226,12 @@ export const collections = {
 Want "prefer a local install, fall back to the API"? Compose both with `mergeSources` - each icon is resolved by trying sources in order, first match wins:
 
 ```ts
-import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyApiSource,
+  iconifyLocalSource,
+  mergeSources,
+} from "astro-icon/loaders";
 
 export const collections = {
   mdi: defineCollection({
@@ -267,7 +284,12 @@ optimize: svgo({
   plugins: [
     {
       name: "preset-default",
-      params: { overrides: { ...defaultOverrides, convertColors: { currentColor: true } } },
+      params: {
+        overrides: {
+          ...defaultOverrides,
+          convertColors: { currentColor: true },
+        },
+      },
     },
   ],
 });
@@ -285,8 +307,14 @@ export const collections = {
         optimize: (svg, { collection, name }) =>
           svgo({
             plugins: [
-              { name: "prefixIds", params: { prefix: `${collection}-${name}` } },
-              { name: "preset-default", params: { overrides: defaultOverrides } },
+              {
+                name: "prefixIds",
+                params: { prefix: `${collection}-${name}` },
+              },
+              {
+                name: "preset-default",
+                params: { overrides: defaultOverrides },
+              },
             ],
           })(svg, { collection, name }),
       }),
@@ -354,20 +382,30 @@ Define one in `src/live.config.ts` with `createLiveIconLoader`, the live equival
 ```ts
 // src/live.config.ts
 import { defineLiveCollection } from "astro:content";
-import { createLiveIconLoader, iconifyLocalSource } from "astro-icon/loaders/live";
+import {
+  createLiveIconLoader,
+  iconifyLocalSource,
+} from "astro-icon/loaders/live";
 
 export const collections = {
-  mdi: defineLiveCollection({ loader: createLiveIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineLiveCollection({
+    loader: createLiveIconLoader(iconifyLocalSource("mdi")),
+  }),
 };
 ```
 
 For a pack you'd rather not install, `iconifyApiSource` (with no `icons` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
 
 ```ts
-import { createLiveIconLoader, iconifyApiSource } from "astro-icon/loaders/live";
+import {
+  createLiveIconLoader,
+  iconifyApiSource,
+} from "astro-icon/loaders/live";
 
 export const collections = {
-  ph: defineLiveCollection({ loader: createLiveIconLoader(iconifyApiSource("ph")) }),
+  ph: defineLiveCollection({
+    loader: createLiveIconLoader(iconifyApiSource("ph")),
+  }),
 };
 ```
 
@@ -424,7 +462,11 @@ A collection is just the object you pass to `export const collections = { ... }`
 ```ts
 // my-lib/src/icons.ts
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyLocalSource,
+  localSource,
+} from "astro-icon/loaders";
 
 export const myLibIcons = {
   // Namespace the key so it can't collide with a collection the consumer
@@ -453,11 +495,11 @@ export const collections = {
 };
 ```
 
-The consumer now renders both without adding a loader themselves: `<Icon name="my-lib-icons:home" />` and `<Icon name="logo" />`. Astro's content layer resolves each loader at build/dev time through the `LoaderContext` it passes in, including `config.root`, so the library's loader runs against the *consumer's* project the same way any loader does. There's nothing extra to wire up, and typegen for the library's collection is written into the consumer's own `.astro/astro-icon.d.ts` alongside everything else.
+The consumer now renders both without adding a loader themselves: `<Icon name="my-lib-icons:home" />` and `<Icon name="logo" />`. Astro's content layer resolves each loader at build/dev time through the `LoaderContext` it passes in, including `config.root`, so the library's loader runs against the _consumer's_ project the same way any loader does. There's nothing extra to wire up, and typegen for the library's collection is written into the consumer's own `.astro/astro-icon.d.ts` alongside everything else.
 
 Two things worth knowing when you're the library author:
 
-- **Use `localSource`, not `localIcons()`, for bundled `.svg` files.** `localIcons(dir)` resolves `dir` against the *consuming* project's root (`config.root`), which is correct for a directory the consumer owns but wrong for one that ships inside your package. `localSource` takes a `URL` and resolves it directly, so `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file, no matter who imports it. Wrap it in `createIconLoader([...])` to get a `Loader` you can hand to `defineCollection`.
+- **Use `localSource`, not `localIcons()`, for bundled `.svg` files.** `localIcons(dir)` resolves `dir` against the _consuming_ project's root (`config.root`), which is correct for a directory the consumer owns but wrong for one that ships inside your package. `localSource` takes a `URL` and resolves it directly, so `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file, no matter who imports it. Wrap it in `createIconLoader([...])` to get a `Loader` you can hand to `defineCollection`.
 - **Pick a collection key that won't collide.** Two collections can't share a key when their objects are spread together; prefix yours with your package name (`"my-lib-icons"`) rather than something generic like `"icons"`.
 
 The same pattern works for a live collection: export an object of `defineLiveCollection({ loader: createLiveIconLoader(...) })` entries for a consumer to spread into their `src/live.config.ts`.

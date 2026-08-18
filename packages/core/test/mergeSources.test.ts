@@ -10,7 +10,8 @@ function entryFor(id: string): IconEntry {
 function fakeSource(
   name: string,
   icons: Record<string, IconEntry>,
-  listIcons: (() => Promise<string[]>) | null = () => Promise.resolve(Object.keys(icons)),
+  listIcons: (() => Promise<string[]>) | null = () =>
+    Promise.resolve(Object.keys(icons)),
 ): IconSource {
   return {
     name,
@@ -50,7 +51,9 @@ describe("mergeSources / multiple sources / getIcon", () => {
     const second = fakeSource("second", { home: entryFor("second-home") });
     const merged = mergeSources([first, second]);
 
-    await expect(merged.getIcon("home")).resolves.toEqual(entryFor("first-home"));
+    await expect(merged.getIcon("home")).resolves.toEqual(
+      entryFor("first-home"),
+    );
     expect(second.getIcon).not.toHaveBeenCalled();
   });
 
@@ -64,14 +67,19 @@ describe("mergeSources / multiple sources / getIcon", () => {
 
   it("throws a descriptive error when no source has the icon", async () => {
     const merged = mergeSources([fakeSource("mdi", {}), fakeSource("ic", {})]);
-    await expect(merged.getIcon("missing")).rejects.toThrow(/mdi\+ic.*missing/s);
+    await expect(merged.getIcon("missing")).rejects.toThrow(
+      /mdi\+ic.*missing/s,
+    );
   });
 });
 
 describe("mergeSources / multiple sources / listIcons", () => {
   it("merges and dedupes names, first-source order wins", async () => {
     const first = fakeSource("first", { home: entryFor("a") });
-    const second = fakeSource("second", { home: entryFor("b"), star: entryFor("c") });
+    const second = fakeSource("second", {
+      home: entryFor("b"),
+      star: entryFor("c"),
+    });
     const merged = mergeSources([first, second]);
 
     await expect(merged.listIcons?.()).resolves.toEqual(["home", "star"]);
@@ -95,6 +103,8 @@ describe("mergeSources / multiple sources / listIcons", () => {
 
 describe("mergeSources naming", () => {
   it("joins each source's name", () => {
-    expect(mergeSources([fakeSource("mdi", {}), fakeSource("ic", {})]).name).toBe("mdi+ic");
+    expect(
+      mergeSources([fakeSource("mdi", {}), fakeSource("ic", {})]).name,
+    ).toBe("mdi+ic");
   });
 });

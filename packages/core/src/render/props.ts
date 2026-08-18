@@ -89,14 +89,26 @@ export function iconA11yProps(
   const normalizedTitle = normalizeAccessibleElement(title);
   const normalizedDesc = normalizeAccessibleElement(desc);
 
-  const hasOwnName = props["aria-label"] != null || props["aria-labelledby"] != null;
-  const hasOwnDesc = props["aria-description"] != null || props["aria-describedby"] != null;
+  const hasOwnName =
+    props["aria-label"] != null || props["aria-labelledby"] != null;
+  const hasOwnDesc =
+    props["aria-description"] != null || props["aria-describedby"] != null;
   const isLabeled = Boolean(
-    normalizedTitle || normalizedDesc || hasOwnName || hasOwnDesc || props.role != null,
+    normalizedTitle ||
+    normalizedDesc ||
+    hasOwnName ||
+    hasOwnDesc ||
+    props.role != null,
   );
 
-  const titleId = normalizedTitle && !hasOwnName ? (normalizedTitle.id ?? shortId("title")) : undefined;
-  const descId = normalizedDesc && !hasOwnDesc ? (normalizedDesc.id ?? shortId("desc")) : undefined;
+  const titleId =
+    normalizedTitle && !hasOwnName
+      ? (normalizedTitle.id ?? shortId("title"))
+      : undefined;
+  const descId =
+    normalizedDesc && !hasOwnDesc
+      ? (normalizedDesc.id ?? shortId("desc"))
+      : undefined;
 
   if (import.meta.env.DEV) {
     if (normalizedTitle && hasOwnName) {
@@ -141,7 +153,12 @@ export interface RenderableIconProps<P> {
 
 /** Builds the final `<svg>` props for a single icon occurrence. Shared by `<Icon>` and `<LiveIcon>`. */
 export function renderableIconProps<
-  P extends { size?: number | string; width?: unknown; height?: unknown; viewBox?: unknown },
+  P extends {
+    size?: number | string;
+    width?: unknown;
+    height?: unknown;
+    viewBox?: unknown;
+  },
 >(
   entry: Pick<IconEntry, "width" | "height" | "viewBox">,
   props: P,

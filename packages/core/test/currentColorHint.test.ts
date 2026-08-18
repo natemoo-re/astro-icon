@@ -3,7 +3,9 @@ import { looksLikeItNeedsCurrentColor } from "../src/content/local/currentColorH
 
 describe("looksLikeItNeedsCurrentColor", () => {
   it("is false when the icon already uses currentColor", () => {
-    expect(looksLikeItNeedsCurrentColor('<path fill="currentColor" d="M0 0"/>')).toBe(false);
+    expect(
+      looksLikeItNeedsCurrentColor('<path fill="currentColor" d="M0 0"/>'),
+    ).toBe(false);
   });
 
   it("is false when currentColor is used anywhere, even alongside other colors", () => {
@@ -34,13 +36,17 @@ describe("looksLikeItNeedsCurrentColor", () => {
     ).toBe(false);
   });
 
-  it("ignores fill=\"none\"/stroke=\"none\" when counting distinct colors", () => {
+  it('ignores fill="none"/stroke="none" when counting distinct colors', () => {
     expect(
-      looksLikeItNeedsCurrentColor('<path fill="none" stroke="#000" d="M0 0"/>'),
+      looksLikeItNeedsCurrentColor(
+        '<path fill="none" stroke="#000" d="M0 0"/>',
+      ),
     ).toBe(true);
   });
 
   it("is case-insensitive for currentColor", () => {
-    expect(looksLikeItNeedsCurrentColor('<path fill="CURRENTCOLOR" d="M0 0"/>')).toBe(false);
+    expect(
+      looksLikeItNeedsCurrentColor('<path fill="CURRENTCOLOR" d="M0 0"/>'),
+    ).toBe(false);
   });
 });

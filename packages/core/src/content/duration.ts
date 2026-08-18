@@ -6,5 +6,7 @@
  * to Astro's own "Synced content"-style output.
  */
 export function formatDuration(durationMs: number): string {
-  return durationMs < 1000 ? `${Math.round(durationMs)}ms` : `${(durationMs / 1000).toFixed(2)}s`;
+  return durationMs < 1000
+    ? `${Math.round(durationMs)}ms`
+    : `${(durationMs / 1000).toFixed(2)}s`;
 }

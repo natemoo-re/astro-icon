@@ -17,7 +17,8 @@ function fakeContext(overrides: Record<string, unknown> = {}) {
   return {
     store: {
       clear: () => stored.clear(),
-      set: (entry: { id: string; data: unknown }) => stored.set(entry.id, entry.data),
+      set: (entry: { id: string; data: unknown }) =>
+        stored.set(entry.id, entry.data),
       get: (id: string) => stored.get(id),
       keys: () => stored.keys(),
       has: (id: string) => stored.has(id),
@@ -78,7 +79,10 @@ describe("createIconLoader", () => {
 
     await loader.load(context);
 
-    expect(context.parseData).toHaveBeenCalledWith({ id: "home", data: entryFor("home") });
+    expect(context.parseData).toHaveBeenCalledWith({
+      id: "home",
+      data: entryFor("home"),
+    });
   });
 
   it("exposes a default schema on the loader", () => {
@@ -104,7 +108,12 @@ describe("createIconLoader", () => {
     expect(context.logger.warn).toHaveBeenCalled();
     // The failed icon must not be typed as a valid IconName either - it
     // isn't in the store, so it can't be in the generated types.
-    expect(recordCollection).toHaveBeenCalledWith(expect.any(URL), "build", "icons", ["home"]);
+    expect(recordCollection).toHaveBeenCalledWith(
+      expect.any(URL),
+      "build",
+      "icons",
+      ["home"],
+    );
   });
 
   it("throws under strict instead of warning when building an icon fails", async () => {
@@ -160,7 +169,8 @@ describe("createIconLoader / multiple sources", () => {
       name: "mdi",
       listIcons: async () => ["home"],
       getIcon: vi.fn(async (name: string) => {
-        if (name !== "home") throw new Error(`"mdi" has no icon named "${name}"`);
+        if (name !== "home")
+          throw new Error(`"mdi" has no icon named "${name}"`);
         return entryFor(`mdi-${name}`);
       }),
     });
@@ -168,7 +178,8 @@ describe("createIconLoader / multiple sources", () => {
       name: "ic",
       listIcons: async () => ["star"],
       getIcon: vi.fn(async (name: string) => {
-        if (name !== "star") throw new Error(`"ic" has no icon named "${name}"`);
+        if (name !== "star")
+          throw new Error(`"ic" has no icon named "${name}"`);
         return entryFor(`ic-${name}`);
       }),
     });
@@ -189,7 +200,10 @@ describe("createIconLoader / multiple sources", () => {
 
   it("uses a fixed loader identity regardless of the source(s) it wraps", () => {
     const single = createIconLoader(fakeSource({ name: "mdi" }));
-    const multi = createIconLoader([fakeSource({ name: "mdi" }), fakeSource({ name: "ic" })]);
+    const multi = createIconLoader([
+      fakeSource({ name: "mdi" }),
+      fakeSource({ name: "ic" }),
+    ]);
     expect(single.name).toBe("astro-icon/loaders");
     expect(multi.name).toBe("astro-icon/loaders");
   });
@@ -293,7 +307,10 @@ describe("createIconLoader / version-based skip", () => {
 
 describe("createIconLoader / timing logs", () => {
   it("logs a duration + count summary at info level after a real sync", async () => {
-    const source = fakeSource({ name: "mdi", listIcons: async () => ["home", "menu"] });
+    const source = fakeSource({
+      name: "mdi",
+      listIcons: async () => ["home", "menu"],
+    });
     const loader = createIconLoader(source);
     const context = fakeContext();
 
@@ -301,19 +318,26 @@ describe("createIconLoader / timing logs", () => {
 
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];
-    expect(message).toMatch(/^Loaded 2 icon\(s\) for the "icons" collection in /);
+    expect(message).toMatch(
+      /^Loaded 2 icon\(s\) for the "icons" collection in /,
+    );
     expect(message).toMatch(/\d+(ms|\.\d\ds)\.$/);
   });
 
   it("logs the list/build breakdown separately, at debug level", async () => {
-    const source = fakeSource({ name: "mdi", listIcons: async () => ["home", "menu"] });
+    const source = fakeSource({
+      name: "mdi",
+      listIcons: async () => ["home", "menu"],
+    });
     const loader = createIconLoader(source);
     const context = fakeContext();
 
     await loader.load(context);
 
     const [message] = context.logger.debug.mock.calls.at(-1)!;
-    expect(message).toMatch(/^"icons" breakdown: list \d+(ms|\.\d\ds), build \d+(ms|\.\d\ds)\.$/);
+    expect(message).toMatch(
+      /^"icons" breakdown: list \d+(ms|\.\d\ds), build \d+(ms|\.\d\ds)\.$/,
+    );
   });
 
   it("does not log the info summary when a sync is skipped as up to date", async () => {

@@ -10,4 +10,8 @@ export type { CompositeSource } from "./compositeSource.js";
 export type { IconSource } from "./source.js";
 export { parseIconSVG } from "./parseIconSVG.js";
 export type { ParseIconSVGOptions } from "./parseIconSVG.js";
-export type { IconifySourceOptions, OptimizeFn, IconEntry } from "../../typings/types";
+export type {
+  IconifySourceOptions,
+  OptimizeFn,
+  IconEntry,
+} from "../../typings/types";

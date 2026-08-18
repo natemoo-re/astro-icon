@@ -10,7 +10,11 @@ import { consoleLogger } from "../logger.js";
 import { parseIconSVG } from "../parseIconSVG.js";
 import { recordCatalog } from "../typegen/index.js";
 import type { IconSource } from "../source.js";
-import type { IconEntry, IconifySourceOptions, OptimizeFn } from "../../../typings/types";
+import type {
+  IconEntry,
+  IconifySourceOptions,
+  OptimizeFn,
+} from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
 
 /** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
@@ -61,7 +65,9 @@ function checkForDuplicateIcons(
   const allowed = new Set(icons);
   if (allowed.size !== icons.length) {
     const seen = new Set<string>();
-    const duplicates = icons.filter((name) => seen.size === seen.add(name).size);
+    const duplicates = icons.filter(
+      (name) => seen.size === seen.add(name).size,
+    );
     logger.warn(
       `"${pack}"'s \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")} (${sourceLabel}). Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
     );
@@ -71,7 +77,8 @@ function checkForDuplicateIcons(
 
 export function iconifyLocalSource<
   Pack extends string,
-  const Icons extends readonly IconifyIconName<Pack>[] = readonly IconifyIconName<Pack>[],
+  const Icons extends readonly IconifyIconName<Pack>[] =
+    readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
   options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
@@ -94,7 +101,12 @@ export function iconifyLocalSource(
 ): IconSource {
   const { icons, optimize, strict = false } = options;
   const logger = consoleLogger;
-  const allowed = checkForDuplicateIcons(pack, "iconifyLocalSource", icons, logger);
+  const allowed = checkForDuplicateIcons(
+    pack,
+    "iconifyLocalSource",
+    icons,
+    logger,
+  );
 
   return {
     name: `iconify-local:${pack}`,
@@ -113,7 +125,12 @@ export function iconifyLocalSource(
         );
       }
       recordPackCatalog(pack, data);
-      const entry = await buildIconEntry(data, name, { collection: pack, optimize, strict, logger });
+      const entry = await buildIconEntry(data, name, {
+        collection: pack,
+        optimize,
+        strict,
+        logger,
+      });
       if (!entry) {
         throw new AstroIconError(
           `"${pack}" does not include an icon named "${name}".`,
@@ -144,7 +161,8 @@ export function iconifyLocalSource(
 
 export function iconifyApiSource<
   Pack extends string,
-  const Icons extends readonly IconifyIconName<Pack>[] = readonly IconifyIconName<Pack>[],
+  const Icons extends readonly IconifyIconName<Pack>[] =
+    readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
   options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
@@ -180,7 +198,12 @@ export function iconifyApiSource(
 ): IconSource {
   const { icons, optimize, strict = false } = options;
   const logger = consoleLogger;
-  const allowed = checkForDuplicateIcons(pack, "iconifyApiSource", icons, logger);
+  const allowed = checkForDuplicateIcons(
+    pack,
+    "iconifyApiSource",
+    icons,
+    logger,
+  );
 
   return {
     name: `iconify-api:${pack}`,
@@ -192,7 +215,12 @@ export function iconifyApiSource(
         );
       }
       const data = await loadPackFromAPI(pack, [name], { logger });
-      const entry = await buildIconEntry(data, name, { collection: pack, optimize, strict, logger });
+      const entry = await buildIconEntry(data, name, {
+        collection: pack,
+        optimize,
+        strict,
+        logger,
+      });
       if (!entry) {
         throw new AstroIconError(
           `"${pack}" does not include an icon named "${name}".`,

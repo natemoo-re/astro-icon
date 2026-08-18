@@ -25,9 +25,9 @@ function warnAboutMissingCurrentColor(
   collection: string,
   logger: Pick<AstroIntegrationLogger, "warn">,
 ): void {
-  const candidates = (store.values() as unknown as { data: IconEntry }[]).filter(({ data }) =>
-    looksLikeItNeedsCurrentColor(data.body),
-  );
+  const candidates = (
+    store.values() as unknown as { data: IconEntry }[]
+  ).filter(({ data }) => looksLikeItNeedsCurrentColor(data.body));
   if (candidates.length === 0) return;
 
   logger.warn(
@@ -45,7 +45,10 @@ function hashSource(raw: string): string {
  * (via `stat`, not a content read) so an unchanged sync can be detected
  * without reading (let alone re-optimizing) a single `.svg`.
  */
-async function getDirVersionKey(dirPath: string, names: string[]): Promise<string> {
+async function getDirVersionKey(
+  dirPath: string,
+  names: string[],
+): Promise<string> {
   const entries = await Promise.all(
     names
       .slice()
@@ -78,14 +81,26 @@ async function getDirVersionKey(dirPath: string, names: string[]): Promise<strin
  * do: add, edit, or remove an `.svg` file and the collection picks it up
  * without a dev server restart.
  */
-export function localIcons(dir: string = "src/icons", options: LocalSourceOptions = {}): Loader {
+export function localIcons(
+  dir: string = "src/icons",
+  options: LocalSourceOptions = {},
+): Loader {
   const strict = options.strict ?? false;
 
   return {
     name: "astro-icon/loaders",
     schema: iconEntrySchema,
     load: async (context) => {
-      const { store, meta, logger, parseData, generateDigest, config, watcher, collection } = context;
+      const {
+        store,
+        meta,
+        logger,
+        parseData,
+        generateDigest,
+        config,
+        watcher,
+        collection,
+      } = context;
 
       const dirUrl = new URL(dir.replace(/\/?$/, "/"), config.root);
       const dirPath = fileURLToPath(dirUrl);
@@ -98,7 +113,8 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
       }
 
       function idFromPath(filePath: string): string | undefined {
-        if (!filePath.startsWith(dirPath) || !filePath.endsWith(".svg")) return undefined;
+        if (!filePath.startsWith(dirPath) || !filePath.endsWith(".svg"))
+          return undefined;
         return filePath
           .slice(dirPath.length)
           .replace(/\\/g, "/")
@@ -130,13 +146,21 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
             const data = await source.getIcon(id);
             const parsedData = await parseData({ id, data });
             meta.set(sourceHashKey, sourceHash);
-            store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
+            store.set({
+              id,
+              data: parsedData,
+              digest: generateDigest(parsedData),
+            });
             return;
           }
 
           const data = await source.getIcon(id);
           const parsedData = await parseData({ id, data });
-          store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
+          store.set({
+            id,
+            data: parsedData,
+            digest: generateDigest(parsedData),
+          });
         } catch (ex) {
           const detail = ex instanceof Error ? ex.message : String(ex);
           if (strict) {
@@ -150,7 +174,9 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
       }
 
       async function updateTypes(): Promise<void> {
-        await recordCollection(config.root, "build", collection, [...store.keys()]);
+        await recordCollection(config.root, "build", collection, [
+          ...store.keys(),
+        ]);
       }
 
       const syncStart = performance.now();
@@ -158,7 +184,8 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
       const names = await listIconsOrFallback(source, {
         strict,
         logger,
-        failureMessage: (detail) => `Failed to list local icons in "${dirPath}": ${detail}`,
+        failureMessage: (detail) =>
+          `Failed to list local icons in "${dirPath}": ${detail}`,
         hint: `Fix the error above, or disable "strict" to skip local icons with a warning instead.`,
       });
 
@@ -167,7 +194,10 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
       // the per-file content hash `syncIcon` uses once it's already reading a file.
       const metaKey = `astro-icon:version:${collection}`;
       const versionKey = await getDirVersionKey(dirPath, names);
-      if (versionKey === meta.get(metaKey) && names.every((name) => store.has(name))) {
+      if (
+        versionKey === meta.get(metaKey) &&
+        names.every((name) => store.has(name))
+      ) {
         await updateTypes();
         logger.debug(
           `"${collection}" is already up to date (${names.length} icon(s)), skipped in ${formatDuration(performance.now() - syncStart)}.`,
@@ -201,14 +231,18 @@ export function localIcons(dir: string = "src/icons", options: LocalSourceOption
       // that crash.
       watcher.on("error", (error: unknown) => {
         const detail = error instanceof Error ? error.message : String(error);
-        logger.warn(`The local icon directory watcher for "${dirPath}" reported an error: ${detail}`);
+        logger.warn(
+          `The local icon directory watcher for "${dirPath}" reported an error: ${detail}`,
+        );
       });
 
       try {
         watcher.add(dirPath);
       } catch (ex) {
         const detail = ex instanceof Error ? ex.message : String(ex);
-        logger.warn(`Failed to watch the local icon directory "${dirPath}": ${detail}`);
+        logger.warn(
+          `Failed to watch the local icon directory "${dirPath}": ${detail}`,
+        );
       }
 
       watcher.on("add", async (filePath: string) => {

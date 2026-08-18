@@ -67,7 +67,10 @@ export const defaultOverrides: Record<string, false> = {
 // `floatPrecision` lives inside the preset's own `params`, not SVGO's top-level config: a
 // preset's `fn` only reads `floatPrecision`/`overrides` off the params it was itself given.
 const defaultPlugins = [
-  { name: "preset-default", params: { floatPrecision: 3, overrides: defaultOverrides } },
+  {
+    name: "preset-default",
+    params: { floatPrecision: 3, overrides: defaultOverrides },
+  },
 ];
 
 let svgoModule: typeof import("svgo") | undefined;
