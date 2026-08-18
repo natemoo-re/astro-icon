@@ -1,67 +1,81 @@
 ---
-title: Deduping with <Sprite>
-description: Collapse repeated icon uses into one symbol and many use elements.
+title: Automatic sprite optimization
+description: Repeated icon uses collapse into one symbol and many use elements — no wrapper component needed.
 ---
 
-import { Icon, Sprite } from 'astro-icon/components';
-import Showcase from '../../../components/Showcase.astro';
+import { Icon } from "astro-icon/components";
+import Showcase from "../../../components/Showcase.astro";
 
-`<Icon>` always renders a standalone `<svg>`, with no deduping between repeated uses. If you render the same icon many times on a page, wrap those uses in `<Sprite>` to dedupe them into one `<symbol>` and many `<use>` elements:
+`<Icon>` never dedupes on its own — render the same icon many times and you get that many full copies of its markup. Install the `icon()` integration to opt in to automatic sprite optimization instead: repeated `<Icon>` uses collapse into one `<symbol>` and many `<use>` elements, with no wrapper component or extra markup required.
 
-<Showcase resultLabel="Rendered from one <symbol>" code={`---
-import { Icon, Sprite } from "astro-icon/components";
----
+```js title="astro.config.mjs"
+import { defineConfig } from "astro/config";
+import { icon } from "astro-icon/integration";
 
-<Sprite>
-  <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-</Sprite>`}>
-  <Sprite>
-    <Icon name="mdi:star" size={28} />
-    <Icon name="mdi:star" size={28} />
-    <Icon name="mdi:star" size={28} />
-  </Sprite>
+export default defineConfig({
+  integrations: [icon()],
+});
+```
+
+<Showcase
+  resultLabel="Rendered from one <symbol>"
+  code={`<Icon name="mdi:star" />
+<Icon name="mdi:star" />
+<Icon name="mdi:star" />`}
+>
+  <Icon name="mdi:star" size={28} />
+  <Icon name="mdi:star" size={28} />
+  <Icon name="mdi:star" size={28} />
 </Showcase>
 
 This renders one `<symbol>` for `mdi:star`, referenced three times by `<use>`, instead of three full copies of the icon's markup. The stars above are the real thing — view source and you'll find a single `<symbol id="ai:mdi:star">` plus three `<use href="#ai:mdi:star" />` refs.
 
+Once the integration is installed, any collection with `sprite` left at its default (`true`) is optimized this way — there's nothing to add per usage. Without the integration installed, every `<Icon>` renders exactly as it always has: a plain, standalone `<svg>`.
+
 ## What the output looks like
 
+On a prerendered page, an icon repeated 2+ times collapses into one `<symbol>` and several `<use>` elements — a single occurrence stays a plain inline `<svg>`, since there's nothing to gain from deduping it:
+
 ```html
-<!-- Emitted once, ahead of the sprite's content -->
-<svg style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false">
+<!-- Emitted once, ahead of the page's content -->
+<svg
+  style="position:absolute;width:0;height:0"
+  aria-hidden="true"
+  focusable="false"
+>
   <symbol id="ai:mdi:star" viewBox="0 0 24 24"><path d="…" /></symbol>
 </svg>
 
-<!-- Each <Icon> becomes a lightweight reference -->
-<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star"><use href="#ai:mdi:star" /></svg>
-<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star"><use href="#ai:mdi:star" /></svg>
-<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star"><use href="#ai:mdi:star" /></svg>
+<!-- Each repeated <Icon> becomes a lightweight reference -->
+<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star">
+  <use href="#ai:mdi:star" />
+</svg>
+<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star">
+  <use href="#ai:mdi:star" />
+</svg>
+<svg width="24" height="24" viewBox="0 0 24 24" data-icon="mdi:star">
+  <use href="#ai:mdi:star" />
+</svg>
 ```
 
 The more times an icon repeats, the more the savings compound — the icon's path data is paid for exactly once, no matter how many instances follow.
 
-## Only affects icons inside it
+On a server-rendered route, `<Icon>` instead references a shared sprite asset — there's no HTML to buffer and rewrite, so it works the same way on-demand as it does prerendered.
 
-`<Sprite>` only affects `<Icon>` uses nested inside it. Anything outside a `<Sprite>` renders as before, as a standalone `<svg>`.
+## Opting out
+
+Opt out per usage when you need to style or animate an icon's internal markup — CSS can't reach into a `<use>`'s referenced content:
 
 ```astro
-<Sprite>
-  <Icon name="mdi:star" /> <!-- deduped -->
-</Sprite>
-
-<Icon name="mdi:star" /> <!-- not deduped, renders in full -->
+<Icon name="mdi:star" inline />
 ```
 
-## One `<Sprite>` per page
+Or opt out an entire collection:
 
-Use one `<Sprite>` per page. A dev-only warning fires if a second one renders, since each dedupes independently and won't share `<symbol>`s with another.
+```ts title="src/content.config.ts"
+icons: defineCollection({ loader: createIconLoader(source, { sprite: false }) }),
+```
 
-## Requires a prerendered page
+## `<LiveIcon>` is never deduped
 
-`<Sprite>` requires a prerendered page (`export const prerender = true;`, or a project with `output: "static"`). It has to buffer and rewrite its slot's full HTML, which would otherwise break streaming on a server-rendered route. Use plain `<Icon>` on a server-rendered route instead — each one already renders as a self-contained `<svg>`, so there's nothing to buffer.
-
-## `<LiveIcon>` passes through untouched
-
-A `<LiveIcon>` inside a `<Sprite>` boundary is never deduped, regardless of how many times its `collection`/`icon` repeats, or whether it shares a name with a static `<Icon>`. Live data isn't guaranteed stable across resolutions the way a build-time collection entry is, so `<Sprite>` leaves it alone instead of folding it into a shared `<symbol>`.
+A `<LiveIcon>` is never folded into a shared `<symbol>`, regardless of how many times its `collection`/`icon` repeats, or whether it shares a name with a static `<Icon>`. Live data isn't guaranteed stable across resolutions the way a build-time collection entry is, so it's always excluded from sprite optimization.
