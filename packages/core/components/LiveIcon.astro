@@ -13,8 +13,9 @@ import type { IconEntry } from "../typings/types";
  * request time instead of build time. Use it when you can't know your icon
  * names ahead of time, such as a user-driven icon search.
  *
- * Requires `defineLiveCollection()` in `live.config.ts` and Astro's
- * `experimental.liveContentCollections` flag. If the icon fails to resolve,
+ * Requires `defineLiveCollection()` in `live.config.ts`; live content
+ * collections are stable as of Astro 6, no experimental flag needed.
+ * If the icon fails to resolve,
  * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
  * one bad icon doesn't take down the page.
  *
@@ -50,13 +51,20 @@ interface Props extends HTMLAttributes<"svg"> {
    * reference it directly.
    */
   desc?: string | AccessibleElementInput;
-  /** Astro's types don't yet include this WAI-ARIA 1.3 attribute; the direct-string analog of `aria-describedby`, same relationship as `aria-label`/`aria-labelledby`. */
+  /**
+   * Sets the icon's accessible description inline, without a separate
+   * `<desc>` element to reference. Same relationship to `aria-describedby`
+   * as `aria-label` has to `aria-labelledby`.
+   *
+   * This is a WAI-ARIA 1.3 attribute that Astro's `HTMLAttributes` type
+   * doesn't include yet, so it's declared here explicitly.
+   */
   "aria-description"?: string;
   /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
   size?: number | string;
-  /** Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
+  /** The icon's rendered width; defaults to the source SVG's own width. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
   width?: number | string | null;
-  /** Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
+  /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
   height?: number | string | null;
 }
 
