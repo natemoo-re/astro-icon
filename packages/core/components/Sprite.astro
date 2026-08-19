@@ -11,63 +11,77 @@
  * </Sprite>
  * ```
  *
- * Only works on prerendered pages, since it has to buffer its slot's HTML to
- * rewrite it, which would otherwise break streaming on a server-rendered
- * route. `<LiveIcon>` output always passes through untouched, since a live
- * entry isn't guaranteed stable enough to dedupe.
+ * Deduping only works on prerendered pages, since it has to buffer its
+ * slot's HTML to rewrite it. On a server-rendered (non-prerendered) route,
+ * buffering here would throw away HTML streaming for the whole subtree, so
+ * `<Sprite>` instead falls back to rendering its slot untouched - each
+ * `<Icon>` inside renders as its own standalone `<svg>`, same as if
+ * `<Sprite>` weren't there. `<LiveIcon>` output always passes through
+ * untouched too, since a live entry isn't guaranteed stable enough to dedupe.
  */
 import { renderTimeError } from "../src/render/error.js";
 import { extractSpriteIcons, rewriteSpriteHtml } from "../src/render/sprite/rewrite.js";
 import { spriteRenderedForRequest } from "../src/render/sprite/marker.js";
 import { resolveIconEntry } from "../src/render/lookupEntry.js";
 
-if (!Astro.isPrerendered) {
-  throw renderTimeError(
-    `<Sprite> is only supported on prerendered pages!`,
-    `This route isn't prerendered, so <Sprite> can't safely buffer and rewrite its contents without breaking HTML streaming.\n\nAdd \`export const prerender = true;\` to this page/layout, or use plain <Icon> usages instead: each renders as a standalone <svg>, safe on server-rendered routes.`,
-  );
-}
+const canDedupe = Astro.isPrerendered;
 
 if (import.meta.env.DEV) {
-  if (spriteRenderedForRequest.get(Astro.request)) {
+  if (!canDedupe) {
+    console.warn(
+      `[astro-icon] <Sprite> only dedupes icons on prerendered pages. This route isn't prerendered, so its <Icon> children will render as standalone <svg> elements instead of being deduped into a sprite sheet.\n\nAdd \`export const prerender = true;\` to this page/layout to enable deduping, or ignore this warning if that's expected.`,
+    );
+  } else if (spriteRenderedForRequest.get(Astro.request)) {
     console.warn(
       `[astro-icon] Multiple <Sprite> components rendered on the same page. Only one <Sprite> per page is supported: each Sprite dedupes independently, so extra ones just add duplicate <symbol> defs instead of sharing one.`,
     );
   }
-  spriteRenderedForRequest.set(Astro.request, true);
+  if (canDedupe) spriteRenderedForRequest.set(Astro.request, true);
 }
 
-const slotHtml = Astro.slots.has("default") ? await Astro.slots.render("default") : "";
-const refs = extractSpriteIcons(slotHtml);
+let resolvedSymbols = new Map<string, { viewBox: string; body: string }>();
+let rewrittenHtml = "";
 
-const resolvedEntries = await Promise.all(
-  refs.map(async (ref) => ({ ref, entry: await resolveIconEntry(ref.collection, ref.name) })),
-);
+if (canDedupe) {
+  const slotHtml = Astro.slots.has("default") ? await Astro.slots.render("default") : "";
+  const refs = extractSpriteIcons(slotHtml);
 
-const resolvedSymbols = new Map<string, { viewBox: string; body: string }>();
-for (const { ref, entry } of resolvedEntries) {
-  if (!entry) {
-    throw renderTimeError(
-      `Unable to locate "${ref.collection}:${ref.name}" icon!`,
-      `<Sprite> found a "${ref.collection}:${ref.name}" icon rendered in its slot, but couldn't re-resolve it from the "${ref.collection}" collection.`,
-    );
+  const resolvedEntries = await Promise.all(
+    refs.map(async (ref) => ({ ref, entry: await resolveIconEntry(ref.collection, ref.name) })),
+  );
+
+  for (const { ref, entry } of resolvedEntries) {
+    if (!entry) {
+      throw renderTimeError(
+        `Unable to locate "${ref.collection}:${ref.name}" icon!`,
+        `<Sprite> found a "${ref.collection}:${ref.name}" icon rendered in its slot, but couldn't re-resolve it from the "${ref.collection}" collection.`,
+      );
+    }
+
+    resolvedSymbols.set(ref.id, { viewBox: entry.data.viewBox, body: entry.data.body });
   }
 
-  resolvedSymbols.set(ref.id, { viewBox: entry.data.viewBox, body: entry.data.body });
+  rewrittenHtml = rewriteSpriteHtml(slotHtml, resolvedSymbols);
 }
-
-const rewrittenHtml = rewriteSpriteHtml(slotHtml, resolvedSymbols);
 ---
 
 {
-  resolvedSymbols.size > 0 && (
-    <svg style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false">
+  canDedupe ? (
+    <>
       {
-        Array.from(resolvedSymbols, ([id, { viewBox, body }]) => (
-          <symbol id={id} viewBox={viewBox} set:html={body} />
-        ))
+        resolvedSymbols.size > 0 && (
+          <svg style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false">
+            {
+              Array.from(resolvedSymbols, ([id, { viewBox, body }]) => (
+                <symbol id={id} viewBox={viewBox} set:html={body} />
+              ))
+            }
+          </svg>
+        )
       }
-    </svg>
+      <Fragment set:html={rewrittenHtml} />
+    </>
+  ) : (
+    <slot />
   )
 }
-<Fragment set:html={rewrittenHtml} />

@@ -35,6 +35,7 @@ async function getFreePort(): Promise<number> {
 describe("<Sprite> against a real astro server (non-prerendered) build", () => {
   let server: ChildProcess;
   let status = 0;
+  let body = "";
 
   beforeAll(async () => {
     await run(astroBin, ["build", "--root", fixtureRoot], {
@@ -74,6 +75,7 @@ describe("<Sprite> against a real astro server (non-prerendered) build", () => {
 
     const res = await fetch(`http://127.0.0.1:${port}/`);
     status = res.status;
+    body = await res.text();
   }, 60_000);
 
   afterAll(async () => {
@@ -82,7 +84,13 @@ describe("<Sprite> against a real astro server (non-prerendered) build", () => {
     await rm(join(fixtureRoot, ".astro"), { recursive: true, force: true });
   });
 
-  it("refuses to render on a non-prerendered route", () => {
-    expect(status).toBe(500);
+  it("renders normally instead of throwing on a non-prerendered route", () => {
+    expect(status).toBe(200);
+  });
+
+  it("falls back to a plain, un-deduped <svg> instead of a sprite symbol/use pair", () => {
+    expect(body).toContain("<svg");
+    expect(body).not.toContain("<symbol");
+    expect(body).not.toContain("<use");
   });
 });
