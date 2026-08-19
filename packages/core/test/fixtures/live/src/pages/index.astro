@@ -5,6 +5,9 @@ import { LiveIcon } from "astro-icon/components";
 <html>
   <body>
     <LiveIcon collection="spinners" icon="3-dots-fade" />
+    <!-- Repeated render of the same icon -> each instance needs its own
+         internal ids, since "3-dots-fade" carries <animate id="..."> timing refs. -->
+    <LiveIcon collection="spinners" icon="3-dots-fade" />
     <!-- A missing icon should degrade to nothing instead of crashing the page. -->
     <LiveIcon collection="spinners" icon="does-not-exist" />
   </body>

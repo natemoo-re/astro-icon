@@ -72,6 +72,35 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
     expect(html).not.toContain("<use ");
   });
 
+  it("gives each occurrence of a repeated icon distinct internal ids, so <animate> timing refs don't cross-reference another instance", () => {
+    // "3-dots-fade"/"spinners:3-dots-fade" bodies carry internal <animate id="...">
+    // elements referenced by sibling begin="id.end"/"id.begin" timing chains -
+    // colliding ids across occurrences would desync the wrong instances.
+    const svgBlocks =
+      html.match(
+        /<svg[^>]*data-icon="(?:3-dots-fade|spinners:3-dots-fade)"[^>]*>[\s\S]*?<\/svg>/g,
+      ) ?? [];
+    expect(svgBlocks.length).toBeGreaterThanOrEqual(4);
+
+    const allIds = svgBlocks.flatMap((block) =>
+      [...block.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]),
+    );
+    expect(new Set(allIds).size).toBe(allIds.length);
+
+    for (const block of svgBlocks) {
+      const ids = new Set(
+        [...block.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]),
+      );
+      const refs = [...block.matchAll(/([\w-]+)\.(?:begin|end)/g)].map(
+        (m) => m[1],
+      );
+      expect(refs.length).toBeGreaterThan(0);
+      for (const ref of refs) {
+        expect(ids.has(ref)).toBe(true);
+      }
+    }
+  });
+
   it("auto-scans usage to decide what's *loaded*, without limiting what's *typed*", () => {
     // The "icons" collection (`createIconLoader(iconifyLocalSource("svg-spinners"))`, no `icons` option)
     // only has one name ever referenced on the page - but svg-spinners is

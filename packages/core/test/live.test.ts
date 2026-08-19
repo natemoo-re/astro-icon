@@ -91,6 +91,19 @@ describe("createLiveIconLoader(iconifyLocalSource()) + <LiveIcon> against a real
     expect(html).toContain('<circle cx="4" cy="12" r="3" fill="currentColor">');
   });
 
+  it("gives each occurrence of a repeated live icon distinct internal ids, so <animate> timing refs don't cross-reference another instance", () => {
+    const svgBlocks =
+      html.match(
+        /<svg[^>]*data-icon="spinners:3-dots-fade"[^>]*>[\s\S]*?<\/svg>/g,
+      ) ?? [];
+    expect(svgBlocks.length).toBe(2);
+
+    const allIds = svgBlocks.flatMap((block) =>
+      [...block.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]),
+    );
+    expect(new Set(allIds).size).toBe(allIds.length);
+  });
+
   it("degrades a missing live icon to nothing instead of crashing the page", () => {
     expect(html).not.toContain("does-not-exist");
     expect(html).toContain("<body>");
