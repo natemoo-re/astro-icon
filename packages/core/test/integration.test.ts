@@ -129,6 +129,13 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
     expect(html).toContain('data-icon="combined:custom-square"');
     expect(html).toContain('<rect x="4" y="4" width="16" height="16"/>');
   });
+
+  it("preserves a license comment from a local .svg file's own markup (#177)", () => {
+    expect(html).toContain('data-icon="local:licensed"');
+    expect(html).toContain(
+      "<!-- Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0) -->",
+    );
+  });
 });
 
 describe("<Sprite> against a real astro build", () => {

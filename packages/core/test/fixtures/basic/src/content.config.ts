@@ -1,5 +1,9 @@
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyLocalSource,
+  localSource,
+} from "astro-icon/loaders";
 import type { IconSource } from "astro-icon/loaders";
 
 // A hand-written, non-iconify source - proves `createIconLoader` isn't
@@ -41,5 +45,11 @@ export const collections = {
       iconifyLocalSource("svg-spinners", { icons: ["180-ring"] }),
       customSource,
     ]),
+  }),
+  // A directory of raw .svg files (as opposed to an Iconify pack) - proves
+  // license/attribution comments in a local icon's own markup survive the
+  // full build pipeline (issue #177).
+  local: defineCollection({
+    loader: createIconLoader(localSource(new URL("./icons", import.meta.url))),
   }),
 };

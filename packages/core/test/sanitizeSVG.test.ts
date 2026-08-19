@@ -61,6 +61,14 @@ describe("sanitizeSVGBody / removes active content", () => {
       "<image />",
     );
   });
+
+  it("keeps a comment that sits alongside content it strips, even though stripping forces a re-serialize", () => {
+    expect(
+      sanitizeSVGBody(
+        '<!-- CC BY 4.0 --><path d="M0 0"/><script>alert(1)</script>',
+      ),
+    ).toBe('<!-- CC BY 4.0 --><path d="M0 0" />');
+  });
 });
 
 describe("sanitizeSVGBody / leaves legitimate content byte-for-byte untouched", () => {
