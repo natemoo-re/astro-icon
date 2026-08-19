@@ -70,9 +70,14 @@ describe("iconifyLocalSource / local pack", () => {
 });
 
 describe("iconifyLocalSource / not installed", () => {
+  // A pack name that doesn't actually exist anywhere on disk - unlike "mdi" (installed for
+  // other tests in this suite), so the `require.resolve` fallback (#263) can't find it either
+  // and these still exercise the "genuinely not installed" path.
+  const notInstalled = "definitely-not-a-real-iconify-pack-xyz";
+
   it("throws from getIcon instead of falling back to the API", async () => {
     loadCollectionFromFS.mockResolvedValueOnce(undefined);
-    const source = iconifyLocalSource("mdi");
+    const source = iconifyLocalSource(notInstalled);
 
     await expect(source.getIcon("search")).rejects.toThrow(
       /isn't installed locally/i,
@@ -81,7 +86,7 @@ describe("iconifyLocalSource / not installed", () => {
 
   it("throws from listIcons instead of falling back to the API", async () => {
     loadCollectionFromFS.mockResolvedValueOnce(undefined);
-    const source = iconifyLocalSource("mdi");
+    const source = iconifyLocalSource(notInstalled);
 
     await expect(source.listIcons?.()).rejects.toThrow(
       /isn't installed locally/i,
@@ -89,7 +94,7 @@ describe("iconifyLocalSource / not installed", () => {
   });
 
   it("resolves undefined (never crashes) from getVersion for a pack that isn't installed", async () => {
-    const source = iconifyLocalSource("definitely-not-a-real-iconify-pack-xyz");
+    const source = iconifyLocalSource(notInstalled);
 
     await expect(source.getVersion?.()).resolves.toBeUndefined();
   });

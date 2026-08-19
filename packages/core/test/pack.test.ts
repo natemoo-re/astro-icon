@@ -1,14 +1,21 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   __clearPackCache,
+  __requireResolvePack,
   __setLoadFromFS,
+  __setLoadViaRequireResolve,
   loadLocalPack,
   loadPackFromAPI,
 } from "../src/content/iconify/pack.js";
 
 const loadCollectionFromFS = vi.fn();
 __setLoadFromFS(loadCollectionFromFS);
+
+const requireResolveFallback = vi.fn();
+__setLoadViaRequireResolve(requireResolveFallback);
 
 const search: IconifyJSON = {
   prefix: "mdi",
@@ -22,6 +29,7 @@ function logger() {
 afterEach(() => {
   vi.unstubAllGlobals();
   loadCollectionFromFS.mockReset();
+  requireResolveFallback.mockReset();
   __clearPackCache();
 });
 
@@ -43,6 +51,62 @@ describe("loadLocalPack", () => {
     await loadLocalPack("mdi");
 
     expect(loadCollectionFromFS).toHaveBeenCalledOnce();
+  });
+
+  // `loadFromFS` resolves via a filesystem-only ESM resolver that walks `node_modules` on
+  // disk, so it can't see a package resolved through Yarn Berry's PnP `.pnp.cjs` hook (no
+  // `node_modules` to walk at all). `require.resolve` goes through the real CJS loader, so it
+  // works under PnP too. See https://github.com/natemoo-re/astro-icon/issues/263.
+  describe("require.resolve fallback (#263)", () => {
+    it("falls back to require.resolve when loadFromFS can't find the pack", async () => {
+      loadCollectionFromFS.mockResolvedValueOnce(undefined);
+      requireResolveFallback.mockResolvedValueOnce(search);
+
+      await expect(loadLocalPack("mdi")).resolves.toBe(search);
+      expect(requireResolveFallback).toHaveBeenCalledWith("mdi");
+    });
+
+    it("doesn't fall back when loadFromFS already found the pack", async () => {
+      loadCollectionFromFS.mockResolvedValueOnce(search);
+
+      await loadLocalPack("mdi");
+
+      expect(requireResolveFallback).not.toHaveBeenCalled();
+    });
+
+    it("resolves undefined when neither loadFromFS nor the fallback find the pack", async () => {
+      loadCollectionFromFS.mockResolvedValueOnce(undefined);
+      requireResolveFallback.mockResolvedValueOnce(undefined);
+
+      await expect(loadLocalPack("mdi")).resolves.toBeUndefined();
+    });
+
+    it("finds a real pack via require.resolve, the same way it works under Yarn PnP, when run from a nested package with no local node_modules", async () => {
+      // Reuses the `monorepoHoisting` fixture: `apps/consumer` has its own
+      // package.json but deliberately no node_modules of its own, so this
+      // only passes if `require.resolve` walks up to the fixture root's
+      // node_modules on its own - the same directory-walking CJS resolution
+      // Node's loader (and Yarn PnP's `.pnp.cjs` hook) both honor.
+      loadCollectionFromFS.mockResolvedValueOnce(undefined);
+      __setLoadViaRequireResolve(__requireResolvePack);
+
+      const fixtureRoot = path.resolve(
+        fileURLToPath(new URL(".", import.meta.url)),
+        "fixtures/monorepo-hoisting",
+      );
+      const consumerDir = path.join(fixtureRoot, "apps/consumer");
+      const originalCwd = process.cwd();
+      process.chdir(consumerDir);
+
+      try {
+        const result = await loadLocalPack("test-pack");
+        expect(result?.prefix).toBe("test-pack");
+        expect(result?.icons.foo).toBeDefined();
+      } finally {
+        process.chdir(originalCwd);
+        __setLoadViaRequireResolve(requireResolveFallback);
+      }
+    });
   });
 });
 
