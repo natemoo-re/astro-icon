@@ -105,10 +105,10 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
 describe("<Sprite> against a real astro build", () => {
   it("emits exactly one <symbol> per unique icon inside the Sprite boundary", () => {
     expect(
-      (spriteHtml.match(/<symbol id="ai:icons:3-dots-fade"/g) ?? []).length,
+      (spriteHtml.match(/<symbol id="ai-icons-3-dots-fade"/g) ?? []).length,
     ).toBe(1);
     expect(
-      (spriteHtml.match(/<symbol id="ai:spinners:3-dots-fade"/g) ?? []).length,
+      (spriteHtml.match(/<symbol id="ai-spinners-3-dots-fade"/g) ?? []).length,
     ).toBe(1);
   });
 
@@ -116,17 +116,17 @@ describe("<Sprite> against a real astro build", () => {
     // 3 direct <Icon> children + 2 rendered inside <IconRow /> (a nested
     // Astro component, not a direct child of <Sprite>) = 5.
     expect(
-      (spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length,
+      (spriteHtml.match(/<use href="#ai-icons-3-dots-fade" \/>/g) ?? []).length,
     ).toBe(5);
     expect(
-      (spriteHtml.match(/<use href="#ai:spinners:3-dots-fade" \/>/g) ?? [])
+      (spriteHtml.match(/<use href="#ai-spinners-3-dots-fade" \/>/g) ?? [])
         .length,
     ).toBe(1);
   });
 
   it("preserves per-instance title on a deduped occurrence", () => {
     expect(spriteHtml).toMatch(
-      /<title id="astro-icon-title-[^"]+">Third<\/title><use href="#ai:icons:3-dots-fade" \/>/,
+      /<title id="astro-icon-title-[^"]+">Third<\/title><use href="#ai-icons-3-dots-fade" \/>/,
     );
   });
 
@@ -135,7 +135,7 @@ describe("<Sprite> against a real astro build", () => {
     // (now <use>s) + 1 outside (still fully inline).
     expect((spriteHtml.match(/data-icon="3-dots-fade"/g) ?? []).length).toBe(6);
     expect(
-      (spriteHtml.match(/<use href="#ai:icons:3-dots-fade" \/>/g) ?? []).length,
+      (spriteHtml.match(/<use href="#ai-icons-3-dots-fade" \/>/g) ?? []).length,
     ).toBe(5);
     expect(spriteHtml.match(/<circle/g)?.length).toBeGreaterThanOrEqual(1);
   });
@@ -145,10 +145,10 @@ describe("<Sprite> against a real astro build", () => {
       'data-icon="liveSpinners:3-dots-fade" data-icon-live',
     );
     expect(spriteHtml).not.toContain(
-      '<use href="#ai:liveSpinners:3-dots-fade" />',
+      '<use href="#ai-liveSpinners-3-dots-fade" />',
     );
     expect(spriteHtml).not.toContain(
-      '<symbol id="ai:liveSpinners:3-dots-fade"',
+      '<symbol id="ai-liveSpinners-3-dots-fade"',
     );
   });
 });

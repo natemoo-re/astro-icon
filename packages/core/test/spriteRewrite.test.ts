@@ -16,7 +16,7 @@ describe("extractSpriteIcons", () => {
     const html =
       '<svg width="24" height="24" data-icon="mdi:home"><path/></svg>';
     expect(extractSpriteIcons(html)).toEqual([
-      { collection: "mdi", name: "home", id: "ai:mdi:home" },
+      { collection: "mdi", name: "home", id: "ai-mdi-home" },
     ]);
   });
 
@@ -26,15 +26,15 @@ describe("extractSpriteIcons", () => {
       '<svg data-icon="mdi:search"><path/></svg>' +
       '<svg data-icon="mdi:home"><path/></svg>';
     expect(extractSpriteIcons(html)).toEqual([
-      { collection: "mdi", name: "home", id: "ai:mdi:home" },
-      { collection: "mdi", name: "search", id: "ai:mdi:search" },
+      { collection: "mdi", name: "home", id: "ai-mdi-home" },
+      { collection: "mdi", name: "search", id: "ai-mdi-search" },
     ]);
   });
 
   it("resolves a bare (no-colon) data-icon value against the 'icons' collection", () => {
     const html = '<svg data-icon="home"><path/></svg>';
     expect(extractSpriteIcons(html)).toEqual([
-      { collection: "icons", name: "home", id: "ai:icons:home" },
+      { collection: "icons", name: "home", id: "ai-icons-home" },
     ]);
   });
 
@@ -43,7 +43,7 @@ describe("extractSpriteIcons", () => {
       '<svg data-icon="mdi:home"><path/></svg>' +
       '<svg data-icon="mdi:search" data-icon-live><path/></svg>';
     expect(extractSpriteIcons(html)).toEqual([
-      { collection: "mdi", name: "home", id: "ai:mdi:home" },
+      { collection: "mdi", name: "home", id: "ai-mdi-home" },
     ]);
   });
 });
@@ -52,9 +52,9 @@ describe("rewriteSpriteHtml", () => {
   it("rewrites a single occurrence into a <use>", () => {
     const html =
       '<svg width="24" height="24" data-icon="mdi:home"><path d="M1 1"/></svg>';
-    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
+    const out = rewriteSpriteHtml(html, new Map([["ai-mdi-home", home]]));
     expect(out).toBe(
-      '<svg width="24" height="24" data-icon="mdi:home"><use href="#ai:mdi:home" /></svg>',
+      '<svg width="24" height="24" data-icon="mdi:home"><use href="#ai-mdi-home" /></svg>',
     );
   });
 
@@ -62,8 +62,8 @@ describe("rewriteSpriteHtml", () => {
     const html =
       '<svg data-icon="mdi:home"><path d="M1 1"/></svg>' +
       '<svg data-icon="mdi:home"><path d="M1 1"/></svg>';
-    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
-    expect(out.match(/<use href="#ai:mdi:home" \/>/g)?.length).toBe(2);
+    const out = rewriteSpriteHtml(html, new Map([["ai-mdi-home", home]]));
+    expect(out.match(/<use href="#ai-mdi-home" \/>/g)?.length).toBe(2);
     expect(out).not.toContain("<path");
   });
 
@@ -74,19 +74,19 @@ describe("rewriteSpriteHtml", () => {
     const out = rewriteSpriteHtml(
       html,
       new Map([
-        ["ai:mdi:home", home],
-        ["ai:mdi:search", search],
+        ["ai-mdi-home", home],
+        ["ai-mdi-search", search],
       ]),
     );
-    expect(out).toContain('<use href="#ai:mdi:home" />');
-    expect(out).toContain('<use href="#ai:mdi:search" />');
+    expect(out).toContain('<use href="#ai-mdi-home" />');
+    expect(out).toContain('<use href="#ai-mdi-search" />');
   });
 
   it("preserves each occurrence's own opening tag attrs (width/height/class)", () => {
     const html =
       '<svg width="16" class="a" data-icon="mdi:home"><path d="M1 1"/></svg>' +
       '<svg width="32" class="b" data-icon="mdi:home"><path d="M1 1"/></svg>';
-    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
+    const out = rewriteSpriteHtml(html, new Map([["ai-mdi-home", home]]));
     expect(out).toContain('<svg width="16" class="a" data-icon="mdi:home">');
     expect(out).toContain('<svg width="32" class="b" data-icon="mdi:home">');
   });
@@ -95,16 +95,16 @@ describe("rewriteSpriteHtml", () => {
     const html =
       '<svg data-icon="mdi:home"><title>First</title><path d="M1 1"/></svg>' +
       '<svg data-icon="mdi:home"><title>Second</title><desc>D</desc><path d="M1 1"/></svg>';
-    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
-    expect(out).toContain('<title>First</title><use href="#ai:mdi:home" />');
+    const out = rewriteSpriteHtml(html, new Map([["ai-mdi-home", home]]));
+    expect(out).toContain('<title>First</title><use href="#ai-mdi-home" />');
     expect(out).toContain(
-      '<title>Second</title><desc>D</desc><use href="#ai:mdi:home" />',
+      '<title>Second</title><desc>D</desc><use href="#ai-mdi-home" />',
     );
   });
 
   it("leaves markup without a data-icon marker untouched", () => {
     const html = '<div><svg><path d="M1 1"/></svg></div>';
-    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
+    const out = rewriteSpriteHtml(html, new Map([["ai-mdi-home", home]]));
     expect(out).toBe(html);
   });
 
@@ -120,7 +120,7 @@ describe("rewriteSpriteHtml", () => {
     // live content isn't guaranteed to match it.
     const html =
       '<svg data-icon="mdi:home" data-icon-live><path d="M9 9"/></svg>';
-    const out = rewriteSpriteHtml(html, new Map([["ai:mdi:home", home]]));
+    const out = rewriteSpriteHtml(html, new Map([["ai-mdi-home", home]]));
     expect(out).toBe(html);
   });
 });

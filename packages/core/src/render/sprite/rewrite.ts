@@ -3,7 +3,7 @@ import { parseIconName } from "../parseIconName.js";
 export interface SpriteIconRef {
   collection: string;
   name: string;
-  /** Shared with the `<symbol>` this ref should resolve to: `ai:${collection}:${name}`. */
+  /** Shared with the `<symbol>` this ref should resolve to: `ai-${collection}-${name}`, with any `:`/`/` in `collection`/`name` also replaced with `-`. */
   id: string;
 }
 
@@ -21,9 +21,10 @@ const DATA_ICON_LIVE_ATTR = /\bdata-icon-live\b/;
 const LEADING_TITLE = /^\s*<title(?:\s[^>]*)?>[\s\S]*?<\/title>/;
 const LEADING_DESC = /^\s*<desc(?:\s[^>]*)?>[\s\S]*?<\/desc>/;
 
-/** The id shared by an icon's `<symbol>` and its `<use>`/inline body. Only used within sprite rewriting. */
+/** The id shared by an icon's `<symbol>` and its `<use>`/inline body. Only used within sprite rewriting.
+ * `:`/`/` are replaced with `-` since they aren't valid in an XML `NCName` (see astro-icon#215). */
 function iconId(collection: string, name: string): string {
-  return `ai:${collection}:${name}`;
+  return `ai-${collection}-${name}`.replace(/[:/]/g, "-");
 }
 
 /** Reads an `<svg>` opening tag's attributes, returning its marker info, or `undefined` if absent or a `<LiveIcon>`. */
