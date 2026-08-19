@@ -1,13 +1,26 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const getEntry = vi.fn();
-vi.mock("astro:content", () => ({ getEntry: (...args: unknown[]) => getEntry(...args) }));
+const getCollection = vi.fn();
+vi.mock("astro:content", () => ({
+  getEntry: (...args: unknown[]) => getEntry(...args),
+  getCollection: (...args: unknown[]) => getCollection(...args),
+}));
 
 const { resolveIconEntry } = await import("../src/render/lookupEntry.js");
 
 afterEach(() => {
   getEntry.mockReset();
+  getCollection.mockReset();
 });
+
+/** Fakes `getCollection`'s real filtering behavior, for a fallback test to run its own filter against. */
+function fakeCollection(entries: { id: string; data: { body: string } }[]) {
+  getCollection.mockImplementation(
+    async (_collection: string, filter?: (entry: unknown) => boolean) =>
+      filter ? entries.filter(filter) : entries,
+  );
+}
 
 describe("resolveIconEntry", () => {
   it("returns the exact-name entry without a fallback lookup", async () => {
@@ -17,47 +30,63 @@ describe("resolveIconEntry", () => {
     await expect(resolveIconEntry("local", "deno")).resolves.toBe(entry);
     expect(getEntry).toHaveBeenCalledOnce();
     expect(getEntry).toHaveBeenCalledWith("local", "deno");
+    expect(getCollection).not.toHaveBeenCalled();
   });
 
-  it("falls back to a lowercase-normalized name when the exact name misses (#189)", async () => {
-    const entry = { data: { body: "<path/>" } };
-    getEntry.mockResolvedValueOnce(undefined).mockResolvedValueOnce(entry);
+  it("falls back case-insensitively when the request is capitalized but the entry isn't (#189)", async () => {
+    const entry = { id: "logos/deno", data: { body: "<path/>" } };
+    getEntry.mockResolvedValueOnce(undefined);
+    fakeCollection([entry]);
 
-    await expect(resolveIconEntry("local", "Deno")).resolves.toBe(entry);
-    expect(getEntry).toHaveBeenNthCalledWith(1, "local", "Deno");
-    expect(getEntry).toHaveBeenNthCalledWith(2, "local", "deno");
+    await expect(resolveIconEntry("local", "logos/Deno")).resolves.toMatchObject(
+      { data: entry.data },
+    );
+    expect(getCollection).toHaveBeenCalledWith("local", expect.any(Function));
+  });
+
+  it("falls back case-insensitively when the entry is capitalized but the request isn't (#189)", async () => {
+    const entry = { id: "logos/Deno", data: { body: "<path/>" } };
+    getEntry.mockResolvedValueOnce(undefined);
+    fakeCollection([entry]);
+
+    await expect(resolveIconEntry("local", "logos/deno")).resolves.toMatchObject(
+      { data: entry.data },
+    );
   });
 
   it("warns in dev when the fallback is what matched", async () => {
-    const entry = { data: { body: "<path/>" } };
-    getEntry.mockResolvedValueOnce(undefined).mockResolvedValueOnce(entry);
+    const entry = { id: "logos/Deno", data: { body: "<path/>" } };
+    getEntry.mockResolvedValueOnce(undefined);
+    fakeCollection([entry]);
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    await resolveIconEntry("local", "Deno");
+    await resolveIconEntry("local", "logos/deno");
 
     expect(warn).toHaveBeenCalledWith(
-      expect.stringMatching(/"Deno".*"local".*"deno"/),
+      expect.stringMatching(/"logos\/deno".*"local".*"logos\/Deno"/),
     );
     warn.mockRestore();
   });
 
-  it("doesn't retry when the name is already lowercase", async () => {
+  it("returns undefined when neither the exact nor case-insensitive match resolves", async () => {
     getEntry.mockResolvedValueOnce(undefined);
-
-    await expect(resolveIconEntry("local", "deno")).resolves.toBeUndefined();
-    expect(getEntry).toHaveBeenCalledOnce();
-  });
-
-  it("returns undefined when neither the exact nor lowercase name resolves", async () => {
-    getEntry.mockResolvedValue(undefined);
+    fakeCollection([]);
 
     await expect(
-      resolveIconEntry("local", "NotReal"),
+      resolveIconEntry("local", "not-real"),
     ).resolves.toBeUndefined();
   });
 
   it("swallows a getEntry rejection as a miss", async () => {
-    getEntry.mockRejectedValue(new Error("boom"));
+    getEntry.mockRejectedValueOnce(new Error("boom"));
+    fakeCollection([]);
+
+    await expect(resolveIconEntry("local", "deno")).resolves.toBeUndefined();
+  });
+
+  it("swallows a getCollection rejection as a miss", async () => {
+    getEntry.mockResolvedValueOnce(undefined);
+    getCollection.mockRejectedValueOnce(new Error("boom"));
 
     await expect(resolveIconEntry("local", "deno")).resolves.toBeUndefined();
   });
