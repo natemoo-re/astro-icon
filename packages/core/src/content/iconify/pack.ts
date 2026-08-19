@@ -29,14 +29,20 @@ function cachedPackLoad(
   return promise;
 }
 
-/** Clears the shared pack cache; for tests only. */
+/**
+ * Clears the shared pack cache; for tests only.
+ * @private
+ */
 export function __clearPackCache(): void {
   packCache.clear();
 }
 
 let loadFromFS: typeof loadCollectionFromFS = loadCollectionFromFS;
 
-/** Swaps the local-pack filesystem loader for a fake, so a test doesn't need a real `@iconify-json/*` package installed; for tests only. */
+/**
+ * Swaps the local-pack filesystem loader for a fake, so a test doesn't need a real `@iconify-json/*` package installed; for tests only.
+ * @private
+ */
 export function __setLoadFromFS(fn: typeof loadCollectionFromFS): void {
   loadFromFS = fn;
 }
@@ -81,7 +87,10 @@ export async function loadPackFromAPI(
   return remote;
 }
 
-/** A bare `<pack>.json` request (no `icons=` param) returns `200 OK` with the literal body `"404"`, so always pass a subset. */
+/**
+ * A bare `<pack>.json` request (no `icons=` param) returns `200 OK` with the literal body `"404"`, so always pass a subset.
+ * @link https://iconify.design/docs/api/icon-data.html
+ */
 async function fetchPackFromAPI(
   pack: string,
   icons: string[],

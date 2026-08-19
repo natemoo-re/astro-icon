@@ -45,6 +45,7 @@ export interface IconLoaderOptions {
  * The sync logic behind `createIconLoader`, taking only {@link IconLoaderSyncContext} instead of
  * Astro's full `LoaderContext`; exported for tests only, so a fixture doesn't have to implement
  * every unused field of the real interface.
+ * @private
  */
 export function __syncIcons(
   source: IconSource,

@@ -37,7 +37,10 @@ export function recordCollection(
   return recordCollectionImpl(rootDir, kind, collection, names);
 }
 
-/** Swaps `recordCollection`'s implementation for a fake, so a loader test can assert on it without touching disk; for tests only. */
+/**
+ * Swaps `recordCollection`'s implementation for a fake, so a loader test can assert on it without touching disk; for tests only.
+ * @private
+ */
 export function __setRecordCollection(fn: RecordCollectionFn): void {
   recordCollectionImpl = fn;
 }

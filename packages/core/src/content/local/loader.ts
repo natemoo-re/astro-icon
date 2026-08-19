@@ -117,6 +117,7 @@ export function localIcons(
  * The sync logic behind `localIcons`, taking only {@link LocalIconsSyncContext} instead of
  * Astro's full `LoaderContext`; exported for tests only, so a fixture doesn't have to implement
  * every unused field of the real interface.
+ * @private
  */
 export function __syncLocalIcons(
   dir: string,
