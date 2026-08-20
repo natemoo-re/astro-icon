@@ -255,9 +255,10 @@ describe("loadPackFromAPI", () => {
     it("stays a single request for an icons list at or under the chunk size", async () => {
       const names = Array.from({ length: 200 }, (_, i) => `icon-${i}`);
       const fetchMock = vi.fn(
-        async () => new Response(JSON.stringify(packWith(names)), {
-          status: 200,
-        }),
+        async () =>
+          new Response(JSON.stringify(packWith(names)), {
+            status: 200,
+          }),
       );
       vi.stubGlobal("fetch", fetchMock);
 
@@ -341,9 +342,7 @@ describe("loadPackFromAPI", () => {
 
       expect(result).toEqual(search);
       // Doubling from a 500ms base: first retry waits 500ms, second waits 1000ms.
-      expect(sleepMock.mock.calls.map((call) => call[0])).toEqual([
-        500, 1000,
-      ]);
+      expect(sleepMock.mock.calls.map((call) => call[0])).toEqual([500, 1000]);
     });
 
     it("gives up after the retry cap and fails the load", async () => {
@@ -375,7 +374,9 @@ describe("loadPackFromAPI", () => {
     it("never sleeps on a plain success", async () => {
       vi.stubGlobal(
         "fetch",
-        vi.fn(async () => new Response(JSON.stringify(search), { status: 200 })),
+        vi.fn(
+          async () => new Response(JSON.stringify(search), { status: 200 }),
+        ),
       );
 
       await loadPackFromAPI("mdi", ["search"], { logger: logger() });

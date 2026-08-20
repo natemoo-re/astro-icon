@@ -33,9 +33,7 @@ describe("iconifyApiSource naming", () => {
 
 describe("iconifyApiSource / concurrency", () => {
   it("sets a default concurrency cap, as a shared-public-API source", () => {
-    expect(iconifyApiSource("mdi", { icons: ["search"] }).concurrency).toBe(
-      20,
-    );
+    expect(iconifyApiSource("mdi", { icons: ["search"] }).concurrency).toBe(20);
   });
 });
 
@@ -62,9 +60,10 @@ describe("iconifyApiSource / batches an allowlist into one request", () => {
     // sorted list) is shared across both `getIcon` calls - one fetch covers both icons.
     expect(fetchMock).toHaveBeenCalledOnce();
     const requestedUrl = new URL(fetchMock.mock.calls[0][0] as string);
-    expect(requestedUrl.searchParams.get("icons")!.split(",").sort()).toEqual(
-      ["menu", "search"],
-    );
+    expect(requestedUrl.searchParams.get("icons")!.split(",").sort()).toEqual([
+      "menu",
+      "search",
+    ]);
   });
 });
 

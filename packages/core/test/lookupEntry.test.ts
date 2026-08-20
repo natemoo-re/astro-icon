@@ -38,9 +38,9 @@ describe("resolveIconEntry", () => {
     getEntry.mockResolvedValueOnce(undefined);
     fakeCollection([entry]);
 
-    await expect(resolveIconEntry("local", "logos/Deno")).resolves.toMatchObject(
-      { data: entry.data },
-    );
+    await expect(
+      resolveIconEntry("local", "logos/Deno"),
+    ).resolves.toMatchObject({ data: entry.data });
     expect(getCollection).toHaveBeenCalledWith("local", expect.any(Function));
   });
 
@@ -49,9 +49,9 @@ describe("resolveIconEntry", () => {
     getEntry.mockResolvedValueOnce(undefined);
     fakeCollection([entry]);
 
-    await expect(resolveIconEntry("local", "logos/deno")).resolves.toMatchObject(
-      { data: entry.data },
-    );
+    await expect(
+      resolveIconEntry("local", "logos/deno"),
+    ).resolves.toMatchObject({ data: entry.data });
   });
 
   it("warns in dev when the fallback is what matched", async () => {

@@ -224,9 +224,13 @@ export function iconifyApiSource(
       // `loadPackFromAPI` under the full sorted list, so every other name in `allowed` hits that
       // same cached response) instead of one request per icon. Without one (e.g. `<LiveIcon>`
       // against a pack with no fixed set), there's nothing to batch against - fetch just `name`.
-      const data = await loadPackFromAPI(pack, allowed ? [...allowed] : [name], {
-        logger,
-      });
+      const data = await loadPackFromAPI(
+        pack,
+        allowed ? [...allowed] : [name],
+        {
+          logger,
+        },
+      );
       const entry = await buildIconEntry(data, name, {
         collection: pack,
         optimize,

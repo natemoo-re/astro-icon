@@ -3,7 +3,12 @@ import { buildIcons } from "../src/content/buildIcons.js";
 import type { IconEntry } from "../../typings/types";
 
 function entryFor(name: string): IconEntry {
-  return { body: `<path d="${name}"/>`, viewBox: "0 0 24 24", width: 24, height: 24 };
+  return {
+    body: `<path d="${name}"/>`,
+    viewBox: "0 0 24 24",
+    width: 24,
+    height: 24,
+  };
 }
 
 function tick(): Promise<void> {
@@ -71,7 +76,7 @@ describe("buildIcons / concurrency", () => {
       concurrency: 1,
       async getIcon() {
         return {
-          body: '<path/><script>alert(1)</script>',
+          body: "<path/><script>alert(1)</script>",
           viewBox: "0 0 24 24",
           width: 24,
           height: 24,

@@ -17,7 +17,8 @@ const WHITESPACE_AND_CONTROL_CHARS_RE = /[\x00-\x20]+/g;
 // none appear, the full parse+walk is guaranteed to find nothing to remove, so it's skipped.
 // Deliberately over-matches (e.g. "href" inside unrelated text) rather than under-matches, since
 // a false positive only costs a redundant parse, while a false negative would be a real bypass.
-const MAYBE_ACTIVE_CONTENT_RE = /<\s*(?:script|foreignobject)\b|on[a-z]+\s*=|href\s*=|src\s*=/i;
+const MAYBE_ACTIVE_CONTENT_RE =
+  /<\s*(?:script|foreignobject)\b|on[a-z]+\s*=|href\s*=|src\s*=/i;
 
 function isDangerousUri(value: string): boolean {
   // Strip control characters and whitespace, a common obfuscation for `java\tscript:`-style bypasses.
