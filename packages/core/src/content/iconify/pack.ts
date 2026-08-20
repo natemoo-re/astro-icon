@@ -147,15 +147,58 @@ export async function loadPackFromAPI(
   return remote;
 }
 
+// A single request was confirmed to work with 300 icons in one query; this stays well under
+// that as a margin against a proxy/server URL-length ceiling we haven't tested against, while
+// keeping "how many icons does one bad response cost" small for a very large `icons: [...]`.
+const MAX_ICONS_PER_REQUEST = 200;
+
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/** Combines same-pack chunk responses into one `IconifyJSON`, merging `icons`/`aliases`. */
+function mergePackChunks(chunks: IconifyJSON[]): IconifyJSON {
+  const [first, ...rest] = chunks;
+  if (rest.length === 0) return first;
+  const icons = { ...first.icons };
+  const aliases = { ...first.aliases };
+  for (const next of rest) {
+    Object.assign(icons, next.icons);
+    if (next.aliases) Object.assign(aliases, next.aliases);
+  }
+  return { ...first, icons, aliases };
+}
+
 /**
  * A bare `<pack>.json` request (no `icons=` param) returns `200 OK` with the literal body `"404"`, so always pass a subset.
  * @link https://iconify.design/docs/api/icon-data.html
+ *
+ * `icons` beyond `MAX_ICONS_PER_REQUEST` is split across multiple requests (run concurrently -
+ * there are only ever a handful of chunks even for a very large explicit `icons: [...]` list) and
+ * merged back into one pack; any one chunk failing fails the whole load, matching the existing
+ * all-or-nothing contract for a single request.
  */
 async function fetchPackFromAPI(
   pack: string,
   icons: string[],
 ): Promise<IconifyJSON | undefined> {
-  const search = `?icons=${encodeURIComponent(Array.from(new Set(icons)).join(","))}`;
+  const groups = chunk(icons, MAX_ICONS_PER_REQUEST);
+  const results = await Promise.all(
+    groups.map((group) => fetchPackChunk(pack, group)),
+  );
+  if (results.some((result) => !result)) return undefined;
+  return mergePackChunks(results as IconifyJSON[]);
+}
+
+async function fetchPackChunk(
+  pack: string,
+  icons: string[],
+): Promise<IconifyJSON | undefined> {
+  const search = `?icons=${encodeURIComponent(icons.join(","))}`;
   const res = await fetch(
     `https://api.iconify.design/${pack}.json${search}`,
   ).catch(() => undefined);

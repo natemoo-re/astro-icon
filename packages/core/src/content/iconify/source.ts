@@ -214,7 +214,13 @@ export function iconifyApiSource(
           `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow any icon name.`,
         );
       }
-      const data = await loadPackFromAPI(pack, [name], { logger });
+      // With an allowlist, the whole set is known upfront - fetch it once (cached by
+      // `loadPackFromAPI` under the full sorted list, so every other name in `allowed` hits that
+      // same cached response) instead of one request per icon. Without one (e.g. `<LiveIcon>`
+      // against a pack with no fixed set), there's nothing to batch against - fetch just `name`.
+      const data = await loadPackFromAPI(pack, allowed ? [...allowed] : [name], {
+        logger,
+      });
       const entry = await buildIconEntry(data, name, {
         collection: pack,
         optimize,

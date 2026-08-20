@@ -31,8 +31,37 @@ describe("iconifyApiSource naming", () => {
   });
 });
 
-describe("iconifyApiSource / resolves each requested icon individually", () => {
-  it("resolves an allowed icon via the public API, scoped to just that icon", async () => {
+describe("iconifyApiSource / batches an allowlist into one request", () => {
+  it("resolves every allowed icon from a single fetch covering the whole allowlist", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const requested = new URL(url).searchParams.get("icons")!.split(",");
+      const icons = Object.fromEntries(
+        requested.map((name) => [name, pack.icons[name]]),
+      );
+      return new Response(JSON.stringify({ prefix: "mdi", icons }), {
+        status: 200,
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const source = iconifyApiSource("mdi", { icons: ["search", "menu"] });
+    const first = await source.getIcon("search");
+    const second = await source.getIcon("menu");
+
+    expect(first.viewBox).toBe("0 0 24 24");
+    expect(second.viewBox).toBe("0 0 24 24");
+    // Both names come from the same allowlist, so `loadPackFromAPI`'s cache (keyed by the full
+    // sorted list) is shared across both `getIcon` calls - one fetch covers both icons.
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const requestedUrl = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(requestedUrl.searchParams.get("icons")!.split(",").sort()).toEqual(
+      ["menu", "search"],
+    );
+  });
+});
+
+describe("iconifyApiSource / resolves each requested icon individually without an allowlist", () => {
+  it("fetches only the requested icon when there's no known set to batch against", async () => {
     const fetchMock = vi.fn(async (url: string) => {
       const requested = new URL(url).searchParams.get("icons");
       return new Response(
@@ -45,12 +74,10 @@ describe("iconifyApiSource / resolves each requested icon individually", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const source = iconifyApiSource("mdi", { icons: ["search", "menu"] });
-    const first = await source.getIcon("search");
-    const second = await source.getIcon("menu");
+    const source = iconifyApiSource("mdi");
+    await source.getIcon("search");
+    await source.getIcon("menu");
 
-    expect(first.viewBox).toBe("0 0 24 24");
-    expect(second.viewBox).toBe("0 0 24 24");
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,

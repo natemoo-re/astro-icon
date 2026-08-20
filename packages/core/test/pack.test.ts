@@ -218,4 +218,70 @@ describe("loadPackFromAPI", () => {
       /Loaded 1 icon\(s\) of "mdi" from the Iconify API in/,
     );
   });
+
+  describe("chunking a large icons list across multiple requests", () => {
+    function packWith(names: string[]): IconifyJSON {
+      return {
+        prefix: "mdi",
+        icons: Object.fromEntries(
+          names.map((name) => [name, { body: `<path d="${name}"/>` }]),
+        ),
+      };
+    }
+
+    it("splits an icons list over 200 into multiple requests and merges the results", async () => {
+      const names = Array.from({ length: 250 }, (_, i) => `icon-${i}`);
+      const fetchMock = vi.fn(async (url: string) => {
+        const requested = new URL(url).searchParams.get("icons")!.split(",");
+        return new Response(JSON.stringify(packWith(requested)), {
+          status: 200,
+        });
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const result = await loadPackFromAPI("mdi", names, {
+        logger: logger(),
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(Object.keys(result.icons)).toHaveLength(250);
+      for (const name of names) {
+        expect(result.icons[name]).toBeDefined();
+      }
+    });
+
+    it("stays a single request for an icons list at or under the chunk size", async () => {
+      const names = Array.from({ length: 200 }, (_, i) => `icon-${i}`);
+      const fetchMock = vi.fn(
+        async () => new Response(JSON.stringify(packWith(names)), {
+          status: 200,
+        }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      await loadPackFromAPI("mdi", names, { logger: logger() });
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("fails the whole load if any one chunk fails, matching the single-request contract", async () => {
+      const names = Array.from({ length: 250 }, (_, i) => `icon-${i}`);
+      let call = 0;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url: string) => {
+          call++;
+          if (call === 2) return new Response("Not Found", { status: 404 });
+          const requested = new URL(url).searchParams.get("icons")!.split(",");
+          return new Response(JSON.stringify(packWith(requested)), {
+            status: 200,
+          });
+        }),
+      );
+
+      await expect(
+        loadPackFromAPI("mdi", names, { logger: logger() }),
+      ).rejects.toThrow(/mdi/);
+    });
+  });
 });
