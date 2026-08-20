@@ -313,6 +313,28 @@ describe("localSource / currentColor discoverability nudge", () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it("names the icon directory as the original relative string passed in, not the resolved absolute path", async () => {
+    await write("icons/home.svg", SQUARE_SVG);
+    const warn = vi.fn();
+    const source = localSource("icons", { logger: { warn } });
+    source.resolveRoot?.(new URL(`file://${dir}/`));
+
+    await source.getIcon("home");
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"icons"'));
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining(dir));
+  });
+
+  it("falls back to the resolved absolute path for a URL dir - a raw file:// string wouldn't be any more readable", async () => {
+    await write("home.svg", SQUARE_SVG);
+    const warn = vi.fn();
+    const source = localSource(new URL(`file://${dir}/`), { logger: { warn } });
+
+    await source.getIcon("home");
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(dir));
+  });
+
   it("doesn't re-warn on a cache hit, but does once the content genuinely changes", async () => {
     await write("home.svg", SQUARE_SVG);
     const warn = vi.fn();
