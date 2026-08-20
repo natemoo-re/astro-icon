@@ -90,9 +90,11 @@ if (error || !entry) {
 
 const data = entry.data as IconEntry;
 const body = replaceIDs(data.body);
+// `data.title`/`.desc` are the icon's own defaults (e.g. a local `.svg`'s inline `<title>`/
+// `<desc>`) - only used when the caller didn't pass their own, same as every other prop here.
 const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
-  title,
-  desc,
+  title ?? data.title,
+  desc ?? data.desc,
   props,
 );
 const { normalizedProps } = renderableIconProps(data, {

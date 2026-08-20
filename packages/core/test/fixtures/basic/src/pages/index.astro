@@ -16,5 +16,9 @@ import { Icon } from "astro-icon/components";
     <Icon name="combined:custom-square" />
     <!-- Raw local .svg file with a license comment -> comment must survive the build -->
     <Icon name="local:licensed" />
+    <!-- Local .svg with its own inline <title>/<desc> -> becomes the default title/desc -->
+    <Icon name="local:titled" />
+    <!-- Same icon, caller's own title wins -> no duplicate <title> from the source's own -->
+    <Icon name="local:titled" title="Caller Title" />
   </body>
 </html>

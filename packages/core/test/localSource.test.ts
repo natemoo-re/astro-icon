@@ -77,6 +77,43 @@ describe("localSource / getIcon", () => {
     expect(entry.viewBox).toBe("0 0 24 24");
   });
 
+  it("stores fill/stroke set on the root <svg> tag (the Heroicons \"stroke icon\" pattern) as entry fields, not wrapped into body", async () => {
+    await write(
+      "adjustment.svg",
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 6V4"/></svg>`,
+    );
+    const source = localSource(dir);
+
+    const entry = await source.getIcon("adjustment");
+    expect(entry.fill).toBe("none");
+    expect(entry.stroke).toBe("currentColor");
+    // Not baked into body: an inner element's own fill/stroke would always beat whatever a
+    // caller's <Icon fill="..." /> prop sets on the outer <svg>, silently defeating the override.
+    expect(entry.body).toBe('<path d="M12 6V4"/>');
+  });
+
+  it("pulls an icon's own inline <title>/<desc> into entry.title/entry.desc, stripped from body", async () => {
+    await write(
+      "adjustment.svg",
+      `<svg viewBox="0 0 24 24"><title>Adjustment</title><desc>An adjustment icon</desc><path d="M12 6V4"/></svg>`,
+    );
+    const source = localSource(dir);
+
+    const entry = await source.getIcon("adjustment");
+    expect(entry.title).toBe("Adjustment");
+    expect(entry.desc).toBe("An adjustment icon");
+    expect(entry.body).toBe('<path d="M12 6V4"/>');
+  });
+
+  it("leaves entry.title/entry.desc unset when the icon has no inline <title>/<desc>", async () => {
+    await write("home.svg", SQUARE_SVG);
+    const source = localSource(dir);
+
+    const entry = await source.getIcon("home");
+    expect(entry.title).toBeUndefined();
+    expect(entry.desc).toBeUndefined();
+  });
+
   it("throws a descriptive error for a missing file", async () => {
     const source = localSource(dir);
     await expect(source.getIcon("nope")).rejects.toThrow(/no local icon file/i);
@@ -241,6 +278,19 @@ describe("localSource / currentColor discoverability nudge", () => {
     await write(
       "home.svg",
       `<svg viewBox="0 0 24 24"><rect fill="currentColor" width="24" height="24"/></svg>`,
+    );
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    await source.getIcon("home");
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("doesn't warn when currentColor is set on the root <svg> tag itself", async () => {
+    await write(
+      "home.svg",
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M0 0"/></svg>`,
     );
     const warn = vi.fn();
     const source = localSource(dir, { logger: { warn } });

@@ -148,7 +148,15 @@ export interface RenderableIconProps<P> {
   normalizedProps: Omit<P, "size">;
 }
 
-/** Builds the final `<svg>` props for a single icon occurrence. Shared by `<Icon>` and `<LiveIcon>`. */
+/**
+ * Builds the final `<svg>` props for a single icon occurrence. Shared by `<Icon>` and `<LiveIcon>`.
+ *
+ * Spreads the whole entry (minus `body`/`title`/`desc`, which aren't `<svg>` attributes) as
+ * defaults, not just `width`/`height`/`viewBox`: a local icon's own root-tag attributes
+ * (`fill`/`stroke`/`class`/... - see `extractRootAttrs`) land here too, so a caller's own prop for
+ * the same attribute genuinely overrides it by landing on the same element, rather than losing to
+ * an inner element's own value the way baking them into `body` would.
+ */
 export function renderableIconProps<
   P extends {
     size?: number | string;
@@ -156,17 +164,13 @@ export function renderableIconProps<
     height?: unknown;
     viewBox?: unknown;
   },
->(
-  entry: Pick<IconEntry, "width" | "height" | "viewBox">,
-  props: P,
-): RenderableIconProps<P> {
+>(entry: IconEntry, props: P): RenderableIconProps<P> {
+  const { body: _body, title: _title, desc: _desc, ...entryAttrs } = entry;
   const { size, ...rest } = props;
   const sized = size ? { ...rest, width: size, height: size } : rest;
   return {
     normalizedProps: {
-      width: entry.width,
-      height: entry.height,
-      viewBox: entry.viewBox,
+      ...entryAttrs,
       ...sized,
     } as Omit<P, "size">,
   };
