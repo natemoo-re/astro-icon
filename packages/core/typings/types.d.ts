@@ -14,7 +14,14 @@ export interface IconEntry {
   viewBox: string;
   width: number;
   height: number;
-  [key: string]: string | number;
+  /**
+   * Default `title` prop for `<Icon>`/`<LiveIcon>`, honored only when the caller doesn't pass
+   * their own. `localSource()` populates this from the icon's own inline `<title>`, if it had one.
+   */
+  title?: string;
+  /** Default `desc` prop, same override relationship as {@link title}. */
+  desc?: string;
+  [key: string]: string | number | undefined;
 }
 
 /**

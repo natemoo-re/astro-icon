@@ -49,4 +49,12 @@ describe("looksLikeItNeedsCurrentColor", () => {
       looksLikeItNeedsCurrentColor('<path fill="CURRENTCOLOR" d="M0 0"/>'),
     ).toBe(false);
   });
+
+  it("is false when currentColor is set on the root <svg> tag itself", () => {
+    expect(
+      looksLikeItNeedsCurrentColor(
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M0 0"/></svg>',
+      ),
+    ).toBe(false);
+  });
 });
