@@ -16,7 +16,7 @@ export interface ListIconsOrFallbackOptions {
  * Calls `source.checkPreconditions()` first if present (see `IconSource.checkPreconditions`'s
  * doc comment - is this source usable at all, as a distinct concern from what it lists), then
  * `source.listIcons()` (falling back to `[]` if absent), throwing under `strict` or warning
- * otherwise if either fails. Shared by `createIconLoader` and `localIcons`.
+ * otherwise if either fails. Used by `createIconLoader`.
  */
 export async function listIconsOrFallback(
   source: Pick<IconSource, "listIcons" | "checkPreconditions">,

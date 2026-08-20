@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { EventEmitter } from "node:events";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createIconLoader } from "../src/content/loader.js";
 import { mergeSources } from "../src/content/compositeSource.js";
+import { localSource } from "../src/content/local/source.js";
 import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
@@ -21,7 +26,14 @@ function entryFor(id: string): IconEntry {
   return { body: id, viewBox: "0 0 24 24", width: 24, height: 24 };
 }
 
-function fakeContext() {
+const SQUARE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`;
+
+function fakeWatcher() {
+  const emitter = new EventEmitter();
+  return Object.assign(emitter, { add: vi.fn() });
+}
+
+function fakeContext(watcher?: ReturnType<typeof fakeWatcher>) {
   const stored = new Map<string, IconEntry>();
   const metaStored = new Map<string, string>();
   return {
@@ -34,6 +46,7 @@ function fakeContext() {
       get: (id: string) => stored.get(id),
       keys: () => [...stored.keys()],
       has: (id: string) => stored.has(id),
+      delete: (id: string) => stored.delete(id),
     },
     meta: {
       get: (key: string) => metaStored.get(key),
@@ -49,6 +62,7 @@ function fakeContext() {
     // would do.
     parseData: vi.fn(async ({ data }: { data: IconEntry }) => data),
     collection: "icons",
+    watcher,
   };
 }
 
@@ -357,5 +371,116 @@ describe("createIconLoader / timing logs", () => {
     expect(context.logger.info).not.toHaveBeenCalled();
     expect(context.logger.debug).toHaveBeenCalledOnce();
     expect(context.logger.debug.mock.calls[0][0]).toMatch(/already up to date/);
+  });
+});
+
+describe("createIconLoader / watching multiple composed local sources", () => {
+  let dirA: string;
+  let dirB: string;
+
+  beforeEach(async () => {
+    dirA = await mkdtemp(join(tmpdir(), "astro-icon-composed-a-"));
+    dirB = await mkdtemp(join(tmpdir(), "astro-icon-composed-b-"));
+  });
+
+  afterEach(async () => {
+    await rm(dirA, { recursive: true, force: true });
+    await rm(dirB, { recursive: true, force: true });
+  });
+
+  it("watches every composed localSource()'s own directory", async () => {
+    await writeFile(join(dirA, "a-only.svg"), SQUARE_SVG);
+    await writeFile(join(dirB, "b-only.svg"), SQUARE_SVG);
+    const source = mergeSources([localSource(dirA), localSource(dirB)]);
+    const watcher = fakeWatcher();
+    const context = fakeContext(watcher);
+
+    await sync(source, false)(context);
+
+    expect(watcher.add).toHaveBeenCalledWith(dirA);
+    expect(watcher.add).toHaveBeenCalledWith(dirB);
+  });
+
+  it("adding a file to either composed directory surfaces it in the store", async () => {
+    const source = mergeSources([localSource(dirA), localSource(dirB)]);
+    const watcher = fakeWatcher();
+    const context = fakeContext(watcher);
+    await sync(source, false)(context);
+
+    await writeFile(join(dirA, "logo.svg"), SQUARE_SVG);
+    watcher.emit("add", join(dirA, "logo.svg"));
+    await vi.waitFor(() => expect(context.store.has("logo")).toBe(true));
+
+    await mkdir(join(dirB, "nested"), { recursive: true });
+    await writeFile(join(dirB, "nested", "icon.svg"), SQUARE_SVG);
+    watcher.emit("add", join(dirB, "nested", "icon.svg"));
+    await vi.waitFor(() => expect(context.store.has("nested/icon")).toBe(true));
+  });
+
+  // The shadowing footgun documented on `IconSource.watch`: two composed sources defining the
+  // same icon name always resolve to the earlier source's file, `getIcon`'s own order. Editing
+  // the shadowed (later) source's file still triggers a resync, it just re-resolves to the same
+  // unchanged winner - so the edit appears to do nothing.
+  it("shadows a later source's same-named icon, even after that file changes", async () => {
+    await writeFile(join(dirA, "home.svg"), SQUARE_SVG);
+    await writeFile(join(dirB, "home.svg"), SQUARE_SVG);
+    const source = mergeSources([localSource(dirA), localSource(dirB)]);
+    const watcher = fakeWatcher();
+    const context = fakeContext(watcher);
+    await sync(source, false)(context);
+
+    const before = context.store.get("home");
+
+    const updated = `<svg viewBox="0 0 32 32"><circle r="16"/></svg>`;
+    await writeFile(join(dirB, "home.svg"), updated);
+    watcher.emit("change", join(dirB, "home.svg"));
+
+    // Give the (unawaited) watcher-driven resync a turn to run.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(context.store.get("home")).toEqual(before);
+    expect((context.store.get("home") as IconEntry).viewBox).not.toBe(
+      "0 0 32 32",
+    );
+  });
+});
+
+describe("createIconLoader / localSource re-sync caching", () => {
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "astro-icon-resync-"));
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  // `localSource()` caches per-file by content hash internally (see localSource.test.ts), and
+  // that cache lives as long as the source instance does - which, for a real `createIconLoader`,
+  // is the lifetime of the dev-server process, not just one `load()` call. So a full resync
+  // triggered by the directory's overall version changing (one file edited) still only
+  // re-optimizes the file that actually changed, as long as it's the same source instance being
+  // synced again - unlike calling `localSource()` fresh each time (see the old `localIcons()`
+  // wrapper this replaced), which had no cache to reuse.
+  it("only re-optimizes the icon whose file actually changed, across two full resyncs of the same source instance", async () => {
+    await writeFile(join(dir, "home.svg"), SQUARE_SVG);
+    await writeFile(join(dir, "menu.svg"), SQUARE_SVG);
+    const optimize = vi.fn((svg: string) => svg);
+    const source = localSource(dir, { optimize });
+    const load = sync(source, false);
+    const context = fakeContext();
+
+    await load(context);
+    expect(optimize).toHaveBeenCalledTimes(2);
+
+    await writeFile(
+      join(dir, "home.svg"),
+      `<svg viewBox="0 0 32 32"><circle r="16"/></svg>`,
+    );
+
+    await load(context);
+    expect(optimize).toHaveBeenCalledTimes(3);
   });
 });

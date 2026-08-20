@@ -9,7 +9,7 @@ const IGNORED_VALUES = new Set([
 /**
  * A cheap, deliberately conservative signal for "this icon probably won't
  * respond to `color: ...` in CSS" - not a decision to act on, only to warn
- * about (see `localIcons()`). True when the icon already uses `currentColor`
+ * about (see `localSource()`). True when the icon already uses `currentColor`
  * nowhere, and every explicit `fill`/`stroke` it does have (if any) agrees on
  * a single color - the same shape a monochrome UI glyph has. An icon with two
  * or more distinct explicit colors reads as a deliberate multi-color
