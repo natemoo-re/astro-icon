@@ -90,6 +90,15 @@ export function localSource(
   // editors' save-as-copy behavior) skips re-running `optimize`/parsing entirely.
   const cache = new Map<string, { hash: string; entry: IconEntry }>();
 
+  // `dirPath` for display in a warning: the original `dir` as given, when it's a string - usually
+  // already the short, relative form a caller wrote (`"src/icons"`), with no resolving needed. An
+  // absolute `dirPath` is mostly noise once you already know it's "the local icon directory".
+  // Falls back to the resolved `dirPath` for a `URL` (e.g. one anchored to a bundled package
+  // directory), which wouldn't be any more readable printed as a raw `file://` string.
+  function displayDirPath(): string {
+    return typeof dir === "string" ? dir : dirPath;
+  }
+
   let warnedMissingDir = false;
   function warnIfDirMissing(): void {
     if (warnedMissingDir || existsSync(dirPath)) return;
@@ -160,7 +169,7 @@ export function localSource(
     // sync, so it also covers an icon added/edited later via `watch()`, not just the initial load.
     if (looksLikeItNeedsCurrentColor(entry.body, rootAttrs)) {
       logger.warn(
-        `"${name}" in "${dirPath}" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
+        `"${name}" in "${displayDirPath()}" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
       );
     }
 
