@@ -1,13 +1,9 @@
 import type { IconifyJSON } from "@iconify/types";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { iconifyLocalSource } from "../src/content/iconify/source.js";
-import {
-  __clearPackCache,
-  __setLoadFromFS,
-} from "../src/content/iconify/pack.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const loadCollectionFromFS = vi.fn();
-__setLoadFromFS(loadCollectionFromFS);
+vi.mock("@iconify/utils/lib/loader/fs", () => ({
+  loadCollectionFromFS: vi.fn(),
+}));
 
 const pack: IconifyJSON = {
   prefix: "mdi",
@@ -20,9 +16,18 @@ const pack: IconifyJSON = {
   },
 };
 
-afterEach(() => {
-  loadCollectionFromFS.mockReset();
-  __clearPackCache();
+// `pack.ts` (used internally by `iconifyLocalSource`) caches resolved packs in a module-level
+// Map. Resetting the registry before each test - rather than exposing a test-only cache-clearing
+// export - gets every test a fresh, empty cache.
+let iconifyLocalSource: (typeof import("../src/content/iconify/source.js"))["iconifyLocalSource"];
+let mockedLoadCollectionFromFS: ReturnType<typeof vi.fn>;
+
+beforeEach(async () => {
+  vi.resetModules();
+  ({ iconifyLocalSource } = await import("../src/content/iconify/source.js"));
+  const { loadCollectionFromFS } = await import("@iconify/utils/lib/loader/fs");
+  mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
+  mockedLoadCollectionFromFS.mockReset();
 });
 
 describe("iconifyLocalSource naming", () => {
@@ -33,7 +38,7 @@ describe("iconifyLocalSource naming", () => {
 
 describe("iconifyLocalSource / local pack", () => {
   it("resolves a single icon via getIcon", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(pack);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
     const entry = await source.getIcon("search");
@@ -42,14 +47,14 @@ describe("iconifyLocalSource / local pack", () => {
   });
 
   it("throws for an icon the pack doesn't have", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(pack);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
     await expect(source.getIcon("does-not-exist")).rejects.toThrow(/mdi/);
   });
 
   it("lists icon and alias names via listIcons", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(pack);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
     const names = await source.listIcons?.();
@@ -58,14 +63,14 @@ describe("iconifyLocalSource / local pack", () => {
   });
 
   it("only resolves the local pack once across getIcon/listIcons calls", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(pack);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
     await source.getIcon("search");
     await source.listIcons?.();
     await source.getIcon("menu");
 
-    expect(loadCollectionFromFS).toHaveBeenCalledOnce();
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
 });
 
@@ -76,7 +81,7 @@ describe("iconifyLocalSource / not installed", () => {
   const notInstalled = "definitely-not-a-real-iconify-pack-xyz";
 
   it("throws from getIcon instead of falling back to the API", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(undefined);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
     const source = iconifyLocalSource(notInstalled);
 
     await expect(source.getIcon("search")).rejects.toThrow(
@@ -85,7 +90,7 @@ describe("iconifyLocalSource / not installed", () => {
   });
 
   it("throws from listIcons instead of falling back to the API", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(undefined);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
     const source = iconifyLocalSource(notInstalled);
 
     await expect(source.listIcons?.()).rejects.toThrow(
@@ -107,11 +112,11 @@ describe("iconifyLocalSource / icons allowlist", () => {
     await expect(source.getIcon("menu")).rejects.toThrow(
       /isn't in the allowed/i,
     );
-    expect(loadCollectionFromFS).not.toHaveBeenCalled();
+    expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();
   });
 
   it("resolves an allowed name normally", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(pack);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi", { icons: ["search"] });
 
     await expect(source.getIcon("search")).resolves.toMatchObject({
@@ -123,17 +128,17 @@ describe("iconifyLocalSource / icons allowlist", () => {
     const source = iconifyLocalSource("mdi", { icons: ["search", "not-real"] });
 
     await expect(source.listIcons?.()).resolves.toEqual(["search", "not-real"]);
-    expect(loadCollectionFromFS).not.toHaveBeenCalled();
+    expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();
   });
 });
 
 describe("iconifyLocalSource / pack cache sharing", () => {
   it("shares a resolved local pack across separate iconifyLocalSource() instances", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(pack);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
 
     await iconifyLocalSource("mdi").getIcon("search");
     await iconifyLocalSource("mdi").getIcon("menu");
 
-    expect(loadCollectionFromFS).toHaveBeenCalledOnce();
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
 });

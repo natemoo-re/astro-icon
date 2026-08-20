@@ -1,8 +1,5 @@
 import type { IconifyJSON } from "@iconify/types";
-import { afterEach, describe, expect, it, vi } from "vitest";
-
-const { iconifyApiSource } = await import("../src/content/iconify/source.js");
-const { __clearPackCache } = await import("../src/content/iconify/pack.js");
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const pack: IconifyJSON = {
   prefix: "mdi",
@@ -12,9 +9,18 @@ const pack: IconifyJSON = {
   },
 };
 
+// `pack.ts` (used internally by `iconifyApiSource`) caches resolved packs in a module-level Map.
+// Resetting the registry before each test - rather than exposing a test-only cache-clearing
+// export - gets every test a fresh, empty cache.
+let iconifyApiSource: (typeof import("../src/content/iconify/source.js"))["iconifyApiSource"];
+
+beforeEach(async () => {
+  vi.resetModules();
+  ({ iconifyApiSource } = await import("../src/content/iconify/source.js"));
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
-  __clearPackCache();
 });
 
 function fetchReturning(requested: () => IconifyJSON) {

@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createLiveIconLoader } from "../src/content/liveLoader.js";
-import { __setRecordCollection } from "../src/content/typegen/index.js";
+import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconEntry } from "../../typings/types";
 
-const recordCollection = vi.fn(async () => {});
-__setRecordCollection(recordCollection);
+vi.mock("../src/content/typegen/index.js", () => ({
+  recordCollection: vi.fn(async () => {}),
+  recordCatalog: vi.fn(async () => {}),
+}));
+
+const mockedRecordCollection = vi.mocked(recordCollection);
 
 const entry: IconEntry = {
   body: "<path/>",
@@ -157,7 +161,7 @@ describe("createLiveIconLoader / loadCollection", () => {
 
 describe("createLiveIconLoader typegen", () => {
   beforeEach(() => {
-    recordCollection.mockClear();
+    mockedRecordCollection.mockClear();
   });
 
   it("records an empty list keyed by source.name, without waiting on listIcons()", async () => {
@@ -172,7 +176,7 @@ describe("createLiveIconLoader typegen", () => {
 
     await flush();
 
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "live",
       "mdi",
@@ -190,7 +194,7 @@ describe("createLiveIconLoader typegen", () => {
 
     await flush();
 
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "live",
       "no-listing",
@@ -209,7 +213,7 @@ describe("createLiveIconLoader typegen", () => {
 
     await flush();
 
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "live",
       "api-only",

@@ -4,15 +4,24 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  __syncLocalIcons,
   localIcons,
   type LocalIconsSyncContext,
 } from "../src/content/local/loader.js";
-import { __setRecordCollection } from "../src/content/typegen/index.js";
+import type { LocalSourceOptions } from "../src/content/local/source.js";
+import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconEntry } from "../../typings/types";
 
-const recordCollection = vi.fn(async () => {});
-__setRecordCollection(recordCollection);
+vi.mock("../src/content/typegen/index.js", () => ({
+  recordCollection: vi.fn(async () => {}),
+  recordCatalog: vi.fn(async () => {}),
+}));
+
+const mockedRecordCollection = vi.mocked(recordCollection);
+
+/** Exercises the loader's own `.load()`, the same entry point Astro calls - just via the public `localIcons()` rather than Astro's full `LoaderContext`. */
+function syncLocalIcons(dir: string, options: LocalSourceOptions) {
+  return localIcons(dir, options).load;
+}
 
 const SQUARE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`;
 
@@ -22,7 +31,7 @@ let root: URL;
 beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), "astro-icon-localicons-"));
   root = new URL(`file://${dir}/`);
-  recordCollection.mockClear();
+  mockedRecordCollection.mockClear();
 });
 
 afterEach(async () => {
@@ -91,10 +100,10 @@ describe("localIcons / initial sync", () => {
     await write("logos/deno.svg", SQUARE_SVG);
 
     const context = fakeContext();
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     expect([...context.store.keys()].sort()).toEqual(["home", "logos/deno"]);
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       root,
       "build",
       "icons",
@@ -113,7 +122,7 @@ describe("localIcons / initial sync", () => {
   it("warns instead of throwing when the directory doesn't exist", async () => {
     const context = fakeContext();
 
-    await __syncLocalIcons("does-not-exist", {})(context);
+    await syncLocalIcons("does-not-exist", {})(context);
 
     expect(context.logger.warn).toHaveBeenCalled();
     expect([...context.store.keys()]).toEqual([]);
@@ -130,7 +139,7 @@ describe("localIcons / currentColor discoverability nudge", () => {
     );
 
     const context = fakeContext();
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     expect(context.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('2 icon(s) in "icons"'),
@@ -147,7 +156,7 @@ describe("localIcons / currentColor discoverability nudge", () => {
     );
 
     const context = fakeContext();
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     expect(context.logger.warn).not.toHaveBeenCalled();
   });
@@ -159,7 +168,7 @@ describe("localIcons / currentColor discoverability nudge", () => {
     );
 
     const context = fakeContext();
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     expect(context.logger.warn).not.toHaveBeenCalled();
   });
@@ -171,7 +180,7 @@ describe("localIcons / incremental watching", () => {
 
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     expect(watcher.add).toHaveBeenCalledWith(join(dir, "icons") + "/");
     expect([...context.store.keys()]).toEqual(["home"]);
@@ -189,7 +198,7 @@ describe("localIcons / incremental watching", () => {
 
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
     await write("home.svg", updated);
@@ -206,7 +215,7 @@ describe("localIcons / incremental watching", () => {
 
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
     expect([...context.store.keys()].sort()).toEqual(["home", "menu"]);
 
     watcher.emit("unlink", join(dir, "icons", "menu.svg"));
@@ -221,7 +230,7 @@ describe("localIcons / incremental watching", () => {
 
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     watcher.emit("add", "/some/unrelated/file.svg");
     await Promise.resolve();
@@ -235,7 +244,7 @@ describe("localIcons / incremental watching", () => {
 
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     watcher.emit("add", join(dir, "icons", "readme.md"));
     await Promise.resolve();
@@ -250,7 +259,7 @@ describe("localIcons / missing directory doesn't destabilize the watcher", () =>
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
 
-    await __syncLocalIcons("does-not-exist", {})(context);
+    await syncLocalIcons("does-not-exist", {})(context);
 
     expect(watcher.add).toHaveBeenCalledWith(join(dir, "does-not-exist") + "/");
     expect(context.logger.warn).toHaveBeenCalledTimes(1);
@@ -267,7 +276,7 @@ describe("localIcons / missing directory doesn't destabilize the watcher", () =>
   it("doesn't crash when the watcher emits 'error' for the missing directory", async () => {
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("does-not-exist", {})(context);
+    await syncLocalIcons("does-not-exist", {})(context);
 
     expect(() => {
       watcher.emit(
@@ -286,7 +295,7 @@ describe("localIcons / missing directory doesn't destabilize the watcher", () =>
 
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     watcher.emit("error", new Error("EPERM: transient error"));
 
@@ -305,7 +314,7 @@ describe("localIcons / re-sync caching", () => {
     await write("logos/deno.svg", SQUARE_SVG);
 
     const optimize = vi.fn((svg: string) => svg);
-    const sync = __syncLocalIcons("icons", { optimize });
+    const sync = syncLocalIcons("icons", { optimize });
     const context = fakeContext();
 
     await sync(context);
@@ -324,7 +333,7 @@ describe("localIcons / re-sync caching", () => {
     await write("logos/deno.svg", SQUARE_SVG);
 
     const optimize = vi.fn((svg: string) => svg);
-    const sync = __syncLocalIcons("icons", { optimize });
+    const sync = syncLocalIcons("icons", { optimize });
     const context = fakeContext();
 
     await sync(context);
@@ -344,7 +353,7 @@ describe("localIcons / whole-directory skip logging", () => {
     await write("home.svg", SQUARE_SVG);
     await write("logos/deno.svg", SQUARE_SVG);
 
-    const sync = __syncLocalIcons("icons", {});
+    const sync = syncLocalIcons("icons", {});
     const context = fakeContext();
 
     await sync(context);
@@ -365,7 +374,7 @@ describe("localIcons / whole-directory skip logging", () => {
   it("falls back to a full resync + info log once a file's mtime/size changes", async () => {
     await write("home.svg", SQUARE_SVG);
 
-    const sync = __syncLocalIcons("icons", {});
+    const sync = syncLocalIcons("icons", {});
     const context = fakeContext();
     await sync(context);
 
@@ -386,7 +395,7 @@ describe("localIcons / timing logs", () => {
 
     const context = fakeContext();
 
-    await __syncLocalIcons("icons", {})(context);
+    await syncLocalIcons("icons", {})(context);
 
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];

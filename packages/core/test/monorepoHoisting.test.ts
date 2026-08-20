@@ -1,10 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  __clearPackCache,
-  loadLocalPack,
-} from "../src/content/iconify/pack.js";
+import { loadLocalPack } from "../src/content/iconify/pack.js";
 
 // Regression test for https://github.com/natemoo-re/astro-icon/issues/187:
 // "Installed icon packs are not detected in a monorepo setup, particularly
@@ -30,7 +27,6 @@ describe("loadLocalPack in a monorepo with hoisted deps", () => {
 
   afterEach(() => {
     process.chdir(originalCwd);
-    __clearPackCache();
   });
 
   it("finds a pack hoisted to the workspace root when run from a nested package with no local node_modules", async () => {

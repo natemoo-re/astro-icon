@@ -2,22 +2,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  __clearPackCache,
-  __requireResolvePack,
-  __resetSleep,
-  __setLoadFromFS,
-  __setLoadViaRequireResolve,
-  __setSleep,
-  loadLocalPack,
-  loadPackFromAPI,
-} from "../src/content/iconify/pack.js";
 
-const loadCollectionFromFS = vi.fn();
-__setLoadFromFS(loadCollectionFromFS);
+vi.mock("@iconify/utils/lib/loader/fs", () => ({
+  loadCollectionFromFS: vi.fn(),
+}));
 
-const requireResolveFallback = vi.fn();
-__setLoadViaRequireResolve(requireResolveFallback);
+vi.mock("../src/content/iconify/requireResolvePack.js", () => ({
+  requireResolvePack: vi.fn(),
+}));
 
 const search: IconifyJSON = {
   prefix: "mdi",
@@ -28,57 +20,75 @@ function logger() {
   return { debug: vi.fn() };
 }
 
+// `pack.ts` caches resolved packs in a module-level Map, shared across every import within the
+// same module registry. Resetting the registry before each test - rather than exposing a
+// test-only cache-clearing export from `pack.ts` - gets every test a fresh, empty cache.
+let loadLocalPack: (typeof import("../src/content/iconify/pack.js"))["loadLocalPack"];
+let loadPackFromAPI: (typeof import("../src/content/iconify/pack.js"))["loadPackFromAPI"];
+let mockedLoadCollectionFromFS: ReturnType<typeof vi.fn>;
+let mockedRequireResolveFallback: ReturnType<typeof vi.fn>;
+
+beforeEach(async () => {
+  vi.resetModules();
+  ({ loadLocalPack, loadPackFromAPI } =
+    await import("../src/content/iconify/pack.js"));
+  const { loadCollectionFromFS } = await import("@iconify/utils/lib/loader/fs");
+  mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
+  mockedLoadCollectionFromFS.mockReset();
+  const { requireResolvePack } =
+    await import("../src/content/iconify/requireResolvePack.js");
+  mockedRequireResolveFallback = vi.mocked(requireResolvePack);
+  mockedRequireResolveFallback.mockReset();
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
-  loadCollectionFromFS.mockReset();
-  requireResolveFallback.mockReset();
-  __clearPackCache();
 });
 
 describe("loadLocalPack", () => {
   it("returns the locally loaded collection when available", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(search);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(search);
     await expect(loadLocalPack("mdi")).resolves.toBe(search);
   });
 
   it("resolves undefined when the pack isn't installed", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(undefined);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
     await expect(loadLocalPack("mdi")).resolves.toBeUndefined();
   });
 
   it("shares a locally resolved pack across separate calls", async () => {
-    loadCollectionFromFS.mockResolvedValueOnce(search);
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(search);
 
     await loadLocalPack("mdi");
     await loadLocalPack("mdi");
 
-    expect(loadCollectionFromFS).toHaveBeenCalledOnce();
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
 
-  // `loadFromFS` resolves via a filesystem-only ESM resolver that walks `node_modules` on
-  // disk, so it can't see a package resolved through Yarn Berry's PnP `.pnp.cjs` hook (no
+  // `loadCollectionFromFS` resolves via a filesystem-only ESM resolver that walks `node_modules`
+  // on disk, so it can't see a package resolved through Yarn Berry's PnP `.pnp.cjs` hook (no
   // `node_modules` to walk at all). `require.resolve` goes through the real CJS loader, so it
   // works under PnP too. See https://github.com/natemoo-re/astro-icon/issues/263.
   describe("require.resolve fallback (#263)", () => {
-    it("falls back to require.resolve when loadFromFS can't find the pack", async () => {
-      loadCollectionFromFS.mockResolvedValueOnce(undefined);
-      requireResolveFallback.mockResolvedValueOnce(search);
+    it("falls back to require.resolve when loadCollectionFromFS can't find the pack", async () => {
+      mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
+      mockedRequireResolveFallback.mockResolvedValueOnce(search);
 
       await expect(loadLocalPack("mdi")).resolves.toBe(search);
-      expect(requireResolveFallback).toHaveBeenCalledWith("mdi");
+      expect(mockedRequireResolveFallback).toHaveBeenCalledWith("mdi");
     });
 
-    it("doesn't fall back when loadFromFS already found the pack", async () => {
-      loadCollectionFromFS.mockResolvedValueOnce(search);
+    it("doesn't fall back when loadCollectionFromFS already found the pack", async () => {
+      mockedLoadCollectionFromFS.mockResolvedValueOnce(search);
 
       await loadLocalPack("mdi");
 
-      expect(requireResolveFallback).not.toHaveBeenCalled();
+      expect(mockedRequireResolveFallback).not.toHaveBeenCalled();
     });
 
-    it("resolves undefined when neither loadFromFS nor the fallback find the pack", async () => {
-      loadCollectionFromFS.mockResolvedValueOnce(undefined);
-      requireResolveFallback.mockResolvedValueOnce(undefined);
+    it("resolves undefined when neither loadCollectionFromFS nor the fallback find the pack", async () => {
+      mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
+      mockedRequireResolveFallback.mockResolvedValueOnce(undefined);
 
       await expect(loadLocalPack("mdi")).resolves.toBeUndefined();
     });
@@ -89,8 +99,14 @@ describe("loadLocalPack", () => {
       // only passes if `require.resolve` walks up to the fixture root's
       // node_modules on its own - the same directory-walking CJS resolution
       // Node's loader (and Yarn PnP's `.pnp.cjs` hook) both honor.
-      loadCollectionFromFS.mockResolvedValueOnce(undefined);
-      __setLoadViaRequireResolve(__requireResolvePack);
+      mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
+      const { requireResolvePack: actualRequireResolvePack } =
+        await vi.importActual<
+          typeof import("../src/content/iconify/requireResolvePack.js")
+        >("../src/content/iconify/requireResolvePack.js");
+      mockedRequireResolveFallback.mockImplementationOnce(
+        actualRequireResolvePack,
+      );
 
       const fixtureRoot = path.resolve(
         fileURLToPath(new URL(".", import.meta.url)),
@@ -106,7 +122,6 @@ describe("loadLocalPack", () => {
         expect(result?.icons.foo).toBeDefined();
       } finally {
         process.chdir(originalCwd);
-        __setLoadViaRequireResolve(requireResolveFallback);
       }
     });
   });
@@ -289,22 +304,22 @@ describe("loadPackFromAPI", () => {
   });
 
   describe("retrying a 429 response", () => {
-    let sleepMock: ReturnType<typeof vi.fn<(ms: number) => Promise<void>>>;
-
     beforeEach(() => {
-      sleepMock = vi.fn(async () => {});
-      __setSleep(sleepMock);
+      vi.useFakeTimers();
+      vi.setSystemTime(0);
     });
 
     afterEach(() => {
-      __resetSleep();
+      vi.useRealTimers();
     });
 
     it("retries after the delay given by Retry-After, then succeeds", async () => {
+      const timestamps: number[] = [];
       let call = 0;
       vi.stubGlobal(
         "fetch",
         vi.fn(async () => {
+          timestamps.push(Date.now());
           call++;
           if (call === 1) {
             return new Response("", {
@@ -316,46 +331,52 @@ describe("loadPackFromAPI", () => {
         }),
       );
 
-      const result = await loadPackFromAPI("mdi", ["search"], {
+      const resultPromise = loadPackFromAPI("mdi", ["search"], {
         logger: logger(),
       });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
 
       expect(result).toEqual(search);
-      expect(sleepMock).toHaveBeenCalledOnce();
-      expect(sleepMock).toHaveBeenCalledWith(2000);
+      expect(timestamps).toEqual([0, 2000]);
     });
 
     it("falls back to exponential backoff when Retry-After is absent", async () => {
+      const timestamps: number[] = [];
       let call = 0;
       vi.stubGlobal(
         "fetch",
         vi.fn(async () => {
+          timestamps.push(Date.now());
           call++;
           if (call <= 2) return new Response("", { status: 429 });
           return new Response(JSON.stringify(search), { status: 200 });
         }),
       );
 
-      const result = await loadPackFromAPI("mdi", ["search"], {
+      const resultPromise = loadPackFromAPI("mdi", ["search"], {
         logger: logger(),
       });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
 
       expect(result).toEqual(search);
       // Doubling from a 500ms base: first retry waits 500ms, second waits 1000ms.
-      expect(sleepMock.mock.calls.map((call) => call[0])).toEqual([500, 1000]);
+      expect(timestamps).toEqual([0, 500, 1500]);
     });
 
     it("gives up after the retry cap and fails the load", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => new Response("", { status: 429 })),
-      );
+      const fetchMock = vi.fn(async () => new Response("", { status: 429 }));
+      vi.stubGlobal("fetch", fetchMock);
 
-      await expect(
-        loadPackFromAPI("mdi", ["search"], { logger: logger() }),
-      ).rejects.toThrow(/mdi/);
+      const resultPromise = loadPackFromAPI("mdi", ["search"], {
+        logger: logger(),
+      });
+      const assertion = expect(resultPromise).rejects.toThrow(/mdi/);
+      await vi.runAllTimersAsync();
+      await assertion;
       // 3 retries after the initial attempt = 4 fetches total.
-      expect(sleepMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
     });
 
     it("doesn't retry a non-429 failure", async () => {
@@ -364,11 +385,12 @@ describe("loadPackFromAPI", () => {
       );
       vi.stubGlobal("fetch", fetchMock);
 
+      const before = Date.now();
       await expect(
         loadPackFromAPI("mdi", ["search"], { logger: logger() }),
       ).rejects.toThrow(/mdi/);
       expect(fetchMock).toHaveBeenCalledOnce();
-      expect(sleepMock).not.toHaveBeenCalled();
+      expect(Date.now() - before).toBe(0);
     });
 
     it("never sleeps on a plain success", async () => {
@@ -379,9 +401,10 @@ describe("loadPackFromAPI", () => {
         ),
       );
 
+      const before = Date.now();
       await loadPackFromAPI("mdi", ["search"], { logger: logger() });
 
-      expect(sleepMock).not.toHaveBeenCalled();
+      expect(Date.now() - before).toBe(0);
     });
   });
 });

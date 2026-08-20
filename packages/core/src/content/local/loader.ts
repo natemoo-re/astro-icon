@@ -105,21 +105,20 @@ export interface LocalIconsSyncContext {
 export function localIcons(
   dir: string = "src/icons",
   options: LocalSourceOptions = {},
-): Loader {
+): Loader & { load: (context: LocalIconsSyncContext) => Promise<void> } {
   return {
     name: "astro-icon/loaders",
     schema: iconEntrySchema,
-    load: __syncLocalIcons(dir, options),
+    load: syncLocalIcons(dir, options),
   };
 }
 
 /**
  * The sync logic behind `localIcons`, taking only {@link LocalIconsSyncContext} instead of
- * Astro's full `LoaderContext`; exported for tests only, so a fixture doesn't have to implement
- * every unused field of the real interface.
- * @private
+ * Astro's full `LoaderContext` - keeping this signature (rather than `LoaderContext`) lets a test
+ * fixture implement only the fields it actually needs, by calling the loader's own `.load()`.
  */
-export function __syncLocalIcons(
+function syncLocalIcons(
   dir: string,
   options: LocalSourceOptions,
 ): (context: LocalIconsSyncContext) => Promise<void> {

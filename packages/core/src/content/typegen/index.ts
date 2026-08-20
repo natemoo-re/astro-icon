@@ -18,15 +18,6 @@ function enqueueWrite(
   return chain;
 }
 
-type RecordCollectionFn = (
-  rootDir: URL,
-  kind: CollectionKind,
-  collection: string,
-  names: string[],
-) => Promise<void>;
-
-let recordCollectionImpl: RecordCollectionFn = enqueueWrite;
-
 /** Records a collection's full icon name set to its own declaration file under `.astro/astro-icon/`, for autocomplete. */
 export function recordCollection(
   rootDir: URL,
@@ -34,15 +25,7 @@ export function recordCollection(
   collection: string,
   names: string[],
 ): Promise<void> {
-  return recordCollectionImpl(rootDir, kind, collection, names);
-}
-
-/**
- * Swaps `recordCollection`'s implementation for a fake, so a loader test can assert on it without touching disk; for tests only.
- * @private
- */
-export function __setRecordCollection(fn: RecordCollectionFn): void {
-  recordCollectionImpl = fn;
+  return enqueueWrite(rootDir, kind, collection, names);
 }
 
 /** Records an Iconify pack's full, unfiltered catalog, so `icons: [...]` options can be typed and autocompleted against it. Not a collection - kept as a separate entry point so `recordCollection`'s `kind` can never be "packs". */

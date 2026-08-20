@@ -2,31 +2,8 @@ export interface RateLimiter {
   (): Promise<void>;
 }
 
-let now: () => number = () => Date.now();
-let sleep: (ms: number) => Promise<void> = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * Swaps the clock/delay for fakes, so a test can verify spacing without waiting in real time;
- * for tests only.
- * @private
- */
-export function __setClock(
-  nowFn: () => number,
-  sleepFn: (ms: number) => Promise<void>,
-): void {
-  now = nowFn;
-  sleep = sleepFn;
-}
-
-/**
- * Restores the real clock/delay after a test swaps them out via {@link __setClock}; for tests
- * only.
- * @private
- */
-export function __resetClock(): void {
-  now = () => Date.now();
-  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -50,7 +27,7 @@ export function createRateLimiter(requestsPerSecond: number): RateLimiter {
   let nextSlot = 0;
 
   return async function acquire(): Promise<void> {
-    const current = now();
+    const current = Date.now();
     const slot = Math.max(current, nextSlot);
     nextSlot = slot + intervalMs;
     const delay = slot - current;

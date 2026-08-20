@@ -1,12 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { __syncIcons, createIconLoader } from "../src/content/loader.js";
+import { createIconLoader } from "../src/content/loader.js";
 import { mergeSources } from "../src/content/compositeSource.js";
-import { __setRecordCollection } from "../src/content/typegen/index.js";
+import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
 
-const recordCollection = vi.fn(async () => {});
-__setRecordCollection(recordCollection);
+vi.mock("../src/content/typegen/index.js", () => ({
+  recordCollection: vi.fn(async () => {}),
+  recordCatalog: vi.fn(async () => {}),
+}));
+
+const mockedRecordCollection = vi.mocked(recordCollection);
+
+/** Exercises the loader's own `.load()`, the same entry point Astro calls - just via the public `createIconLoader()` rather than Astro's full `LoaderContext`. */
+function sync(source: IconSource | IconSource[], strict: boolean) {
+  return createIconLoader(source, { strict }).load;
+}
 
 function entryFor(id: string): IconEntry {
   return { body: id, viewBox: "0 0 24 24", width: 24, height: 24 };
@@ -53,7 +62,7 @@ function fakeSource(overrides: Partial<IconSource> = {}): IconSource {
 }
 
 beforeEach(() => {
-  recordCollection.mockClear();
+  mockedRecordCollection.mockClear();
 });
 
 describe("createIconLoader", () => {
@@ -61,11 +70,11 @@ describe("createIconLoader", () => {
     const source = fakeSource({ listIcons: async () => ["home", "menu"] });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
 
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("menu")).toEqual(entryFor("menu"));
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "build",
       "icons",
@@ -77,7 +86,7 @@ describe("createIconLoader", () => {
     const source = fakeSource({ listIcons: async () => ["home"] });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
 
     expect(context.parseData).toHaveBeenCalledWith({
       id: "home",
@@ -100,14 +109,14 @@ describe("createIconLoader", () => {
     });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
 
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("missing")).toBeUndefined();
     expect(context.logger.warn).toHaveBeenCalled();
     // The failed icon must not be typed as a valid IconName either - it
     // isn't in the store, so it can't be in the generated types.
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "build",
       "icons",
@@ -123,14 +132,14 @@ describe("createIconLoader", () => {
       }),
     });
 
-    await expect(__syncIcons(source, true)(fakeContext())).rejects.toThrow();
+    await expect(sync(source, true)(fakeContext())).rejects.toThrow();
   });
 
   it("warns and loads nothing when the source has no listIcons at all", async () => {
     const source = fakeSource({ listIcons: undefined });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
 
     expect([...context.store.keys()]).toEqual([]);
     expect(context.logger.warn).toHaveBeenCalled();
@@ -139,7 +148,7 @@ describe("createIconLoader", () => {
   it("throws under strict when the source can't list any icons", async () => {
     const source = fakeSource({ listIcons: undefined });
 
-    await expect(__syncIcons(source, true)(fakeContext())).rejects.toThrow();
+    await expect(sync(source, true)(fakeContext())).rejects.toThrow();
   });
 
   it("throws (or warns) when listIcons() itself rejects", async () => {
@@ -150,10 +159,10 @@ describe("createIconLoader", () => {
     });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
     expect(context.logger.warn).toHaveBeenCalled();
 
-    await expect(__syncIcons(source, true)(fakeContext())).rejects.toThrow();
+    await expect(sync(source, true)(fakeContext())).rejects.toThrow();
   });
 });
 
@@ -179,11 +188,11 @@ describe("createIconLoader / multiple sources", () => {
     });
     const context = fakeContext();
 
-    await __syncIcons(mergeSources([mdi, ic]), false)(context);
+    await sync(mergeSources([mdi, ic]), false)(context);
 
     expect(context.store.get("home")).toEqual(entryFor("mdi-home"));
     expect(context.store.get("star")).toEqual(entryFor("ic-star"));
-    expect(recordCollection).toHaveBeenCalledWith(
+    expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "build",
       "icons",
@@ -210,13 +219,13 @@ describe("createIconLoader / version-based skip", () => {
       getIcon,
       getVersion: async () => "1.0.0",
     });
-    const sync = __syncIcons(source, false);
+    const load = sync(source, false);
     const context = fakeContext();
 
-    await sync(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(2);
 
-    await sync(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(2);
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("menu")).toEqual(entryFor("menu"));
@@ -230,14 +239,14 @@ describe("createIconLoader / version-based skip", () => {
       getIcon,
       getVersion: async () => version,
     });
-    const sync = __syncIcons(source, false);
+    const load = sync(source, false);
     const context = fakeContext();
 
-    await sync(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(1);
 
     version = "2.0.0";
-    await sync(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(2);
   });
 
@@ -249,25 +258,25 @@ describe("createIconLoader / version-based skip", () => {
       getIcon,
       getVersion: async () => "1.0.0",
     });
-    const sync = __syncIcons(source, false);
+    const load = sync(source, false);
     const context = fakeContext();
 
-    await sync(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(1);
 
     names = ["home", "menu"];
-    await sync(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(3);
   });
 
   it("never skips when the source doesn't report a version", async () => {
     const getIcon = vi.fn(async (name: string) => entryFor(name));
     const source = fakeSource({ listIcons: async () => ["home"], getIcon });
-    const sync = __syncIcons(source, false);
+    const load = sync(source, false);
     const context = fakeContext();
 
-    await sync(context);
-    await sync(context);
+    await load(context);
+    await load(context);
     expect(getIcon).toHaveBeenCalledTimes(2);
   });
 
@@ -286,14 +295,14 @@ describe("createIconLoader / version-based skip", () => {
       getVersion: async () => "1.0.0",
     });
     const sourceB = fakeSource({ name: "b", listIcons: async () => ["menu"] });
-    const sync = __syncIcons(mergeSources([sourceA, sourceB]), false);
+    const load = sync(mergeSources([sourceA, sourceB]), false);
     const context = fakeContext();
 
-    await sync(context);
+    await load(context);
     const afterFirstLoad = getIconA.mock.calls.length;
     expect(afterFirstLoad).toBeGreaterThan(0);
 
-    await sync(context);
+    await load(context);
     expect(getIconA).toHaveBeenCalledTimes(afterFirstLoad * 2);
   });
 });
@@ -306,7 +315,7 @@ describe("createIconLoader / timing logs", () => {
     });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
 
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];
@@ -323,7 +332,7 @@ describe("createIconLoader / timing logs", () => {
     });
     const context = fakeContext();
 
-    await __syncIcons(source, false)(context);
+    await sync(source, false)(context);
 
     const [message] = context.logger.debug.mock.calls.at(-1)!;
     expect(message).toMatch(
@@ -336,14 +345,14 @@ describe("createIconLoader / timing logs", () => {
       listIcons: async () => ["home"],
       getVersion: async () => "1.0.0",
     });
-    const sync = __syncIcons(source, false);
+    const load = sync(source, false);
     const context = fakeContext();
 
-    await sync(context);
+    await load(context);
     context.logger.info.mockClear();
     context.logger.debug.mockClear();
 
-    await sync(context);
+    await load(context);
 
     expect(context.logger.info).not.toHaveBeenCalled();
     expect(context.logger.debug).toHaveBeenCalledOnce();

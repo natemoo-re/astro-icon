@@ -43,11 +43,10 @@ export interface IconLoaderOptions {
 
 /**
  * The sync logic behind `createIconLoader`, taking only {@link IconLoaderSyncContext} instead of
- * Astro's full `LoaderContext`; exported for tests only, so a fixture doesn't have to implement
- * every unused field of the real interface.
- * @private
+ * Astro's full `LoaderContext` - keeping this signature (rather than `LoaderContext`) lets a test
+ * fixture implement only the fields it actually needs, by calling the loader's own `.load()`.
  */
-export function __syncIcons(
+function syncIcons(
   source: IconSource,
   strict: boolean,
 ): (context: IconLoaderSyncContext) => Promise<void> {
@@ -182,13 +181,13 @@ export function __syncIcons(
 export function createIconLoader(
   sources: IconSource | IconSource[],
   options: IconLoaderOptions = {},
-): Loader {
+): Loader & { load: (context: IconLoaderSyncContext) => Promise<void> } {
   const source = mergeSources(sources);
   const { strict = false } = options;
 
   return {
     name: "astro-icon/loaders",
-    load: __syncIcons(source, strict),
+    load: syncIcons(source, strict),
     schema: iconEntrySchema,
   };
 }
