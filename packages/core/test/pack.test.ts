@@ -1,12 +1,14 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   __clearPackCache,
   __requireResolvePack,
+  __resetSleep,
   __setLoadFromFS,
   __setLoadViaRequireResolve,
+  __setSleep,
   loadLocalPack,
   loadPackFromAPI,
 } from "../src/content/iconify/pack.js";
@@ -282,6 +284,103 @@ describe("loadPackFromAPI", () => {
       await expect(
         loadPackFromAPI("mdi", names, { logger: logger() }),
       ).rejects.toThrow(/mdi/);
+    });
+  });
+
+  describe("retrying a 429 response", () => {
+    let sleepMock: ReturnType<typeof vi.fn<(ms: number) => Promise<void>>>;
+
+    beforeEach(() => {
+      sleepMock = vi.fn(async () => {});
+      __setSleep(sleepMock);
+    });
+
+    afterEach(() => {
+      __resetSleep();
+    });
+
+    it("retries after the delay given by Retry-After, then succeeds", async () => {
+      let call = 0;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          call++;
+          if (call === 1) {
+            return new Response("", {
+              status: 429,
+              headers: { "retry-after": "2" },
+            });
+          }
+          return new Response(JSON.stringify(search), { status: 200 });
+        }),
+      );
+
+      const result = await loadPackFromAPI("mdi", ["search"], {
+        logger: logger(),
+      });
+
+      expect(result).toEqual(search);
+      expect(sleepMock).toHaveBeenCalledOnce();
+      expect(sleepMock).toHaveBeenCalledWith(2000);
+    });
+
+    it("falls back to exponential backoff when Retry-After is absent", async () => {
+      let call = 0;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          call++;
+          if (call <= 2) return new Response("", { status: 429 });
+          return new Response(JSON.stringify(search), { status: 200 });
+        }),
+      );
+
+      const result = await loadPackFromAPI("mdi", ["search"], {
+        logger: logger(),
+      });
+
+      expect(result).toEqual(search);
+      // Doubling from a 500ms base: first retry waits 500ms, second waits 1000ms.
+      expect(sleepMock.mock.calls.map((call) => call[0])).toEqual([
+        500, 1000,
+      ]);
+    });
+
+    it("gives up after the retry cap and fails the load", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response("", { status: 429 })),
+      );
+
+      await expect(
+        loadPackFromAPI("mdi", ["search"], { logger: logger() }),
+      ).rejects.toThrow(/mdi/);
+      // 3 retries after the initial attempt = 4 fetches total.
+      expect(sleepMock).toHaveBeenCalledTimes(3);
+    });
+
+    it("doesn't retry a non-429 failure", async () => {
+      const fetchMock = vi.fn(
+        async () => new Response("Not Found", { status: 404 }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        loadPackFromAPI("mdi", ["search"], { logger: logger() }),
+      ).rejects.toThrow(/mdi/);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(sleepMock).not.toHaveBeenCalled();
+    });
+
+    it("never sleeps on a plain success", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(JSON.stringify(search), { status: 200 })),
+      );
+
+      await loadPackFromAPI("mdi", ["search"], { logger: logger() });
+
+      expect(sleepMock).not.toHaveBeenCalled();
     });
   });
 });

@@ -199,13 +199,66 @@ async function fetchPackChunk(
   icons: string[],
 ): Promise<IconifyJSON | undefined> {
   const search = `?icons=${encodeURIComponent(icons.join(","))}`;
-  const res = await fetch(
+  const res = await fetchWithRetry(
     `https://api.iconify.design/${pack}.json${search}`,
-  ).catch(() => undefined);
+  );
   if (!res || !res.ok) return undefined;
   const data = await res.json().catch(() => undefined);
   if (data == null || !Object.prototype.hasOwnProperty.call(data, "icons"))
     return undefined;
   if (!(data as { icons: unknown }).icons) return undefined;
   return data;
+}
+
+// 429 is a shared public service telling us to slow down, not a permanent failure - worth a few
+// retries before giving up, unlike any other error status (a 404 or a malformed pack name won't
+// start working on retry, so those still fail immediately, same as before).
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 500;
+
+let sleep: (ms: number) => Promise<void> = (ms) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Swaps the retry delay for a fake, so a test doesn't have to wait in real time; for tests only.
+ * @private
+ */
+export function __setSleep(fn: (ms: number) => Promise<void>): void {
+  sleep = fn;
+}
+
+/**
+ * Restores the real timer-based delay after a test swaps it out via {@link __setSleep}; for
+ * tests only.
+ * @private
+ */
+export function __resetSleep(): void {
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * `fetch`, retrying on a 429 up to {@link MAX_RETRIES} times. Waits for the delay the server
+ * itself asked for via `Retry-After` (the numeric-seconds form; the less common HTTP-date form
+ * isn't handled and falls through to backoff instead) when present, otherwise a doubling backoff
+ * from {@link BASE_RETRY_DELAY_MS}. Any other status (or a network failure) is returned/resolved
+ * as-is on the first try - only 429 is worth retrying automatically.
+ */
+async function fetchWithRetry(
+  url: string,
+  attempt = 0,
+): Promise<Response | undefined> {
+  const res = await fetch(url).catch(() => undefined);
+  if (!res) return undefined;
+  if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
+
+  const retryAfterHeader = res.headers.get("retry-after");
+  // `Number(null)` is 0, not NaN, so a missing header has to be checked for explicitly rather
+  // than relying on Number.isFinite to reject it.
+  const retryAfterSeconds =
+    retryAfterHeader == null ? NaN : Number(retryAfterHeader);
+  const delayMs = Number.isFinite(retryAfterSeconds)
+    ? retryAfterSeconds * 1000
+    : BASE_RETRY_DELAY_MS * 2 ** attempt;
+  await sleep(delayMs);
+  return fetchWithRetry(url, attempt + 1);
 }
