@@ -123,7 +123,9 @@ export function localSource(
     // be a passthrough of the author's own file, so whatever's left there (`fill`/`stroke`/
     // `color`/`class`/...) needs reading back out via `extractRootAttrs` below - which means the
     // optimized SVG has to stay in scope long enough for that.
-    const optimizedSvg = optimize ? await optimize(svg, { collection: "local", name }) : svg;
+    const optimizedSvg = optimize
+      ? await optimize(svg, { collection: "local", name })
+      : svg;
     const parsed = await parseIconSVG(optimizedSvg, {
       collection: "local",
       name,

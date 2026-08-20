@@ -33,9 +33,9 @@ describe("extractTitleDesc", () => {
   });
 
   it("treats an empty <title>/<desc> as absent, not an empty string", () => {
-    expect(
-      extractTitleDesc('<title></title><path d="M0 0"/>'),
-    ).toEqual({ body: '<path d="M0 0"/>' });
+    expect(extractTitleDesc('<title></title><path d="M0 0"/>')).toEqual({
+      body: '<path d="M0 0"/>',
+    });
   });
 
   it("trims whitespace around the extracted text", () => {

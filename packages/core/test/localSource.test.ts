@@ -77,7 +77,7 @@ describe("localSource / getIcon", () => {
     expect(entry.viewBox).toBe("0 0 24 24");
   });
 
-  it("stores fill/stroke set on the root <svg> tag (the Heroicons \"stroke icon\" pattern) as entry fields, not wrapped into body", async () => {
+  it('stores fill/stroke set on the root <svg> tag (the Heroicons "stroke icon" pattern) as entry fields, not wrapped into body', async () => {
     await write(
       "adjustment.svg",
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 6V4"/></svg>`,
