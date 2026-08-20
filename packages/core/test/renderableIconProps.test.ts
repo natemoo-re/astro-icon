@@ -91,7 +91,10 @@ describe("renderableIconProps", () => {
     const { normalizedProps } = renderableIconProps(withRootAttrs, {
       fill: "red",
     });
-    expect(normalizedProps).toMatchObject({ fill: "red", stroke: "currentColor" });
+    expect(normalizedProps).toMatchObject({
+      fill: "red",
+      stroke: "currentColor",
+    });
   });
 
   it("never leaks body/title/desc onto the rendered <svg>'s props", () => {

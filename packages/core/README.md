@@ -193,7 +193,7 @@ A relative string like that resolves against your project's root, however `conte
 
 Each sync logs how many icons it loaded and how long it took (e.g. `Loaded 42 icon(s) for the "icons" collection in 18ms`), so a slow build step is easy to attribute to icon loading versus everything else.
 
-`localSource()` is a passthrough of the file you wrote: whatever's left on the root `<svg>` tag itself - `fill`, `stroke`, `color`, `class`, `style`, anything else - becomes a default attribute on the *rendered* `<svg>`, not dropped. This matters for the common "stroke icon" pattern (Heroicons and friends), which sets `fill="none" stroke="currentColor"` once on the root and relies on every child inheriting it:
+`localSource()` is a passthrough of the file you wrote: whatever's left on the root `<svg>` tag itself - `fill`, `stroke`, `color`, `class`, `style`, anything else - becomes a default attribute on the _rendered_ `<svg>`, not dropped. This matters for the common "stroke icon" pattern (Heroicons and friends), which sets `fill="none" stroke="currentColor"` once on the root and relies on every child inheriting it:
 
 ```svg
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -205,7 +205,7 @@ These are defaults, the same as `width`/`height` already are: your own `<Icon fi
 
 Accessibility attributes (`role`, every `aria-*`, `focusable`, `tabindex`) are the one exception - those are `<Icon>`/`<LiveIcon>`'s own contract, computed from your `title`/`desc` props, so a source file's own copies (usually generic export-tool boilerplate) are dropped rather than defaulted.
 
-An icon's own inline `<title>`/`<desc>` are handled differently from other content: instead of being left in `body` (which would render alongside, and conflict with, a caller-supplied `title`/`desc`), they become that icon's *default* `title`/`desc` prop value - used only when the caller doesn't pass their own, the same override relationship every other prop already has:
+An icon's own inline `<title>`/`<desc>` are handled differently from other content: instead of being left in `body` (which would render alongside, and conflict with, a caller-supplied `title`/`desc`), they become that icon's _default_ `title`/`desc` prop value - used only when the caller doesn't pass their own, the same override relationship every other prop already has:
 
 ```svg
 <svg viewBox="0 0 24 24"><title>Settings</title><path d="..." /></svg>

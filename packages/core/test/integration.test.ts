@@ -144,7 +144,7 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
     expect(svgBlocks).toHaveLength(2);
 
     const [defaulted] = svgBlocks;
-    expect(defaulted).toContain("role=\"img\"");
+    expect(defaulted).toContain('role="img"');
     expect(defaulted).toMatch(/<title id="[^"]+">Titled Icon<\/title>/);
     expect(defaulted).toMatch(
       /<desc id="[^"]+">A titled icon&#39;s description<\/desc>/,
