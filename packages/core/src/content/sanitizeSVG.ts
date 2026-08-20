@@ -11,6 +11,14 @@ const URI_ATTRS = new Set(["href", "xlink:href", "src"]);
 const DANGEROUS_URI_RE = /^(javascript|vbscript):|^data:text\/html/i;
 const WHITESPACE_AND_CONTROL_CHARS_RE = /[\x00-\x20]+/g;
 
+// A sound (not heuristic) pre-check: everything the walk below can ever remove hinges on one of
+// these substrings being literally present in the source - a dangerous tag name, an `on*`
+// attribute name, or one of `URI_ATTRS` (`xlink:href` matches via the `href` alternative). If
+// none appear, the full parse+walk is guaranteed to find nothing to remove, so it's skipped.
+// Deliberately over-matches (e.g. "href" inside unrelated text) rather than under-matches, since
+// a false positive only costs a redundant parse, while a false negative would be a real bypass.
+const MAYBE_ACTIVE_CONTENT_RE = /<\s*(?:script|foreignobject)\b|on[a-z]+\s*=|href\s*=|src\s*=/i;
+
 function isDangerousUri(value: string): boolean {
   // Strip control characters and whitespace, a common obfuscation for `java\tscript:`-style bypasses.
   const normalized = value.replace(WHITESPACE_AND_CONTROL_CHARS_RE, "");
@@ -30,6 +38,7 @@ function isDangerousUri(value: string): boolean {
  */
 export function sanitizeSVGBody(body: string): string {
   if (!body) return body;
+  if (!MAYBE_ACTIVE_CONTENT_RE.test(body)) return body;
 
   // Parsed inside a wrapper element so a top-level dangerous tag has a parent to be removed from.
   const root = parse(`<svg>${body}</svg>`);
