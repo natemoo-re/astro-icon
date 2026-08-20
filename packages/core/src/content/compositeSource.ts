@@ -1,5 +1,5 @@
 import { AstroIconError } from "../internal/error.js";
-import type { IconSource } from "./source.js";
+import type { IconSource, IconSourceWatcher } from "./source.js";
 
 /**
  * An `IconSource` composed from an ordered list of member sources, tried in
@@ -56,6 +56,22 @@ export function mergeSources(
       );
       if (versions.some((version) => !version)) return undefined;
       return versions.join("+");
+    },
+    // Present unconditionally (even if no member implements `watch`) so `createIconLoader`
+    // always has one consistent thing to call for a multi-source collection; a member with no
+    // `watch` of its own is simply never asked to register anything.
+    //
+    // Composing two watchable sources (e.g. two `localSource()` directories) watches both - see
+    // the name-collision footgun documented on `IconSource.watch`.
+    watch(watcher: IconSourceWatcher, report) {
+      for (const member of sources) {
+        member.watch?.(watcher, report);
+      }
+    },
+    resolveRoot(root: URL) {
+      for (const member of sources) {
+        member.resolveRoot?.(root);
+      }
     },
   };
 }

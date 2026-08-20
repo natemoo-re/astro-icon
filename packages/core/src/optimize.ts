@@ -97,7 +97,7 @@ async function loadSvgo(): Promise<typeof import("svgo")> {
 }
 
 /**
- * An `OptimizeFn` (see `optimize` on {@link iconify}, {@link localIcons}, and friends) that runs
+ * An `OptimizeFn` (see `optimize` on {@link iconify}, {@link localSource}, and friends) that runs
  * an icon's SVG through SVGO. `svgo` is an optional peer dependency - install it yourself, this
  * helper only imports it lazily when actually called.
  *

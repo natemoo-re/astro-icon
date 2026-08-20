@@ -43,6 +43,9 @@ export function createLiveIconLoader(
   // resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
   // sources like `iconifyLocalSource` use it to record their own full pack catalog for typing the `icons: [...]` option.
   const rootDir = new URL(`file://${process.cwd()}/`);
+  // Best-effort only: `process.cwd()` isn't necessarily the project root (see
+  // `IconSource.resolveRoot`'s doc comment), but it's the only thing a live collection has.
+  source.resolveRoot?.(rootDir);
   if (source.listIcons) source.listIcons().catch(() => {});
   recordCollection(rootDir, "live", source.name, []).catch(() => {});
 

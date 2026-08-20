@@ -12,7 +12,7 @@ export interface ListIconsOrFallbackOptions {
   hint: string;
 }
 
-/** Calls `source.listIcons()` (falling back to `[]` if absent), throwing under `strict` or warning otherwise on failure. Shared by `createIconLoader` and `localIcons`. */
+/** Calls `source.listIcons()` (falling back to `[]` if absent), throwing under `strict` or warning otherwise on failure. Used by `createIconLoader`. */
 export async function listIconsOrFallback(
   source: Pick<IconSource, "listIcons">,
   { strict, logger, failureMessage, hint }: ListIconsOrFallbackOptions,

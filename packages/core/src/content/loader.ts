@@ -1,12 +1,20 @@
 import type { Loader, LoaderContext } from "astro/loaders";
 import { AstroIconError } from "../internal/error.js";
-import { buildIcons } from "./buildIcons.js";
+import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
 import { iconEntrySchema } from "./entrySchema.js";
 import { listIconsOrFallback } from "./listIconsOrFallback.js";
 import { mergeSources } from "./compositeSource.js";
 import { recordCollection } from "./typegen/index.js";
-import type { IconSource } from "./source.js";
+import type {
+  IconChangeEvent,
+  IconSource,
+  IconSourceWatcher,
+} from "./source.js";
+
+function metaKeyFor(collection: string): string {
+  return `astro-icon:version:${collection}`;
+}
 
 async function getSourceVersionKey(
   source: IconSource,
@@ -23,13 +31,17 @@ async function getSourceVersionKey(
  * and `config`.
  */
 export interface IconLoaderSyncContext {
-  store: Pick<LoaderContext["store"], "clear" | "set" | "get" | "keys" | "has">;
+  store: Pick<
+    LoaderContext["store"],
+    "clear" | "set" | "get" | "keys" | "has" | "delete"
+  >;
   meta: Pick<LoaderContext["meta"], "get" | "set" | "delete" | "has">;
   logger: Pick<LoaderContext["logger"], "warn" | "info" | "error" | "debug">;
   parseData: LoaderContext["parseData"];
   generateDigest: LoaderContext["generateDigest"];
   collection: LoaderContext["collection"];
   config: Pick<LoaderContext["config"], "root">;
+  watcher?: IconSourceWatcher;
 }
 
 export interface IconLoaderOptions {
@@ -51,8 +63,57 @@ function syncIcons(
   strict: boolean,
 ): (context: IconLoaderSyncContext) => Promise<void> {
   return async function load(context: IconLoaderSyncContext): Promise<void> {
-    const { store, meta, logger, parseData, generateDigest, collection } =
-      context;
+    const {
+      store,
+      meta,
+      logger,
+      parseData,
+      generateDigest,
+      collection,
+      watcher,
+    } = context;
+
+    // Turns one `report()`ed file-level change into a surgical store update - re-resolving just
+    // that name for an "add"/"change", or deleting it for an "unlink" - instead of a full resync.
+    // Never throws, even under `strict`: this runs from inside a watcher event handler, where an
+    // unhandled rejection would be far worse than a logged warning.
+    async function handleChange(event: IconChangeEvent): Promise<void> {
+      try {
+        if (event.type === "unlink") {
+          store.delete(event.name);
+          logger.info(`Removed icon "${event.name}" from "${collection}".`);
+        } else {
+          const { data } = await buildIcon(source, event.name);
+          const parsedData = await parseData({ id: event.name, data });
+          store.set({
+            id: event.name,
+            data: parsedData,
+            digest: generateDigest(parsedData),
+          });
+          logger.info(
+            `${event.type === "add" ? "Added" : "Reloaded"} icon "${event.name}" in "${collection}".`,
+          );
+        }
+        meta.delete(metaKeyFor(collection));
+        await recordCollection(context.config.root, "build", collection, [
+          ...store.keys(),
+        ]);
+      } catch (ex) {
+        const detail = ex instanceof Error ? ex.message : String(ex);
+        logger.warn(
+          `"${source.name}" failed to handle a "${event.type}" for "${event.name}": ${detail}`,
+        );
+      }
+    }
+
+    function registerWatch(): void {
+      if (!watcher || !source.watch) return;
+      source.watch(watcher, (event) => void handleChange(event));
+    }
+
+    // Before anything else: a source built eagerly (in `content.config.ts`, before Astro's
+    // `config.root` exists) gets a chance to anchor itself now that a real one is available.
+    source.resolveRoot?.(context.config.root);
 
     const syncStart = performance.now();
 
@@ -78,7 +139,7 @@ function syncIcons(
     }
 
     // Skip resolving if every source's version + the requested icon set matches the last sync.
-    const metaKey = `astro-icon:version:${collection}`;
+    const metaKey = metaKeyFor(collection);
     const versionKey = await getSourceVersionKey(source, names);
     if (
       versionKey &&
@@ -89,6 +150,7 @@ function syncIcons(
       logger.debug(
         `"${collection}" is already up to date (${names.length} icon(s) from "${source.name}"), skipped in ${formatDuration(performance.now() - syncStart)}.`,
       );
+      registerWatch();
       return;
     }
 
@@ -137,6 +199,8 @@ function syncIcons(
     logger.debug(
       `"${collection}" breakdown: list ${formatDuration(listDuration)}, build ${formatDuration(buildDuration)}.`,
     );
+
+    registerWatch();
   };
 }
 

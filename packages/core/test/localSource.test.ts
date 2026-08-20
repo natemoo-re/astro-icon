@@ -1,8 +1,10 @@
+import { EventEmitter } from "node:events";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { localSource } from "../src/content/local/source.js";
+import type { IconChangeEvent } from "../src/content/source.js";
 
 const SQUARE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24"/></svg>`;
 
@@ -92,6 +94,230 @@ describe("localSource / getIcon", () => {
   it("accepts a file:// URL for the directory, same as a plain path", async () => {
     await write("logo.svg", SQUARE_SVG);
     const source = localSource(new URL(`file://${dir}/`));
+
+    await expect(source.getIcon("logo")).resolves.toMatchObject({
+      viewBox: "0 0 24 24",
+    });
+  });
+
+  it("skips re-running optimize when the file's content hash hasn't changed between calls", async () => {
+    await write("logo.svg", SQUARE_SVG);
+    const optimize = vi.fn((svg: string) => svg);
+    const source = localSource(dir, { optimize });
+
+    await source.getIcon("logo");
+    await source.getIcon("logo");
+    expect(optimize).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-runs optimize once the file's content actually changes", async () => {
+    await write("logo.svg", SQUARE_SVG);
+    const optimize = vi.fn((svg: string) => svg);
+    const source = localSource(dir, { optimize });
+    await source.getIcon("logo");
+
+    await write("logo.svg", `<svg viewBox="0 0 32 32"><circle r="16"/></svg>`);
+    const entry = await source.getIcon("logo");
+
+    expect(optimize).toHaveBeenCalledTimes(2);
+    expect(entry.viewBox).toBe("0 0 32 32");
+  });
+});
+
+describe("localSource / getVersion", () => {
+  it("reports the same version when nothing on disk has changed", async () => {
+    await write("logo.svg", SQUARE_SVG);
+    const source = localSource(dir);
+
+    await expect(source.getVersion?.()).resolves.toEqual(
+      await source.getVersion?.(),
+    );
+  });
+
+  it("reports a different version once a file's mtime/size changes", async () => {
+    await write("logo.svg", SQUARE_SVG);
+    const source = localSource(dir);
+    const before = await source.getVersion?.();
+
+    await write("logo.svg", `<svg viewBox="0 0 32 32"><circle r="16"/></svg>`);
+    const after = await source.getVersion?.();
+
+    expect(after).not.toEqual(before);
+  });
+});
+
+function fakeWatcher() {
+  const emitter = new EventEmitter();
+  return Object.assign(emitter, { add: vi.fn() });
+}
+
+describe("localSource / watch", () => {
+  it("registers its own directory with the watcher", async () => {
+    const source = localSource(dir);
+    const watcher = fakeWatcher();
+
+    source.watch?.(watcher, () => {});
+
+    expect(watcher.add).toHaveBeenCalledWith(dir);
+  });
+
+  it("reports an add/change/unlink for a .svg file inside its own directory, by icon name", async () => {
+    const source = localSource(dir);
+    const watcher = fakeWatcher();
+    const events: IconChangeEvent[] = [];
+    source.watch?.(watcher, (event) => events.push(event));
+
+    watcher.emit("add", join(dir, "logos", "deno.svg"));
+    watcher.emit("change", join(dir, "home.svg"));
+    watcher.emit("unlink", join(dir, "home.svg"));
+
+    expect(events).toEqual([
+      { type: "add", name: "logos/deno" },
+      { type: "change", name: "home" },
+      { type: "unlink", name: "home" },
+    ]);
+  });
+
+  it("ignores events for files outside its own directory, or non-.svg files inside it", async () => {
+    const source = localSource(dir);
+    const watcher = fakeWatcher();
+    const events: IconChangeEvent[] = [];
+    source.watch?.(watcher, (event) => events.push(event));
+
+    watcher.emit("add", "/some/unrelated/file.svg");
+    watcher.emit("add", join(dir, "readme.md"));
+
+    expect(events).toEqual([]);
+  });
+
+  it("doesn't crash when the shared watcher emits 'error'", () => {
+    const source = localSource(dir);
+    const watcher = fakeWatcher();
+    source.watch?.(watcher, () => {});
+
+    expect(() => watcher.emit("error", new Error("EPERM"))).not.toThrow();
+  });
+});
+
+describe("localSource / missing directory", () => {
+  it("warns once, however many times listIcons()/watch() ask", async () => {
+    const warn = vi.fn();
+    const missing = join(dir, "does-not-exist");
+    const source = localSource(missing, { logger: { warn } });
+
+    await source.listIcons?.();
+    await source.listIcons?.();
+    source.watch?.(fakeWatcher(), () => {});
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("does not exist");
+  });
+
+  it("still registers the directory with the watcher, so it recovers once created", () => {
+    const missing = join(dir, "does-not-exist");
+    const source = localSource(missing);
+    const watcher = fakeWatcher();
+
+    source.watch?.(watcher, () => {});
+
+    expect(watcher.add).toHaveBeenCalledWith(missing);
+  });
+});
+
+describe("localSource / currentColor discoverability nudge", () => {
+  it("warns once, naming the icon, the first time a freshly-parsed icon doesn't use currentColor", async () => {
+    // No fill attribute at all - relies on SVG's default black, the same shape #136 hit.
+    await write("home.svg", SQUARE_SVG);
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    await source.getIcon("home");
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"home"'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("currentColor"));
+  });
+
+  it("doesn't warn when the icon already uses currentColor", async () => {
+    await write(
+      "home.svg",
+      `<svg viewBox="0 0 24 24"><rect fill="currentColor" width="24" height="24"/></svg>`,
+    );
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    await source.getIcon("home");
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("doesn't warn about a multi-color icon (reads as a deliberate graphic, not a miss)", async () => {
+    await write(
+      "logo.svg",
+      `<svg viewBox="0 0 24 24"><rect fill="#ff0000" width="12" height="24"/><rect fill="#0000ff" x="12" width="12" height="24"/></svg>`,
+    );
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    await source.getIcon("logo");
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("doesn't re-warn on a cache hit, but does once the content genuinely changes", async () => {
+    await write("home.svg", SQUARE_SVG);
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    await source.getIcon("home");
+    await source.getIcon("home");
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    await write(
+      "home.svg",
+      `<svg viewBox="0 0 24 24"><rect fill="#000" width="24" height="24"/></svg>`,
+    );
+    await source.getIcon("home");
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("localSource / resolveRoot", () => {
+  it("anchors a relative dir against the given root once resolveRoot() is called", async () => {
+    await write("sub/logo.svg", SQUARE_SVG);
+    const source = localSource("sub");
+
+    source.resolveRoot?.(new URL(`file://${dir}/`));
+
+    await expect(source.getIcon("logo")).resolves.toMatchObject({
+      viewBox: "0 0 24 24",
+    });
+  });
+
+  it("resolves a relative dir against the process's cwd before resolveRoot() is ever called", async () => {
+    await write("sub/logo.svg", SQUARE_SVG);
+    const source = localSource("sub");
+
+    // Never anchored to `dir` - "sub" resolves relative to this process's actual cwd, which
+    // (assuming the test runner isn't invoked from inside the temp dir) has no such file.
+    await expect(source.getIcon("logo")).rejects.toThrow(/no local icon file/i);
+  });
+
+  it("leaves a URL dir untouched, ignoring any root it's given", async () => {
+    await write("logo.svg", SQUARE_SVG);
+    const source = localSource(new URL(`file://${dir}/`));
+
+    source.resolveRoot?.(new URL("file:///somewhere/else/"));
+
+    await expect(source.getIcon("logo")).resolves.toMatchObject({
+      viewBox: "0 0 24 24",
+    });
+  });
+
+  it("leaves an absolute string dir untouched, ignoring any root it's given", async () => {
+    await write("logo.svg", SQUARE_SVG);
+    const source = localSource(dir);
+
+    source.resolveRoot?.(new URL("file:///somewhere/else/"));
 
     await expect(source.getIcon("logo")).resolves.toMatchObject({
       viewBox: "0 0 24 24",

@@ -3,7 +3,7 @@
  * `entry.data` gives you from `getEntry()` or `getLiveEntry()`.
  *
  * You won't normally construct this yourself: a loader (`iconify`,
- * `localIcons`, or a custom {@link IconSource}) builds it for you from raw
+ * `localSource`, or a custom {@link IconSource}) builds it for you from raw
  * SVG. Reach for it directly if you write a custom loader or `optimize`
  * function and need the target shape.
  */
@@ -23,7 +23,7 @@ export interface IconEntry {
  * colors so CSS can control them, or adding `aria-hidden`.
  *
  * Pass one via the `optimize` option on {@link iconifyLocalSource},
- * {@link iconifyApiSource}, {@link localIcons}, or {@link localSource}.
+ * {@link iconifyApiSource}, or {@link localSource}.
  */
 export type OptimizeFn = (
   svg: string,

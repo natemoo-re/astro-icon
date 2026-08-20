@@ -2,12 +2,12 @@ import { defineCollection } from "astro:content";
 import {
   createIconLoader,
   iconifyLocalSource,
-  localIcons,
+  localSource,
 } from "astro-icon/loaders";
 
 // Each pack is restricted to the icons this demo uses; omitting `icons` would load the entire pack.
 export const collections = {
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
   ic: defineCollection({
     loader: createIconLoader(
       iconifyLocalSource("ic", {
