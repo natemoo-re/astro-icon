@@ -1,3 +1,4 @@
+import { mapWithConcurrency } from "./concurrency.js";
 import { sanitizeSVGBody } from "./sanitizeSVG.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
@@ -7,14 +8,20 @@ export interface BuiltIcon {
   data: IconEntry;
 }
 
-/** Builds every name via `source.getIcon()` in parallel, skipping (and reporting via `onError`) any that fail. */
+/**
+ * Builds every name via `source.getIcon()`, skipping (and reporting via `onError`) any that
+ * fail. Respects `source.concurrency` if set (see `IconSource.concurrency`); otherwise every
+ * name is resolved at once, as before.
+ */
 export async function buildIcons(
-  source: Pick<IconSource, "getIcon">,
+  source: Pick<IconSource, "getIcon" | "concurrency">,
   names: string[],
   onError: (name: string, cause: unknown) => void,
 ): Promise<BuiltIcon[]> {
-  const results = await Promise.all(
-    names.map(async (name) => {
+  const built = await mapWithConcurrency(
+    names,
+    source.concurrency,
+    async (name): Promise<BuiltIcon | undefined> => {
       try {
         const data = await source.getIcon(name);
         // Every `IconSource`, custom ones included, funnels through here before being stored -
@@ -25,7 +32,7 @@ export async function buildIcons(
         onError(name, cause);
         return undefined;
       }
-    }),
+    },
   );
-  return results.filter((entry): entry is BuiltIcon => entry !== undefined);
+  return built.filter((entry): entry is BuiltIcon => entry !== undefined);
 }

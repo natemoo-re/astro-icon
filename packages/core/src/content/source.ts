@@ -38,4 +38,15 @@ export interface IconSource {
    * building; the loader always falls back to a full build.
    */
   getVersion?(): Promise<string | undefined>;
+  /**
+   * Caps how many `getIcon` calls `buildIcons` runs concurrently for this source. Omit for no
+   * cap (every name resolved at once, the previous and still-default behavior).
+   *
+   * Meant for a source backed by a shared external resource - a rate-limited API, a
+   * connection-limited database - where firing every request at once would be irresponsible
+   * regardless of how fast the client itself could go. A source with no such constraint (a local
+   * file, an already-cached pack) has no reason to set one: bounding concurrency doesn't make
+   * synchronous, already-cached, or otherwise uncontended work resolve any faster.
+   */
+  concurrency?: number;
 }

@@ -31,6 +31,14 @@ describe("iconifyApiSource naming", () => {
   });
 });
 
+describe("iconifyApiSource / concurrency", () => {
+  it("sets a default concurrency cap, as a shared-public-API source", () => {
+    expect(iconifyApiSource("mdi", { icons: ["search"] }).concurrency).toBe(
+      20,
+    );
+  });
+});
+
 describe("iconifyApiSource / batches an allowlist into one request", () => {
   it("resolves every allowed icon from a single fetch covering the whole allowlist", async () => {
     const fetchMock = vi.fn(async (url: string) => {

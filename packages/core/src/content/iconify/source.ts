@@ -207,6 +207,12 @@ export function iconifyApiSource(
 
   return {
     name: `iconify-api:${pack}`,
+    // A deliberate cap on a shared public resource, not a speed optimization (see
+    // `IconSource.concurrency`). Batching (above) already collapses concurrent `getIcon` calls
+    // sharing an allowlist into one request, so this mostly guards call patterns batching
+    // doesn't cover - a very large allowlist split into multiple chunk requests, or a future
+    // change that reintroduces per-name fetches - rather than the common case.
+    concurrency: 20,
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
         throw new AstroIconError(
