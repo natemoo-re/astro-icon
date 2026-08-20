@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchJSON, FetchJSONError, fetchWithRetry } from "../../src/utils/fetch.js";
+import {
+  fetchJSON,
+  FetchJSONError,
+  fetchWithRetry,
+} from "../../src/utils/fetch.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -24,7 +28,9 @@ describe("fetchWithRetry", () => {
       }),
     );
 
-    await expect(fetchWithRetry("https://example.com")).resolves.toBeUndefined();
+    await expect(
+      fetchWithRetry("https://example.com"),
+    ).resolves.toBeUndefined();
   });
 
   it("doesn't retry a status outside retryStatuses", async () => {
@@ -136,7 +142,10 @@ describe("fetchJSON", () => {
   it("resolves the parsed JSON body on success", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ hello: "world" }), { status: 200 })),
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ hello: "world" }), { status: 200 }),
+      ),
     );
 
     await expect(fetchJSON("https://example.com")).resolves.toEqual({
