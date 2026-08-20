@@ -2,11 +2,15 @@ import type { IconifyJSON } from "@iconify/types";
 import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
+import type { RateLimiter } from "../../utils/rateLimiter.js";
+import { fetchWithRetry } from "../../utils/fetch.js";
 import { formatDuration } from "../duration.js";
 import { requireResolvePack } from "./requireResolvePack.js";
 
 export interface LoadPackFromAPIOptions {
   logger: Pick<AstroIntegrationLogger, "debug">;
+  /** Awaited before each request to the Iconify API, if given; see `iconifyApiSource`'s `requestsPerSecond` option. */
+  rateLimiter?: RateLimiter;
 }
 
 // Shared across every loader instance in this process; keyed by `<pack>` (full local install) or `<pack>:<sorted icons>` (API subset). Failed lookups aren't cached, so they're retried.
@@ -57,7 +61,7 @@ export function loadLocalPack(pack: string): Promise<IconifyJSON | undefined> {
 export async function loadPackFromAPI(
   pack: string,
   icons: string[],
-  { logger }: LoadPackFromAPIOptions,
+  { logger, rateLimiter }: LoadPackFromAPIOptions,
 ): Promise<IconifyJSON> {
   if (!icons.length) {
     throw new AstroIconError(
@@ -69,7 +73,7 @@ export async function loadPackFromAPI(
   const apiStart = performance.now();
   const sortedIcons = Array.from(new Set(icons)).sort();
   const remote = await cachedPackLoad(`${pack}:${sortedIcons.join(",")}`, () =>
-    fetchPackFromAPI(pack, sortedIcons),
+    fetchPackFromAPI(pack, sortedIcons, rateLimiter),
   );
   const apiDuration = formatDuration(performance.now() - apiStart);
   if (!remote) {
@@ -122,10 +126,11 @@ function mergePackChunks(chunks: IconifyJSON[]): IconifyJSON {
 async function fetchPackFromAPI(
   pack: string,
   icons: string[],
+  rateLimiter: RateLimiter | undefined,
 ): Promise<IconifyJSON | undefined> {
   const groups = chunk(icons, MAX_ICONS_PER_REQUEST);
   const results = await Promise.all(
-    groups.map((group) => fetchPackChunk(pack, group)),
+    groups.map((group) => fetchPackChunk(pack, group, rateLimiter)),
   );
   if (results.some((result) => !result)) return undefined;
   return mergePackChunks(results as IconifyJSON[]);
@@ -134,7 +139,9 @@ async function fetchPackFromAPI(
 async function fetchPackChunk(
   pack: string,
   icons: string[],
+  rateLimiter: RateLimiter | undefined,
 ): Promise<IconifyJSON | undefined> {
+  if (rateLimiter) await rateLimiter();
   const search = `?icons=${encodeURIComponent(icons.join(","))}`;
   const res = await fetchWithRetry(
     `https://api.iconify.design/${pack}.json${search}`,
@@ -145,41 +152,4 @@ async function fetchPackChunk(
     return undefined;
   if (!(data as { icons: unknown }).icons) return undefined;
   return data;
-}
-
-// 429 is a shared public service telling us to slow down, not a permanent failure - worth a few
-// retries before giving up, unlike any other error status (a 404 or a malformed pack name won't
-// start working on retry, so those still fail immediately, same as before).
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY_MS = 500;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * `fetch`, retrying on a 429 up to {@link MAX_RETRIES} times. Waits for the delay the server
- * itself asked for via `Retry-After` (the numeric-seconds form; the less common HTTP-date form
- * isn't handled and falls through to backoff instead) when present, otherwise a doubling backoff
- * from {@link BASE_RETRY_DELAY_MS}. Any other status (or a network failure) is returned/resolved
- * as-is on the first try - only 429 is worth retrying automatically.
- */
-async function fetchWithRetry(
-  url: string,
-  attempt = 0,
-): Promise<Response | undefined> {
-  const res = await fetch(url).catch(() => undefined);
-  if (!res) return undefined;
-  if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
-
-  const retryAfterHeader = res.headers.get("retry-after");
-  // `Number(null)` is 0, not NaN, so a missing header has to be checked for explicitly rather
-  // than relying on Number.isFinite to reject it.
-  const retryAfterSeconds =
-    retryAfterHeader == null ? NaN : Number(retryAfterHeader);
-  const delayMs = Number.isFinite(retryAfterSeconds)
-    ? retryAfterSeconds * 1000
-    : BASE_RETRY_DELAY_MS * 2 ** attempt;
-  await sleep(delayMs);
-  return fetchWithRetry(url, attempt + 1);
 }

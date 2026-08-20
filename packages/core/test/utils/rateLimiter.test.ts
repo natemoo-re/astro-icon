@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createRateLimiter } from "../src/content/iconify/rateLimiter.js";
+import { createRateLimiter } from "../../src/utils/rateLimiter.js";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -25,9 +25,9 @@ describe("createRateLimiter", () => {
 
     for (let i = 0; i < 3; i++) {
       const before = Date.now();
-      const acquired = limiter();
+      const done = limiter();
       await vi.runAllTimersAsync();
-      await acquired;
+      await done;
       waited.push(Date.now() - before);
     }
 
@@ -40,7 +40,7 @@ describe("createRateLimiter", () => {
     const limiter = createRateLimiter(10); // 100ms interval
 
     await limiter();
-    vi.advanceTimersByTime(150); // more than one interval's worth of "real" time passes
+    await vi.advanceTimersByTimeAsync(150); // more than one interval's worth of "real" time passes
     const before = Date.now();
     await limiter();
     expect(Date.now() - before).toBe(0);
@@ -51,9 +51,9 @@ describe("createRateLimiter", () => {
 
     // All three start "at once" (no sequential await between them) - each should still land in
     // its own slot, 100ms apart, rather than all going through immediately.
-    const acquired = Promise.all([0, 1, 2].map(() => limiter()));
+    const all = Promise.all([0, 1, 2].map(() => limiter()));
     await vi.runAllTimersAsync();
-    await acquired;
+    await all;
 
     expect(Date.now()).toBe(200); // slots at 0ms, 100ms, 200ms
   });

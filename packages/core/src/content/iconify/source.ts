@@ -10,8 +10,10 @@ import { consoleLogger } from "../logger.js";
 import { parseIconSVG } from "../parseIconSVG.js";
 import { recordCatalog } from "../typegen/index.js";
 import type { IconSource } from "../source.js";
+import { createRateLimiter } from "../../utils/rateLimiter.js";
 import type {
   IconEntry,
+  IconifyApiSourceOptions,
   IconifySourceOptions,
   OptimizeFn,
 } from "../../../typings/types";
@@ -165,7 +167,7 @@ export function iconifyApiSource<
     readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
-  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+  options?: Omit<IconifyApiSourceOptions, "icons"> & { icons?: Icons },
 ): IconSource;
 /**
  * An {@link IconSource} backed by the public Iconify API only - never a
@@ -191,12 +193,15 @@ export function iconifyApiSource<
  *   mdi: defineCollection({ loader: createIconLoader(mdi) }),
  * };
  * ```
+ *
+ * Requests already retry a 429 with backoff automatically. Pass `requestsPerSecond` to also cap
+ * how often this source *starts* a new request against the public API in the first place.
  */
 export function iconifyApiSource(
   pack: string,
-  options: IconifySourceOptions = {},
+  options: IconifyApiSourceOptions = {},
 ): IconSource {
-  const { icons, optimize, strict = false } = options;
+  const { icons, optimize, strict = false, requestsPerSecond } = options;
   const logger = consoleLogger;
   const allowed = checkForDuplicateIcons(
     pack,
@@ -204,6 +209,9 @@ export function iconifyApiSource(
     icons,
     logger,
   );
+  const rateLimiter = requestsPerSecond
+    ? createRateLimiter(requestsPerSecond)
+    : undefined;
 
   return {
     name: `iconify-api:${pack}`,
@@ -229,6 +237,7 @@ export function iconifyApiSource(
         allowed ? [...allowed] : [name],
         {
           logger,
+          rateLimiter,
         },
       );
       const entry = await buildIconEntry(data, name, {

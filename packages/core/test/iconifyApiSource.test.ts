@@ -1,11 +1,13 @@
 import type { IconifyJSON } from "@iconify/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { IconSource } from "../src/content/source.js";
 
 const pack: IconifyJSON = {
   prefix: "mdi",
   icons: {
     search: { body: "<path/>", width: 24, height: 24 },
     menu: { body: "<path/>", width: 24, height: 24 },
+    home: { body: "<path/>", width: 24, height: 24 },
   },
 };
 
@@ -172,5 +174,69 @@ describe("iconifyApiSource / pack cache sharing", () => {
     await iconifyApiSource("mdi", { icons: ["search"] }).getIcon("search");
 
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("iconifyApiSource / requestsPerSecond", () => {
+  function fetchEchoingRequestedIcon() {
+    return vi.fn(async (url: string) => {
+      const requested = new URL(url).searchParams.get("icons");
+      return new Response(
+        JSON.stringify({
+          prefix: "mdi",
+          icons: { [requested!]: pack.icons[requested!] },
+        }),
+        { status: 200 },
+      );
+    });
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Awaits `source.getIcon(name)`, driving any pending fake timers (the rate limiter's delay) forward as needed. */
+  async function getIcon(source: IconSource, name: string) {
+    const pending = source.getIcon(name);
+    await vi.runAllTimersAsync();
+    return pending;
+  }
+
+  it("doesn't rate-limit requests when the option is omitted", async () => {
+    vi.stubGlobal("fetch", fetchEchoingRequestedIcon());
+    const source = iconifyApiSource("mdi");
+
+    await getIcon(source, "search");
+    await getIcon(source, "menu");
+
+    expect(Date.now()).toBe(0);
+  });
+
+  it("spaces requests to stay under the given requestsPerSecond", async () => {
+    const fetchMock = fetchEchoingRequestedIcon();
+    vi.stubGlobal("fetch", fetchMock);
+    const source = iconifyApiSource("mdi", { requestsPerSecond: 10 }); // 100ms interval
+
+    await getIcon(source, "search");
+    await getIcon(source, "menu");
+
+    expect(Date.now()).toBe(100);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares one rate limiter's spacing across every getIcon call on the same source instance", async () => {
+    vi.stubGlobal("fetch", fetchEchoingRequestedIcon());
+    const source = iconifyApiSource("mdi", { requestsPerSecond: 10 }); // 100ms interval
+
+    await getIcon(source, "search");
+    await getIcon(source, "menu");
+    await getIcon(source, "home");
+
+    expect(Date.now()).toBe(200);
   });
 });

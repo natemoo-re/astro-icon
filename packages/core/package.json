@@ -23,6 +23,10 @@
     "./optimize": {
       "types": "./dist/optimize.d.ts",
       "default": "./dist/optimize.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.js"
     }
   },
   "files": [

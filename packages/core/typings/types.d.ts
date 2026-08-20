@@ -52,3 +52,17 @@ export interface IconifySourceOptions {
    */
   strict?: boolean;
 }
+
+/** Options for {@link iconifyApiSource}: {@link IconifySourceOptions} plus settings only meaningful for a network-backed source. */
+export interface IconifyApiSourceOptions extends IconifySourceOptions {
+  /**
+   * Caps how many requests this source starts per second against the public Iconify API,
+   * independent of `concurrency` (which bounds how many calls are in flight at once, not how
+   * often a new one begins - see `createRateLimiter` from `astro-icon/utils` for the distinction).
+   * Useful when a build hits the API for many packs/allowlists and you want to stay a good
+   * citizen of the shared public service.
+   *
+   * @default undefined - no rate limiting; `concurrency` alone already caps requests in flight.
+   */
+  requestsPerSecond?: number;
+}

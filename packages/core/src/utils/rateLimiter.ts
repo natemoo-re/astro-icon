@@ -2,10 +2,6 @@ export interface RateLimiter {
   (): Promise<void>;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * Builds a rate limiter enforcing at most `requestsPerSecond` *starts* globally across every
  * caller sharing the returned function. Not a concurrency cap (see `IconSource.concurrency`,
@@ -18,9 +14,8 @@ function sleep(ms: number): Promise<void> {
  * has passed since the last call was let through, otherwise after whatever delay is needed to
  * keep the global rate at or under `requestsPerSecond`.
  *
- * Internal only for now: not wired into any `IconSource` by default, and not exported from the
- * package's public entrypoints (`astro-icon`, `astro-icon/loaders`). A caller wanting this today
- * would need to import this module path directly and wrap their own source's `getIcon` with it.
+ * Exported from `astro-icon/utils` for a custom `IconSource` that wants to be a good citizen of
+ * whatever API or database it talks to - wrap your own `getIcon` with it if you need one.
  */
 export function createRateLimiter(requestsPerSecond: number): RateLimiter {
   const intervalMs = 1000 / requestsPerSecond;
@@ -31,6 +26,6 @@ export function createRateLimiter(requestsPerSecond: number): RateLimiter {
     const slot = Math.max(current, nextSlot);
     nextSlot = slot + intervalMs;
     const delay = slot - current;
-    if (delay > 0) await sleep(delay);
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
   };
 }

@@ -12,6 +12,7 @@ export { parseIconSVG } from "./parseIconSVG.js";
 export type { ParseIconSVGOptions } from "./parseIconSVG.js";
 export type {
   IconifySourceOptions,
+  IconifyApiSourceOptions,
   OptimizeFn,
   IconEntry,
 } from "../../typings/types";
