@@ -55,6 +55,58 @@ function recordPackCatalog(pack: string, data: IconifyJSON): void {
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }
 
+export interface IconifyGetIconOptions {
+  pack: string;
+  name: string;
+  allowed: Set<string> | undefined;
+  /** The `icons: [...]` option's own length (not `allowed.size`) - matches the count a caller passed, duplicates included, since that's what "N icon(s) allowed" has always reported. */
+  iconsCount: number;
+  optimize: OptimizeFn | undefined;
+  strict: boolean;
+  logger: Pick<AstroIntegrationLogger, "warn">;
+  /** How the allowlist-rejection error's second sentence should finish - "the whole pack" (local) vs. "any icon name" (API). */
+  allowlistHint: string;
+  /** Loads (and, if needed, validates/records) the pack backing this icon - a local install vs. the Iconify API differ entirely here; everything below is identical either way. */
+  loadPack: () => Promise<IconifyJSON>;
+}
+
+/**
+ * The allowlist-check-then-build skeleton shared by `iconifyLocalSource` and `iconifyApiSource`'s
+ * `getIcon` - only how the pack itself is loaded differs between them, via `loadPack`.
+ */
+async function getIconFromPack({
+  pack,
+  name,
+  allowed,
+  iconsCount,
+  optimize,
+  strict,
+  logger,
+  allowlistHint,
+  loadPack,
+}: IconifyGetIconOptions): Promise<IconEntry> {
+  if (allowed && !allowed.has(name)) {
+    throw new AstroIconError(
+      `"${name}" isn't in the allowed icon list for "${pack}" (${iconsCount} icon(s) allowed).`,
+      `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow ${allowlistHint}.`,
+    );
+  }
+  const data = await loadPack();
+  const entry = await buildIconEntry(data, name, {
+    collection: pack,
+    optimize,
+    strict,
+    logger,
+  });
+  if (!entry) {
+    throw new AstroIconError(
+      `"${pack}" does not include an icon named "${name}".`,
+      `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
+    );
+  }
+  return entry;
+}
+
 function checkForDuplicateIcons(
   pack: string,
   sourceLabel: string,
@@ -110,34 +162,28 @@ export function iconifyLocalSource(
 
   return {
     name: `iconify-local:${pack}`,
-    async getIcon(name) {
-      if (allowed && !allowed.has(name)) {
-        throw new AstroIconError(
-          `"${name}" isn't in the allowed icon list for "${pack}" (${icons!.length} icon(s) allowed).`,
-          `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow the whole pack.`,
-        );
-      }
-      const data = await loadLocalPack(pack);
-      if (!data) {
-        throw new AstroIconError(
-          `"${pack}" isn't installed locally.`,
-          `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
-        );
-      }
-      recordPackCatalog(pack, data);
-      const entry = await buildIconEntry(data, name, {
-        collection: pack,
+    getIcon(name) {
+      return getIconFromPack({
+        pack,
+        name,
+        allowed,
+        iconsCount: icons?.length ?? 0,
         optimize,
         strict,
         logger,
+        allowlistHint: "the whole pack",
+        async loadPack() {
+          const data = await loadLocalPack(pack);
+          if (!data) {
+            throw new AstroIconError(
+              `"${pack}" isn't installed locally.`,
+              `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
+            );
+          }
+          recordPackCatalog(pack, data);
+          return data;
+        },
       });
-      if (!entry) {
-        throw new AstroIconError(
-          `"${pack}" does not include an icon named "${name}".`,
-          `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
-        );
-      }
-      return entry;
     },
     async listIcons() {
       // Not verified against the pack upfront, matching getIcon's own lazy check. `allowed` is a Set, so this also dedupes the option.
@@ -213,37 +259,24 @@ export function iconifyApiSource(
     // doesn't cover - a very large allowlist split into multiple chunk requests, or a future
     // change that reintroduces per-name fetches - rather than the common case.
     concurrency: 20,
-    async getIcon(name) {
-      if (allowed && !allowed.has(name)) {
-        throw new AstroIconError(
-          `"${name}" isn't in the allowed icon list for "${pack}" (${icons!.length} icon(s) allowed).`,
-          `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow any icon name.`,
-        );
-      }
-      // With an allowlist, the whole set is known upfront - fetch it once (cached by
-      // `loadPackFromAPI` under the full sorted list, so every other name in `allowed` hits that
-      // same cached response) instead of one request per icon. Without one (e.g. `<LiveIcon>`
-      // against a pack with no fixed set), there's nothing to batch against - fetch just `name`.
-      const data = await loadPackFromAPI(
+    getIcon(name) {
+      return getIconFromPack({
         pack,
-        allowed ? [...allowed] : [name],
-        {
-          logger,
-        },
-      );
-      const entry = await buildIconEntry(data, name, {
-        collection: pack,
+        name,
+        allowed,
+        iconsCount: icons?.length ?? 0,
         optimize,
         strict,
         logger,
+        allowlistHint: "any icon name",
+        // With an allowlist, the whole set is known upfront - fetch it once (cached by
+        // `loadPackFromAPI` under the full sorted list, so every other name in `allowed` hits
+        // that same cached response) instead of one request per icon. Without one (e.g.
+        // `<LiveIcon>` against a pack with no fixed set), there's nothing to batch against -
+        // fetch just `name`.
+        loadPack: () =>
+          loadPackFromAPI(pack, allowed ? [...allowed] : [name], { logger }),
       });
-      if (!entry) {
-        throw new AstroIconError(
-          `"${pack}" does not include an icon named "${name}".`,
-          `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
-        );
-      }
-      return entry;
     },
     async listIcons() {
       if (allowed) return [...allowed];
