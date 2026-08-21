@@ -5,6 +5,7 @@ import { formatDuration } from "./duration.js";
 import { iconEntrySchema } from "./entrySchema.js";
 import { listIconsOrFallback } from "./listIconsOrFallback.js";
 import { mergeSources } from "./compositeSource.js";
+import { syncSpriteFromStore } from "./sprite/syncFromStore.js";
 import { isUpToDate, recordVersionKey } from "./syncFreshness.js";
 import { recordCollection } from "./typegen/index.js";
 import type {
@@ -34,7 +35,7 @@ async function getSourceVersionKey(
 export interface IconLoaderSyncContext {
   store: Pick<
     LoaderContext["store"],
-    "clear" | "set" | "get" | "keys" | "has" | "delete"
+    "clear" | "set" | "get" | "keys" | "has" | "delete" | "entries"
   >;
   meta: Pick<LoaderContext["meta"], "get" | "set" | "delete" | "has">;
   logger: Pick<LoaderContext["logger"], "warn" | "info" | "error" | "debug">;
@@ -52,6 +53,19 @@ export interface IconLoaderOptions {
    * @default false
    */
   strict?: boolean;
+  /**
+   * Whether `<Icon>` usages of this collection are eligible for automatic
+   * sprite optimization (repeated icons deduped into `<symbol>`/`<use>` on
+   * prerendered pages, referenced from a shared asset on server-rendered
+   * ones). Purely a preference: optimization only actually happens once the
+   * sprite integration is installed, and a single-use icon on a page is
+   * left inline regardless.
+   *
+   * Set `false` if you need to style or animate an icon's internal markup -
+   * CSS can't reach into a `<use>`'s referenced content.
+   * @default true
+   */
+  sprite?: boolean;
 }
 
 /**
@@ -62,6 +76,7 @@ export interface IconLoaderOptions {
 function syncIcons(
   source: IconSource,
   strict: boolean,
+  sprite: boolean,
 ): (context: IconLoaderSyncContext) => Promise<void> {
   return async function load(context: IconLoaderSyncContext): Promise<void> {
     const {
@@ -99,6 +114,13 @@ function syncIcons(
         await recordCollection(context.config.root, "build", collection, [
           ...store.keys(),
         ]);
+        await syncSpriteFromStore(
+          context.config.root,
+          collection,
+          sprite,
+          store,
+          logger,
+        );
       } catch (ex) {
         const detail = ex instanceof Error ? ex.message : String(ex);
         logger.warn(
@@ -148,6 +170,15 @@ function syncIcons(
     const versionKey = await getSourceVersionKey(source, names);
     if (isUpToDate(versionKey, metaKey, meta, names, store)) {
       await recordCollection(context.config.root, "build", collection, names);
+      // Store already reflects every current entry, so this stays correct on the fast
+      // path too - including catching a `sprite` option flipped since the last full sync.
+      await syncSpriteFromStore(
+        context.config.root,
+        collection,
+        sprite,
+        store,
+        logger,
+      );
       logger.debug(
         `"${collection}" is already up to date (${names.length} icon(s) from "${source.name}"), skipped in ${formatDuration(performance.now() - syncStart)}.`,
       );
@@ -188,6 +219,15 @@ function syncIcons(
       "build",
       collection,
       built.map(({ name }) => name),
+    );
+    // Reads back from the store (post-parseData, post-schema) rather than reusing `built`
+    // directly, hashing what's actually stored/served rather than the pre-schema data.
+    await syncSpriteFromStore(
+      context.config.root,
+      collection,
+      sprite,
+      store,
+      logger,
     );
 
     logger.info(
@@ -247,11 +287,11 @@ export function createIconLoader(
   options: IconLoaderOptions = {},
 ): Loader & { load: (context: IconLoaderSyncContext) => Promise<void> } {
   const source = mergeSources(sources);
-  const { strict = false } = options;
+  const { strict = false, sprite = true } = options;
 
   return {
     name: "astro-icon/loaders",
-    load: syncIcons(source, strict),
+    load: syncIcons(source, strict, sprite),
     schema: iconEntrySchema,
   };
 }

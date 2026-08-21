@@ -7,6 +7,7 @@ import { createIconLoader } from "../src/content/loader.js";
 import { mergeSources } from "../src/content/compositeSource.js";
 import { localSource } from "../src/content/local/source.js";
 import { recordCollection } from "../src/content/typegen/index.js";
+import { recordSprite } from "../src/content/sprite/manifest.js";
 import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
 
@@ -15,7 +16,16 @@ vi.mock("../src/content/typegen/index.js", () => ({
   recordCatalog: vi.fn(async () => {}),
 }));
 
+// Otherwise the loader writes real sprite state + asset files to the fake
+// `config.root` below on every test run - this keeps the test hermetic and
+// lets tests assert exactly what the loader passed, the same reason
+// recordCollection is mocked above.
+vi.mock("../src/content/sprite/manifest.js", () => ({
+  recordSprite: vi.fn(async () => {}),
+}));
+
 const mockedRecordCollection = vi.mocked(recordCollection);
+const mockedRecordSprite = vi.mocked(recordSprite);
 
 /** Exercises the loader's own `.load()`, the same entry point Astro calls - just via the public `createIconLoader()` rather than Astro's full `LoaderContext`. */
 function sync(source: IconSource | IconSource[], strict: boolean) {
@@ -47,6 +57,10 @@ function fakeContext(watcher?: ReturnType<typeof fakeWatcher>) {
       keys: () => [...stored.keys()],
       has: (id: string) => stored.has(id),
       delete: (id: string) => stored.delete(id),
+      // Matches real Astro's DataStore shape ([id, { data, ... }]), unlike get()
+      // above (kept simplified since many existing tests depend on it as-is).
+      entries: () =>
+        [...stored.entries()].map(([id, data]) => [id, { data }] as const),
     },
     meta: {
       get: (key: string) => metaStored.get(key),
@@ -77,9 +91,36 @@ function fakeSource(overrides: Partial<IconSource> = {}): IconSource {
 
 beforeEach(() => {
   mockedRecordCollection.mockClear();
+  mockedRecordSprite.mockClear();
 });
 
 describe("createIconLoader", () => {
+  it("records sprite: true (the default) with a content hash and rendered asset once icons are built", async () => {
+    const source = fakeSource({ listIcons: async () => ["home"] });
+    const loader = createIconLoader(source);
+    await loader.load(fakeContext());
+
+    expect(mockedRecordSprite).toHaveBeenCalledWith(
+      expect.any(URL),
+      "icons",
+      expect.objectContaining({
+        sprite: true,
+        hash: expect.any(String),
+        assetContent: expect.stringContaining("<symbol"),
+      }),
+    );
+  });
+
+  it("records sprite: false immediately, without waiting for icons to build", async () => {
+    const source = fakeSource({ listIcons: async () => ["home"] });
+    const loader = createIconLoader(source, { sprite: false });
+    await loader.load(fakeContext());
+
+    expect(mockedRecordSprite).toHaveBeenCalledWith(expect.any(URL), "icons", {
+      sprite: false,
+    });
+  });
+
   it("loads exactly what listIcons() reports and types the same set", async () => {
     const source = fakeSource({ listIcons: async () => ["home", "menu"] });
     const context = fakeContext();

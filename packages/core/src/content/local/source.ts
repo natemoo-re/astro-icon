@@ -140,6 +140,10 @@ export function localSource(
       name,
       strict,
       logger,
+      // `rootAttrs` (below) already extracts these as entry fields; carrying them into
+      // `body` too would duplicate them onto an inner `<g>` that wins over a caller's own
+      // override landing on the outer `<svg>`.
+      carryPresentationAttrs: false,
     });
 
     // `rootAttrs` are stored as plain entry fields, not baked into `body`: `renderableIconProps`

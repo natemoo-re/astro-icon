@@ -12,6 +12,15 @@ export interface ParseIconSVGOptions {
   logger: Pick<AstroIntegrationLogger, "warn">;
   /** Fallback intrinsic size to use if there's no usable viewBox and none can be recovered from the SVG's own attributes. Defaults to 24x24. */
   fallbackSize?: { width: number; height: number };
+  /**
+   * Whether to re-home the root `<svg>`'s presentation attributes onto a wrapping `<g>` in
+   * `body`. Defaults to `true`. Set `false` when the caller already extracts those attributes
+   * itself (e.g. `localSource`'s `extractRootAttrs`, applied as entry fields rather than baked
+   * into `body`) - carrying them here too would duplicate them, and a hardcoded value on the
+   * inner `<g>` would silently win over a caller's `<Icon fill="..." />` landing on the outer
+   * `<svg>` instead.
+   */
+  carryPresentationAttrs?: boolean;
 }
 
 /**
@@ -33,6 +42,7 @@ export async function parseIconSVG(
     strict = false,
     logger,
     fallbackSize,
+    carryPresentationAttrs = true,
   }: ParseIconSVGOptions,
 ): Promise<IconEntry> {
   if (optimize) {
@@ -46,7 +56,7 @@ export async function parseIconSVG(
     );
   }
 
-  const parsed = parseSVG(svg);
+  const parsed = parseSVG(svg, carryPresentationAttrs);
 
   let { viewBox } = parsed;
   // Derived from the viewBox, not the SVG's own attributes, which are often relative units like
@@ -202,7 +212,7 @@ function splitLeadingTitleDesc(body: string): {
 }
 
 /** Minimal SVG parser: extracts the outer `<svg>` attributes and inner markup. Not a full XML parser. */
-function parseSVG(svg: string): ParsedSVG {
+function parseSVG(svg: string, carryPresentationAttrs: boolean): ParsedSVG {
   const openTagMatch = svg.match(/<svg\b([^>]*)>/i);
   const attrs = openTagMatch?.[1] ?? "";
   const bodyMatch = svg.match(/<svg\b[^>]*>([\s\S]*)<\/svg>/i);
@@ -210,5 +220,8 @@ function parseSVG(svg: string): ParsedSVG {
 
   const viewBox = attrs.match(/viewBox=["']([^"']+)["']/i)?.[1];
 
-  return { body: carryRootPresentation(body, attrs), viewBox };
+  return {
+    body: carryPresentationAttrs ? carryRootPresentation(body, attrs) : body,
+    viewBox,
+  };
 }
