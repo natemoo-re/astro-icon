@@ -1,0 +1,13 @@
+---
+// No `export const prerender` - with `output: "server"` this route is server-rendered,
+// and it's the only route in the app.
+import { Icon } from "astro-icon/components";
+---
+
+<html lang="en">
+  <head><title>SSR only</title></head>
+  <body>
+    <Icon name="icons:square" size={24} />
+    <Icon name="icons:square" size={32} />
+  </body>
+</html>

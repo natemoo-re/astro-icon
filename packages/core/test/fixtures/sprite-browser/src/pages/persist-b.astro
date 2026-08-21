@@ -1,0 +1,27 @@
+---
+export const prerender = true;
+import { ClientRouter } from "astro:transitions";
+import { Icon } from "astro-icon/components";
+---
+
+<html>
+  <head>
+    <ClientRouter />
+  </head>
+  <body>
+    <h1>Page B</h1>
+    <a href="/persist-a" id="nav-link">Go to A</a>
+
+    <!-- Page B never repeats "square" outside the persisted region - if the persisted <use>
+         from page A carried over pointing at a same-document id, this page has no local defs
+         block containing it (this page's own rewrite has nothing to dedupe: "circle" appears
+         once, "square" appears only in the persisted region). The only way this page can render
+         the persisted icon correctly is if it was never rewritten into a <use> in the first
+         place - exactly what the [data-astro-transition-persist] exclusion is for. -->
+    <Icon name="circle" />
+
+    <div transition:persist="shared-icon">
+      <Icon name="square" data-testid="persisted-icon" />
+    </div>
+  </body>
+</html>

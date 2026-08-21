@@ -1,0 +1,14 @@
+---
+export const prerender = true;
+import { Icon } from "astro-icon/components";
+import IslandWrapper from "../components/IslandWrapper.tsx";
+---
+
+<html>
+  <body>
+    <IslandWrapper client:load>
+      <Icon name="square" data-testid="island-icon-1" />
+      <Icon name="square" data-testid="island-icon-2" />
+    </IslandWrapper>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+---
+export const prerender = true;
+import { ClientRouter } from "astro:transitions";
+import { Icon } from "astro-icon/components";
+---
+
+<html>
+  <head>
+    <ClientRouter />
+  </head>
+  <body>
+    <h1>Page A</h1>
+    <a href="/persist-b" id="nav-link">Go to B</a>
+
+    <!-- Repeated elsewhere on the page, not persisted - gives both icons something to dedupe,
+         including "square" (same id as the persisted one below), the exact case that must stay
+         untouched inside the persisted region even though its id is being deduped elsewhere. -->
+    <Icon name="circle" />
+    <Icon name="circle" />
+    <Icon name="square" />
+    <Icon name="square" />
+
+    <div transition:persist="shared-icon">
+      <Icon name="square" data-testid="persisted-icon" />
+    </div>
+  </body>
+</html>
