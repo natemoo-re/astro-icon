@@ -5,6 +5,7 @@ import { formatDuration } from "./duration.js";
 import { iconEntrySchema } from "./entrySchema.js";
 import { listIconsOrFallback } from "./listIconsOrFallback.js";
 import { mergeSources } from "./compositeSource.js";
+import { isUpToDate, recordVersionKey } from "./syncFreshness.js";
 import { recordCollection } from "./typegen/index.js";
 import type { IconSource } from "./source.js";
 
@@ -80,11 +81,7 @@ function syncIcons(
     // Skip resolving if every source's version + the requested icon set matches the last sync.
     const metaKey = `astro-icon:version:${collection}`;
     const versionKey = await getSourceVersionKey(source, names);
-    if (
-      versionKey &&
-      versionKey === meta.get(metaKey) &&
-      names.every((name) => store.has(name))
-    ) {
+    if (isUpToDate(versionKey, metaKey, meta, names, store)) {
       await recordCollection(context.config.root, "build", collection, names);
       logger.debug(
         `"${collection}" is already up to date (${names.length} icon(s) from "${source.name}"), skipped in ${formatDuration(performance.now() - syncStart)}.`,
@@ -117,8 +114,7 @@ function syncIcons(
       });
     }
 
-    if (versionKey) meta.set(metaKey, versionKey);
-    else meta.delete(metaKey);
+    recordVersionKey(meta, metaKey, versionKey);
 
     // Typed from `built`, not `names`: a failed icon is skipped from the store in non-strict mode.
     await recordCollection(

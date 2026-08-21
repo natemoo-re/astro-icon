@@ -9,6 +9,7 @@ import { AstroIconError } from "../../internal/error.js";
 import { formatDuration } from "../duration.js";
 import { iconEntrySchema } from "../entrySchema.js";
 import { listIconsOrFallback } from "../listIconsOrFallback.js";
+import { isUpToDate, recordVersionKey } from "../syncFreshness.js";
 import { recordCollection } from "../typegen/index.js";
 import { looksLikeItNeedsCurrentColor } from "./currentColorHint.js";
 import { localSource } from "./source.js";
@@ -113,6 +114,122 @@ export function localIcons(
   };
 }
 
+/** Everything one file's sync (initial or watched) needs, bundled so it can be passed to a standalone function instead of captured by closure. */
+interface FileSyncDeps {
+  dirPath: string;
+  source: ReturnType<typeof localSource>;
+  strict: boolean;
+  store: LocalIconsSyncContext["store"];
+  meta: LocalIconsSyncContext["meta"];
+  logger: LocalIconsSyncContext["logger"];
+  parseData: LocalIconsSyncContext["parseData"];
+  generateDigest: LocalIconsSyncContext["generateDigest"];
+  config: LocalIconsSyncContext["config"];
+  collection: LocalIconsSyncContext["collection"];
+}
+
+function idFromPath(dirPath: string, filePath: string): string | undefined {
+  if (!filePath.startsWith(dirPath) || !filePath.endsWith(".svg"))
+    return undefined;
+  return filePath
+    .slice(dirPath.length)
+    .replace(/\\/g, "/")
+    .replace(/^\//, "")
+    .slice(0, -".svg".length);
+}
+
+/** Skips re-running `optimize`/SVGO if the source file's hash matches `previous`'s. */
+async function syncIcon(
+  deps: FileSyncDeps,
+  id: string,
+  previous?: ReturnType<LocalIconsSyncContext["store"]["get"]>,
+): Promise<void> {
+  const {
+    dirPath,
+    source,
+    strict,
+    store,
+    meta,
+    parseData,
+    generateDigest,
+    logger,
+  } = deps;
+  try {
+    const filePath = join(dirPath, `${id}.svg`);
+    let raw: string | undefined;
+    try {
+      raw = await readFile(filePath, "utf-8");
+    } catch {
+      // Falls through to source.getIcon()'s "no local icon file found" error.
+    }
+
+    if (raw !== undefined) {
+      const sourceHash = hashSource(raw);
+      const sourceHashKey = `sourceHash:${id}`;
+      if (previous && meta.get(sourceHashKey) === sourceHash) {
+        store.set({ id, data: previous.data, digest: previous.digest });
+        return;
+      }
+      const data = await source.getIcon(id);
+      const parsedData = await parseData({ id, data });
+      meta.set(sourceHashKey, sourceHash);
+      store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
+      return;
+    }
+
+    const data = await source.getIcon(id);
+    const parsedData = await parseData({ id, data });
+    store.set({ id, data: parsedData, digest: generateDigest(parsedData) });
+  } catch (ex) {
+    const detail = ex instanceof Error ? ex.message : String(ex);
+    if (strict) {
+      throw new AstroIconError(
+        `Failed to build local icon "${id}": ${detail}`,
+        `Fix the error above, or disable "strict" to skip this icon with a warning instead.`,
+      );
+    }
+    logger.warn(`Failed to build local icon "${id}": ${detail}`);
+  }
+}
+
+async function updateTypes(deps: FileSyncDeps): Promise<void> {
+  await recordCollection(deps.config.root, "build", deps.collection, [
+    ...deps.store.keys(),
+  ]);
+}
+
+/**
+ * Handles one chokidar event (`add`/`change`/`unlink`) for a file inside the watched directory,
+ * exported so a test can call it directly with a fake `filePath` instead of driving a fake
+ * watcher through `.on()`/`.emit()`. Ignores any path outside `deps.dirPath` or not a `.svg` file.
+ */
+export async function handleFileEvent(
+  kind: "add" | "change" | "unlink",
+  filePath: string,
+  deps: FileSyncDeps,
+): Promise<void> {
+  const id = idFromPath(deps.dirPath, filePath);
+  if (!id) return;
+
+  switch (kind) {
+    case "add":
+      await syncIcon(deps, id, deps.store.get(id));
+      await updateTypes(deps);
+      deps.logger.info(`Added local icon "${id}"`);
+      return;
+    case "change":
+      await syncIcon(deps, id, deps.store.get(id));
+      deps.logger.info(`Reloaded local icon "${id}"`);
+      return;
+    case "unlink":
+      deps.store.delete(id);
+      deps.meta.delete(`sourceHash:${id}`);
+      await updateTypes(deps);
+      deps.logger.info(`Removed local icon "${id}"`);
+      return;
+  }
+}
+
 /**
  * The sync logic behind `localIcons`, taking only {@link LocalIconsSyncContext} instead of
  * Astro's full `LoaderContext` - keeping this signature (rather than `LoaderContext`) lets a test
@@ -139,78 +256,23 @@ function syncLocalIcons(
     const dirUrl = new URL(dir.replace(/\/?$/, "/"), config.root);
     const dirPath = fileURLToPath(dirUrl);
     const source = localSource(dirUrl, { ...options, logger });
+    const deps: FileSyncDeps = {
+      dirPath,
+      source,
+      strict,
+      store,
+      meta,
+      logger,
+      parseData,
+      generateDigest,
+      config,
+      collection,
+    };
 
     if (!existsSync(dirPath)) {
       logger.warn(
         `The local icon directory "${dirPath}" does not exist. Create it, or point "localIcons()" at a different "dir".`,
       );
-    }
-
-    function idFromPath(filePath: string): string | undefined {
-      if (!filePath.startsWith(dirPath) || !filePath.endsWith(".svg"))
-        return undefined;
-      return filePath
-        .slice(dirPath.length)
-        .replace(/\\/g, "/")
-        .replace(/^\//, "")
-        .slice(0, -".svg".length);
-    }
-
-    // Skips re-running `optimize`/SVGO if the source file's hash matches `previous`'s.
-    async function syncIcon(
-      id: string,
-      previous?: ReturnType<typeof store.get>,
-    ): Promise<void> {
-      try {
-        const filePath = join(dirPath, `${id}.svg`);
-        let raw: string | undefined;
-        try {
-          raw = await readFile(filePath, "utf-8");
-        } catch {
-          // Falls through to source.getIcon()'s "no local icon file found" error.
-        }
-
-        if (raw !== undefined) {
-          const sourceHash = hashSource(raw);
-          const sourceHashKey = `sourceHash:${id}`;
-          if (previous && meta.get(sourceHashKey) === sourceHash) {
-            store.set({ id, data: previous.data, digest: previous.digest });
-            return;
-          }
-          const data = await source.getIcon(id);
-          const parsedData = await parseData({ id, data });
-          meta.set(sourceHashKey, sourceHash);
-          store.set({
-            id,
-            data: parsedData,
-            digest: generateDigest(parsedData),
-          });
-          return;
-        }
-
-        const data = await source.getIcon(id);
-        const parsedData = await parseData({ id, data });
-        store.set({
-          id,
-          data: parsedData,
-          digest: generateDigest(parsedData),
-        });
-      } catch (ex) {
-        const detail = ex instanceof Error ? ex.message : String(ex);
-        if (strict) {
-          throw new AstroIconError(
-            `Failed to build local icon "${id}": ${detail}`,
-            `Fix the error above, or disable "strict" to skip this icon with a warning instead.`,
-          );
-        }
-        logger.warn(`Failed to build local icon "${id}": ${detail}`);
-      }
-    }
-
-    async function updateTypes(): Promise<void> {
-      await recordCollection(config.root, "build", collection, [
-        ...store.keys(),
-      ]);
     }
 
     const syncStart = performance.now();
@@ -228,11 +290,8 @@ function syncLocalIcons(
     // the per-file content hash `syncIcon` uses once it's already reading a file.
     const metaKey = `astro-icon:version:${collection}`;
     const versionKey = await getDirVersionKey(dirPath, names);
-    if (
-      versionKey === meta.get(metaKey) &&
-      names.every((name) => store.has(name))
-    ) {
-      await updateTypes();
+    if (isUpToDate(versionKey, metaKey, meta, names, store)) {
+      await updateTypes(deps);
       logger.debug(
         `"${collection}" is already up to date (${names.length} icon(s)), skipped in ${formatDuration(performance.now() - syncStart)}.`,
       );
@@ -241,10 +300,10 @@ function syncLocalIcons(
       const previousEntries = new Map(store.entries());
       store.clear();
       for (const id of names) {
-        await syncIcon(id, previousEntries.get(id));
+        await syncIcon(deps, id, previousEntries.get(id));
       }
-      await updateTypes();
-      meta.set(metaKey, versionKey);
+      await updateTypes(deps);
+      recordVersionKey(meta, metaKey, versionKey);
 
       logger.info(
         `Loaded ${names.length} icon(s) from "${collection}" in ${formatDuration(performance.now() - syncStart)}.`,
@@ -279,28 +338,14 @@ function syncLocalIcons(
       );
     }
 
-    watcher.on("add", async (filePath: string) => {
-      const id = idFromPath(filePath);
-      if (!id) return;
-      await syncIcon(id, store.get(id));
-      await updateTypes();
-      logger.info(`Added local icon "${id}"`);
-    });
-
-    watcher.on("change", async (filePath: string) => {
-      const id = idFromPath(filePath);
-      if (!id) return;
-      await syncIcon(id, store.get(id));
-      logger.info(`Reloaded local icon "${id}"`);
-    });
-
-    watcher.on("unlink", async (filePath: string) => {
-      const id = idFromPath(filePath);
-      if (!id) return;
-      store.delete(id);
-      meta.delete(`sourceHash:${id}`);
-      await updateTypes();
-      logger.info(`Removed local icon "${id}"`);
-    });
+    watcher.on("add", (filePath: string) =>
+      handleFileEvent("add", filePath, deps),
+    );
+    watcher.on("change", (filePath: string) =>
+      handleFileEvent("change", filePath, deps),
+    );
+    watcher.on("unlink", (filePath: string) =>
+      handleFileEvent("unlink", filePath, deps),
+    );
   };
 }

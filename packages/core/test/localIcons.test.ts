@@ -4,9 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  handleFileEvent,
   localIcons,
   type LocalIconsSyncContext,
 } from "../src/content/local/loader.js";
+import { localSource } from "../src/content/local/source.js";
 import type { LocalSourceOptions } from "../src/content/local/source.js";
 import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconEntry } from "../../typings/types";
@@ -385,6 +387,111 @@ describe("localIcons / whole-directory skip logging", () => {
     await sync(context);
     expect(context.logger.info).toHaveBeenCalledOnce();
     expect(context.logger.debug).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleFileEvent", () => {
+  // Calls the watcher-event handler directly with a fake filePath, rather than driving a fake
+  // chokidar EventEmitter through .on()/.emit() the way "localIcons / incremental watching" does.
+  function deps(dirPath: string, context: ReturnType<typeof fakeContext>) {
+    return {
+      dirPath,
+      source: localSource(new URL(`file://${dirPath}/`), {
+        logger: context.logger,
+      }),
+      strict: false,
+      store: context.store,
+      meta: context.meta,
+      logger: context.logger,
+      parseData: context.parseData,
+      generateDigest: context.generateDigest,
+      config: context.config,
+      collection: context.collection,
+    };
+  }
+
+  it("adds a new icon on 'add'", async () => {
+    await write("home.svg", SQUARE_SVG);
+    const iconsDir = join(dir, "icons");
+    const context = fakeContext();
+
+    await write("menu.svg", SQUARE_SVG);
+    await handleFileEvent(
+      "add",
+      join(iconsDir, "menu.svg"),
+      deps(iconsDir, context),
+    );
+
+    expect([...context.store.keys()]).toEqual(["menu"]);
+    expect(context.logger.info).toHaveBeenCalledWith('Added local icon "menu"');
+  });
+
+  it("reloads an icon's contents on 'change'", async () => {
+    await write("home.svg", SQUARE_SVG);
+    const iconsDir = join(dir, "icons");
+    const context = fakeContext();
+    await handleFileEvent(
+      "add",
+      join(iconsDir, "home.svg"),
+      deps(iconsDir, context),
+    );
+
+    const updated = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle r="16"/></svg>`;
+    await write("home.svg", updated);
+    await handleFileEvent(
+      "change",
+      join(iconsDir, "home.svg"),
+      deps(iconsDir, context),
+    );
+
+    expect(storedData(context as LocalIconsSyncContext, "home").viewBox).toBe(
+      "0 0 32 32",
+    );
+  });
+
+  it("removes an icon on 'unlink'", async () => {
+    await write("home.svg", SQUARE_SVG);
+    const iconsDir = join(dir, "icons");
+    const context = fakeContext();
+    await handleFileEvent(
+      "add",
+      join(iconsDir, "home.svg"),
+      deps(iconsDir, context),
+    );
+
+    await handleFileEvent(
+      "unlink",
+      join(iconsDir, "home.svg"),
+      deps(iconsDir, context),
+    );
+
+    expect([...context.store.keys()]).toEqual([]);
+  });
+
+  it("ignores a path outside the watched directory", async () => {
+    const iconsDir = join(dir, "icons");
+    const context = fakeContext();
+
+    await handleFileEvent(
+      "add",
+      "/some/unrelated/file.svg",
+      deps(iconsDir, context),
+    );
+
+    expect([...context.store.keys()]).toEqual([]);
+  });
+
+  it("ignores a non-.svg path inside the watched directory", async () => {
+    const iconsDir = join(dir, "icons");
+    const context = fakeContext();
+
+    await handleFileEvent(
+      "add",
+      join(iconsDir, "readme.md"),
+      deps(iconsDir, context),
+    );
+
+    expect([...context.store.keys()]).toEqual([]);
   });
 });
 
