@@ -43,11 +43,11 @@ const recordedPacks = new Set<string>();
 
 /**
  * Best-effort typegen: records a locally loaded pack's full, unfiltered
- * catalog so `icons: [...]` can be typed and autocompleted against it on a
+ * catalog so `allowed: [...]` can be typed and autocompleted against it on a
  * later run. Only called with data that already came from a local pack
  * load done for real work (never fetched just for this), so it never
  * touches the pack on its own. Fetching it here would break the documented
- * "an `icons` allowlist alone never requires a local install" contract.
+ * "an `allowed` allowlist alone never requires a local install" contract.
  */
 function recordPackCatalog(pack: string, data: IconifyJSON): void {
   if (recordedPacks.has(pack)) return;
@@ -60,18 +60,18 @@ function recordPackCatalog(pack: string, data: IconifyJSON): void {
 function checkForDuplicateIcons(
   pack: string,
   sourceLabel: string,
-  icons: readonly string[] | undefined,
+  allowedNames: readonly string[] | undefined,
   logger: Pick<AstroIntegrationLogger, "warn">,
 ): Set<string> | undefined {
-  if (!icons) return undefined;
-  const allowed = new Set(icons);
-  if (allowed.size !== icons.length) {
+  if (!allowedNames) return undefined;
+  const allowed = new Set(allowedNames);
+  if (allowed.size !== allowedNames.length) {
     const seen = new Set<string>();
-    const duplicates = icons.filter(
+    const duplicates = allowedNames.filter(
       (name) => seen.size === seen.add(name).size,
     );
     logger.warn(
-      `"${pack}"'s \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")} (${sourceLabel}). Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+      `"${pack}"'s \`allowed: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")} (${sourceLabel}). Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
     );
   }
   return allowed;
@@ -83,7 +83,7 @@ export function iconifyLocalSource<
     readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
-  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+  options?: Omit<IconifySourceOptions, "allowed"> & { allowed?: Icons },
 ): IconSource;
 /**
  * An {@link IconSource} backed by a locally installed `@iconify-json/<pack>`
@@ -91,7 +91,7 @@ export function iconifyLocalSource<
  * installed; there's no fallback built in, by design (see
  * {@link iconifyApiSource} and `mergeSources` for composing one yourself).
  *
- * The `icons: [...]` option is typed and autocompleted against the pack's
+ * The `allowed: [...]` option is typed and autocompleted against the pack's
  * own catalog, once astro-icon has recorded it from a previous sync
  * (`astro sync`/`dev`/`build`); until then it falls back to a plain
  * `string`. A duplicate name in that array is deduped and logged as a
@@ -101,12 +101,12 @@ export function iconifyLocalSource(
   pack: string,
   options: IconifySourceOptions = {},
 ): IconSource {
-  const { icons, optimize, strict = false } = options;
+  const { allowed: allowedList, optimize, strict = false } = options;
   const logger = consoleLogger;
   const allowed = checkForDuplicateIcons(
     pack,
     "iconifyLocalSource",
-    icons,
+    allowedList,
     logger,
   );
 
@@ -115,8 +115,8 @@ export function iconifyLocalSource(
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
         throw new AstroIconError(
-          `"${name}" isn't in the allowed icon list for "${pack}" (${icons!.length} icon(s) allowed).`,
-          `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow the whole pack.`,
+          `"${name}" isn't in the allowed icon list for "${pack}" (${allowedList!.length} icon(s) allowed).`,
+          `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow the whole pack.`,
         );
       }
       const data = await loadLocalPack(pack);
@@ -149,7 +149,7 @@ export function iconifyLocalSource(
       if (!data) {
         throw new AstroIconError(
           `"${pack}" isn't installed locally.`,
-          `Install "@iconify-json/${pack}", or restrict it with an explicit \`icons: [...]\` list.`,
+          `Install "@iconify-json/${pack}", or restrict it with an explicit \`allowed: [...]\` list.`,
         );
       }
       recordPackCatalog(pack, data);
@@ -167,14 +167,14 @@ export function iconifyApiSource<
     readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
-  options?: Omit<IconifyApiSourceOptions, "icons"> & { icons?: Icons },
+  options?: Omit<IconifyApiSourceOptions, "allowed"> & { allowed?: Icons },
 ): IconSource;
 /**
  * An {@link IconSource} backed by the public Iconify API only - never a
  * local install. `getIcon` resolves any icon name from the pack one at a
- * time regardless of `icons`, useful for `<LiveIcon>` against a pack you
+ * time regardless of `allowed`, useful for `<LiveIcon>` against a pack you
  * don't want to install; the API can't return "the whole pack" the way a
- * local install can, so omitting `icons` (an explicit allowlist) also
+ * local install can, so omitting `allowed` (an explicit allowlist) also
  * means `listIcons()` throws instead of pretending to enumerate one.
  *
  * Meant either standalone (e.g. deliberately avoiding an install) or
@@ -185,8 +185,8 @@ export function iconifyApiSource<
  * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
  *
  * const mdi = mergeSources([
- *   iconifyLocalSource("mdi", { icons: ["home"] }),
- *   iconifyApiSource("mdi", { icons: ["home"] }),
+ *   iconifyLocalSource("mdi", { allowed: ["home"] }),
+ *   iconifyApiSource("mdi", { allowed: ["home"] }),
  * ]);
  *
  * export const collections = {
@@ -201,12 +201,17 @@ export function iconifyApiSource(
   pack: string,
   options: IconifyApiSourceOptions = {},
 ): IconSource {
-  const { icons, optimize, strict = false, requestsPerSecond } = options;
+  const {
+    allowed: allowedList,
+    optimize,
+    strict = false,
+    requestsPerSecond,
+  } = options;
   const logger = consoleLogger;
   const allowed = checkForDuplicateIcons(
     pack,
     "iconifyApiSource",
-    icons,
+    allowedList,
     logger,
   );
   const rateLimiter = requestsPerSecond
@@ -224,8 +229,8 @@ export function iconifyApiSource(
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
         throw new AstroIconError(
-          `"${name}" isn't in the allowed icon list for "${pack}" (${icons!.length} icon(s) allowed).`,
-          `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow any icon name.`,
+          `"${name}" isn't in the allowed icon list for "${pack}" (${allowedList!.length} icon(s) allowed).`,
+          `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow any icon name.`,
         );
       }
       // With an allowlist, the whole set is known upfront - fetch it once (cached by
@@ -257,8 +262,8 @@ export function iconifyApiSource(
     async listIcons() {
       if (allowed) return [...allowed];
       throw new AstroIconError(
-        `"${pack}" has no \`icons: [...]\` list, so its full icon set can't be enumerated from the Iconify API.`,
-        `Add an explicit \`icons: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
+        `"${pack}" has no \`allowed: [...]\` list, so its full icon set can't be enumerated from the Iconify API.`,
+        `Add an explicit \`allowed: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
       );
     },
   };

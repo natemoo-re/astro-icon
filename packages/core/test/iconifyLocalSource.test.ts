@@ -107,7 +107,7 @@ describe("iconifyLocalSource / not installed", () => {
 
 describe("iconifyLocalSource / icons allowlist", () => {
   it("rejects a name not in the allowlist without touching the pack", async () => {
-    const source = iconifyLocalSource("mdi", { icons: ["search"] });
+    const source = iconifyLocalSource("mdi", { allowed: ["search"] });
 
     await expect(source.getIcon("menu")).rejects.toThrow(
       /isn't in the allowed/i,
@@ -117,7 +117,7 @@ describe("iconifyLocalSource / icons allowlist", () => {
 
   it("resolves an allowed name normally", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
-    const source = iconifyLocalSource("mdi", { icons: ["search"] });
+    const source = iconifyLocalSource("mdi", { allowed: ["search"] });
 
     await expect(source.getIcon("search")).resolves.toMatchObject({
       viewBox: "0 0 24 24",
@@ -125,7 +125,9 @@ describe("iconifyLocalSource / icons allowlist", () => {
   });
 
   it("types exactly the given allowlist, without checking the pack", async () => {
-    const source = iconifyLocalSource("mdi", { icons: ["search", "not-real"] });
+    const source = iconifyLocalSource("mdi", {
+      allowed: ["search", "not-real"],
+    });
 
     await expect(source.listIcons?.()).resolves.toEqual(["search", "not-real"]);
     expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();

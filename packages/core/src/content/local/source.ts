@@ -16,7 +16,7 @@ import type { IconEntry, OptimizeFn } from "../../../typings/types";
 export interface LocalSourceOptions {
   /**
    * Restricts this source to a fixed list of icon names, the same
-   * deliberate allowlist semantics as {@link IconifySourceOptions.icons}.
+   * deliberate allowlist semantics as {@link IconifySourceOptions.allowed}.
    * Omit it to allow every `.svg` file found in the directory.
    */
   icons?: string[];

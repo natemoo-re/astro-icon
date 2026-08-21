@@ -271,7 +271,7 @@ export const collections = {
   // and it adds a network request per icon during your build.
   mdi: defineCollection({
     loader: createIconLoader(
-      iconifyApiSource("mdi", { icons: ["account", "home", "heart"] }),
+      iconifyApiSource("mdi", { allowed: ["account", "home", "heart"] }),
     ),
   }),
 };
@@ -291,8 +291,8 @@ export const collections = {
   mdi: defineCollection({
     loader: createIconLoader(
       mergeSources([
-        iconifyLocalSource("mdi", { icons: ["account", "home", "heart"] }),
-        iconifyApiSource("mdi", { icons: ["account", "home", "heart"] }),
+        iconifyLocalSource("mdi", { allowed: ["account", "home", "heart"] }),
+        iconifyApiSource("mdi", { allowed: ["account", "home", "heart"] }),
       ]),
     ),
   }),
@@ -310,7 +310,7 @@ export const collections = {
       iconifyLocalSource("mdi", {
         // Restrict the collection (and its generated types) to exactly these icons,
         // typed and autocompleted against "mdi"'s catalog once a sync has recorded it.
-        icons: ["account", "home", "heart"],
+        allowed: ["account", "home", "heart"],
         // Transform each icon's raw SVG before astro-icon stores it.
         optimize: svgo(),
         // Turn a missing icon into a build error instead of a warning.
@@ -385,8 +385,8 @@ import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 export const collections = {
   social: defineCollection({
     loader: createIconLoader([
-      iconifyLocalSource("mdi", { icons: ["github"] }),
-      iconifyLocalSource("simple-icons", { icons: ["discord"] }),
+      iconifyLocalSource("mdi", { allowed: ["github"] }),
+      iconifyLocalSource("simple-icons", { allowed: ["discord"] }),
     ]),
   }),
 };
@@ -532,7 +532,7 @@ export const myLibIcons = {
       // Bundle .svg files that ship inside the library's own package...
       localSource(new URL("../icons/", import.meta.url)),
       // ...and/or re-export a curated slice of an Iconify pack.
-      iconifyLocalSource("mdi", { icons: ["home", "account"] }),
+      iconifyLocalSource("mdi", { allowed: ["home", "account"] }),
     ]),
   }),
 };

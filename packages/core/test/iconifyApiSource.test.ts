@@ -33,7 +33,7 @@ function fetchReturning(requested: () => IconifyJSON) {
 
 describe("iconifyApiSource naming", () => {
   it("namespaces the source name with the pack", () => {
-    expect(iconifyApiSource("mdi", { icons: ["search"] }).name).toBe(
+    expect(iconifyApiSource("mdi", { allowed: ["search"] }).name).toBe(
       "iconify-api:mdi",
     );
   });
@@ -41,7 +41,9 @@ describe("iconifyApiSource naming", () => {
 
 describe("iconifyApiSource / concurrency", () => {
   it("sets a default concurrency cap, as a shared-public-API source", () => {
-    expect(iconifyApiSource("mdi", { icons: ["search"] }).concurrency).toBe(20);
+    expect(iconifyApiSource("mdi", { allowed: ["search"] }).concurrency).toBe(
+      20,
+    );
   });
 });
 
@@ -58,7 +60,7 @@ describe("iconifyApiSource / batches an allowlist into one request", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const source = iconifyApiSource("mdi", { icons: ["search", "menu"] });
+    const source = iconifyApiSource("mdi", { allowed: ["search", "menu"] });
     const first = await source.getIcon("search");
     const second = await source.getIcon("menu");
 
@@ -109,7 +111,7 @@ describe("iconifyApiSource / icons allowlist is required", () => {
   it("rejects a name not in the allowlist without fetching", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    const source = iconifyApiSource("mdi", { icons: ["search"] });
+    const source = iconifyApiSource("mdi", { allowed: ["search"] });
 
     await expect(source.getIcon("menu")).rejects.toThrow(
       /isn't in the allowed/i,
@@ -118,7 +120,7 @@ describe("iconifyApiSource / icons allowlist is required", () => {
   });
 
   it("listIcons returns exactly the given allowlist", async () => {
-    const source = iconifyApiSource("mdi", { icons: ["search", "menu"] });
+    const source = iconifyApiSource("mdi", { allowed: ["search", "menu"] });
 
     await expect(source.listIcons?.()).resolves.toEqual(["search", "menu"]);
   });
@@ -159,7 +161,7 @@ describe("iconifyApiSource / failure modes", () => {
       "fetch",
       vi.fn(async () => new Response("Not Found", { status: 404 })),
     );
-    const source = iconifyApiSource("mdi", { icons: ["search"] });
+    const source = iconifyApiSource("mdi", { allowed: ["search"] });
 
     await expect(source.getIcon("search")).rejects.toThrow(/mdi/);
   });
@@ -170,8 +172,8 @@ describe("iconifyApiSource / pack cache sharing", () => {
     const fetchMock = fetchReturning(() => pack);
     vi.stubGlobal("fetch", fetchMock);
 
-    await iconifyApiSource("mdi", { icons: ["search"] }).getIcon("search");
-    await iconifyApiSource("mdi", { icons: ["search"] }).getIcon("search");
+    await iconifyApiSource("mdi", { allowed: ["search"] }).getIcon("search");
+    await iconifyApiSource("mdi", { allowed: ["search"] }).getIcon("search");
 
     expect(fetchMock).toHaveBeenCalledOnce();
   });
