@@ -155,12 +155,14 @@ async function fetchPackChunk(
   const search = `?icons=${encodeURIComponent(icons.join(","))}`;
   // `fetchJSON` throws on a network failure, a non-OK status, or invalid JSON - all three collapse
   // to `undefined` here, same as before, since `fetchPackFromAPI` already treats any one chunk
-  // failing as failing the whole load.
-  const data = await fetchJSON<unknown>(
+  // failing as failing the whole load. Its `IconifyJSON` generic is just a type assertion, not a
+  // runtime guarantee - a bare `<pack>.json` request (no `icons=` param) actually returns 200 OK
+  // with the literal JSON string `"404"`, so `data.icons` still needs a real check: `undefined`/
+  // `null` would throw on the property access, and a differently-shaped (or missing) `icons`
+  // means this wasn't a real pack response.
+  const data = await fetchJSON<IconifyJSON>(
     `https://api.iconify.design/${pack}.json${search}`,
   ).catch(() => undefined);
-  if (data == null || !Object.prototype.hasOwnProperty.call(data, "icons"))
-    return undefined;
-  if (!(data as { icons: unknown }).icons) return undefined;
-  return data as IconifyJSON;
+  if (!data || !data.icons) return undefined;
+  return data;
 }
