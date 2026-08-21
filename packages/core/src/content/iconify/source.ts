@@ -63,6 +63,43 @@ function recordPackCatalog(pack: string, data: IconifyJSON, cwd: string): void {
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }
 
+/**
+ * Anchors one `iconifyLocalSource(pack, ...)` instance to a project root, so `cwd` itself never
+ * has to be threaded through the returned `IconSource`'s own methods - they call `getVersion()`/
+ * `recordCatalog(data)` without it, and read the actively-loading pack off `packPromise`.
+ *
+ * Starts loading immediately, against a `process.cwd()` guess (the only root available until
+ * `resolveRoot`, if ever, anchors this to the real one - see `IconSource.resolveRoot`'s doc
+ * comment for why the two can differ, e.g. `astro build --root <dir>` invoked from elsewhere),
+ * so a source used directly, outside either bundled loader, still fails at construction rather
+ * than never checking at all. `resolveRoot` only restarts the load if the accurate root actually
+ * differs from that guess, so the common case (the two already match) pays nothing extra.
+ */
+function createPackAnchor(pack: string) {
+  let cwd = process.cwd();
+  let packPromise = loadLocalPack(pack, cwd);
+  packPromise.catch(() => {});
+
+  return {
+    get packPromise(): Promise<IconifyJSON | undefined> {
+      return packPromise;
+    },
+    resolveRoot(root: URL): void {
+      const resolved = stripTrailingSlash(fileURLToPath(root));
+      if (resolved === cwd) return;
+      cwd = resolved;
+      packPromise = loadLocalPack(pack, cwd);
+      packPromise.catch(() => {});
+    },
+    getVersion(): Promise<string | undefined> {
+      return getPackVersion(pack, cwd);
+    },
+    recordCatalog(data: IconifyJSON): void {
+      recordPackCatalog(pack, data, cwd);
+    },
+  };
+}
+
 function checkForDuplicateIcons(
   pack: string,
   sourceLabel: string,
@@ -122,35 +159,13 @@ export function iconifyLocalSource(
 
   // Started here, not inside getIcon/listIcons/checkPreconditions, so a missing pack fails the
   // build as soon as this source is constructed instead of only once the first icon is actually
-  // requested. `loadLocalPack` caches by `cwd`+`pack` (see `packCache` in pack.ts), so kicking it
-  // off eagerly costs nothing extra - everything below awaits this exact same promise, nothing
-  // triggers a second load. A source that's constructed but never used (e.g. one branch of a
-  // conditional) would otherwise leave this rejection unhandled - the `.catch(() => {})` here is
-  // only to silence that warning at the process level; real consumers still await `packPromise`
-  // itself and see the real rejection.
-  //
-  // `cwd` starts as `process.cwd()`, the only root available until (if ever) `resolveRoot`
-  // anchors this source to the real project root - see `IconSource.resolveRoot`'s doc comment
-  // for why the two can differ (e.g. `astro build --root <dir>` invoked from elsewhere). Started
-  // eagerly against that guess anyway so a source used directly, outside `createIconLoader`/
-  // `createLiveIconLoader` (where `resolveRoot` never fires), still fails at construction rather
-  // than never checking at all.
-  let cwd = process.cwd();
-  let packPromise = loadLocalPack(pack, cwd);
-  packPromise.catch(() => {});
+  // requested - see createPackAnchor's own doc comment for the eager-load/resolveRoot details.
+  const anchor = createPackAnchor(pack);
 
   return {
     name: `iconify-local:${pack}`,
-    // Both bundled loaders call this before any other method, so a `--root`-launched build still
-    // resolves against the accurate project root. Only restarts the load if the root actually
-    // differs from the `process.cwd()` guess above, so the common case (the two already match)
-    // pays nothing extra.
     resolveRoot(root) {
-      const resolved = stripTrailingSlash(fileURLToPath(root));
-      if (resolved === cwd) return;
-      cwd = resolved;
-      packPromise = loadLocalPack(pack, cwd);
-      packPromise.catch(() => {});
+      anchor.resolveRoot(root);
     },
     // The eager pack load's actual "fail loudly, up front" payoff: called once by both bundled
     // loaders before listIcons/getIcon are ever touched, so a missing pack is one clear failure
@@ -159,7 +174,7 @@ export function iconifyLocalSource(
     // "pack isn't installed" is checked - getIcon/listIcons below trust it already ran (both
     // bundled loaders call this before either) and don't re-check `!data` themselves.
     async checkPreconditions() {
-      const data = await packPromise;
+      const data = await anchor.packPromise;
       if (!data) {
         throw new AstroIconError(
           `"${pack}" isn't installed locally.`,
@@ -177,8 +192,8 @@ export function iconifyLocalSource(
       // Non-null: trusts checkPreconditions() already confirmed the pack is installed (both
       // bundled loaders call it first). Only unsound for this source used directly, outside
       // either loader - see checkPreconditions()'s own comment above.
-      const data = (await packPromise)!;
-      recordPackCatalog(pack, data, cwd);
+      const data = (await anchor.packPromise)!;
+      anchor.recordCatalog(data);
       const entry = await buildIconEntry(data, name, {
         collection: pack,
         optimize,
@@ -200,12 +215,12 @@ export function iconifyLocalSource(
       if (allowed) return [...allowed];
 
       // Non-null: see getIcon's identical comment above.
-      const data = (await packPromise)!;
-      recordPackCatalog(pack, data, cwd);
+      const data = (await anchor.packPromise)!;
+      anchor.recordCatalog(data);
       return localPackIconNames(data);
     },
     getVersion() {
-      return getPackVersion(pack, cwd);
+      return anchor.getVersion();
     },
   };
 }
