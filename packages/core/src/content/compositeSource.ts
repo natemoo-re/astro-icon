@@ -1,5 +1,7 @@
+import type { AstroIntegrationLogger } from "astro";
 import { createConcurrencyGate } from "./concurrency.js";
 import { AstroIconError } from "../internal/error.js";
+import { consoleLogger } from "./logger.js";
 import type { IconSource } from "./source.js";
 
 /**
@@ -10,9 +12,19 @@ import type { IconSource } from "./source.js";
  */
 export type CompositeSource = IconSource;
 
-/** Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per icon (first match wins). */
+/**
+ * Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per
+ * icon (first match wins).
+ *
+ * `logger` has no bearing on `getIcon`'s own success/failure - it only receives a debug line each
+ * time one member fails and execution falls through to the next. Defaults to `consoleLogger`,
+ * like `iconifyLocalSource`/`iconifyApiSource`, since `mergeSources` is normally called while
+ * building `content.config.ts`'s collections - before Astro hands a loader its own
+ * `AstroIntegrationLogger`.
+ */
 export function mergeSources(
   sources: IconSource | IconSource[],
+  logger: Pick<AstroIntegrationLogger, "debug"> = consoleLogger,
 ): CompositeSource {
   if (!Array.isArray(sources)) return sources;
   if (sources.length === 1) return sources[0];
@@ -32,17 +44,22 @@ export function mergeSources(
     name,
     async getIcon(iconName) {
       const failures: string[] = [];
-      for (const source of sources) {
+      for (const [index, source] of sources.entries()) {
         try {
           const gate = gates.get(source);
           return gate
             ? await gate(() => source.getIcon(iconName))
             : await source.getIcon(iconName);
         } catch (ex) {
-          // Try the next source; only fail if none of them have it.
-          failures.push(
-            `${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`,
-          );
+          const detail = ex instanceof Error ? ex.message : String(ex);
+          failures.push(`${source.name}: ${detail}`);
+          // Only worth a log when there's actually another source left to try - the last
+          // failure is already reflected in the aggregate error thrown below.
+          if (index < sources.length - 1) {
+            logger.debug(
+              `"${source.name}" failed to resolve "${iconName}" (${detail}), falling back to the next source in "${name}".`,
+            );
+          }
         }
       }
       throw new AstroIconError(
@@ -69,6 +86,32 @@ export function mergeSources(
       );
       if (versions.some((version) => !version)) return undefined;
       return versions.join("+");
+    },
+    resolveRoot(root: URL) {
+      for (const member of sources) {
+        member.resolveRoot?.(root);
+      }
+    },
+    async checkPreconditions() {
+      const failures: string[] = [];
+      for (const source of sources) {
+        // No precondition to check for this member at all - same as one succeeding, since
+        // there's nothing wrong to report. Matches getIcon's first-match-wins tolerance: the
+        // whole point of composing sources is that one of them being unusable isn't fatal.
+        if (!source.checkPreconditions) return;
+        try {
+          await source.checkPreconditions();
+          return;
+        } catch (ex) {
+          failures.push(
+            `${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`,
+          );
+        }
+      }
+      throw new AstroIconError(
+        `No source in "${name}" is usable.`,
+        `Tried:\n${failures.map((failure) => `  - ${failure}`).join("\n")}`,
+      );
     },
   };
 }
