@@ -3,6 +3,7 @@ import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
 import { formatDuration } from "../duration.js";
+import { createIconifyApiPolicy } from "./apiPolicy.js";
 import { requireResolvePack } from "./requireResolvePack.js";
 
 export interface LoadPackFromAPIOptions {
@@ -131,12 +132,16 @@ async function fetchPackFromAPI(
   return mergePackChunks(results as IconifyJSON[]);
 }
 
+// Shared across every loader instance in this process, same as `packCache` above - one policy
+// governing every request this module makes to the Iconify API.
+const apiPolicy = createIconifyApiPolicy();
+
 async function fetchPackChunk(
   pack: string,
   icons: string[],
 ): Promise<IconifyJSON | undefined> {
   const search = `?icons=${encodeURIComponent(icons.join(","))}`;
-  const res = await fetchWithRetry(
+  const res = await apiPolicy.fetch(
     `https://api.iconify.design/${pack}.json${search}`,
   );
   if (!res || !res.ok) return undefined;
@@ -145,41 +150,4 @@ async function fetchPackChunk(
     return undefined;
   if (!(data as { icons: unknown }).icons) return undefined;
   return data;
-}
-
-// 429 is a shared public service telling us to slow down, not a permanent failure - worth a few
-// retries before giving up, unlike any other error status (a 404 or a malformed pack name won't
-// start working on retry, so those still fail immediately, same as before).
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY_MS = 500;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * `fetch`, retrying on a 429 up to {@link MAX_RETRIES} times. Waits for the delay the server
- * itself asked for via `Retry-After` (the numeric-seconds form; the less common HTTP-date form
- * isn't handled and falls through to backoff instead) when present, otherwise a doubling backoff
- * from {@link BASE_RETRY_DELAY_MS}. Any other status (or a network failure) is returned/resolved
- * as-is on the first try - only 429 is worth retrying automatically.
- */
-async function fetchWithRetry(
-  url: string,
-  attempt = 0,
-): Promise<Response | undefined> {
-  const res = await fetch(url).catch(() => undefined);
-  if (!res) return undefined;
-  if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
-
-  const retryAfterHeader = res.headers.get("retry-after");
-  // `Number(null)` is 0, not NaN, so a missing header has to be checked for explicitly rather
-  // than relying on Number.isFinite to reject it.
-  const retryAfterSeconds =
-    retryAfterHeader == null ? NaN : Number(retryAfterHeader);
-  const delayMs = Number.isFinite(retryAfterSeconds)
-    ? retryAfterSeconds * 1000
-    : BASE_RETRY_DELAY_MS * 2 ** attempt;
-  await sleep(delayMs);
-  return fetchWithRetry(url, attempt + 1);
 }
