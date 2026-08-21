@@ -41,7 +41,7 @@ export interface IconifySourceOptions {
    * locally (`npm install @iconify-json/<pack>`): the public Iconify API can
    * only resolve icons you name explicitly, never "every icon in the pack."
    */
-  icons?: string[];
+  allowed?: string[];
   /** Transform applied to each icon's raw SVG markup before astro-icon parses and stores it. */
   optimize?: OptimizeFn;
   /**

@@ -28,7 +28,7 @@ export function recordCollection(
   return enqueueWrite(rootDir, kind, collection, names);
 }
 
-/** Records an Iconify pack's full, unfiltered catalog, so `icons: [...]` options can be typed and autocompleted against it. Not a collection - kept as a separate entry point so `recordCollection`'s `kind` can never be "packs". */
+/** Records an Iconify pack's full, unfiltered catalog, so `allowed: [...]` options can be typed and autocompleted against it. Not a collection - kept as a separate entry point so `recordCollection`'s `kind` can never be "packs". */
 export function recordCatalog(
   rootDir: URL,
   pack: string,

@@ -21,7 +21,7 @@ export interface PackLoader {
 
 // A single request was confirmed to work with 300 icons in one query; this stays well under
 // that as a margin against a proxy/server URL-length ceiling we haven't tested against, while
-// keeping "how many icons does one bad response cost" small for a very large `icons: [...]`.
+// keeping "how many icons does one bad response cost" small for a very large `allowed: [...]`.
 const MAX_ICONS_PER_REQUEST = 200;
 
 function chunk<T>(items: readonly T[], size: number): T[][] {
@@ -99,7 +99,7 @@ export function createPackLoader(): PackLoader {
    * `"404"`, so always pass a subset. @link https://iconify.design/docs/api/icon-data.html
    *
    * `icons` beyond `MAX_ICONS_PER_REQUEST` is split across multiple requests (run concurrently -
-   * there are only ever a handful of chunks even for a very large explicit `icons: [...]` list)
+   * there are only ever a handful of chunks even for a very large explicit `allowed: [...]` list)
    * and merged back into one pack; any one chunk failing fails the whole load, matching the
    * existing all-or-nothing contract for a single request.
    */
@@ -148,7 +148,7 @@ export function createPackLoader(): PackLoader {
       if (!icons.length) {
         throw new AstroIconError(
           `"${pack}" was requested from the Iconify API with no icons named.`,
-          `The Iconify API can only resolve icons you name explicitly. Pass an \`icons: [...]\` option, or use \`iconifyLocalSource\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
+          `The Iconify API can only resolve icons you name explicitly. Pass an \`allowed: [...]\` option, or use \`iconifyLocalSource\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
         );
       }
 

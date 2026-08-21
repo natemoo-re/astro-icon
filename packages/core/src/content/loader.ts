@@ -72,7 +72,7 @@ function syncIcons(
       if (strict) {
         throw new AstroIconError(
           message,
-          `Check that "${source.name}" is configured correctly and that its icon list (or \`icons: [...]\` option) isn't empty.`,
+          `Check that "${source.name}" is configured correctly and that its icon list (or \`allowed: [...]\` option) isn't empty.`,
         );
       }
       logger.warn(message);
@@ -154,7 +154,7 @@ function syncIcons(
  * Each icon is resolved by trying sources in order and using the first one
  * that has it. The collection always contains exactly what `listIcons()`
  * reports; restrict that on a per-source basis (see `iconifyLocalSource`'s
- * `icons` option), since this loader does no filtering of its own.
+ * `allowed` option), since this loader does no filtering of its own.
  *
  * For a local-preferred, API-fallback Iconify source, compose
  * `iconifyLocalSource` and `iconifyApiSource` with `mergeSources` yourself:
@@ -166,8 +166,8 @@ function syncIcons(
  *   mdi: defineCollection({
  *     loader: createIconLoader(
  *       mergeSources([
- *         iconifyLocalSource("mdi", { icons: ["home"] }),
- *         iconifyApiSource("mdi", { icons: ["home"] }),
+ *         iconifyLocalSource("mdi", { allowed: ["home"] }),
+ *         iconifyApiSource("mdi", { allowed: ["home"] }),
  *       ]),
  *     ),
  *   }),
