@@ -97,4 +97,22 @@ export interface IconSource {
    * `localSource(new URL("../icons/", import.meta.url))`) has no reason to implement this.
    */
   resolveRoot?(root: URL): void;
+  /**
+   * Checks whether this source is actually usable at all - a missing local install, an
+   * unreachable API, a misconfigured credential - as a distinct concern from `listIcons`/
+   * `getIcon` themselves. Called once, after `resolveRoot` but before anything else,
+   * so a broken source fails clearly and immediately instead of silently surfacing later as a
+   * `listIcons`/per-icon `getIcon` failure (in non-strict mode, `getIcon` failures are warned
+   * and skipped one icon at a time, which buries a whole-source problem in noise rather than
+   * reporting it once, up front).
+   *
+   * When composed via `mergeSources`, a member's failed `validate()` doesn't fail the whole
+   * composite by itself - only surfaced if every member that implements `validate` fails theirs,
+   * matching `getIcon`'s own first-match-wins/no-source-worked contract, since the entire point
+   * of composing sources is tolerating one of them being unusable.
+   *
+   * Omit it if there's nothing meaningful to check before an icon is actually requested (most
+   * sources - `iconifyApiSource`, `localSource`).
+   */
+  validate?(): Promise<void>;
 }

@@ -127,21 +127,24 @@ describe("iconifyLocalSource / icons allowlist", () => {
     });
   });
 
-  it("types exactly the given allowlist once the pack load confirms the pack is installed", async () => {
-    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+  it("types exactly the given allowlist, without waiting on the pack load", async () => {
+    mockedLoadCollectionFromFS.mockReturnValueOnce(new Promise(() => {}));
     const source = iconifyLocalSource("mdi", {
       allowed: ["search", "not-real"],
     });
 
     await expect(source.listIcons?.()).resolves.toEqual(["search", "not-real"]);
   });
+});
 
-  // Regression: `listIcons()` used to return the allowlist as-is without ever checking the pack
-  // load, so a missing pack only ever surfaced from individual `getIcon` calls during a build -
-  // in non-strict mode (the default), that's silently skipped per icon instead of failing loudly.
-  // `createIconLoader` always calls `listIcons()` first, so this is what makes a missing pack a
-  // single clear failure instead of N buried per-icon warnings.
-  it("throws from listIcons when the pack isn't installed, even with an allowlist set", async () => {
+describe("iconifyLocalSource / validate", () => {
+  // Regression: before `validate()` existed, a missing pack only ever surfaced from individual
+  // `getIcon` calls during a build - `listIcons()` returned an `allowed` allowlist without ever
+  // checking, and in non-strict mode (the default) each getIcon failure is just warned-and-
+  // skipped, burying "the whole pack is missing" as N separate per-icon warnings instead of one
+  // clear failure. `createIconLoader`/`createLiveIconLoader` both call `validate()` before
+  // anything else specifically to catch this.
+  it("throws when the pack isn't installed, even with an allowlist set", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
     // A pack name that doesn't exist anywhere on disk (unlike "mdi", genuinely installed for
     // other tests in this suite) so the `require.resolve` fallback (#263) can't find it either -
@@ -150,7 +153,14 @@ describe("iconifyLocalSource / icons allowlist", () => {
       allowed: ["search"],
     });
 
-    await expect(source.listIcons?.()).rejects.toThrow(/isn't installed/i);
+    await expect(source.validate?.()).rejects.toThrow(/isn't installed/i);
+  });
+
+  it("resolves once the pack load confirms the pack is installed", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+    const source = iconifyLocalSource("mdi");
+
+    await expect(source.validate?.()).resolves.toBeUndefined();
   });
 });
 

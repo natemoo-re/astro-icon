@@ -122,7 +122,7 @@ function syncIcons(
       strict,
       logger,
       failureMessage: (detail) =>
-        `"${source.name}" failed to list its icons: ${detail}`,
+        `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`,
       hint: `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
     });
     const listDuration = performance.now() - listStart;

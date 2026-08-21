@@ -143,6 +143,75 @@ describe("mergeSources / multiple sources / listIcons", () => {
   });
 });
 
+describe("mergeSources / multiple sources / validate", () => {
+  it("resolves as soon as one member's validate() succeeds, without checking the rest", async () => {
+    const broken: IconSource = {
+      name: "broken",
+      getIcon: vi.fn(),
+      validate: vi.fn(async () => {
+        throw new Error("not installed");
+      }),
+    };
+    const working: IconSource = {
+      name: "working",
+      getIcon: vi.fn(),
+      validate: vi.fn(async () => {}),
+    };
+    const untried: IconSource = {
+      name: "untried",
+      getIcon: vi.fn(),
+      validate: vi.fn(async () => {
+        throw new Error("should never run");
+      }),
+    };
+    const merged = mergeSources([broken, working, untried]);
+
+    await expect(merged.validate?.()).resolves.toBeUndefined();
+    expect(untried.validate).not.toHaveBeenCalled();
+  });
+
+  it("treats a member with no validate() as trivially fine, without checking any member after it", async () => {
+    const noCheck = fakeSource("noCheck", {}, null);
+    const untried: IconSource = {
+      name: "untried",
+      getIcon: vi.fn(),
+      validate: vi.fn(async () => {
+        throw new Error("should never run");
+      }),
+    };
+    const merged = mergeSources([noCheck, untried]);
+
+    await expect(merged.validate?.()).resolves.toBeUndefined();
+    expect(untried.validate).not.toHaveBeenCalled();
+  });
+
+  it("throws an aggregate error only when every member's validate() fails", async () => {
+    const a: IconSource = {
+      name: "a",
+      getIcon: vi.fn(),
+      validate: vi.fn(async () => {
+        throw new Error("a is broken");
+      }),
+    };
+    const b: IconSource = {
+      name: "b",
+      getIcon: vi.fn(),
+      validate: vi.fn(async () => {
+        throw new Error("b is broken");
+      }),
+    };
+    const merged = mergeSources([a, b]);
+
+    await expect(merged.validate?.()).rejects.toThrow(/no source.*is usable/i);
+    await expect(merged.validate?.()).rejects.toMatchObject({
+      hint: expect.stringMatching(/a is broken/),
+    });
+    await expect(merged.validate?.()).rejects.toMatchObject({
+      hint: expect.stringMatching(/b is broken/),
+    });
+  });
+});
+
 describe("mergeSources naming", () => {
   it("joins each source's name", () => {
     expect(

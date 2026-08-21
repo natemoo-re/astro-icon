@@ -95,5 +95,24 @@ export function mergeSources(
         member.resolveRoot?.(root);
       }
     },
+    async validate() {
+      const failures: string[] = [];
+      for (const source of sources) {
+        // No precondition to check for this member at all - same as one succeeding, since
+        // there's nothing wrong to report. Matches getIcon's first-match-wins tolerance: the
+        // whole point of composing sources is that one of them being unusable isn't fatal.
+        if (!source.validate) return;
+        try {
+          await source.validate();
+          return;
+        } catch (ex) {
+          failures.push(`${source.name}: ${failureDetail(ex)}`);
+        }
+      }
+      throw new AstroIconError(
+        `No source in "${name}" is usable.`,
+        `Tried:\n${failures.map((failure) => `  - ${failure}`).join("\n")}`,
+      );
+    },
   };
 }

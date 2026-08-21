@@ -172,6 +172,17 @@ export function iconifyLocalSource(
       packPromise = loadLocalPack(pack, cwd);
       packPromise.catch(() => {});
     },
+    // The eager pack load's actual "fail loudly, up front" payoff: called once by both bundled
+    // loaders before listIcons/getIcon are ever touched, so a missing pack is one clear failure
+    // instead of an `allowed` allowlist masking it in listIcons, surfacing only later as N
+    // separate non-strict getIcon warnings once each icon is individually built.
+    async validate() {
+      await requirePackInstalled(
+        pack,
+        packPromise,
+        `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
+      );
+    },
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
         throw new AstroIconError(
@@ -200,21 +211,16 @@ export function iconifyLocalSource(
       return entry;
     },
     async listIcons() {
-      // Always confirms the pack is actually installed first, even with `allowed` set - this is
-      // the one call `createIconLoader`'s sync makes before anything else (see
-      // `listIconsOrFallback`), so a missing pack surfacing here (instead of only from a later
-      // `getIcon`) is what makes construction's eager `packPromise` actually visible as a single
-      // clear failure, rather than an "isn't installed" warning repeated once per allowed icon
-      // name as each one is built and silently skipped in non-strict mode.
+      // Not verified against the pack upfront - `validate()` above owns "is this source usable
+      // at all" as its own concern, called by both bundled loaders before this. `allowed` is a
+      // Set, so this also dedupes the option.
+      if (allowed) return [...allowed];
+
       const data = await requirePackInstalled(
         pack,
         packPromise,
         `Install "@iconify-json/${pack}", or restrict it with an explicit \`allowed: [...]\` list.`,
       );
-      // `allowed` is a Set, so this also dedupes the option; not verified against the pack's
-      // actual catalog beyond confirming the pack itself is installed.
-      if (allowed) return [...allowed];
-
       recordPackCatalog(pack, data, cwd);
       return localPackIconNames(data);
     },
