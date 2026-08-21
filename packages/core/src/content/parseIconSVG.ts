@@ -39,6 +39,13 @@ export async function parseIconSVG(
     svg = await optimize(svg, { collection, name });
   }
 
+  if (!hasSvgElement(svg)) {
+    throw new AstroIconError(
+      `"${collection}:${name}" has no <svg> element after optimization.`,
+      `The SVG returned from "optimize" doesn't contain an <svg>...</svg> element. Check that "optimize" returns the whole SVG markup, not just its inner content.`,
+    );
+  }
+
   const parsed = parseSVG(svg);
 
   let { viewBox } = parsed;
@@ -75,6 +82,11 @@ function deriveViewBox(
     attrs.match(/\bheight=["'](\d+(?:\.\d+)?)["']/i)?.[1] ??
     String(fallbackSize?.height ?? 24);
   return `0 0 ${width} ${height}`;
+}
+
+/** Whether `svg` contains a well-formed `<svg>...</svg>` element at all - not just an empty/self-closing one, which `parseSVG` already handles fine via its own empty-`body` fallback. */
+function hasSvgElement(svg: string): boolean {
+  return /<svg\b[^>]*>[\s\S]*<\/svg>/i.test(svg) || /<svg\b[^>]*\/>/i.test(svg);
 }
 
 interface ParsedSVG {
