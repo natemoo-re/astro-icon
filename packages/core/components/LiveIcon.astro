@@ -4,6 +4,7 @@ import { getLiveEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
 import { AstroIconError } from "../src/internal/error.js";
 import { renderTimeError } from "../src/render/error.js";
+import IconMarkup from "../src/render/IconMarkup.astro";
 import { iconA11yProps, renderableIconProps } from "../src/render/props.js";
 import type { AccessibleElementInput } from "../src/render/props.js";
 import type { LiveCollectionName } from "../typings/names";
@@ -101,8 +102,13 @@ const { normalizedProps } = renderableIconProps(data, {
 });
 ---
 
-<svg {...normalizedProps} data-icon={`${collection}:${icon}`} data-icon-live>
-  {titleId && <title id={titleId}>{titleText}</title>}
-  {descId && <desc id={descId}>{descText}</desc>}
-  <Fragment set:html={body} />
-</svg>
+<IconMarkup
+  normalizedProps={normalizedProps}
+  titleId={titleId}
+  titleText={titleText}
+  descId={descId}
+  descText={descText}
+  body={body}
+  dataIcon={`${collection}:${icon}`}
+  dataIconLive
+/>
