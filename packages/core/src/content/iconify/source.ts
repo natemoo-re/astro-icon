@@ -277,7 +277,7 @@ export function iconifyApiSource(
     async listIcons() {
       if (allowed) return [...allowed];
       throw new AstroIconError(
-        `"${pack}" has no \`allowed: [...]\` list, so its full icon set can't be enumerated from the Iconify API.`,
+        `"${pack}" has no \`allowed: [...]\` list, so \`iconifyApiSource\` has no fixed set of icon names to report.`,
         `Add an explicit \`allowed: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
       );
     },

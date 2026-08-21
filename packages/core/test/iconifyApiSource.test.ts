@@ -151,7 +151,9 @@ describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against
   it("throws from listIcons instead of pretending to enumerate the whole pack", async () => {
     const source = iconifyApiSource("mdi");
 
-    await expect(source.listIcons?.()).rejects.toThrow(/can't be enumerated/i);
+    await expect(source.listIcons?.()).rejects.toThrow(
+      /no fixed set of icon names/i,
+    );
   });
 });
 
