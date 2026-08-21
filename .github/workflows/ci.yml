@@ -31,7 +31,7 @@ jobs:
       - name: Lint (External)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != github.repository_owner }}
         run: pnpm run lint
-        
+
       # Otherwise, run lint autofixer
       - name: Lint
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.owner.login == github.repository_owner }}
@@ -71,4 +71,5 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install
+      - run: pnpm --filter astro-icon run build
       - run: pnpm run test
