@@ -202,7 +202,9 @@ describe("mergeSources / multiple sources / checkPreconditions", () => {
     };
     const merged = mergeSources([a, b]);
 
-    await expect(merged.checkPreconditions?.()).rejects.toThrow(/no source.*is usable/i);
+    await expect(merged.checkPreconditions?.()).rejects.toThrow(
+      /no source.*is usable/i,
+    );
     await expect(merged.checkPreconditions?.()).rejects.toMatchObject({
       hint: expect.stringMatching(/a is broken/),
     });

@@ -149,11 +149,16 @@ describe("iconifyLocalSource / checkPreconditions", () => {
     // A pack name that doesn't exist anywhere on disk (unlike "mdi", genuinely installed for
     // other tests in this suite) so the `require.resolve` fallback (#263) can't find it either -
     // otherwise this would pass for the wrong reason even without the fix under test.
-    const source = iconifyLocalSource("definitely-not-a-real-iconify-pack-xyz", {
-      allowed: ["search"],
-    });
+    const source = iconifyLocalSource(
+      "definitely-not-a-real-iconify-pack-xyz",
+      {
+        allowed: ["search"],
+      },
+    );
 
-    await expect(source.checkPreconditions?.()).rejects.toThrow(/isn't installed/i);
+    await expect(source.checkPreconditions?.()).rejects.toThrow(
+      /isn't installed/i,
+    );
   });
 
   it("resolves once the pack load confirms the pack is installed", async () => {
