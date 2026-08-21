@@ -37,11 +37,7 @@ function sleep(ms: number): Promise<void> {
 export function createIconifyApiPolicy(
   options: IconifyApiPolicyOptions = {},
 ): IconifyApiPolicy {
-  const {
-    maxRetries = 3,
-    baseRetryDelayMs = 500,
-    requestsPerSecond,
-  } = options;
+  const { maxRetries = 3, baseRetryDelayMs = 500, requestsPerSecond } = options;
   const limiter = requestsPerSecond
     ? createRateLimiter(requestsPerSecond)
     : undefined;

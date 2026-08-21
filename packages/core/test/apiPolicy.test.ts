@@ -13,9 +13,7 @@ afterEach(() => {
 
 describe("createIconifyApiPolicy / retry", () => {
   it("returns a successful response on the first try untouched", async () => {
-    const fetchMock = vi.fn(
-      async () => new Response("ok", { status: 200 }),
-    );
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const policy = createIconifyApiPolicy();
 

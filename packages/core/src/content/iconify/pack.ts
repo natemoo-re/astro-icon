@@ -11,10 +11,7 @@ export interface LoadPackFromAPIOptions {
 }
 
 export interface PackLoader {
-  loadLocalPack(
-    pack: string,
-    cwd?: string,
-  ): Promise<IconifyJSON | undefined>;
+  loadLocalPack(pack: string, cwd?: string): Promise<IconifyJSON | undefined>;
   loadPackFromAPI(
     pack: string,
     icons: string[],

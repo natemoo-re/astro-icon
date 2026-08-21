@@ -206,7 +206,9 @@ describe("createLiveIconLoader / loadCollection duration logging", () => {
       await loader.loadCollection({ collection: "icons" });
 
       expect(debug).toHaveBeenCalledWith(
-        expect.stringMatching(/Loaded 1 icon\(s\) for "test"'s live collection in/),
+        expect.stringMatching(
+          /Loaded 1 icon\(s\) for "test"'s live collection in/,
+        ),
       );
     } finally {
       debug.mockRestore();

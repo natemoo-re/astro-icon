@@ -39,7 +39,9 @@ describe("iconifyApiSource naming", () => {
 
 describe("iconifyApiSource / concurrency", () => {
   it("sets a default concurrency cap, as a shared-public-API source", () => {
-    expect(iconifyApiSource("mdi", { allowed: ["search"] }).concurrency).toBe(20);
+    expect(iconifyApiSource("mdi", { allowed: ["search"] }).concurrency).toBe(
+      20,
+    );
   });
 });
 

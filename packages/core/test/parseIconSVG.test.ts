@@ -49,7 +49,9 @@ describe("parseIconSVG / malformed viewBox", () => {
         logger: { warn },
       }),
     ).resolves.toMatchObject({ viewBox: "0 0 32 32", width: 32, height: 32 });
-    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/invalid viewBox/i));
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringMatching(/invalid viewBox/i),
+    );
   });
 
   it("falls back to a derived viewBox, with a warning, when viewBox has too few tokens", async () => {
@@ -61,7 +63,9 @@ describe("parseIconSVG / malformed viewBox", () => {
         logger: { warn },
       }),
     ).resolves.toMatchObject({ viewBox: "0 0 24 24" });
-    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/invalid viewBox/i));
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringMatching(/invalid viewBox/i),
+    );
   });
 
   it("throws under strict instead of falling back", async () => {
