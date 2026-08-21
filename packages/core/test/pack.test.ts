@@ -2,6 +2,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPackLoader } from "../src/content/iconify/pack.js";
+import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
+import { requireResolvePack } from "../src/content/iconify/requireResolvePack.js";
 
 vi.mock("@iconify/utils/lib/loader/fs", () => ({
   loadCollectionFromFS: vi.fn(),
@@ -20,24 +23,17 @@ function logger() {
   return { debug: vi.fn() };
 }
 
-// `pack.ts` caches resolved packs in a module-level Map, shared across every import within the
-// same module registry. Resetting the registry before each test - rather than exposing a
-// test-only cache-clearing export from `pack.ts` - gets every test a fresh, empty cache.
-let loadLocalPack: (typeof import("../src/content/iconify/pack.js"))["loadLocalPack"];
-let loadPackFromAPI: (typeof import("../src/content/iconify/pack.js"))["loadPackFromAPI"];
-let mockedLoadCollectionFromFS: ReturnType<typeof vi.fn>;
-let mockedRequireResolveFallback: ReturnType<typeof vi.fn>;
+// Each test gets its own `PackLoader` instance - `createPackLoader()`'s cache is scoped to
+// construction, not a module-level singleton, so a fresh instance per test is an ordinary
+// `beforeEach`, no module-registry reset required to get an empty cache.
+let loadLocalPack: ReturnType<typeof createPackLoader>["loadLocalPack"];
+let loadPackFromAPI: ReturnType<typeof createPackLoader>["loadPackFromAPI"];
+const mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
+const mockedRequireResolveFallback = vi.mocked(requireResolvePack);
 
-beforeEach(async () => {
-  vi.resetModules();
-  ({ loadLocalPack, loadPackFromAPI } =
-    await import("../src/content/iconify/pack.js"));
-  const { loadCollectionFromFS } = await import("@iconify/utils/lib/loader/fs");
-  mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
+beforeEach(() => {
+  ({ loadLocalPack, loadPackFromAPI } = createPackLoader());
   mockedLoadCollectionFromFS.mockReset();
-  const { requireResolvePack } =
-    await import("../src/content/iconify/requireResolvePack.js");
-  mockedRequireResolveFallback = vi.mocked(requireResolvePack);
   mockedRequireResolveFallback.mockReset();
 });
 
