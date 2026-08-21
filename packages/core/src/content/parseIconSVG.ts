@@ -10,7 +10,7 @@ export interface ParseIconSVGOptions {
   optimize?: OptimizeFn;
   strict?: boolean;
   logger: Pick<AstroIntegrationLogger, "warn">;
-  /** Fallback intrinsic size to use if optimization strips the viewBox and none can be recovered from the SVG's own attributes. Defaults to 24x24. */
+  /** Fallback intrinsic size to use if there's no usable viewBox and none can be recovered from the SVG's own attributes. Defaults to 24x24. */
   fallbackSize?: { width: number; height: number };
 }
 
@@ -39,27 +39,52 @@ export async function parseIconSVG(
     svg = await optimize(svg, { collection, name });
   }
 
+  if (!hasSvgElement(svg)) {
+    throw new AstroIconError(
+      `"${collection}:${name}" has no <svg> element.`,
+      `This icon's SVG markup doesn't contain an <svg>...</svg> element. Check the source data (or your "optimize" function, if set) returns the whole markup, not just its inner content.`,
+    );
+  }
+
   const parsed = parseSVG(svg);
 
   let { viewBox } = parsed;
-  if (!viewBox) {
+  // Derived from the viewBox, not the SVG's own attributes, which are often relative units like
+  // "1em" - `undefined` here means "not four finite numbers", covering both a missing viewBox
+  // and one present but malformed (wrong token count, non-numeric values, ...).
+  let dimensions = viewBox ? parseViewBoxDimensions(viewBox) : undefined;
+  if (!dimensions) {
     const derived = deriveViewBox(svg, fallbackSize);
+    const problem = viewBox
+      ? `an invalid viewBox ("${viewBox}")`
+      : "no viewBox";
     if (strict) {
       throw new AstroIconError(
-        `"${collection}:${name}" has no viewBox after optimization.`,
-        `The SVG returned from "optimize" is missing a viewBox attribute. Either preserve it in your "optimize" function, or disable "strict" to fall back to a derived viewBox ("${derived}") instead of failing the build.`,
+        `"${collection}:${name}" has ${problem}.`,
+        `This icon's SVG markup ${viewBox ? "has a viewBox that doesn't resolve to four numbers" : "is missing a viewBox attribute"}. Check the source data (or your "optimize" function, if set), or disable "strict" to fall back to a derived viewBox ("${derived}") instead of failing the build.`,
       );
     }
     logger.warn(
-      `"${collection}:${name}" has no viewBox after optimization, falling back to a derived viewBox ("${derived}"). Preserve the viewBox in your "optimize" function to avoid this.`,
+      `"${collection}:${name}" has ${problem}, falling back to a derived viewBox ("${derived}"). Check the source data (or your "optimize" function, if set) to avoid this.`,
     );
     viewBox = derived;
+    // `deriveViewBox` always builds its result from numeric width/height (a regex-matched
+    // unit-less attribute, or a fallback default), so this is always well-formed.
+    dimensions = parseViewBoxDimensions(derived)!;
   }
 
-  // Derived from the viewBox, not the SVG's own attributes, which are often relative units like "1em".
-  const [, , width, height] = viewBox.split(/\s+/).map(Number);
+  // Non-null: either present from the start (dimensions truthy skips the block above) or set to
+  // `derived` (always a string) inside it.
+  return { body: parsed.body, viewBox: viewBox!, ...dimensions };
+}
 
-  return { body: parsed.body, viewBox, width, height };
+/** `viewBox`'s width/height, or `undefined` if it isn't exactly four finite numbers (e.g. wrong token count, a non-numeric value). */
+function parseViewBoxDimensions(
+  viewBox: string,
+): { width: number; height: number } | undefined {
+  const [, , width, height] = viewBox.split(/\s+/).map(Number);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
+  return { width, height };
 }
 
 function deriveViewBox(
@@ -75,6 +100,11 @@ function deriveViewBox(
     attrs.match(/\bheight=["'](\d+(?:\.\d+)?)["']/i)?.[1] ??
     String(fallbackSize?.height ?? 24);
   return `0 0 ${width} ${height}`;
+}
+
+/** Whether `svg` contains a well-formed `<svg>...</svg>` element at all - not just an empty/self-closing one, which `parseSVG` already handles fine via its own empty-`body` fallback. */
+function hasSvgElement(svg: string): boolean {
+  return /<svg\b[^>]*>[\s\S]*<\/svg>/i.test(svg) || /<svg\b[^>]*\/>/i.test(svg);
 }
 
 interface ParsedSVG {
