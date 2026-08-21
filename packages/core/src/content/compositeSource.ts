@@ -11,11 +11,6 @@ import type { IconSource, IconSourceWatcher } from "./source.js";
  */
 export type CompositeSource = IconSource;
 
-/** Unwraps a caught value's message, the same way for both the fallback debug log and the final aggregate error below, so the two can't drift out of sync. */
-function failureDetail(ex: unknown): string {
-  return ex instanceof Error ? ex.message : String(ex);
-}
-
 /**
  * Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per
  * icon (first match wins).
@@ -43,7 +38,7 @@ export function mergeSources(
         try {
           return await source.getIcon(iconName);
         } catch (ex) {
-          const detail = failureDetail(ex);
+          const detail = ex instanceof Error ? ex.message : String(ex);
           failures.push(`${source.name}: ${detail}`);
           // Only worth a log when there's actually another source left to try - the last
           // failure is already reflected in the aggregate error thrown below.
@@ -106,7 +101,9 @@ export function mergeSources(
           await source.checkPreconditions();
           return;
         } catch (ex) {
-          failures.push(`${source.name}: ${failureDetail(ex)}`);
+          failures.push(
+            `${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`,
+          );
         }
       }
       throw new AstroIconError(
