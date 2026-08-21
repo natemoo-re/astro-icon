@@ -37,9 +37,8 @@ beforeEach(async () => {
   const { loadCollectionFromFS } = await import("@iconify/utils/lib/loader/fs");
   mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
   mockedLoadCollectionFromFS.mockReset();
-  const { createIconifyPackResolver } = await import(
-    "../src/content/iconify/packResolver.js"
-  );
+  const { createIconifyPackResolver } =
+    await import("../src/content/iconify/packResolver.js");
   mockedCreateResolver = vi.mocked(createIconifyPackResolver);
   mockedLoadIcons = vi.fn();
   mockedCreateResolver.mockReset();

@@ -58,7 +58,9 @@ export async function parseIconSVG(
   let dimensions = viewBox ? parseViewBoxDimensions(viewBox) : undefined;
   if (!dimensions) {
     const derived = deriveViewBox(svg, fallbackSize);
-    const problem = viewBox ? `an invalid viewBox ("${viewBox}")` : "no viewBox";
+    const problem = viewBox
+      ? `an invalid viewBox ("${viewBox}")`
+      : "no viewBox";
     if (strict) {
       throw new AstroIconError(
         `"${collection}:${name}" has ${problem}.`,
