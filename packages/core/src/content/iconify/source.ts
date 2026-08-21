@@ -87,9 +87,13 @@ export function iconifyLocalSource<
 ): IconSource;
 /**
  * An {@link IconSource} backed by a locally installed `@iconify-json/<pack>`
- * package only - never the public Iconify API. Throws if the pack isn't
- * installed; there's no fallback built in, by design (see
- * {@link iconifyApiSource} and `mergeSources` for composing one yourself).
+ * package only - never the public Iconify API. Throws (from `getIcon`/
+ * `listIcons`) if the pack isn't installed; there's no fallback built in, by
+ * design (see {@link iconifyApiSource} and `mergeSources` for composing one
+ * yourself). Resolving the pack starts immediately, at construction time,
+ * rather than waiting for the first icon request - so a missing pack surfaces
+ * as soon as anything awaits this source, not only once a build gets around
+ * to resolving its first icon.
  *
  * The `allowed: [...]` option is typed and autocompleted against the pack's
  * own catalog, once astro-icon has recorded it from a previous sync
@@ -110,6 +114,17 @@ export function iconifyLocalSource(
     logger,
   );
 
+  // Started here, not inside getIcon/listIcons, so a missing pack fails the build as soon as
+  // this source is constructed instead of only once the first icon is actually requested.
+  // `loadLocalPack` caches by `pack` (see `packCache` in pack.ts), so kicking it off eagerly
+  // costs nothing extra - getIcon/listIcons below await this exact same promise, they don't
+  // trigger a second load. A source that's constructed but never used (e.g. one branch of a
+  // conditional) would otherwise leave this rejection unhandled - the `.catch(() => {})` here is
+  // only to silence that warning at the process level; getIcon/listIcons still await
+  // `packPromise` itself and see the real rejection/undefined result.
+  const packPromise = loadLocalPack(pack);
+  packPromise.catch(() => {});
+
   return {
     name: `iconify-local:${pack}`,
     async getIcon(name) {
@@ -119,7 +134,7 @@ export function iconifyLocalSource(
           `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow the whole pack.`,
         );
       }
-      const data = await loadLocalPack(pack);
+      const data = await packPromise;
       if (!data) {
         throw new AstroIconError(
           `"${pack}" isn't installed locally.`,
@@ -145,7 +160,7 @@ export function iconifyLocalSource(
       // Not verified against the pack upfront, matching getIcon's own lazy check. `allowed` is a Set, so this also dedupes the option.
       if (allowed) return [...allowed];
 
-      const data = await loadLocalPack(pack);
+      const data = await packPromise;
       if (!data) {
         throw new AstroIconError(
           `"${pack}" isn't installed locally.`,

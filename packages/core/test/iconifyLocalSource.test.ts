@@ -106,13 +106,16 @@ describe("iconifyLocalSource / not installed", () => {
 });
 
 describe("iconifyLocalSource / icons allowlist", () => {
-  it("rejects a name not in the allowlist without touching the pack", async () => {
+  // The pack load now starts eagerly at construction regardless of the allowlist (see "fails
+  // eagerly" below), so these no longer assert the pack is never touched - only that neither
+  // check *waits* on that load, by leaving it permanently unresolved.
+  it("rejects a name not in the allowlist without waiting on the pack load", async () => {
+    mockedLoadCollectionFromFS.mockReturnValueOnce(new Promise(() => {}));
     const source = iconifyLocalSource("mdi", { allowed: ["search"] });
 
     await expect(source.getIcon("menu")).rejects.toThrow(
       /isn't in the allowed/i,
     );
-    expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();
   });
 
   it("resolves an allowed name normally", async () => {
@@ -124,13 +127,13 @@ describe("iconifyLocalSource / icons allowlist", () => {
     });
   });
 
-  it("types exactly the given allowlist, without checking the pack", async () => {
+  it("types exactly the given allowlist without waiting on the pack load", async () => {
+    mockedLoadCollectionFromFS.mockReturnValueOnce(new Promise(() => {}));
     const source = iconifyLocalSource("mdi", {
       allowed: ["search", "not-real"],
     });
 
     await expect(source.listIcons?.()).resolves.toEqual(["search", "not-real"]);
-    expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();
   });
 });
 
@@ -142,5 +145,38 @@ describe("iconifyLocalSource / pack cache sharing", () => {
     await iconifyLocalSource("mdi").getIcon("menu");
 
     expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
+  });
+});
+
+describe("iconifyLocalSource / fails eagerly", () => {
+  it("starts resolving the local pack as soon as the source is constructed, not on first getIcon/listIcons", () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+
+    iconifyLocalSource("mdi");
+
+    // No getIcon()/listIcons() call above - the pack load already started regardless.
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
+  });
+
+  // `loadLocalPack` itself never actually rejects today (both its internal paths self-catch to
+  // `undefined`) - mocking `pack.js` directly, rather than `loadCollectionFromFS`, is the only
+  // way to exercise a genuine rejection and prove the eager `.catch(() => {})` guard (see
+  // source.ts) keeps it from becoming an unhandled rejection for a source that's constructed but
+  // never awaited by anything.
+  it("doesn't produce an unhandled rejection when a constructed-but-never-awaited source's pack load rejects", async () => {
+    vi.resetModules();
+    vi.doMock("../src/content/iconify/pack.js", () => ({
+      loadLocalPack: vi.fn(() => Promise.reject(new Error("boom"))),
+      loadPackFromAPI: vi.fn(),
+    }));
+    const { iconifyLocalSource: isolatedIconifyLocalSource } =
+      await import("../src/content/iconify/source.js");
+
+    expect(() => isolatedIconifyLocalSource("mdi")).not.toThrow();
+    // Let the already-rejected promise's microtask settle before the test ends; if the
+    // `.catch(() => {})` guard were missing, vitest would report this as an unhandled rejection.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    vi.doUnmock("../src/content/iconify/pack.js");
   });
 });
