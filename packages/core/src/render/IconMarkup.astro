@@ -1,38 +1,47 @@
 ---
 import { replaceIDs } from "@iconify/utils";
+import type { HTMLAttributes } from "astro/types";
+import {
+  iconA11yProps,
+  renderableIconProps,
+  type AccessibleElementInput,
+} from "./props.js";
+import type { IconEntry } from "../../typings/types";
 
 /**
- * The `<svg>` markup shared by `<Icon>`/`<LiveIcon>` once each has already resolved its entry and
- * computed `normalizedProps`/a11y ids via `renderableIconProps`/`iconA11yProps` - the only parts
- * that differ between the two (how an entry is resolved, and each's own error-vs-warn philosophy
- * on a miss) stay in their own `.astro` files.
+ * Everything shared by `<Icon>`/`<LiveIcon>` once each has already resolved its entry: computing
+ * a11y attributes/ids (`iconA11yProps`), the final `<svg>` props (`renderableIconProps`),
+ * generating unique element ids in the body (`replaceIDs`), and the markup itself. The only parts
+ * that differ between the two - how an entry is resolved, and each's own error-vs-warn philosophy
+ * on a miss - stay in their own `.astro` files.
  */
 export interface Props {
-  normalizedProps: Record<string, unknown>;
-  titleId?: string;
-  titleText?: string;
-  descId?: string;
-  descText?: string;
-  /** The resolved entry's raw body - `replaceIDs` runs here, not by the caller. */
-  body: string;
+  entry: Pick<IconEntry, "width" | "height" | "viewBox" | "body">;
+  title?: string | AccessibleElementInput;
+  desc?: string | AccessibleElementInput;
+  /** Every other prop the caller passed - spread onto the rendered `<svg>` after the computed a11y/size defaults, so the caller's own values always win. */
+  svgProps: HTMLAttributes<"svg"> & {
+    "aria-description"?: string;
+    size?: number | string;
+  };
   /** The `data-icon` marker's value - see CONTEXT.md's "Icon marker". */
   dataIcon: string;
   /** Set on `<LiveIcon>` output only - see CONTEXT.md's "Sprite boundary" for why. */
   dataIconLive?: boolean;
 }
 
-const {
-  normalizedProps,
-  titleId,
-  titleText,
-  descId,
-  descText,
-  body,
-  dataIcon,
-  dataIconLive,
-} = Astro.props;
+const { entry, title, desc, svgProps, dataIcon, dataIconLive } = Astro.props;
 
-const renderedBody = replaceIDs(body);
+const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
+  title,
+  desc,
+  svgProps,
+);
+const { normalizedProps } = renderableIconProps(entry, {
+  ...a11yProps,
+  ...svgProps,
+});
+const renderedBody = replaceIDs(entry.body);
 ---
 
 <svg {...normalizedProps} data-icon={dataIcon} data-icon-live={dataIconLive}>

@@ -4,7 +4,6 @@ import type { HTMLAttributes } from "astro/types";
 import { AstroIconError } from "../src/internal/error.js";
 import { renderTimeError } from "../src/render/error.js";
 import IconMarkup from "../src/render/IconMarkup.astro";
-import { iconA11yProps, renderableIconProps } from "../src/render/props.js";
 import type { AccessibleElementInput } from "../src/render/props.js";
 import type { LiveCollectionName } from "../typings/names";
 import type { IconEntry } from "../typings/types";
@@ -89,24 +88,13 @@ if (error || !entry) {
 }
 
 const data = entry.data as IconEntry;
-const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
-  title,
-  desc,
-  props,
-);
-const { normalizedProps } = renderableIconProps(data, {
-  ...a11yProps,
-  ...props,
-});
 ---
 
 <IconMarkup
-  normalizedProps={normalizedProps}
-  titleId={titleId}
-  titleText={titleText}
-  descId={descId}
-  descText={descText}
-  body={data.body}
+  entry={data}
+  title={title}
+  desc={desc}
+  svgProps={props}
   dataIcon={`${collection}:${icon}`}
   dataIconLive
 />

@@ -2,7 +2,6 @@
 import type { HTMLAttributes } from "astro/types";
 import { renderTimeError } from "../src/render/error.js";
 import IconMarkup from "../src/render/IconMarkup.astro";
-import { iconA11yProps, renderableIconProps } from "../src/render/props.js";
 import type { AccessibleElementInput } from "../src/render/props.js";
 import { parseIconName } from "../src/render/parseIconName.js";
 import { resolveIconEntry } from "../src/render/lookupEntry.js";
@@ -77,24 +76,12 @@ if (!entry) {
       : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`,
   );
 }
-
-const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
-  title,
-  desc,
-  props,
-);
-const { normalizedProps } = renderableIconProps(entry.data, {
-  ...a11yProps,
-  ...props,
-});
 ---
 
 <IconMarkup
-  normalizedProps={normalizedProps}
-  titleId={titleId}
-  titleText={titleText}
-  descId={descId}
-  descText={descText}
-  body={entry.data.body}
+  entry={entry.data}
+  title={title}
+  desc={desc}
+  svgProps={props}
   dataIcon={name}
 />
