@@ -5,7 +5,9 @@ import IconMarkup from "../src/render/IconMarkup.astro";
 import type { AccessibleElementInput } from "../src/render/props.js";
 import { parseIconName } from "../src/render/parseIconName.js";
 import { resolveIconEntry } from "../src/render/lookupEntry.js";
+import { resolveSpriteRenderMode } from "../src/render/spriteMode.js";
 import type { IconName } from "../typings/names";
+import type { SpriteManifest } from "../src/internal/spriteManifest.js";
 
 /**
  * Renders one icon from a content collection as an inline `<svg>`, resolved
@@ -52,9 +54,36 @@ interface Props extends HTMLAttributes<"svg"> {
   width?: number | string | null;
   /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
   height?: number | string | null;
+  /**
+   * Opts this one usage out of automatic sprite optimization, rendering the
+   * full icon body inline regardless of the collection's `sprite` setting.
+   * Needed when you style or animate the icon's internal markup - CSS can't
+   * reach into a `<use>`'s referenced content.
+   * @default false
+   */
+  inline?: boolean;
 }
 
-const { name = "", title, desc, ...props } = Astro.props;
+const { name = "", title, desc, inline = false, ...props } = Astro.props;
+
+// Provided by the sprite integration (`astro-icon/integration`) via a Vite
+// virtual module. Not installed -> this import fails to resolve, so every
+// collection is treated as unsprited and every icon renders inline, same as
+// if the integration never existed. `inline` already decides the outcome on
+// its own (see resolveSpriteRenderMode), so an opted-out usage skips the
+// import entirely rather than awaiting a manifest it can't use.
+let spriteManifest: SpriteManifest = {};
+let spriteAssetsPrefix: string | undefined;
+if (!inline) {
+  try {
+    // @ts-expect-error - only resolvable once the sprite integration registers the virtual module
+    const mod = await import("virtual:astro-icon/sprite-manifest");
+    spriteManifest = mod.default;
+    spriteAssetsPrefix = mod.assetsPrefix ?? undefined;
+  } catch {
+    // No sprite integration installed.
+  }
+}
 
 const parsedName = parseIconName(name as string);
 const { collection, name: iconName, hasPrefix } = parsedName;
@@ -76,6 +105,22 @@ if (!entry) {
       : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`,
   );
 }
+
+const renderMode = resolveSpriteRenderMode({
+  inline,
+  manifestEntry: spriteManifest[collection],
+  isPrerendered: Astro.isPrerendered,
+  assetsPrefix: spriteAssetsPrefix,
+  collection,
+  name: iconName,
+});
+
+if (renderMode.kind === "missing-from-asset") {
+  throw renderTimeError(
+    `"${name}" is sprited but missing from its asset!`,
+    `The "${collection}" collection is sprite-eligible, but "${iconName}" isn't in the emitted sprite asset.\n\nThis usually means the collection's sprite asset is scoped narrower than the collection itself (e.g. via a future "include" option) and this icon was left out - widen that scope, or pass "inline" on this <Icon> to bypass the asset entirely.`,
+  );
+}
 ---
 
 <IconMarkup
@@ -84,4 +129,5 @@ if (!entry) {
   desc={desc}
   svgProps={props}
   dataIcon={name}
+  renderMode={renderMode}
 />

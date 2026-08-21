@@ -6,6 +6,7 @@ import {
   renderableIconProps,
   type AccessibleElementInput,
 } from "./props.js";
+import type { SpriteRenderMode } from "./spriteMode.js";
 import type { IconEntry } from "../../typings/types";
 
 /**
@@ -28,9 +29,16 @@ export interface Props {
   dataIcon: string;
   /** Set on `<LiveIcon>` output only - see CONTEXT.md's "Sprite boundary" for why. */
   dataIconLive?: boolean;
+  /**
+   * Automatic sprite optimization's render decision for this occurrence - set by `<Icon>` only.
+   * `<LiveIcon>` never passes this: it resolves per-request, so there's no build-time asset to
+   * reference, and it already opts out of sprite-eligible page rewriting via `dataIconLive`.
+   */
+  renderMode?: SpriteRenderMode;
 }
 
-const { entry, title, desc, svgProps, dataIcon, dataIconLive } = Astro.props;
+const { entry, title, desc, svgProps, dataIcon, dataIconLive, renderMode } =
+  Astro.props;
 
 // `entry.title`/`.desc` are the icon's own defaults (e.g. a local `.svg`'s inline `<title>`/
 // `<desc>`) - only used when the caller didn't pass their own, same as every other prop here.
@@ -46,8 +54,19 @@ const { normalizedProps } = renderableIconProps(entry, {
 const renderedBody = replaceIDs(entry.body);
 ---
 
-<svg {...normalizedProps} data-icon={dataIcon} data-icon-live={dataIconLive}>
+<svg
+  {...normalizedProps}
+  data-icon={dataIcon}
+  data-icon-live={dataIconLive}
+  data-icon-inline={renderMode?.kind === "inline" ? "" : undefined}
+>
   {titleId && <title id={titleId}>{titleText}</title>}
   {descId && <desc id={descId}>{descText}</desc>}
-  <Fragment set:html={renderedBody} />
+  {
+    renderMode?.kind === "asset" ? (
+      <use href={renderMode.href} />
+    ) : (
+      <Fragment set:html={renderedBody} />
+    )
+  }
 </svg>
