@@ -49,24 +49,43 @@ export async function parseIconSVG(
   const parsed = parseSVG(svg);
 
   let { viewBox } = parsed;
-  if (!viewBox) {
+  // Derived from the viewBox, not the SVG's own attributes, which are often relative units like
+  // "1em" - `undefined` here means "not four finite numbers", covering both a missing viewBox
+  // and one present but malformed (wrong token count, non-numeric values, ...). Zod's
+  // `iconEntrySchema` does reject a NaN width/height, but only once this entry reaches Astro's
+  // own `parseData` - well past `buildIcons`' per-icon try/catch, so that rejection would
+  // otherwise crash the whole sync uncaught instead of respecting `strict`.
+  let dimensions = viewBox ? parseViewBoxDimensions(viewBox) : undefined;
+  if (!dimensions) {
     const derived = deriveViewBox(svg, fallbackSize);
+    const problem = viewBox ? `an invalid viewBox ("${viewBox}")` : "no viewBox";
     if (strict) {
       throw new AstroIconError(
-        `"${collection}:${name}" has no viewBox after optimization.`,
-        `The SVG returned from "optimize" is missing a viewBox attribute. Either preserve it in your "optimize" function, or disable "strict" to fall back to a derived viewBox ("${derived}") instead of failing the build.`,
+        `"${collection}:${name}" has ${problem} after optimization.`,
+        `The SVG returned from "optimize" ${viewBox ? "has a viewBox that doesn't resolve to four numbers" : "is missing a viewBox attribute"}. Fix it in your "optimize" function, or disable "strict" to fall back to a derived viewBox ("${derived}") instead of failing the build.`,
       );
     }
     logger.warn(
-      `"${collection}:${name}" has no viewBox after optimization, falling back to a derived viewBox ("${derived}"). Preserve the viewBox in your "optimize" function to avoid this.`,
+      `"${collection}:${name}" has ${problem} after optimization, falling back to a derived viewBox ("${derived}"). Preserve a valid viewBox in your "optimize" function to avoid this.`,
     );
     viewBox = derived;
+    // `deriveViewBox` always builds its result from numeric width/height (a regex-matched
+    // unit-less attribute, or a fallback default), so this is always well-formed.
+    dimensions = parseViewBoxDimensions(derived)!;
   }
 
-  // Derived from the viewBox, not the SVG's own attributes, which are often relative units like "1em".
-  const [, , width, height] = viewBox.split(/\s+/).map(Number);
+  // Non-null: either present from the start (dimensions truthy skips the block above) or set to
+  // `derived` (always a string) inside it.
+  return { body: parsed.body, viewBox: viewBox!, ...dimensions };
+}
 
-  return { body: parsed.body, viewBox, width, height };
+/** `viewBox`'s width/height, or `undefined` if it isn't exactly four finite numbers (e.g. wrong token count, a non-numeric value). */
+function parseViewBoxDimensions(
+  viewBox: string,
+): { width: number; height: number } | undefined {
+  const [, , width, height] = viewBox.split(/\s+/).map(Number);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
+  return { width, height };
 }
 
 function deriveViewBox(
