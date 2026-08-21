@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
-import { createRequire } from "node:module";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
 import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
 import { loadLocalPack, loadPackFromAPI } from "./pack.js";
+import { resolveIconifyPackFile } from "./requireResolvePack.js";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
 import { parseIconSVG } from "../parseIconSVG.js";
@@ -17,12 +17,19 @@ import type {
 } from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
 
+/** Drops a trailing path separator (e.g. from `fileURLToPath` on a directory URL, which always ends in one) so it compares equal to a bare `process.cwd()`. */
+function stripTrailingSlash(path: string): string {
+  return path.length > 1 ? path.replace(/[\\/]+$/, "") : path;
+}
+
 /** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
-async function getPackVersion(pack: string): Promise<string | undefined> {
+async function getPackVersion(
+  pack: string,
+  cwd: string,
+): Promise<string | undefined> {
   try {
-    // cwd, not import.meta.resolve, to reach the consuming project's install in a pnpm workspace.
-    const require = createRequire(join(process.cwd(), "package.json"));
-    const pkgPath = require.resolve(`@iconify-json/${pack}/package.json`);
+    const pkgPath = resolveIconifyPackFile(pack, "package.json", cwd);
+    if (!pkgPath) return undefined;
     const raw = await readFile(pkgPath, "utf-8");
     const version: unknown = JSON.parse(raw)?.version;
     return version == null ? undefined : String(version);
@@ -41,26 +48,62 @@ const recordedPacks = new Set<string>();
 
 /**
  * Best-effort typegen: records a locally loaded pack's full, unfiltered
- * catalog so `icons: [...]` can be typed and autocompleted against it on a
+ * catalog so `allowed: [...]` can be typed and autocompleted against it on a
  * later run. Only called with data that already came from a local pack
  * load done for real work (never fetched just for this), so it never
  * touches the pack on its own. Fetching it here would break the documented
- * "an `icons` allowlist alone never requires a local install" contract.
+ * "an `allowed` allowlist alone never requires a local install" contract.
  */
-function recordPackCatalog(pack: string, data: IconifyJSON): void {
+function recordPackCatalog(pack: string, data: IconifyJSON, cwd: string): void {
   if (recordedPacks.has(pack)) return;
   recordedPacks.add(pack);
-  // No access to the project root the way a `LoaderContext` does; mirrors `createLiveIconLoader`'s own `process.cwd()` fallback.
-  const rootDir = new URL(`file://${process.cwd()}/`);
+  const rootDir = new URL(`file://${cwd}/`);
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
+}
+
+/**
+ * Anchors one `iconifyLocalSource(pack, ...)` instance to a project root, so `cwd` itself never
+ * has to be threaded through the returned `IconSource`'s own methods - they call `getVersion()`/
+ * `recordCatalog(data)` without it, and read the actively-loading pack off `packPromise`.
+ *
+ * Starts loading immediately, against a `process.cwd()` guess (the only root available until
+ * `resolveRoot`, if ever, anchors this to the real one - see `IconSource.resolveRoot`'s doc
+ * comment for why the two can differ, e.g. `astro build --root <dir>` invoked from elsewhere),
+ * so a source used directly, outside either bundled loader, still fails at construction rather
+ * than never checking at all. `resolveRoot` only restarts the load if the accurate root actually
+ * differs from that guess, so the common case (the two already match) pays nothing extra.
+ */
+function createPackAnchor(pack: string) {
+  let cwd = process.cwd();
+  let packPromise = loadLocalPack(pack, cwd);
+  packPromise.catch(() => {});
+
+  return {
+    get packPromise(): Promise<IconifyJSON | undefined> {
+      return packPromise;
+    },
+    resolveRoot(root: URL): void {
+      const resolved = stripTrailingSlash(fileURLToPath(root));
+      if (resolved === cwd) return;
+      cwd = resolved;
+      packPromise = loadLocalPack(pack, cwd);
+      packPromise.catch(() => {});
+    },
+    getVersion(): Promise<string | undefined> {
+      return getPackVersion(pack, cwd);
+    },
+    recordCatalog(data: IconifyJSON): void {
+      recordPackCatalog(pack, data, cwd);
+    },
+  };
 }
 
 export interface IconifyGetIconOptions {
   pack: string;
   name: string;
   allowed: Set<string> | undefined;
-  /** The `icons: [...]` option's own length (not `allowed.size`) - matches the count a caller passed, duplicates included, since that's what "N icon(s) allowed" has always reported. */
-  iconsCount: number;
+  /** The `allowed: [...]` option's own length (not `allowed.size`) - matches the count a caller passed, duplicates included, since that's what "N icon(s) allowed" has always reported. */
+  allowedCount: number;
   optimize: OptimizeFn | undefined;
   strict: boolean;
   logger: Pick<AstroIntegrationLogger, "warn">;
@@ -78,7 +121,7 @@ async function getIconFromPack({
   pack,
   name,
   allowed,
-  iconsCount,
+  allowedCount,
   optimize,
   strict,
   logger,
@@ -87,8 +130,8 @@ async function getIconFromPack({
 }: IconifyGetIconOptions): Promise<IconEntry> {
   if (allowed && !allowed.has(name)) {
     throw new AstroIconError(
-      `"${name}" isn't in the allowed icon list for "${pack}" (${iconsCount} icon(s) allowed).`,
-      `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow ${allowlistHint}.`,
+      `"${name}" isn't in the allowed icon list for "${pack}" (${allowedCount} icon(s) allowed).`,
+      `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow ${allowlistHint}.`,
     );
   }
   const data = await loadPack();
@@ -110,18 +153,18 @@ async function getIconFromPack({
 function checkForDuplicateIcons(
   pack: string,
   sourceLabel: string,
-  icons: readonly string[] | undefined,
+  allowedNames: readonly string[] | undefined,
   logger: Pick<AstroIntegrationLogger, "warn">,
 ): Set<string> | undefined {
-  if (!icons) return undefined;
-  const allowed = new Set(icons);
-  if (allowed.size !== icons.length) {
+  if (!allowedNames) return undefined;
+  const allowed = new Set(allowedNames);
+  if (allowed.size !== allowedNames.length) {
     const seen = new Set<string>();
-    const duplicates = icons.filter(
+    const duplicates = allowedNames.filter(
       (name) => seen.size === seen.add(name).size,
     );
     logger.warn(
-      `"${pack}"'s \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")} (${sourceLabel}). Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+      `"${pack}"'s \`allowed: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")} (${sourceLabel}). Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
     );
   }
   return allowed;
@@ -133,7 +176,7 @@ export function iconifyLocalSource<
     readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
-  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+  options?: Omit<IconifySourceOptions, "allowed"> & { allowed?: Icons },
 ): IconSource;
 /**
  * An {@link IconSource} backed by a locally installed `@iconify-json/<pack>`
@@ -141,7 +184,7 @@ export function iconifyLocalSource<
  * installed; there's no fallback built in, by design (see
  * {@link iconifyApiSource} and `mergeSources` for composing one yourself).
  *
- * The `icons: [...]` option is typed and autocompleted against the pack's
+ * The `allowed: [...]` option is typed and autocompleted against the pack's
  * own catalog, once astro-icon has recorded it from a previous sync
  * (`astro sync`/`dev`/`build`); until then it falls back to a plain
  * `string`. A duplicate name in that array is deduped and logged as a
@@ -151,56 +194,73 @@ export function iconifyLocalSource(
   pack: string,
   options: IconifySourceOptions = {},
 ): IconSource {
-  const { icons, optimize, strict = false } = options;
+  const { allowed: allowedList, optimize, strict = false } = options;
   const logger = consoleLogger;
   const allowed = checkForDuplicateIcons(
     pack,
     "iconifyLocalSource",
-    icons,
+    allowedList,
     logger,
   );
 
+  // Started here, not inside getIcon/listIcons/checkPreconditions, so a missing pack fails the
+  // build as soon as this source is constructed instead of only once the first icon is actually
+  // requested - see createPackAnchor's own doc comment for the eager-load/resolveRoot details.
+  const anchor = createPackAnchor(pack);
+
   return {
     name: `iconify-local:${pack}`,
+    resolveRoot(root) {
+      anchor.resolveRoot(root);
+    },
+    // The eager pack load's actual "fail loudly, up front" payoff: called once by both bundled
+    // loaders before listIcons/getIcon are ever touched, so a missing pack is one clear failure
+    // instead of an `allowed` allowlist masking it in listIcons, surfacing only later as N
+    // separate non-strict getIcon warnings once each icon is individually built. The only place
+    // "pack isn't installed" is checked - getIcon/listIcons below trust it already ran (both
+    // bundled loaders call this before either) and don't re-check `!data` themselves.
+    async checkPreconditions() {
+      const data = await anchor.packPromise;
+      if (!data) {
+        throw new AstroIconError(
+          `"${pack}" isn't installed locally.`,
+          `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead. If you only need a few icons, restrict this source with an explicit \`allowed: [...]\` list instead of installing the whole pack.`,
+        );
+      }
+    },
     getIcon(name) {
       return getIconFromPack({
         pack,
         name,
         allowed,
-        iconsCount: icons?.length ?? 0,
+        allowedCount: allowedList?.length ?? 0,
         optimize,
         strict,
         logger,
         allowlistHint: "the whole pack",
         async loadPack() {
-          const data = await loadLocalPack(pack);
-          if (!data) {
-            throw new AstroIconError(
-              `"${pack}" isn't installed locally.`,
-              `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
-            );
-          }
-          recordPackCatalog(pack, data);
+          // Non-null: trusts checkPreconditions() already confirmed the pack is installed (both
+          // bundled loaders call it first). Only unsound for this source used directly, outside
+          // either loader - see checkPreconditions()'s own comment above.
+          const data = (await anchor.packPromise)!;
+          anchor.recordCatalog(data);
           return data;
         },
       });
     },
     async listIcons() {
-      // Not verified against the pack upfront, matching getIcon's own lazy check. `allowed` is a Set, so this also dedupes the option.
+      // Not verified against the pack upfront - `checkPreconditions()` above owns "is this
+      // source usable at all" as its own concern, called by both bundled loaders before this.
+      // `allowed` is a Set, so this also dedupes the option.
       if (allowed) return [...allowed];
 
-      const data = await loadLocalPack(pack);
-      if (!data) {
-        throw new AstroIconError(
-          `"${pack}" isn't installed locally.`,
-          `Install "@iconify-json/${pack}", or restrict it with an explicit \`icons: [...]\` list.`,
-        );
-      }
-      recordPackCatalog(pack, data);
+      // Non-null: see getIcon's identical comment above.
+      const data = (await anchor.packPromise)!;
+      anchor.recordCatalog(data);
       return localPackIconNames(data);
     },
     getVersion() {
-      return getPackVersion(pack);
+      return anchor.getVersion();
     },
   };
 }
@@ -211,14 +271,14 @@ export function iconifyApiSource<
     readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
-  options?: Omit<IconifySourceOptions, "icons"> & { icons?: Icons },
+  options?: Omit<IconifySourceOptions, "allowed"> & { allowed?: Icons },
 ): IconSource;
 /**
  * An {@link IconSource} backed by the public Iconify API only - never a
  * local install. `getIcon` resolves any icon name from the pack one at a
- * time regardless of `icons`, useful for `<LiveIcon>` against a pack you
+ * time regardless of `allowed`, useful for `<LiveIcon>` against a pack you
  * don't want to install; the API can't return "the whole pack" the way a
- * local install can, so omitting `icons` (an explicit allowlist) also
+ * local install can, so omitting `allowed` (an explicit allowlist) also
  * means `listIcons()` throws instead of pretending to enumerate one.
  *
  * Meant either standalone (e.g. deliberately avoiding an install) or
@@ -229,8 +289,8 @@ export function iconifyApiSource<
  * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
  *
  * const mdi = mergeSources([
- *   iconifyLocalSource("mdi", { icons: ["home"] }),
- *   iconifyApiSource("mdi", { icons: ["home"] }),
+ *   iconifyLocalSource("mdi", { allowed: ["home"] }),
+ *   iconifyApiSource("mdi", { allowed: ["home"] }),
  * ]);
  *
  * export const collections = {
@@ -242,12 +302,12 @@ export function iconifyApiSource(
   pack: string,
   options: IconifySourceOptions = {},
 ): IconSource {
-  const { icons, optimize, strict = false } = options;
+  const { allowed: allowedList, optimize, strict = false } = options;
   const logger = consoleLogger;
   const allowed = checkForDuplicateIcons(
     pack,
     "iconifyApiSource",
-    icons,
+    allowedList,
     logger,
   );
 
@@ -264,7 +324,7 @@ export function iconifyApiSource(
         pack,
         name,
         allowed,
-        iconsCount: icons?.length ?? 0,
+        allowedCount: allowedList?.length ?? 0,
         optimize,
         strict,
         logger,
@@ -281,8 +341,8 @@ export function iconifyApiSource(
     async listIcons() {
       if (allowed) return [...allowed];
       throw new AstroIconError(
-        `"${pack}" has no \`icons: [...]\` list, so its full icon set can't be enumerated from the Iconify API.`,
-        `Add an explicit \`icons: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
+        `"${pack}" has no \`allowed: [...]\` list, so \`iconifyApiSource\` has no fixed set of icon names to report.`,
+        `Add an explicit \`allowed: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
       );
     },
   };

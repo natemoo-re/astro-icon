@@ -74,6 +74,131 @@ describe("mergeSources / multiple sources / getIcon", () => {
   });
 });
 
+describe("mergeSources / multiple sources / per-source fallback logging", () => {
+  it("debug-logs a per-source failure when falling back to the next source, on an eventual success", async () => {
+    const mdi = fakeSource("mdi", {});
+    const ic = fakeSource("ic", { star: entryFor("ic-star") });
+    const debug = vi.fn();
+    const merged = mergeSources([mdi, ic], { debug });
+
+    await expect(merged.getIcon("star")).resolves.toEqual(entryFor("ic-star"));
+
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /"mdi" failed to resolve "star" \(.*\), falling back to the next source in "mdi\+ic"/,
+      ),
+    );
+  });
+
+  it("doesn't log the last source's failure - it's already in the thrown aggregate error", async () => {
+    const mdi = fakeSource("mdi", {});
+    const ic = fakeSource("ic", {});
+    const debug = vi.fn();
+    const merged = mergeSources([mdi, ic], { debug });
+
+    await expect(merged.getIcon("missing")).rejects.toThrow();
+
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining('"mdi" failed'));
+  });
+
+  it("doesn't log anything when the first source resolves the icon directly", async () => {
+    const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
+    const ic = fakeSource("ic", {});
+    const debug = vi.fn();
+    const merged = mergeSources([mdi, ic], { debug });
+
+    await merged.getIcon("home");
+
+    expect(debug).not.toHaveBeenCalled();
+  });
+});
+
+describe("mergeSources / multiple sources / checkPreconditions", () => {
+  it("resolves as soon as one member's checkPreconditions() succeeds, without checking the rest", async () => {
+    const broken: IconSource = {
+      name: "broken",
+      getIcon: vi.fn(),
+      checkPreconditions: vi.fn(async () => {
+        throw new Error("not installed");
+      }),
+    };
+    const working: IconSource = {
+      name: "working",
+      getIcon: vi.fn(),
+      checkPreconditions: vi.fn(async () => {}),
+    };
+    const untried: IconSource = {
+      name: "untried",
+      getIcon: vi.fn(),
+      checkPreconditions: vi.fn(async () => {
+        throw new Error("should never run");
+      }),
+    };
+    const merged = mergeSources([broken, working, untried]);
+
+    await expect(merged.checkPreconditions?.()).resolves.toBeUndefined();
+    expect(untried.checkPreconditions).not.toHaveBeenCalled();
+  });
+
+  it("treats a member with no checkPreconditions() as trivially fine, without checking any member after it", async () => {
+    const noCheck = fakeSource("noCheck", {}, null);
+    const untried: IconSource = {
+      name: "untried",
+      getIcon: vi.fn(),
+      checkPreconditions: vi.fn(async () => {
+        throw new Error("should never run");
+      }),
+    };
+    const merged = mergeSources([noCheck, untried]);
+
+    await expect(merged.checkPreconditions?.()).resolves.toBeUndefined();
+    expect(untried.checkPreconditions).not.toHaveBeenCalled();
+  });
+
+  it("throws an aggregate error only when every member's checkPreconditions() fails", async () => {
+    const a: IconSource = {
+      name: "a",
+      getIcon: vi.fn(),
+      checkPreconditions: vi.fn(async () => {
+        throw new Error("a is broken");
+      }),
+    };
+    const b: IconSource = {
+      name: "b",
+      getIcon: vi.fn(),
+      checkPreconditions: vi.fn(async () => {
+        throw new Error("b is broken");
+      }),
+    };
+    const merged = mergeSources([a, b]);
+
+    await expect(merged.checkPreconditions?.()).rejects.toThrow(
+      /no source.*is usable/i,
+    );
+    await expect(merged.checkPreconditions?.()).rejects.toMatchObject({
+      hint: expect.stringMatching(/a is broken/),
+    });
+    await expect(merged.checkPreconditions?.()).rejects.toMatchObject({
+      hint: expect.stringMatching(/b is broken/),
+    });
+  });
+});
+
+describe("mergeSources / multiple sources / resolveRoot", () => {
+  it("fans out to every member that implements it", () => {
+    const a: IconSource = { name: "a", getIcon: vi.fn(), resolveRoot: vi.fn() };
+    const b: IconSource = { name: "b", getIcon: vi.fn() };
+    const merged = mergeSources([a, b]);
+    const root = new URL("file:///some/project/");
+
+    merged.resolveRoot?.(root);
+
+    expect(a.resolveRoot).toHaveBeenCalledWith(root);
+  });
+});
+
 describe("mergeSources / multiple sources / listIcons", () => {
   it("merges and dedupes names, first-source order wins", async () => {
     const first = fakeSource("first", { home: entryFor("a") });

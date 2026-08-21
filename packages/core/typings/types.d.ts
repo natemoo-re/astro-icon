@@ -3,7 +3,7 @@
  * `entry.data` gives you from `getEntry()` or `getLiveEntry()`.
  *
  * You won't normally construct this yourself: a loader (`iconify`,
- * `localIcons`, or a custom {@link IconSource}) builds it for you from raw
+ * `localSource`, or a custom {@link IconSource}) builds it for you from raw
  * SVG. Reach for it directly if you write a custom loader or `optimize`
  * function and need the target shape.
  */
@@ -14,7 +14,14 @@ export interface IconEntry {
   viewBox: string;
   width: number;
   height: number;
-  [key: string]: string | number;
+  /**
+   * Default `title` prop for `<Icon>`/`<LiveIcon>`, honored only when the caller doesn't pass
+   * their own. `localSource()` populates this from the icon's own inline `<title>`, if it had one.
+   */
+  title?: string;
+  /** Default `desc` prop, same override relationship as {@link title}. */
+  desc?: string;
+  [key: string]: string | number | undefined;
 }
 
 /**
@@ -23,7 +30,7 @@ export interface IconEntry {
  * colors so CSS can control them, or adding `aria-hidden`.
  *
  * Pass one via the `optimize` option on {@link iconifyLocalSource},
- * {@link iconifyApiSource}, {@link localIcons}, or {@link localSource}.
+ * {@link iconifyApiSource}, or {@link localSource}.
  */
 export type OptimizeFn = (
   svg: string,
@@ -41,7 +48,7 @@ export interface IconifySourceOptions {
    * locally (`npm install @iconify-json/<pack>`): the public Iconify API can
    * only resolve icons you name explicitly, never "every icon in the pack."
    */
-  icons?: string[];
+  allowed?: string[];
   /** Transform applied to each icon's raw SVG markup before astro-icon parses and stores it. */
   optimize?: OptimizeFn;
   /**

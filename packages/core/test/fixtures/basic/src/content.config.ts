@@ -35,14 +35,14 @@ export const collections = {
   }),
   spinners: defineCollection({
     loader: createIconLoader(
-      iconifyLocalSource("svg-spinners", { icons: ["3-dots-fade"] }),
+      iconifyLocalSource("svg-spinners", { allowed: ["3-dots-fade"] }),
     ),
   }),
   // Combines an icon from the svg-spinners pack (explicitly limited) with
   // an icon from a completely custom source, into one collection.
   combined: defineCollection({
     loader: createIconLoader([
-      iconifyLocalSource("svg-spinners", { icons: ["180-ring"] }),
+      iconifyLocalSource("svg-spinners", { allowed: ["180-ring"] }),
       customSource,
     ]),
   }),

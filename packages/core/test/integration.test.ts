@@ -136,6 +136,31 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
       "<!-- Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0) -->",
     );
   });
+
+  it("defaults to a local icon's own inline <title>/<desc> when the caller passes neither", () => {
+    const svgBlocks =
+      html.match(/<svg[^>]*data-icon="local:titled"[^>]*>[\s\S]*?<\/svg>/g) ??
+      [];
+    expect(svgBlocks).toHaveLength(2);
+
+    const [defaulted] = svgBlocks;
+    expect(defaulted).toContain('role="img"');
+    expect(defaulted).toMatch(/<title id="[^"]+">Titled Icon<\/title>/);
+    expect(defaulted).toMatch(
+      /<desc id="[^"]+">A titled icon&#39;s description<\/desc>/,
+    );
+  });
+
+  it("lets a caller-supplied title win, without a duplicate <title> from the source's own", () => {
+    const svgBlocks =
+      html.match(/<svg[^>]*data-icon="local:titled"[^>]*>[\s\S]*?<\/svg>/g) ??
+      [];
+    const [, overridden] = svgBlocks;
+
+    expect(overridden).toContain(">Caller Title</title>");
+    expect(overridden).not.toContain("Titled Icon");
+    expect((overridden.match(/<title/g) ?? []).length).toBe(1);
+  });
 });
 
 describe("<Sprite> against a real astro build", () => {

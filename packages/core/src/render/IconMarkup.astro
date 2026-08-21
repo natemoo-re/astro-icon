@@ -16,7 +16,7 @@ import type { IconEntry } from "../../typings/types";
  * on a miss - stay in their own `.astro` files.
  */
 export interface Props {
-  entry: Pick<IconEntry, "width" | "height" | "viewBox" | "body">;
+  entry: IconEntry;
   title?: string | AccessibleElementInput;
   desc?: string | AccessibleElementInput;
   /** Every other prop the caller passed - spread onto the rendered `<svg>` after the computed a11y/size defaults, so the caller's own values always win. */
@@ -32,9 +32,11 @@ export interface Props {
 
 const { entry, title, desc, svgProps, dataIcon, dataIconLive } = Astro.props;
 
+// `entry.title`/`.desc` are the icon's own defaults (e.g. a local `.svg`'s inline `<title>`/
+// `<desc>`) - only used when the caller didn't pass their own, same as every other prop here.
 const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
-  title,
-  desc,
+  title ?? entry.title,
+  desc ?? entry.desc,
   svgProps,
 );
 const { normalizedProps } = renderableIconProps(entry, {

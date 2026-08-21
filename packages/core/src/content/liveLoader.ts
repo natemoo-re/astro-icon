@@ -1,6 +1,7 @@
 import type { LiveLoader } from "astro/loaders";
 import { AstroIconError } from "../internal/error.js";
 import { buildIcons } from "./buildIcons.js";
+import { formatDuration } from "./duration.js";
 import { consoleLogger } from "./logger.js";
 import { mergeSources } from "./compositeSource.js";
 import { sanitizeSVGBody } from "./sanitizeSVG.js";
@@ -21,7 +22,7 @@ import type { IconEntry } from "../../typings/types";
  *
  * export const collections = {
  *   mdi: defineLiveCollection({
- *     loader: createLiveIconLoader(iconifyLocalSource("mdi", { icons: ["home"] })),
+ *     loader: createLiveIconLoader(iconifyLocalSource("mdi", { allowed: ["home"] })),
  *   }),
  * };
  * ```
@@ -41,8 +42,21 @@ export function createLiveIconLoader(
   // `LiveCollectionName` only needs the collection key to exist: a live collection's specific icons resolve per
   // request and are never validated against a catalog (see names.d.ts), so this records an empty list rather than
   // resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
-  // sources like `iconifyLocalSource` use it to record their own full pack catalog for typing the `icons: [...]` option.
+  // sources like `iconifyLocalSource` use it to record their own full pack catalog for typing the `allowed: [...]` option.
   const rootDir = new URL(`file://${process.cwd()}/`);
+  // Best-effort only: `process.cwd()` isn't necessarily the project root (see
+  // `IconSource.resolveRoot`'s doc comment), but it's the only thing a live collection has.
+  source.resolveRoot?.(rootDir);
+  // Same "fail loudly, up front" intent as `createIconLoader`'s own `checkPreconditions()` call
+  // (see `listIconsOrFallback`), just downgraded to a warning: a `LiveLoader` has no "build
+  // failed" concept to hook into - `loadEntry`/`loadCollection` already turn a broken source into
+  // `{ error }` per request regardless - so this only gets a source's problem into the logs
+  // immediately instead of waiting for the first request to surface it.
+  source.checkPreconditions?.().catch((ex) => {
+    consoleLogger.warn(
+      `"${source.name}" isn't usable: ${ex instanceof Error ? ex.message : ex}`,
+    );
+  });
   if (source.listIcons) source.listIcons().catch(() => {});
   recordCollection(rootDir, "live", source.name, []).catch(() => {});
 
@@ -78,6 +92,7 @@ export function createLiveIconLoader(
           ),
         };
       }
+      const loadStart = performance.now();
       try {
         const names = await source.listIcons();
         const built = await buildIcons(
@@ -88,6 +103,12 @@ export function createLiveIconLoader(
               `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
             );
           },
+        );
+        // Debug-only, matching `createIconLoader`'s own build-duration log - no `LoaderContext`
+        // to log through here (`LiveLoader` gives `loadCollection` no arguments at all), so this
+        // falls back to `consoleLogger` the same way the warning above does.
+        consoleLogger.debug(
+          `Loaded ${built.length} icon(s) for "${source.name}"'s live collection in ${formatDuration(performance.now() - loadStart)}.`,
         );
         // `name` -> `id` only here, where astro-icon's own vocabulary crosses into `LiveLoader`'s.
         return { entries: built.map(({ name, data }) => ({ id: name, data })) };

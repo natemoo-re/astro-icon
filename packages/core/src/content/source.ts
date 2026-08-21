@@ -1,6 +1,19 @@
 import type { IconEntry } from "../../typings/types";
 
 /**
+ * The subset of Astro's/chokidar's shared dev-server watcher an {@link IconSource} needs to
+ * register itself: enough to add paths and listen for its own "error" event, nothing else.
+ */
+export interface IconSourceWatcher {
+  on(event: string, listener: (...args: any[]) => void): void;
+  add(paths: string | readonly string[]): void;
+}
+
+/** One file-level change a watching {@link IconSource} reports back to its loader. */
+export type IconChangeEvent =
+  { type: "add" | "change"; name: string } | { type: "unlink"; name: string };
+
+/**
  * The interface for plugging a custom icon backend into astro-icon.
  * `iconifyLocalSource`/`iconifyApiSource` (Iconify packs) and `localSource` (a directory of `.svg`
  * files) are astro-icon's own implementations; write your own to fetch icons
@@ -49,4 +62,57 @@ export interface IconSource {
    * synchronous, already-cached, or otherwise uncontended work resolve any faster.
    */
   concurrency?: number;
+  /**
+   * Opts this source into dev-mode watching. Called at most once per sync, only when the loader
+   * has a real file watcher to hand it (build-time only, not a live collection). Register
+   * whatever paths this source depends on with `watcher`, and call `report()` with the affected
+   * icon name whenever one of them changes - the loader turns that into a surgical store update
+   * (re-running `getIcon` for an "add"/"change", deleting the entry for an "unlink") instead of a
+   * full resync.
+   *
+   * Composing sources that both implement `watch` (e.g. two `localSource()` directories via
+   * `mergeSources`/`createIconLoader([...])`) watches all of them - but if two composed sources
+   * define the *same* icon name, only the earlier source's file is ever visible in the store,
+   * matching `getIcon`'s own first-match-wins order. Editing the shadowed source's file still
+   * triggers a resync (via `report()`), it just re-resolves to the same, unchanged winner - so
+   * keep icon names disjoint across composed sources you intend to watch, or the shadowed file's
+   * edits will appear to do nothing.
+   */
+  watch?(
+    watcher: IconSourceWatcher,
+    report: (event: IconChangeEvent) => void,
+  ): void;
+  /**
+   * Anchors this source to the project root, if it needs one. Called once, before any other
+   * method, whenever the loader using this source actually has a root to give it -
+   * `createIconLoader` always does (`config.root`); `createLiveIconLoader` only has a best-effort
+   * `process.cwd()`-based one, since `LiveLoader`'s own context exposes no project root.
+   *
+   * Exists because a source is normally built eagerly, in `content.config.ts`, before Astro's
+   * `config.root` is available at all - `localSource("src/icons")` implements this so the plain,
+   * unanchored string it was given resolves against the project root once the loader can tell it
+   * one, instead of silently resolving against `process.cwd()` at each file read (which is only
+   * sometimes the project root - `astro build --root <dir>` invoked from elsewhere is a common
+   * case where it isn't). A source already anchored to something specific (e.g.
+   * `localSource(new URL("../icons/", import.meta.url))`) has no reason to implement this.
+   */
+  resolveRoot?(root: URL): void;
+  /**
+   * Checks whether this source is actually usable at all - a missing local install, an
+   * unreachable API, a misconfigured credential - as a distinct concern from `listIcons`/
+   * `getIcon` themselves. Called once, after `resolveRoot` but before anything else,
+   * so a broken source fails clearly and immediately instead of silently surfacing later as a
+   * `listIcons`/per-icon `getIcon` failure (in non-strict mode, `getIcon` failures are warned
+   * and skipped one icon at a time, which buries a whole-source problem in noise rather than
+   * reporting it once, up front).
+   *
+   * When composed via `mergeSources`, a member's failed `checkPreconditions()` doesn't fail the
+   * whole composite by itself - only surfaced if every member that implements `checkPreconditions`
+   * fails theirs, matching `getIcon`'s own first-match-wins/no-source-worked contract, since the
+   * entire point of composing sources is tolerating one of them being unusable.
+   *
+   * Omit it if there's nothing meaningful to check before an icon is actually requested (most
+   * sources - `iconifyApiSource`, `localSource`).
+   */
+  checkPreconditions?(): Promise<void>;
 }
