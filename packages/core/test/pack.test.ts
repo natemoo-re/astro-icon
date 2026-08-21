@@ -7,8 +7,8 @@ vi.mock("@iconify/utils/lib/loader/fs", () => ({
   loadCollectionFromFS: vi.fn(),
 }));
 
-vi.mock("../src/content/iconify/requireResolvePack.js", () => ({
-  requireResolvePack: vi.fn(),
+vi.mock("../src/content/iconify/packResolver.js", () => ({
+  createIconifyPackResolver: vi.fn(),
 }));
 
 const search: IconifyJSON = {
@@ -26,7 +26,9 @@ function logger() {
 let loadLocalPack: (typeof import("../src/content/iconify/pack.js"))["loadLocalPack"];
 let loadPackFromAPI: (typeof import("../src/content/iconify/pack.js"))["loadPackFromAPI"];
 let mockedLoadCollectionFromFS: ReturnType<typeof vi.fn>;
-let mockedRequireResolveFallback: ReturnType<typeof vi.fn>;
+let mockedCreateResolver: ReturnType<typeof vi.fn>;
+// The resolver's own `loadIcons` - what require.resolve fallback (#263) actually calls.
+let mockedLoadIcons: ReturnType<typeof vi.fn>;
 
 beforeEach(async () => {
   vi.resetModules();
@@ -35,10 +37,17 @@ beforeEach(async () => {
   const { loadCollectionFromFS } = await import("@iconify/utils/lib/loader/fs");
   mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
   mockedLoadCollectionFromFS.mockReset();
-  const { requireResolvePack } =
-    await import("../src/content/iconify/requireResolvePack.js");
-  mockedRequireResolveFallback = vi.mocked(requireResolvePack);
-  mockedRequireResolveFallback.mockReset();
+  const { createIconifyPackResolver } = await import(
+    "../src/content/iconify/packResolver.js"
+  );
+  mockedCreateResolver = vi.mocked(createIconifyPackResolver);
+  mockedLoadIcons = vi.fn();
+  mockedCreateResolver.mockReset();
+  mockedCreateResolver.mockImplementation((cwd: string) => ({
+    cwd,
+    resolveFile: vi.fn(),
+    loadIcons: mockedLoadIcons,
+  }));
 });
 
 afterEach(() => {
@@ -72,13 +81,11 @@ describe("loadLocalPack", () => {
   describe("require.resolve fallback (#263)", () => {
     it("falls back to require.resolve when loadCollectionFromFS can't find the pack", async () => {
       mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-      mockedRequireResolveFallback.mockResolvedValueOnce(search);
+      mockedLoadIcons.mockResolvedValueOnce(search);
 
       await expect(loadLocalPack("mdi")).resolves.toBe(search);
-      expect(mockedRequireResolveFallback).toHaveBeenCalledWith(
-        "mdi",
-        process.cwd(),
-      );
+      expect(mockedCreateResolver).toHaveBeenCalledWith(process.cwd());
+      expect(mockedLoadIcons).toHaveBeenCalledWith("mdi");
     });
 
     it("doesn't fall back when loadCollectionFromFS already found the pack", async () => {
@@ -86,12 +93,12 @@ describe("loadLocalPack", () => {
 
       await loadLocalPack("mdi");
 
-      expect(mockedRequireResolveFallback).not.toHaveBeenCalled();
+      expect(mockedLoadIcons).not.toHaveBeenCalled();
     });
 
     it("resolves undefined when neither loadCollectionFromFS nor the fallback find the pack", async () => {
       mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-      mockedRequireResolveFallback.mockResolvedValueOnce(undefined);
+      mockedLoadIcons.mockResolvedValueOnce(undefined);
 
       await expect(loadLocalPack("mdi")).resolves.toBeUndefined();
     });
@@ -103,13 +110,11 @@ describe("loadLocalPack", () => {
       // node_modules on its own - the same directory-walking CJS resolution
       // Node's loader (and Yarn PnP's `.pnp.cjs` hook) both honor.
       mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-      const { requireResolvePack: actualRequireResolvePack } =
+      const { createIconifyPackResolver: actualCreateResolver } =
         await vi.importActual<
-          typeof import("../src/content/iconify/requireResolvePack.js")
-        >("../src/content/iconify/requireResolvePack.js");
-      mockedRequireResolveFallback.mockImplementationOnce(
-        actualRequireResolvePack,
-      );
+          typeof import("../src/content/iconify/packResolver.js")
+        >("../src/content/iconify/packResolver.js");
+      mockedCreateResolver.mockImplementationOnce(actualCreateResolver);
 
       const fixtureRoot = path.resolve(
         fileURLToPath(new URL(".", import.meta.url)),

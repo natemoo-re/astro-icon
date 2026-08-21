@@ -5,7 +5,10 @@ import { AstroIconError } from "../../internal/error.js";
 import type { RateLimiter } from "../../utils/rateLimiter.js";
 import { fetchJSON } from "../../utils/fetch.js";
 import { formatDuration } from "../duration.js";
-import { requireResolvePack } from "./requireResolvePack.js";
+import {
+  createIconifyPackResolver,
+  type IconifyPackResolver,
+} from "./packResolver.js";
 
 export interface LoadPackFromAPIOptions {
   logger: Pick<AstroIntegrationLogger, "debug">;
@@ -45,21 +48,25 @@ function cachedPackLoad(
  * through the real (CJS) loader, so it works under PnP too. See
  * https://github.com/natemoo-re/astro-icon/issues/263.
  *
- * `cwd` defaults to `process.cwd()` for a caller with no better root to give (matches this
- * function's long-standing behavior); `iconifyLocalSource` passes its `resolveRoot`-anchored
- * root once one is available. Included in the cache key so two different roots for the same
- * pack name - a rare case, but possible across composed sources in one process - don't collide.
+ * `resolver` defaults to one anchored at `process.cwd()` for a caller with no better root to give
+ * (matches this function's long-standing behavior); `iconifyLocalSource` passes its own,
+ * anchored to its `resolveRoot`-anchored root once one is available. `resolver.cwd` is included
+ * in the cache key so two different roots for the same pack name - a rare case, but possible
+ * across composed sources in one process - don't collide.
  */
 export function loadLocalPack(
   pack: string,
-  cwd: string = process.cwd(),
+  resolver: IconifyPackResolver = createIconifyPackResolver(process.cwd()),
 ): Promise<IconifyJSON | undefined> {
-  return cachedPackLoad(`${cwd}::${pack}`, async () => {
-    const viaFS = await loadCollectionFromFS(pack, undefined, undefined, cwd).catch(
-      () => undefined,
-    );
+  return cachedPackLoad(`${resolver.cwd}::${pack}`, async () => {
+    const viaFS = await loadCollectionFromFS(
+      pack,
+      undefined,
+      undefined,
+      resolver.cwd,
+    ).catch(() => undefined);
     if (viaFS) return viaFS;
-    return requireResolvePack(pack, cwd);
+    return resolver.loadIcons(pack);
   });
 }
 

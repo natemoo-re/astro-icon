@@ -4,7 +4,10 @@ import type { IconifyJSON } from "@iconify/types";
 import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
 import { loadLocalPack, loadPackFromAPI } from "./pack.js";
-import { resolveIconifyPackFile } from "./requireResolvePack.js";
+import {
+  createIconifyPackResolver,
+  type IconifyPackResolver,
+} from "./packResolver.js";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
 import { parseIconSVG } from "../parseIconSVG.js";
@@ -27,10 +30,10 @@ function stripTrailingSlash(path: string): string {
 /** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
 async function getPackVersion(
   pack: string,
-  cwd: string,
+  resolver: IconifyPackResolver,
 ): Promise<string | undefined> {
   try {
-    const pkgPath = resolveIconifyPackFile(pack, "package.json", cwd);
+    const pkgPath = resolver.resolveFile(pack, "package.json");
     if (!pkgPath) return undefined;
     const raw = await readFile(pkgPath, "utf-8");
     const version: unknown = JSON.parse(raw)?.version;
@@ -76,8 +79,8 @@ function recordPackCatalog(pack: string, data: IconifyJSON, cwd: string): void {
  * differs from that guess, so the common case (the two already match) pays nothing extra.
  */
 function createPackAnchor(pack: string) {
-  let cwd = process.cwd();
-  let packPromise = loadLocalPack(pack, cwd);
+  let resolver = createIconifyPackResolver(process.cwd());
+  let packPromise = loadLocalPack(pack, resolver);
   packPromise.catch(() => {});
 
   return {
@@ -86,16 +89,16 @@ function createPackAnchor(pack: string) {
     },
     resolveRoot(root: URL): void {
       const resolved = stripTrailingSlash(fileURLToPath(root));
-      if (resolved === cwd) return;
-      cwd = resolved;
-      packPromise = loadLocalPack(pack, cwd);
+      if (resolved === resolver.cwd) return;
+      resolver = createIconifyPackResolver(resolved);
+      packPromise = loadLocalPack(pack, resolver);
       packPromise.catch(() => {});
     },
     getVersion(): Promise<string | undefined> {
-      return getPackVersion(pack, cwd);
+      return getPackVersion(pack, resolver);
     },
     recordCatalog(data: IconifyJSON): void {
-      recordPackCatalog(pack, data, cwd);
+      recordPackCatalog(pack, data, resolver.cwd);
     },
   };
 }
