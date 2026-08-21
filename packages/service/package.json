@@ -2,9 +2,6 @@
   "name": "service",
   "private": true,
   "version": "0.1.0",
-  "exports": {
-    "./client": "./client.ts"
-  },
   "author": {
     "name": "Nate Moore",
     "email": "nate@natemoo.re",
@@ -20,18 +17,12 @@
     "url": "https://github.com/natemoo-re/astro-icon/issues"
   },
   "homepage": "https://github.com/natemoo-re/astro-icon#readme",
-  "scripts": {
-    "dev": "tsx watch dev-server.ts",
-    "start": "tsx dev-server.ts"
-  },
   "dependencies": {
     "@iconify/json": "^1.1.461",
     "@iconify/json-tools": "^1.0.10",
     "etag": "^1.8.1"
   },
   "devDependencies": {
-    "@vercel/node": "^1.12.1",
-    "astro-icon": "workspace:*",
-    "tsx": "^4.23.11"
+    "@vercel/node": "^1.12.1"
   }
 }

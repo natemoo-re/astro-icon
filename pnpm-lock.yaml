@@ -55,9 +55,6 @@ importers:
       astro-icon:
         specifier: workspace:*
         version: link:../packages/core
-      service:
-        specifier: workspace:*
-        version: link:../packages/service
 
   packages/core:
     dependencies:
@@ -114,12 +111,6 @@ importers:
       "@vercel/node":
         specifier: ^1.12.1
         version: 1.15.4
-      astro-icon:
-        specifier: workspace:*
-        version: link:../core
-      tsx:
-        specifier: ^4.23.11
-        version: 4.23.12
 
   packages/www:
     dependencies:
