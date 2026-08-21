@@ -3,7 +3,7 @@ import { loadCollectionFromFS } from "@iconify/utils/lib/loader/fs";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
 import type { RateLimiter } from "../../utils/rateLimiter.js";
-import { fetchWithRetry } from "../../utils/fetch.js";
+import { fetchJSON } from "../../utils/fetch.js";
 import { formatDuration } from "../duration.js";
 import { requireResolvePack } from "./requireResolvePack.js";
 
@@ -143,13 +143,14 @@ async function fetchPackChunk(
 ): Promise<IconifyJSON | undefined> {
   if (rateLimiter) await rateLimiter();
   const search = `?icons=${encodeURIComponent(icons.join(","))}`;
-  const res = await fetchWithRetry(
+  // `fetchJSON` throws on a network failure, a non-OK status, or invalid JSON - all three collapse
+  // to `undefined` here, same as before, since `fetchPackFromAPI` already treats any one chunk
+  // failing as failing the whole load.
+  const data = await fetchJSON<unknown>(
     `https://api.iconify.design/${pack}.json${search}`,
-  );
-  if (!res || !res.ok) return undefined;
-  const data = await res.json().catch(() => undefined);
+  ).catch(() => undefined);
   if (data == null || !Object.prototype.hasOwnProperty.call(data, "icons"))
     return undefined;
   if (!(data as { icons: unknown }).icons) return undefined;
-  return data;
+  return data as IconifyJSON;
 }
