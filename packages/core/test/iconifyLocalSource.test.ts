@@ -80,28 +80,25 @@ describe("iconifyLocalSource / not installed", () => {
   // and these still exercise the "genuinely not installed" path.
   const notInstalled = "definitely-not-a-real-iconify-pack-xyz";
 
-  it("throws from getIcon instead of falling back to the API", async () => {
-    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-    const source = iconifyLocalSource(notInstalled);
-
-    await expect(source.getIcon("search")).rejects.toThrow(
-      /isn't installed locally/i,
-    );
-  });
-
-  it("throws from listIcons instead of falling back to the API", async () => {
-    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-    const source = iconifyLocalSource(notInstalled);
-
-    await expect(source.listIcons?.()).rejects.toThrow(
-      /isn't installed locally/i,
-    );
-  });
-
   it("resolves undefined (never crashes) from getVersion for a pack that isn't installed", async () => {
     const source = iconifyLocalSource(notInstalled);
 
     await expect(source.getVersion?.()).resolves.toBeUndefined();
+  });
+
+  // getIcon/listIcons no longer independently guard "pack isn't installed" - only
+  // checkPreconditions() does (see "iconifyLocalSource / checkPreconditions" below). Real usage
+  // through createIconLoader/createLiveIconLoader always calls checkPreconditions() first, so
+  // getIcon/listIcons trust it already ran; calling either directly, first, without it, is
+  // unsupported and surfaces whatever low-level error the missing data happens to cause instead
+  // of a descriptive AstroIconError.
+  it("doesn't produce a descriptive error from getIcon/listIcons on their own, without checkPreconditions() run first", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
+    const source = iconifyLocalSource(notInstalled);
+
+    await expect(source.getIcon("search")).rejects.not.toThrow(
+      /isn't installed locally/i,
+    );
   });
 });
 
