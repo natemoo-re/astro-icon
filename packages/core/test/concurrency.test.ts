@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { mapWithConcurrency } from "../src/content/concurrency.js";
+import {
+  createConcurrencyGate,
+  mapWithConcurrency,
+} from "../src/content/concurrency.js";
 
 /** Resolves after a macrotask tick, so overlapping calls actually overlap instead of resolving synchronously. */
 function tick(): Promise<void> {
@@ -85,5 +88,53 @@ describe("mapWithConcurrency", () => {
         return n;
       }),
     ).rejects.toThrow("boom");
+  });
+});
+
+describe("createConcurrencyGate", () => {
+  it("never exceeds the limit across calls arriving over time", async () => {
+    const gate = createConcurrencyGate(3);
+    let concurrent = 0;
+    let peak = 0;
+    await Promise.all(
+      Array.from({ length: 20 }, () =>
+        gate(async () => {
+          concurrent++;
+          peak = Math.max(peak, concurrent);
+          await tick();
+          concurrent--;
+        }),
+      ),
+    );
+    expect(peak).toBe(3);
+  });
+
+  it("queues waiters in call order", async () => {
+    const gate = createConcurrencyGate(1);
+    const order: number[] = [];
+    await Promise.all(
+      [1, 2, 3].map((n) =>
+        gate(async () => {
+          order.push(n);
+          await tick();
+        }),
+      ),
+    );
+    expect(order).toEqual([1, 2, 3]);
+  });
+
+  it("resolves to fn's return value", async () => {
+    const gate = createConcurrencyGate(2);
+    await expect(gate(async () => "result")).resolves.toBe("result");
+  });
+
+  it("propagates a rejection without leaking the slot", async () => {
+    const gate = createConcurrencyGate(1);
+    await expect(
+      gate(async () => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+    await expect(gate(async () => "ok")).resolves.toBe("ok");
   });
 });

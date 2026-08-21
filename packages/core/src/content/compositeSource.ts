@@ -1,3 +1,4 @@
+import { createConcurrencyGate } from "./concurrency.js";
 import { AstroIconError } from "../internal/error.js";
 import type { IconSource } from "./source.js";
 
@@ -18,13 +19,25 @@ export function mergeSources(
 
   const name = sources.map((source) => source.name).join("+");
 
+  // Each source's own cap only gates calls that actually reach that source - not the composite as
+  // a whole. Merging into one shared cap (e.g. the minimum across members) would throttle a fast,
+  // uncapped member (a local pack) down to a slow fallback's limit even when calls never reach it.
+  const gates = new Map(
+    sources
+      .filter((source) => source.concurrency !== undefined)
+      .map((source) => [source, createConcurrencyGate(source.concurrency!)]),
+  );
+
   return {
     name,
     async getIcon(iconName) {
       const failures: string[] = [];
       for (const source of sources) {
         try {
-          return await source.getIcon(iconName);
+          const gate = gates.get(source);
+          return gate
+            ? await gate(() => source.getIcon(iconName))
+            : await source.getIcon(iconName);
         } catch (ex) {
           // Try the next source; only fail if none of them have it.
           failures.push(

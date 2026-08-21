@@ -109,3 +109,56 @@ describe("mergeSources naming", () => {
     ).toBe("mdi+ic");
   });
 });
+
+describe("mergeSources / per-source concurrency", () => {
+  /** Resolves after a macrotask tick, so overlapping calls actually overlap instead of resolving synchronously. */
+  function tick(): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  function trackingSource(
+    name: string,
+    concurrency?: number,
+  ): IconSource & { peak: number } {
+    const tracker = {
+      name,
+      concurrency,
+      peak: 0,
+      concurrent: 0,
+      async getIcon(iconName: string) {
+        tracker.concurrent++;
+        tracker.peak = Math.max(tracker.peak, tracker.concurrent);
+        await tick();
+        tracker.concurrent--;
+        return entryFor(`${name}-${iconName}`);
+      },
+    };
+    return tracker;
+  }
+
+  it("caps concurrent calls into a source at that source's own limit", async () => {
+    const capped = trackingSource("capped", 2);
+    // Two members forces the object-literal path rather than single-source pass-through, so the
+    // gate is actually exercised.
+    const composite = mergeSources([capped, fakeSource("fallback", {})]);
+
+    await Promise.all(
+      ["a", "b", "c", "d", "e", "f"].map((n) => composite.getIcon(n)),
+    );
+    expect(capped.peak).toBe(2);
+  });
+
+  it("doesn't throttle an uncapped source down to a capped sibling's limit", async () => {
+    const uncapped = trackingSource("uncapped");
+    const capped = trackingSource("capped", 1);
+    // "uncapped" is tried first for every name, so every call resolves there and never reaches
+    // "capped" - its own (absent) cap should govern, not the composite's other member.
+    const composite = mergeSources([uncapped, capped]);
+
+    await Promise.all(
+      Array.from({ length: 6 }, (_, i) => composite.getIcon(`icon-${i}`)),
+    );
+    expect(uncapped.peak).toBe(6);
+    expect(capped.peak).toBe(0);
+  });
+});

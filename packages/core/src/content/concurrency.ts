@@ -27,3 +27,46 @@ export async function mapWithConcurrency<T, R>(
   await Promise.all(Array.from({ length: workerCount }, run));
   return results;
 }
+
+/** A function that runs `fn`, queuing it if the gate's limit is already saturated. */
+export interface ConcurrencyGate {
+  <T>(fn: () => Promise<T>): Promise<T>;
+}
+
+/**
+ * Builds a gate gating at most `limit` calls to run `fn` at once *across every call to the
+ * returned function*, queuing the rest in call order - unlike `mapWithConcurrency`, which caps
+ * one fixed batch of work, this is meant for throttling calls arriving over time from unrelated
+ * callers against one shared-capacity resource.
+ */
+export function createConcurrencyGate(limit: number): ConcurrencyGate {
+  let active = 0;
+  const queue: Array<() => void> = [];
+
+  function acquire(): Promise<void> {
+    if (active < limit) {
+      active++;
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      queue.push(() => {
+        active++;
+        resolve();
+      });
+    });
+  }
+
+  function release(): void {
+    active--;
+    queue.shift()?.();
+  }
+
+  return async function withGate<T>(fn: () => Promise<T>): Promise<T> {
+    await acquire();
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  };
+}
