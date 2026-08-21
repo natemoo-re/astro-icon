@@ -6,40 +6,30 @@ Terms specific to this codebase, for anyone (human or agent) navigating it.
 
 `packages/core/src/` is split into two directories that mirror this codebase's two bounded contexts:
 
-- **`src/content/`** - turning a backend (a local directory, an Iconify pack, a custom `IconSource`) into Astro content-collection data. Everything about [sources](#icon-source), [packs](#pack), [catalogs](#catalog), and [loaders](#loader-vs-source) lives here.
-- **`src/render/`** - turning an `IconEntry` already sitting in the content store into markup on a page. `<Icon>`/`<LiveIcon>`/`<Sprite>`'s supporting code (a11y/render props, sprite rewriting, name parsing, entry lookup) lives here.
+- **`src/content/`** - turning a backend (a local directory, an Iconify pack, a custom `IconSource`) into Astro content-collection data. Everything about [sources](#icon-source), [packs](#pack), [catalogs](#catalog), and [loaders](#loader-vs-source) lives here, plus sprite state recording and the build-time page rewrite (`content/sprite/`) - both act on already-synced/already-rendered output, not on a single render.
+- **`src/render/`** - turning an `IconEntry` already sitting in the content store into markup on a page. `<Icon>`/`<LiveIcon>`'s supporting code (a11y/render props, sprite render-mode decision, name parsing, entry lookup) lives here.
 
 They meet at exactly one point: an `IconEntry`. `src/internal/` holds the one piece genuinely shared by both - `AstroIconError` (see [Resolve vs Build vs Load vs Look up](#resolve-vs-build-vs-load-vs-look-up) for why `renderTimeError`, despite living next to it before, is `render/`-only). `src/index.ts` (the package's `"."` entry), `src/optimize.ts` (transforms an already-built SVG string; independent of both contexts), and `typings/` stay outside both, since they're the whole-package public surface, not a context-specific concern.
 
 ## Icon marker
 
-The `data-icon="collection:name"` attribute every `<Icon>`-rendered `<svg>` carries, regardless of context. Originally just a styling hook (`[data-icon="..."]` selectors), it is now also a load-bearing contract: `<Sprite>` scans for it to find which icons were rendered in its slot. See `packages/core/components/Icon.astro`.
+The `data-icon="collection:name"` attribute every `<Icon>`-rendered `<svg>` carries, regardless of context. Originally just a styling hook (`[data-icon="..."]` selectors), it is now also a load-bearing contract: the sprite integration's build-time page rewrite (`content/sprite/rewrite.ts`) scans a finished page's HTML for it to find which icons were rendered where. See `packages/core/components/Icon.astro`.
 
-## Sprite boundary
+## Automatic sprite optimization
 
-The subtree wrapped by a single `<Sprite>` component (`packages/core/components/Sprite.astro`). Deduping (repeated icons collapsed into one `<symbol>` + many `<use>`s) is scoped entirely to what's inside this boundary - an `<Icon>` rendered outside any `<Sprite>` is never affected.
+Repeated `<Icon>` uses are deduped into a `<symbol>`/`<use>` sheet automatically, no wrapper component - the successor to an earlier opt-in `<Sprite>` component (buffered a slot's HTML at render time; only worked on prerendered pages). `sprite: true` (the default on `createIconLoader`) makes a collection eligible; deduping only actually happens once the `icon()` integration (`packages/core/src/integration.ts`) is installed.
 
-A `<LiveIcon>` inside the boundary is never deduped, regardless of how many times its `collection:name` repeats - it carries a second marker, `data-icon-live` (alongside the [Icon marker](#icon-marker)), which `Sprite` uses to pass it through untouched instead of resolving/folding it into a shared `<symbol>`. Live data isn't guaranteed stable across resolutions the way a static collection entry is, so `Sprite` doesn't attempt to treat two `<LiveIcon>` occurrences - or a `<LiveIcon>` and a static `<Icon>` that happen to share a `collection:name` - as interchangeable. See `packages/core/src/render/sprite/rewrite.ts`.
+`<Icon>` never has enough information at its own render time to know whether *this* occurrence is one of several on the page - Astro doesn't render template expressions in document order. So it always renders a full inline body on a prerendered page; the integration's `astro:build:generated` hook does the real deduping afterward, as a post-processing pass over each page's finished HTML file (`rewritePageSprites`, `content/sprite/rewrite.ts`) - an icon repeated 2+ times becomes `<use>` against a shared `<symbol>`, injected once into a hidden defs block right after `<body>`. A server-rendered route has no such build pass to run against a live response, so `<Icon>` instead references a shared, hash-versioned asset directly (`/_astro/{collection}.{hash}.svg`) - see [Sprite render mode](#sprite-render-mode).
 
-## Symbol defs block
+An icon opts out per-usage via the `inline` prop (`<Icon name="..." inline />`), which skips the sprite-manifest import entirely rather than resolving it and ignoring the result. `<LiveIcon>` output is never eligible at all - it carries its own marker, `data-icon-live` (alongside the [Icon marker](#icon-marker)), which the rewrite skips outright, and it never receives a `renderMode` prop from `IconMarkup` in the first place. Live data isn't guaranteed stable across resolutions the way a static collection entry is, so it's never folded into a shared `<symbol>`.
 
-The single hidden `<svg style="position:absolute;width:0;height:0" aria-hidden="true">` that a `<Sprite>` emits once, containing one `<symbol>` per unique icon referenced inside its boundary, ahead of the rewritten slot content.
+## Sprite render mode
 
-## Request-scoped Sprite marker
+`resolveSpriteRenderMode` (`packages/core/src/render/spriteMode.ts`)'s decision for one `<Icon>` usage, from static facts only (no sibling state, no render order): `"inline"` (opted out, or the collection isn't sprited), `"prerendered"` (renders inline now; the build rewrite may still dedupe it later), `"asset"` (server-rendered - references the shared asset directly), or `"missing-from-asset"` (a real configuration error - throws rather than silently falling back).
 
-`spriteRenderedForRequest`, a `WeakMap<Request, boolean>` (`packages/core/src/render/sprite/marker.ts`) used purely to power a dev-only warning if more than one `<Sprite>` renders on the same page. It carries no icon identity - deliberately simpler than the per-icon dedup cache it replaced.
+## Sprite state file
 
-## Icon Inspector
-
-The Astro dev-toolbar app that lets you inspect icon usage on the currently loaded page. Toggling it on highlights every element carrying the [Icon marker](#icon-marker) (`[data-icon]`) and opens a list window of unique icons in use, grouped by `collection:name` with a usage count, with hover/click linking each list row to its on-page highlight(s). Ships via the [`icon()` integration](#icon-integration).
-
-## `icon()` integration
-
-A new, opt-in `AstroIntegration` export whose only responsibility, for now, is calling Astro's `addDevToolbarApp` during `astro:config:setup` to register the [Icon Inspector](#icon-inspector). Not a revival of the pre-content-layer-v2 `integrations: [icon()]` config pattern (still described in `packages/core/README.md` but no longer how icon sources are configured) - this integration carries no icon-source configuration of its own.
-
-## Source link
-
-An optional, best-effort link on each Icon Inspector list row pointing back to an icon's origin: an "open in editor" link (via Astro's `/__open-in-editor` mechanism) for icons from a local source, or an external link to `icon-sets.iconify.design/{collection}/{name}/` for icons from an Iconify source. Icons from any other/custom `IconSource` show no link - there's no generic way to resolve an arbitrary source's origin.
+`.astro/astro-icon-sprite.json` (`packages/core/src/content/sprite/state.ts`), written by `createIconLoader` after each sync, regardless of whether the `icon()` integration is installed - recording is unconditional; only *reading it back* (building the runtime manifest, emitting/serving assets) is the integration's job. Each collection's entry carries its sprite preference, a content-addressed hash, and where its rendered asset was staged to disk for the integration to pick up.
 
 ## Icon Source
 
@@ -106,4 +96,4 @@ Three caches existed; only two survived review, on the principle that a cache is
 
 ## Public/internal boundary
 
-Resolved structurally, not just by convention: `package.json`'s `exports` map has exactly five entries (`.`, `./components`, `./loaders`, `./loaders/live`, `./optimize`), each pointing at one specific file - never a wildcard into `src/content/`, `src/render/`, or `src/internal/`. Node throws `ERR_PACKAGE_PATH_NOT_EXPORTED` for anything else, so "not listed in `exports`" is an enforced boundary, not a documentation-only one. `./loaders` and `./loaders/live` are barrel files (`src/content/loaders.ts`, `src/content/live.ts`) that only re-export the intentionally public pieces (`iconifyLocalSource`, `iconifyApiSource`, `localSource`, `createIconLoader`, `createLiveIconLoader`, `mergeSources`, `AstroIconError`, `IconSource`, `parseIconSVG`) - everything else under `content/`/`render/`/`internal/` (`buildIcons`, `loadLocalPack`/`loadPackFromAPI`, typegen, sprite rewriting, a11y/render props, etc.) is invisible to consumers by never appearing in one of those five entries. `./optimize` (`src/optimize.ts`) is its own top-level module, not part of either bounded context - it transforms an already-built SVG string, independent of source/loader/render concerns. **Do not add a wildcard export into `content/`, `render/`, or `internal/`** - that would silently remove this enforcement.
+Resolved structurally, not just by convention: `package.json`'s `exports` map has exactly six entries (`.`, `./components`, `./integration`, `./loaders`, `./loaders/live`, `./optimize`), each pointing at one specific file - never a wildcard into `src/content/`, `src/render/`, or `src/internal/`. Node throws `ERR_PACKAGE_PATH_NOT_EXPORTED` for anything else, so "not listed in `exports`" is an enforced boundary, not a documentation-only one. `./loaders` and `./loaders/live` are barrel files (`src/content/loaders.ts`, `src/content/live.ts`) that only re-export the intentionally public pieces (`iconifyLocalSource`, `iconifyApiSource`, `localSource`, `createIconLoader`, `createLiveIconLoader`, `mergeSources`, `AstroIconError`, `IconSource`, `parseIconSVG`) - everything else under `content/`/`render/`/`internal/` (`buildIcons`, `loadLocalPack`/`loadPackFromAPI`, typegen, sprite state/asset/rewrite, a11y/render props, etc.) is invisible to consumers by never appearing in one of those six entries. `./integration` (`src/integration.ts`) exports only `icon()`, the sprite integration. `./optimize` (`src/optimize.ts`) is its own top-level module, not part of either bounded context - it transforms an already-built SVG string, independent of source/loader/render concerns. **Do not add a wildcard export into `content/`, `render/`, or `internal/`** - that would silently remove this enforcement.

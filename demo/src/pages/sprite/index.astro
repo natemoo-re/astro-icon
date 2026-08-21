@@ -1,35 +1,38 @@
 ---
 export const prerender = true;
 
-import { Icon, Sprite } from "astro-icon/components";
+import { Icon } from "astro-icon/components";
 import Base from "../../layouts/base.astro";
 ---
 
 <Base>
-  <h1>&lt;Sprite&gt; demo</h1>
+  <h1>Automatic sprite optimization demo</h1>
 
   <p>
-    Wrapping repeated <code>&lt;Icon&gt;</code> usages in a <code>&lt;Sprite&gt;</code>
-    dedupes them into one <code>&lt;symbol&gt;</code> per unique icon, referenced by
-    <code>&lt;use&gt;</code> everywhere else. View source to see it. Only works on
-    prerendered pages (this one sets <code>export const prerender = true</code>).
+    Repeated <code>&lt;Icon&gt;</code> uses are deduped into one <code>&lt;symbol&gt;</code>
+    per unique icon, referenced by <code>&lt;use&gt;</code> everywhere else - no wrapper
+    component. View source to see it. Install <code>icon()</code> from
+    <code>astro-icon/integration</code> to enable it; it's on by default per collection
+    once installed.
   </p>
 
   <article>
-    <h2>Inside a Sprite boundary</h2>
-    <Sprite>
-      <Icon size={32} name="ic:baseline-account-box" />
-      <Icon size={32} name="ic:baseline-account-box" />
-      <Icon size={32} name="ic:baseline-account-box" />
-      <Icon size={32} name="ic:outline-star" />
-      <Icon size={32} name="ic:outline-star" />
-    </Sprite>
+    <h2>Deduped automatically</h2>
+    <Icon size={32} name="ic:baseline-account-box" />
+    <Icon size={32} name="ic:baseline-account-box" />
+    <Icon size={32} name="ic:baseline-account-box" />
+    <Icon size={32} name="ic:outline-star" />
+    <Icon size={32} name="ic:outline-star" />
   </article>
 
   <article>
-    <h2>Outside any Sprite boundary</h2>
-    <p>Icons rendered outside a <code>&lt;Sprite&gt;</code> are never deduped.</p>
-    <Icon size={32} name="ic:baseline-account-box" />
+    <h2>Opted out with <code>inline</code></h2>
+    <p>
+      Pass <code>inline</code> to render the full body regardless - needed to style or
+      animate an icon's own internal markup, since CSS can't reach into a
+      <code>&lt;use&gt;</code>'s referenced content.
+    </p>
+    <Icon size={32} name="ic:baseline-account-box" inline />
   </article>
 
   <p><a href="/">&larr; Back home</a></p>

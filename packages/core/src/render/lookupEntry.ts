@@ -4,11 +4,10 @@ import type { IconEntry } from "../../typings/types";
 type IconDataEntry = Omit<DataEntry, "data"> & { data: IconEntry };
 
 /**
- * Shared by `<Icon>` and `<Sprite>` so both get the same "not found" behavior
- * instead of drifting independently. No caching of our own here, because
- * `getEntry` already reads from Astro's in-memory content store, so a second
- * cache on top of it would only add a Map and a key format for no
- * measurable win.
+ * Looks up one icon's content-collection entry via Astro's own `getEntry()`.
+ * No caching of our own here, because `getEntry` already reads from Astro's
+ * in-memory content store, so a second cache on top of it would only add a
+ * Map and a key format for no measurable win.
  *
  * Falls back to a case-insensitive scan of the collection via
  * `getCollection()` (still an in-memory read, no I/O) when the exact name
