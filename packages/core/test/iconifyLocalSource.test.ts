@@ -80,39 +80,39 @@ describe("iconifyLocalSource / not installed", () => {
   // and these still exercise the "genuinely not installed" path.
   const notInstalled = "definitely-not-a-real-iconify-pack-xyz";
 
-  it("throws from getIcon instead of falling back to the API", async () => {
-    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-    const source = iconifyLocalSource(notInstalled);
-
-    await expect(source.getIcon("search")).rejects.toThrow(
-      /isn't installed locally/i,
-    );
-  });
-
-  it("throws from listIcons instead of falling back to the API", async () => {
-    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-    const source = iconifyLocalSource(notInstalled);
-
-    await expect(source.listIcons?.()).rejects.toThrow(
-      /isn't installed locally/i,
-    );
-  });
-
   it("resolves undefined (never crashes) from getVersion for a pack that isn't installed", async () => {
     const source = iconifyLocalSource(notInstalled);
 
     await expect(source.getVersion?.()).resolves.toBeUndefined();
   });
+
+  // getIcon/listIcons no longer independently guard "pack isn't installed" - only
+  // checkPreconditions() does (see "iconifyLocalSource / checkPreconditions" below). Real usage
+  // through createIconLoader/createLiveIconLoader always calls checkPreconditions() first, so
+  // getIcon/listIcons trust it already ran; calling either directly, first, without it, is
+  // unsupported and surfaces whatever low-level error the missing data happens to cause instead
+  // of a descriptive AstroIconError.
+  it("doesn't produce a descriptive error from getIcon/listIcons on their own, without checkPreconditions() run first", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
+    const source = iconifyLocalSource(notInstalled);
+
+    await expect(source.getIcon("search")).rejects.not.toThrow(
+      /isn't installed locally/i,
+    );
+  });
 });
 
 describe("iconifyLocalSource / icons allowlist", () => {
-  it("rejects a name not in the allowlist without touching the pack", async () => {
+  // The pack load now starts eagerly at construction regardless of the allowlist (see "fails
+  // eagerly" below), so these no longer assert the pack is never touched - only that neither
+  // check *waits* on that load, by leaving it permanently unresolved.
+  it("rejects a name not in the allowlist without waiting on the pack load", async () => {
+    mockedLoadCollectionFromFS.mockReturnValueOnce(new Promise(() => {}));
     const source = iconifyLocalSource("mdi", { allowed: ["search"] });
 
     await expect(source.getIcon("menu")).rejects.toThrow(
       /isn't in the allowed/i,
     );
-    expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();
   });
 
   it("resolves an allowed name normally", async () => {
@@ -124,11 +124,43 @@ describe("iconifyLocalSource / icons allowlist", () => {
     });
   });
 
-  it("types exactly the given allowlist, without checking the pack", async () => {
-    const source = iconifyLocalSource("mdi", { allowed: ["search", "not-real"] });
+  it("types exactly the given allowlist, without waiting on the pack load", async () => {
+    mockedLoadCollectionFromFS.mockReturnValueOnce(new Promise(() => {}));
+    const source = iconifyLocalSource("mdi", {
+      allowed: ["search", "not-real"],
+    });
 
     await expect(source.listIcons?.()).resolves.toEqual(["search", "not-real"]);
-    expect(mockedLoadCollectionFromFS).not.toHaveBeenCalled();
+  });
+});
+
+describe("iconifyLocalSource / checkPreconditions", () => {
+  // Regression: before checkPreconditions() existed, a missing pack only ever surfaced from
+  // individual getIcon calls during a build - listIcons() returned an allowed allowlist without
+  // ever checking, and in non-strict mode (the default) each getIcon failure is just warned-and-
+  // skipped, burying "the whole pack is missing" as N separate per-icon warnings instead of one
+  // clear failure. createIconLoader/createLiveIconLoader both call checkPreconditions() before
+  // anything else specifically to catch this.
+  it("throws when the pack isn't installed, even with an allowlist set", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
+    // A pack name that doesn't exist anywhere on disk (unlike "mdi", genuinely installed for
+    // other tests in this suite) so the require.resolve fallback (#263) can't find it either -
+    // otherwise this would pass for the wrong reason even without the fix under test.
+    const source = iconifyLocalSource(
+      "definitely-not-a-real-iconify-pack-xyz",
+      { allowed: ["search"] },
+    );
+
+    await expect(source.checkPreconditions?.()).rejects.toThrow(
+      /isn't installed/i,
+    );
+  });
+
+  it("resolves once the pack load confirms the pack is installed", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+    const source = iconifyLocalSource("mdi");
+
+    await expect(source.checkPreconditions?.()).resolves.toBeUndefined();
   });
 });
 
@@ -138,6 +170,59 @@ describe("iconifyLocalSource / pack cache sharing", () => {
 
     await iconifyLocalSource("mdi").getIcon("search");
     await iconifyLocalSource("mdi").getIcon("menu");
+
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
+  });
+});
+
+describe("iconifyLocalSource / fails eagerly", () => {
+  it("starts resolving the local pack as soon as the source is constructed, not on first getIcon/listIcons", () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+
+    iconifyLocalSource("mdi");
+
+    // No getIcon()/listIcons() call above - the pack load already started regardless.
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
+  });
+});
+
+describe("iconifyLocalSource / resolveRoot", () => {
+  it("resolves the eager pack load against process.cwd() until resolveRoot anchors it elsewhere", () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+
+    iconifyLocalSource("mdi");
+
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledWith(
+      "mdi",
+      undefined,
+      undefined,
+      process.cwd(),
+    );
+  });
+
+  it("restarts the pack load against the anchored root when resolveRoot differs from process.cwd()", () => {
+    mockedLoadCollectionFromFS
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(pack);
+
+    const source = iconifyLocalSource("mdi");
+    source.resolveRoot?.(new URL("file:///some/other/project/"));
+
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledTimes(2);
+    expect(mockedLoadCollectionFromFS).toHaveBeenNthCalledWith(
+      2,
+      "mdi",
+      undefined,
+      undefined,
+      "/some/other/project",
+    );
+  });
+
+  it("doesn't restart the pack load when resolveRoot matches process.cwd()", () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+
+    const source = iconifyLocalSource("mdi");
+    source.resolveRoot?.(new URL(`file://${process.cwd()}/`));
 
     expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });

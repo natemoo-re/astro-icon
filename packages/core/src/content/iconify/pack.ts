@@ -11,7 +11,10 @@ export interface LoadPackFromAPIOptions {
 }
 
 export interface PackLoader {
-  loadLocalPack(pack: string): Promise<IconifyJSON | undefined>;
+  loadLocalPack(
+    pack: string,
+    cwd?: string,
+  ): Promise<IconifyJSON | undefined>;
   loadPackFromAPI(
     pack: string,
     icons: string[],
@@ -126,12 +129,26 @@ export function createPackLoader(): PackLoader {
      * package resolved through Yarn Berry's PnP `.pnp.cjs` hook (there's no `node_modules` to
      * walk at all). `require.resolve` does go through the real (CJS) loader, so it works under
      * PnP too. See https://github.com/natemoo-re/astro-icon/issues/263.
+     *
+     * `cwd` defaults to `process.cwd()` for a caller with no better root to give (matches this
+     * function's long-standing behavior); `iconifyLocalSource` passes its `resolveRoot`-anchored
+     * root once one is available. Included in the cache key so two different roots for the same
+     * pack name - a rare case, but possible across composed sources in one process - don't
+     * collide.
      */
-    loadLocalPack(pack: string): Promise<IconifyJSON | undefined> {
-      return cachedPackLoad(pack, async () => {
-        const viaFS = await loadCollectionFromFS(pack).catch(() => undefined);
+    loadLocalPack(
+      pack: string,
+      cwd: string = process.cwd(),
+    ): Promise<IconifyJSON | undefined> {
+      return cachedPackLoad(`${cwd}::${pack}`, async () => {
+        const viaFS = await loadCollectionFromFS(
+          pack,
+          undefined,
+          undefined,
+          cwd,
+        ).catch(() => undefined);
         if (viaFS) return viaFS;
-        return requireResolvePack(pack);
+        return requireResolvePack(pack, cwd);
       });
     },
 

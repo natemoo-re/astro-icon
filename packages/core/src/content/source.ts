@@ -49,4 +49,37 @@ export interface IconSource {
    * synchronous, already-cached, or otherwise uncontended work resolve any faster.
    */
   concurrency?: number;
+  /**
+   * Anchors this source to the project root, if it needs one. Called once, before any other
+   * method, whenever the loader using this source actually has a root to give it -
+   * `createIconLoader` always does (`config.root`); `createLiveIconLoader` only has a best-effort
+   * `process.cwd()`-based one, since `LiveLoader`'s own context exposes no project root.
+   *
+   * Exists because a source is normally built eagerly, in `content.config.ts`, before Astro's
+   * `config.root` is available at all - a source resolving a relative path (e.g. against a
+   * locally installed pack) implements this so it resolves against the project root once the
+   * loader can tell it one, instead of silently resolving against `process.cwd()` at each lookup
+   * (which is only sometimes the project root - `astro build --root <dir>` invoked from
+   * elsewhere is a common case where it isn't). A source already anchored to something specific
+   * has no reason to implement this.
+   */
+  resolveRoot?(root: URL): void;
+  /**
+   * Checks whether this source is actually usable at all - a missing local install, an
+   * unreachable API, a misconfigured credential - as a distinct concern from `listIcons`/
+   * `getIcon` themselves. Called once, after `resolveRoot` but before anything else,
+   * so a broken source fails clearly and immediately instead of silently surfacing later as a
+   * `listIcons`/per-icon `getIcon` failure (in non-strict mode, `getIcon` failures are warned
+   * and skipped one icon at a time, which buries a whole-source problem in noise rather than
+   * reporting it once, up front).
+   *
+   * When composed via `mergeSources`, a member's failed `checkPreconditions()` doesn't fail the
+   * whole composite by itself - only surfaced if every member that implements `checkPreconditions`
+   * fails theirs, matching `getIcon`'s own first-match-wins/no-source-worked contract, since the
+   * entire point of composing sources is tolerating one of them being unusable.
+   *
+   * Omit it if there's nothing meaningful to check before an icon is actually requested (most
+   * sources - `iconifyApiSource`, `localSource`).
+   */
+  checkPreconditions?(): Promise<void>;
 }
