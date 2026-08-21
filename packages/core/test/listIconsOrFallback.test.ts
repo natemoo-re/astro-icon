@@ -54,4 +54,48 @@ describe("listIconsOrFallback", () => {
       ),
     ).rejects.toBeInstanceOf(AstroIconError);
   });
+
+  it("calls checkPreconditions() before listIcons(), warning and falling back to [] when it throws", async () => {
+    const logger = { warn: vi.fn() };
+    const listIcons = vi.fn(async () => ["a"]);
+    const names = await listIconsOrFallback(
+      {
+        listIcons,
+        checkPreconditions: async () => {
+          throw new Error("not installed");
+        },
+      },
+      options({ logger }),
+    );
+    expect(names).toEqual([]);
+    expect(listIcons).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith("failed: not installed");
+  });
+
+  it("throws an AstroIconError when checkPreconditions() throws and strict is on, without calling listIcons()", async () => {
+    const listIcons = vi.fn(async () => ["a"]);
+    await expect(
+      listIconsOrFallback(
+        {
+          listIcons,
+          checkPreconditions: async () => {
+            throw new Error("not installed");
+          },
+        },
+        options({ strict: true }),
+      ),
+    ).rejects.toBeInstanceOf(AstroIconError);
+    expect(listIcons).not.toHaveBeenCalled();
+  });
+
+  it("calls listIcons() normally once checkPreconditions() succeeds", async () => {
+    const names = await listIconsOrFallback(
+      {
+        listIcons: async () => ["a", "b"],
+        checkPreconditions: async () => {},
+      },
+      options(),
+    );
+    expect(names).toEqual(["a", "b"]);
+  });
 });

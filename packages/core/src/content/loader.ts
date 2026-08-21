@@ -55,6 +55,10 @@ function syncIcons(
     const { store, meta, logger, parseData, generateDigest, collection } =
       context;
 
+    // Before anything else: a source built eagerly (in `content.config.ts`, before Astro's
+    // `config.root` exists) gets a chance to anchor itself now that a real one is available.
+    source.resolveRoot?.(context.config.root);
+
     const syncStart = performance.now();
 
     const listStart = syncStart;
@@ -62,7 +66,7 @@ function syncIcons(
       strict,
       logger,
       failureMessage: (detail) =>
-        `"${source.name}" failed to list its icons: ${detail}`,
+        `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`,
       hint: `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
     });
     const listDuration = performance.now() - listStart;

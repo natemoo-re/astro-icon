@@ -159,6 +159,61 @@ describe("createLiveIconLoader / loadCollection", () => {
   });
 });
 
+describe("createLiveIconLoader / resolveRoot + checkPreconditions", () => {
+  it("calls resolveRoot at construction with a process.cwd()-based root", () => {
+    const resolveRoot = vi.fn();
+    createLiveIconLoader({
+      name: "test",
+      getIcon: vi.fn(async () => entry),
+      resolveRoot,
+    });
+
+    expect(resolveRoot).toHaveBeenCalledWith(expect.any(URL));
+  });
+
+  it("warns via the console when checkPreconditions() rejects, without throwing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      createLiveIconLoader({
+        name: "broken",
+        getIcon: vi.fn(async () => entry),
+        checkPreconditions: async () => {
+          throw new Error("not installed");
+        },
+      });
+
+      await flush();
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('"broken" isn\'t usable: not installed'),
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("createLiveIconLoader / loadCollection duration logging", () => {
+  it("debug-logs loadCollection's duration on success", async () => {
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+    try {
+      const loader = createLiveIconLoader({
+        name: "test",
+        getIcon: vi.fn(async () => entry),
+        listIcons: async () => ["a"],
+      });
+
+      await loader.loadCollection({ collection: "icons" });
+
+      expect(debug).toHaveBeenCalledWith(
+        expect.stringMatching(/Loaded 1 icon\(s\) for "test"'s live collection in/),
+      );
+    } finally {
+      debug.mockRestore();
+    }
+  });
+});
+
 describe("createLiveIconLoader typegen", () => {
   beforeEach(() => {
     mockedRecordCollection.mockClear();
