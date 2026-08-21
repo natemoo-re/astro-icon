@@ -1,6 +1,7 @@
 import type { LiveLoader } from "astro/loaders";
 import { AstroIconError } from "../internal/error.js";
 import { buildIcons } from "./buildIcons.js";
+import { formatDuration } from "./duration.js";
 import { consoleLogger } from "./logger.js";
 import { mergeSources } from "./compositeSource.js";
 import { sanitizeRootAttrs, sanitizeSVGBody } from "./sanitizeSVG.js";
@@ -85,6 +86,7 @@ export function createLiveIconLoader(
           ),
         };
       }
+      const loadStart = performance.now();
       try {
         const names = await source.listIcons();
         const built = await buildIcons(
@@ -95,6 +97,12 @@ export function createLiveIconLoader(
               `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
             );
           },
+        );
+        // Debug-only, matching `createIconLoader`'s own build-duration log - no `LoaderContext`
+        // to log through here (`LiveLoader` gives `loadCollection` no arguments at all), so this
+        // falls back to `consoleLogger` the same way the warning above does.
+        consoleLogger.debug(
+          `Loaded ${built.length} icon(s) for "${source.name}"'s live collection in ${formatDuration(performance.now() - loadStart)}.`,
         );
         // `name` -> `id` only here, where astro-icon's own vocabulary crosses into `LiveLoader`'s.
         return { entries: built.map(({ name, data }) => ({ id: name, data })) };
