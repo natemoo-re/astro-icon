@@ -180,3 +180,45 @@ describe("iconifyLocalSource / fails eagerly", () => {
     vi.doUnmock("../src/content/iconify/pack.js");
   });
 });
+
+describe("iconifyLocalSource / resolveRoot", () => {
+  it("resolves the eager pack load against process.cwd() until resolveRoot anchors it elsewhere", () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+
+    iconifyLocalSource("mdi");
+
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledWith(
+      "mdi",
+      undefined,
+      undefined,
+      process.cwd(),
+    );
+  });
+
+  it("restarts the pack load against the anchored root when resolveRoot differs from process.cwd()", () => {
+    mockedLoadCollectionFromFS
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(pack);
+
+    const source = iconifyLocalSource("mdi");
+    source.resolveRoot?.(new URL("file:///some/other/project/"));
+
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledTimes(2);
+    expect(mockedLoadCollectionFromFS).toHaveBeenNthCalledWith(
+      2,
+      "mdi",
+      undefined,
+      undefined,
+      "/some/other/project",
+    );
+  });
+
+  it("doesn't restart the pack load when resolveRoot matches process.cwd()", () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+
+    const source = iconifyLocalSource("mdi");
+    source.resolveRoot?.(new URL(`file://${process.cwd()}/`));
+
+    expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
+  });
+});

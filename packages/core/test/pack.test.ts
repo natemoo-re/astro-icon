@@ -75,7 +75,10 @@ describe("loadLocalPack", () => {
       mockedRequireResolveFallback.mockResolvedValueOnce(search);
 
       await expect(loadLocalPack("mdi")).resolves.toBe(search);
-      expect(mockedRequireResolveFallback).toHaveBeenCalledWith("mdi");
+      expect(mockedRequireResolveFallback).toHaveBeenCalledWith(
+        "mdi",
+        process.cwd(),
+      );
     });
 
     it("doesn't fall back when loadCollectionFromFS already found the pack", async () => {

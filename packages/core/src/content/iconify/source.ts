@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
-import { createRequire } from "node:module";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
 import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
 import { loadLocalPack, loadPackFromAPI } from "./pack.js";
+import { resolveIconifyPackFile } from "./requireResolvePack.js";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
 import { parseIconSVG } from "../parseIconSVG.js";
@@ -19,12 +19,19 @@ import type {
 } from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
 
+/** Drops a trailing path separator (e.g. from `fileURLToPath` on a directory URL, which always ends in one) so it compares equal to a bare `process.cwd()`. */
+function stripTrailingSlash(path: string): string {
+  return path.length > 1 ? path.replace(/[\\/]+$/, "") : path;
+}
+
 /** The installed `@iconify-json/<pack>`'s npm version, or `undefined` if not locally installed; used as `IconSource.getVersion`'s freshness signal. */
-async function getPackVersion(pack: string): Promise<string | undefined> {
+async function getPackVersion(
+  pack: string,
+  cwd: string,
+): Promise<string | undefined> {
   try {
-    // cwd, not import.meta.resolve, to reach the consuming project's install in a pnpm workspace.
-    const require = createRequire(join(process.cwd(), "package.json"));
-    const pkgPath = require.resolve(`@iconify-json/${pack}/package.json`);
+    const pkgPath = resolveIconifyPackFile(pack, "package.json", cwd);
+    if (!pkgPath) return undefined;
     const raw = await readFile(pkgPath, "utf-8");
     const version: unknown = JSON.parse(raw)?.version;
     return version == null ? undefined : String(version);
@@ -49,11 +56,10 @@ const recordedPacks = new Set<string>();
  * touches the pack on its own. Fetching it here would break the documented
  * "an `allowed` allowlist alone never requires a local install" contract.
  */
-function recordPackCatalog(pack: string, data: IconifyJSON): void {
+function recordPackCatalog(pack: string, data: IconifyJSON, cwd: string): void {
   if (recordedPacks.has(pack)) return;
   recordedPacks.add(pack);
-  // No access to the project root the way a `LoaderContext` does; mirrors `createLiveIconLoader`'s own `process.cwd()` fallback.
-  const rootDir = new URL(`file://${process.cwd()}/`);
+  const rootDir = new URL(`file://${cwd}/`);
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }
 
@@ -116,17 +122,36 @@ export function iconifyLocalSource(
 
   // Started here, not inside getIcon/listIcons, so a missing pack fails the build as soon as
   // this source is constructed instead of only once the first icon is actually requested.
-  // `loadLocalPack` caches by `pack` (see `packCache` in pack.ts), so kicking it off eagerly
-  // costs nothing extra - getIcon/listIcons below await this exact same promise, they don't
-  // trigger a second load. A source that's constructed but never used (e.g. one branch of a
-  // conditional) would otherwise leave this rejection unhandled - the `.catch(() => {})` here is
-  // only to silence that warning at the process level; getIcon/listIcons still await
+  // `loadLocalPack` caches by `cwd`+`pack` (see `packCache` in pack.ts), so kicking it off
+  // eagerly costs nothing extra - getIcon/listIcons below await this exact same promise, they
+  // don't trigger a second load. A source that's constructed but never used (e.g. one branch of
+  // a conditional) would otherwise leave this rejection unhandled - the `.catch(() => {})` here
+  // is only to silence that warning at the process level; getIcon/listIcons still await
   // `packPromise` itself and see the real rejection/undefined result.
-  const packPromise = loadLocalPack(pack);
+  //
+  // `cwd` starts as `process.cwd()`, the only root available until (if ever) `resolveRoot`
+  // anchors this source to the real project root - see `IconSource.resolveRoot`'s doc comment
+  // for why the two can differ (e.g. `astro build --root <dir>` invoked from elsewhere). Started
+  // eagerly against that guess anyway so a source used directly, outside `createIconLoader`/
+  // `createLiveIconLoader` (where `resolveRoot` never fires), still fails at construction rather
+  // than never checking at all.
+  let cwd = process.cwd();
+  let packPromise = loadLocalPack(pack, cwd);
   packPromise.catch(() => {});
 
   return {
     name: `iconify-local:${pack}`,
+    // Both bundled loaders call this before any other method, so a `--root`-launched build still
+    // resolves against the accurate project root. Only restarts the load if the root actually
+    // differs from the `process.cwd()` guess above, so the common case (the two already match)
+    // pays nothing extra.
+    resolveRoot(root) {
+      const resolved = stripTrailingSlash(fileURLToPath(root));
+      if (resolved === cwd) return;
+      cwd = resolved;
+      packPromise = loadLocalPack(pack, cwd);
+      packPromise.catch(() => {});
+    },
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
         throw new AstroIconError(
@@ -141,7 +166,7 @@ export function iconifyLocalSource(
           `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
         );
       }
-      recordPackCatalog(pack, data);
+      recordPackCatalog(pack, data, cwd);
       const entry = await buildIconEntry(data, name, {
         collection: pack,
         optimize,
@@ -167,11 +192,11 @@ export function iconifyLocalSource(
           `Install "@iconify-json/${pack}", or restrict it with an explicit \`allowed: [...]\` list.`,
         );
       }
-      recordPackCatalog(pack, data);
+      recordPackCatalog(pack, data, cwd);
       return localPackIconNames(data);
     },
     getVersion() {
-      return getPackVersion(pack);
+      return getPackVersion(pack, cwd);
     },
   };
 }
