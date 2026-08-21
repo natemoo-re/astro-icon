@@ -122,7 +122,10 @@ describe("parseIconSVG", () => {
     // An Iconify-shaped body paints entirely through its own children; wrapping it in a
     // <g> that carries nothing would add bytes to every icon for no behavioral gain.
     const body = `<path d="M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/>`;
-    const entry = await parseIconSVG(`<svg viewBox="0 0 24 24">${body}</svg>`, context);
+    const entry = await parseIconSVG(
+      `<svg viewBox="0 0 24 24">${body}</svg>`,
+      context,
+    );
 
     expect(entry.body).toBe(body);
   });
@@ -135,7 +138,9 @@ describe("parseIconSVG", () => {
       context,
     );
 
-    expect(entry.body).toBe(`<g fill="none" stroke="red"><path d="M0 0h24" /></g>`);
+    expect(entry.body).toBe(
+      `<g fill="none" stroke="red"><path d="M0 0h24" /></g>`,
+    );
   });
 
   it("lets a child's own attribute win over the carried root value", async () => {
@@ -146,7 +151,9 @@ describe("parseIconSVG", () => {
       context,
     );
 
-    expect(entry.body).toBe(`<g fill="none"><path fill="red" d="M0 0h24" /></g>`);
+    expect(entry.body).toBe(
+      `<g fill="none"><path fill="red" d="M0 0h24" /></g>`,
+    );
   });
 
   it("reads single-quoted root attributes", async () => {
@@ -155,7 +162,9 @@ describe("parseIconSVG", () => {
       context,
     );
 
-    expect(entry.body).toBe(`<g stroke="currentColor"><path d="M0 0h24" /></g>`);
+    expect(entry.body).toBe(
+      `<g stroke="currentColor"><path d="M0 0h24" /></g>`,
+    );
   });
 
   it("leaves an empty body alone", async () => {
