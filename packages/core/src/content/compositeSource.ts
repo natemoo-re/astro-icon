@@ -1,4 +1,6 @@
+import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../internal/error.js";
+import { consoleLogger } from "./logger.js";
 import type { IconSource, IconSourceWatcher } from "./source.js";
 
 /**
@@ -9,9 +11,24 @@ import type { IconSource, IconSourceWatcher } from "./source.js";
  */
 export type CompositeSource = IconSource;
 
-/** Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per icon (first match wins). */
+/** Unwraps a caught value's message, the same way for both the fallback debug log and the final aggregate error below, so the two can't drift out of sync. */
+function failureDetail(ex: unknown): string {
+  return ex instanceof Error ? ex.message : String(ex);
+}
+
+/**
+ * Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per
+ * icon (first match wins).
+ *
+ * `logger` has no bearing on `getIcon`'s own success/failure - it only receives a debug line each
+ * time one member fails and execution falls through to the next. Defaults to `consoleLogger`,
+ * like `iconifyLocalSource`/`iconifyApiSource`, since `mergeSources` is normally called while
+ * building `content.config.ts`'s collections - before Astro hands a loader its own
+ * `AstroIntegrationLogger` - so there's no real logger in scope at the call site to pass in.
+ */
 export function mergeSources(
   sources: IconSource | IconSource[],
+  logger: Pick<AstroIntegrationLogger, "debug"> = consoleLogger,
 ): CompositeSource {
   if (!Array.isArray(sources)) return sources;
   if (sources.length === 1) return sources[0];
@@ -22,14 +39,19 @@ export function mergeSources(
     name,
     async getIcon(iconName) {
       const failures: string[] = [];
-      for (const source of sources) {
+      for (const [index, source] of sources.entries()) {
         try {
           return await source.getIcon(iconName);
         } catch (ex) {
-          // Try the next source; only fail if none of them have it.
-          failures.push(
-            `${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`,
-          );
+          const detail = failureDetail(ex);
+          failures.push(`${source.name}: ${detail}`);
+          // Only worth a log when there's actually another source left to try - the last
+          // failure is already reflected in the aggregate error thrown below.
+          if (index < sources.length - 1) {
+            logger.debug(
+              `"${source.name}" failed to resolve "${iconName}" (${detail}), falling back to the next source in "${name}".`,
+            );
+          }
         }
       }
       throw new AstroIconError(

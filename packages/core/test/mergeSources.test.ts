@@ -74,6 +74,47 @@ describe("mergeSources / multiple sources / getIcon", () => {
   });
 });
 
+describe("mergeSources / multiple sources / per-source fallback logging", () => {
+  it("debug-logs a per-source failure when falling back to the next source, on an eventual success", async () => {
+    const mdi = fakeSource("mdi", {});
+    const ic = fakeSource("ic", { star: entryFor("ic-star") });
+    const debug = vi.fn();
+    const merged = mergeSources([mdi, ic], { debug });
+
+    await expect(merged.getIcon("star")).resolves.toEqual(entryFor("ic-star"));
+
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /"mdi" failed to resolve "star" \(.*\), falling back to the next source in "mdi\+ic"/,
+      ),
+    );
+  });
+
+  it("doesn't log the last source's failure - it's already in the thrown aggregate error", async () => {
+    const mdi = fakeSource("mdi", {});
+    const ic = fakeSource("ic", {});
+    const debug = vi.fn();
+    const merged = mergeSources([mdi, ic], { debug });
+
+    await expect(merged.getIcon("missing")).rejects.toThrow();
+
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining('"mdi" failed'));
+  });
+
+  it("doesn't log anything when the first source resolves the icon directly", async () => {
+    const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
+    const ic = fakeSource("ic", {});
+    const debug = vi.fn();
+    const merged = mergeSources([mdi, ic], { debug });
+
+    await merged.getIcon("home");
+
+    expect(debug).not.toHaveBeenCalled();
+  });
+});
+
 describe("mergeSources / multiple sources / listIcons", () => {
   it("merges and dedupes names, first-source order wins", async () => {
     const first = fakeSource("first", { home: entryFor("a") });
