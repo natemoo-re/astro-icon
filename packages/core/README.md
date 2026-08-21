@@ -10,7 +10,7 @@ astro-icon reads icons through Astro's [content layer](https://docs.astro.build/
 - [Styling icons](#styling-icons)
 - [Local icons](#local-icons)
 - [Iconify icons](#iconify-icons)
-- [Deduping repeated icons with `<Sprite>`](#deduping-repeated-icons-with-sprite)
+- [Automatic sprite optimization](#automatic-sprite-optimization)
 - [Resolving icons per request with `<LiveIcon>`](#resolving-icons-per-request-with-liveicon)
 - [Bringing your own icon source](#bringing-your-own-icon-source)
 - [Shipping icons from a library](#shipping-icons-from-a-library)
@@ -349,7 +349,7 @@ optimize: svgo({
 });
 ```
 
-`optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once outside `<Sprite>` (see [below](#deduping-repeated-icons-with-sprite)) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+`optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once without sprite optimization (see [below](#automatic-sprite-optimization)) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts
 import { svgo, defaultOverrides } from "astro-icon/optimize";
@@ -394,25 +394,35 @@ export const collections = {
 
 Like a local collection, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of how long listing icons took versus resolving/building them, so you can tell a slow local pack lookup apart from a slow Iconify API fallback, plus whether a pack resolved locally or from the API.
 
-## Deduping repeated icons with `<Sprite>`
+## Automatic sprite optimization
 
-`<Icon>` always renders a standalone `<svg>`, with no deduping between repeated uses. If you render the same icon many times on a page, wrap those uses in `<Sprite>` to dedupe them into one `<symbol>` and many `<use>` elements:
+Repeated `<Icon>` uses are deduped into a sprite automatically - no wrapper component, no extra markup. Install the integration:
 
-```astro
----
-import { Icon, Sprite } from "astro-icon/components";
----
+```js
+// astro.config.mjs
+import { defineConfig } from "astro/config";
+import { icon } from "astro-icon/integration";
 
-<Sprite>
-  <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-</Sprite>
+export default defineConfig({
+  integrations: [icon()],
+});
 ```
 
-`<Sprite>` only affects `<Icon>` uses nested inside it. Anything outside a `<Sprite>` renders as before. Use one `<Sprite>` per page; a dev-only warning fires if a second one renders, since each dedupes independently and won't share `<symbol>`s with another.
+Once installed, any collection with `sprite` left at its default (`true`) is optimized: on a prerendered page, an icon repeated 2+ times collapses into one `<symbol>` and several `<use>` elements (a single occurrence stays a plain inline `<svg>` - nothing to gain from deduping it); on a server-rendered route, `<Icon>` references a shared sprite asset instead.
 
-`<Sprite>` requires a prerendered page (`export const prerender = true;`, or a project with `output: "static"`). It has to buffer and rewrite its slot's full HTML, which would otherwise break streaming on a server-rendered route.
+Opt out per usage when you need to style or animate an icon's internal markup - CSS can't reach into a `<use>`'s referenced content:
+
+```astro
+<Icon name="mdi:star" inline />
+```
+
+Or opt out an entire collection, on either `createIconLoader` or `localIcons()`:
+
+```ts
+icons: defineCollection({ loader: createIconLoader(source, { sprite: false }) }),
+```
+
+Without the integration installed, every `<Icon>` renders exactly as it always has - a plain, standalone `<svg>`.
 
 ## Resolving icons per request with `<LiveIcon>`
 
