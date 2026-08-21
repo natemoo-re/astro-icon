@@ -41,23 +41,25 @@ async function getPackVersion(
 }
 
 /**
- * Awaits `iconifyLocalSource`'s eagerly-started pack load, throwing a descriptive
- * `AstroIconError` (`hint` tailored to the caller - `getIcon` vs `listIcons` want a different
- * next step) instead of resolving `undefined` if the pack turned out not to be installed.
- * Centralizing the check here, rather than each caller re-checking `!data` itself, is what makes
- * the eager load in `iconifyLocalSource` actually eager where it counts: every path that reads
- * pack data goes through this same rejection instead of only the ones that happen to check it.
+ * Wraps `loadLocalPack`'s raw result with the "pack must actually be installed" check -
+ * resolving the loaded pack, or rejecting with a descriptive `AstroIconError` if it's missing.
+ * The one place this check exists: `iconifyLocalSource`'s `checkPreconditions()`,
+ * `getIcon`, and `listIcons` all just await the same wrapped promise instead of separately
+ * re-checking `!data` themselves.
  */
-async function requirePackInstalled(
+function ensurePackInstalled(
   pack: string,
-  packPromise: Promise<IconifyJSON | undefined>,
-  hint: string,
+  raw: Promise<IconifyJSON | undefined>,
 ): Promise<IconifyJSON> {
-  const data = await packPromise;
-  if (!data) {
-    throw new AstroIconError(`"${pack}" isn't installed locally.`, hint);
-  }
-  return data;
+  return raw.then((data) => {
+    if (!data) {
+      throw new AstroIconError(
+        `"${pack}" isn't installed locally.`,
+        `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead. If you only need a few icons, restrict this source with an explicit \`allowed: [...]\` list instead of installing the whole pack.`,
+      );
+    }
+    return data;
+  });
 }
 
 /** Every icon name (including aliases) in a loaded local pack. */
@@ -140,14 +142,14 @@ export function iconifyLocalSource(
     logger,
   );
 
-  // Started here, not inside getIcon/listIcons, so a missing pack fails the build as soon as
-  // this source is constructed instead of only once the first icon is actually requested.
-  // `loadLocalPack` caches by `cwd`+`pack` (see `packCache` in pack.ts), so kicking it off
-  // eagerly costs nothing extra - getIcon/listIcons below await this exact same promise, they
-  // don't trigger a second load. A source that's constructed but never used (e.g. one branch of
-  // a conditional) would otherwise leave this rejection unhandled - the `.catch(() => {})` here
-  // is only to silence that warning at the process level; getIcon/listIcons still await
-  // `packPromise` itself and see the real rejection/undefined result.
+  // Started here, not inside getIcon/listIcons/checkPreconditions, so a missing pack fails the
+  // build as soon as this source is constructed instead of only once the first icon is actually
+  // requested. `loadLocalPack` caches by `cwd`+`pack` (see `packCache` in pack.ts), so kicking it
+  // off eagerly costs nothing extra - everything below awaits this exact same promise, nothing
+  // triggers a second load. A source that's constructed but never used (e.g. one branch of a
+  // conditional) would otherwise leave this rejection unhandled - the `.catch(() => {})` here is
+  // only to silence that warning at the process level; real consumers still await `packPromise`
+  // itself and see the real rejection.
   //
   // `cwd` starts as `process.cwd()`, the only root available until (if ever) `resolveRoot`
   // anchors this source to the real project root - see `IconSource.resolveRoot`'s doc comment
@@ -156,7 +158,7 @@ export function iconifyLocalSource(
   // `createLiveIconLoader` (where `resolveRoot` never fires), still fails at construction rather
   // than never checking at all.
   let cwd = process.cwd();
-  let packPromise = loadLocalPack(pack, cwd);
+  let packPromise = ensurePackInstalled(pack, loadLocalPack(pack, cwd));
   packPromise.catch(() => {});
 
   return {
@@ -169,19 +171,18 @@ export function iconifyLocalSource(
       const resolved = stripTrailingSlash(fileURLToPath(root));
       if (resolved === cwd) return;
       cwd = resolved;
-      packPromise = loadLocalPack(pack, cwd);
+      packPromise = ensurePackInstalled(pack, loadLocalPack(pack, cwd));
       packPromise.catch(() => {});
     },
     // The eager pack load's actual "fail loudly, up front" payoff: called once by both bundled
     // loaders before listIcons/getIcon are ever touched, so a missing pack is one clear failure
     // instead of an `allowed` allowlist masking it in listIcons, surfacing only later as N
-    // separate non-strict getIcon warnings once each icon is individually built.
-    async validate() {
-      await requirePackInstalled(
-        pack,
-        packPromise,
-        `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
-      );
+    // separate non-strict getIcon warnings once each icon is individually built. `getIcon`/
+    // `listIcons` below don't re-check this themselves - `packPromise` already carries the
+    // "installed or a descriptive rejection" guarantee `ensurePackInstalled` built in, so they
+    // just await the same promise and trust it.
+    async checkPreconditions() {
+      await packPromise;
     },
     async getIcon(name) {
       if (allowed && !allowed.has(name)) {
@@ -190,11 +191,7 @@ export function iconifyLocalSource(
           `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow the whole pack.`,
         );
       }
-      const data = await requirePackInstalled(
-        pack,
-        packPromise,
-        `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead.`,
-      );
+      const data = await packPromise;
       recordPackCatalog(pack, data, cwd);
       const entry = await buildIconEntry(data, name, {
         collection: pack,
@@ -211,16 +208,12 @@ export function iconifyLocalSource(
       return entry;
     },
     async listIcons() {
-      // Not verified against the pack upfront - `validate()` above owns "is this source usable
-      // at all" as its own concern, called by both bundled loaders before this. `allowed` is a
-      // Set, so this also dedupes the option.
+      // Not verified against the pack upfront - `checkPreconditions()` above owns "is this
+      // source usable at all" as its own concern, called by both bundled loaders before this.
+      // `allowed` is a Set, so this also dedupes the option.
       if (allowed) return [...allowed];
 
-      const data = await requirePackInstalled(
-        pack,
-        packPromise,
-        `Install "@iconify-json/${pack}", or restrict it with an explicit \`allowed: [...]\` list.`,
-      );
+      const data = await packPromise;
       recordPackCatalog(pack, data, cwd);
       return localPackIconNames(data);
     },

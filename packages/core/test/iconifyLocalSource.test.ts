@@ -137,12 +137,12 @@ describe("iconifyLocalSource / icons allowlist", () => {
   });
 });
 
-describe("iconifyLocalSource / validate", () => {
-  // Regression: before `validate()` existed, a missing pack only ever surfaced from individual
+describe("iconifyLocalSource / checkPreconditions", () => {
+  // Regression: before `checkPreconditions()` existed, a missing pack only ever surfaced from individual
   // `getIcon` calls during a build - `listIcons()` returned an `allowed` allowlist without ever
   // checking, and in non-strict mode (the default) each getIcon failure is just warned-and-
   // skipped, burying "the whole pack is missing" as N separate per-icon warnings instead of one
-  // clear failure. `createIconLoader`/`createLiveIconLoader` both call `validate()` before
+  // clear failure. `createIconLoader`/`createLiveIconLoader` both call `checkPreconditions()` before
   // anything else specifically to catch this.
   it("throws when the pack isn't installed, even with an allowlist set", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
@@ -153,14 +153,14 @@ describe("iconifyLocalSource / validate", () => {
       allowed: ["search"],
     });
 
-    await expect(source.validate?.()).rejects.toThrow(/isn't installed/i);
+    await expect(source.checkPreconditions?.()).rejects.toThrow(/isn't installed/i);
   });
 
   it("resolves once the pack load confirms the pack is installed", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
-    await expect(source.validate?.()).resolves.toBeUndefined();
+    await expect(source.checkPreconditions?.()).resolves.toBeUndefined();
   });
 });
 

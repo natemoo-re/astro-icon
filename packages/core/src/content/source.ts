@@ -106,13 +106,13 @@ export interface IconSource {
    * and skipped one icon at a time, which buries a whole-source problem in noise rather than
    * reporting it once, up front).
    *
-   * When composed via `mergeSources`, a member's failed `validate()` doesn't fail the whole
-   * composite by itself - only surfaced if every member that implements `validate` fails theirs,
+   * When composed via `mergeSources`, a member's failed `checkPreconditions()` doesn't fail the whole
+   * composite by itself - only surfaced if every member that implements `checkPreconditions` fails theirs,
    * matching `getIcon`'s own first-match-wins/no-source-worked contract, since the entire point
    * of composing sources is tolerating one of them being unusable.
    *
    * Omit it if there's nothing meaningful to check before an icon is actually requested (most
    * sources - `iconifyApiSource`, `localSource`).
    */
-  validate?(): Promise<void>;
+  checkPreconditions?(): Promise<void>;
 }

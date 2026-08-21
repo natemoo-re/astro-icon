@@ -95,15 +95,15 @@ export function mergeSources(
         member.resolveRoot?.(root);
       }
     },
-    async validate() {
+    async checkPreconditions() {
       const failures: string[] = [];
       for (const source of sources) {
         // No precondition to check for this member at all - same as one succeeding, since
         // there's nothing wrong to report. Matches getIcon's first-match-wins tolerance: the
         // whole point of composing sources is that one of them being unusable isn't fatal.
-        if (!source.validate) return;
+        if (!source.checkPreconditions) return;
         try {
-          await source.validate();
+          await source.checkPreconditions();
           return;
         } catch (ex) {
           failures.push(`${source.name}: ${failureDetail(ex)}`);

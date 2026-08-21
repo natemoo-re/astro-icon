@@ -55,13 +55,13 @@ describe("listIconsOrFallback", () => {
     ).rejects.toBeInstanceOf(AstroIconError);
   });
 
-  it("calls validate() before listIcons(), warning and falling back to [] when it throws", async () => {
+  it("calls checkPreconditions() before listIcons(), warning and falling back to [] when it throws", async () => {
     const logger = { warn: vi.fn() };
     const listIcons = vi.fn(async () => ["a"]);
     const names = await listIconsOrFallback(
       {
         listIcons,
-        validate: async () => {
+        checkPreconditions: async () => {
           throw new Error("not installed");
         },
       },
@@ -72,13 +72,13 @@ describe("listIconsOrFallback", () => {
     expect(logger.warn).toHaveBeenCalledWith("failed: not installed");
   });
 
-  it("throws an AstroIconError when validate() throws and strict is on, without calling listIcons()", async () => {
+  it("throws an AstroIconError when checkPreconditions() throws and strict is on, without calling listIcons()", async () => {
     const listIcons = vi.fn(async () => ["a"]);
     await expect(
       listIconsOrFallback(
         {
           listIcons,
-          validate: async () => {
+          checkPreconditions: async () => {
             throw new Error("not installed");
           },
         },
@@ -88,11 +88,11 @@ describe("listIconsOrFallback", () => {
     expect(listIcons).not.toHaveBeenCalled();
   });
 
-  it("calls listIcons() normally once validate() succeeds", async () => {
+  it("calls listIcons() normally once checkPreconditions() succeeds", async () => {
     const names = await listIconsOrFallback(
       {
         listIcons: async () => ["a", "b"],
-        validate: async () => {},
+        checkPreconditions: async () => {},
       },
       options(),
     );
