@@ -1,4 +1,6 @@
 ---
+import { replaceIDs } from "@iconify/utils";
+
 /**
  * The `<svg>` markup shared by `<Icon>`/`<LiveIcon>` once each has already resolved its entry and
  * computed `normalizedProps`/a11y ids via `renderableIconProps`/`iconA11yProps` - the only parts
@@ -11,6 +13,7 @@ export interface Props {
   titleText?: string;
   descId?: string;
   descText?: string;
+  /** The resolved entry's raw body - `replaceIDs` runs here, not by the caller. */
   body: string;
   /** The `data-icon` marker's value - see CONTEXT.md's "Icon marker". */
   dataIcon: string;
@@ -28,10 +31,12 @@ const {
   dataIcon,
   dataIconLive,
 } = Astro.props;
+
+const renderedBody = replaceIDs(body);
 ---
 
 <svg {...normalizedProps} data-icon={dataIcon} data-icon-live={dataIconLive}>
   {titleId && <title id={titleId}>{titleText}</title>}
   {descId && <desc id={descId}>{descText}</desc>}
-  <Fragment set:html={body} />
+  <Fragment set:html={renderedBody} />
 </svg>

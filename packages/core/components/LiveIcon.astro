@@ -1,5 +1,4 @@
 ---
-import { replaceIDs } from "@iconify/utils";
 import { getLiveEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
 import { AstroIconError } from "../src/internal/error.js";
@@ -90,7 +89,6 @@ if (error || !entry) {
 }
 
 const data = entry.data as IconEntry;
-const body = replaceIDs(data.body);
 const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
   title,
   desc,
@@ -108,7 +106,7 @@ const { normalizedProps } = renderableIconProps(data, {
   titleText={titleText}
   descId={descId}
   descText={descText}
-  body={body}
+  body={data.body}
   dataIcon={`${collection}:${icon}`}
   dataIconLive
 />

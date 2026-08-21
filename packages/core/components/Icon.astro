@@ -1,5 +1,4 @@
 ---
-import { replaceIDs } from "@iconify/utils";
 import type { HTMLAttributes } from "astro/types";
 import { renderTimeError } from "../src/render/error.js";
 import IconMarkup from "../src/render/IconMarkup.astro";
@@ -79,7 +78,6 @@ if (!entry) {
   );
 }
 
-const body = replaceIDs(entry.data.body);
 const { a11yProps, titleId, descId, titleText, descText } = iconA11yProps(
   title,
   desc,
@@ -97,6 +95,6 @@ const { normalizedProps } = renderableIconProps(entry.data, {
   titleText={titleText}
   descId={descId}
   descText={descText}
-  body={body}
+  body={entry.data.body}
   dataIcon={name}
 />
