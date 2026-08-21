@@ -10,7 +10,7 @@ export interface ParseIconSVGOptions {
   optimize?: OptimizeFn;
   strict?: boolean;
   logger: Pick<AstroIntegrationLogger, "warn">;
-  /** Fallback intrinsic size to use if optimization strips the viewBox and none can be recovered from the SVG's own attributes. Defaults to 24x24. */
+  /** Fallback intrinsic size to use if there's no usable viewBox and none can be recovered from the SVG's own attributes. Defaults to 24x24. */
   fallbackSize?: { width: number; height: number };
 }
 
@@ -41,8 +41,8 @@ export async function parseIconSVG(
 
   if (!hasSvgElement(svg)) {
     throw new AstroIconError(
-      `"${collection}:${name}" has no <svg> element after optimization.`,
-      `The SVG returned from "optimize" doesn't contain an <svg>...</svg> element. Check that "optimize" returns the whole SVG markup, not just its inner content.`,
+      `"${collection}:${name}" has no <svg> element.`,
+      `This icon's SVG markup doesn't contain an <svg>...</svg> element. Check the source data (or your "optimize" function, if set) returns the whole markup, not just its inner content.`,
     );
   }
 
@@ -61,12 +61,12 @@ export async function parseIconSVG(
     const problem = viewBox ? `an invalid viewBox ("${viewBox}")` : "no viewBox";
     if (strict) {
       throw new AstroIconError(
-        `"${collection}:${name}" has ${problem} after optimization.`,
-        `The SVG returned from "optimize" ${viewBox ? "has a viewBox that doesn't resolve to four numbers" : "is missing a viewBox attribute"}. Fix it in your "optimize" function, or disable "strict" to fall back to a derived viewBox ("${derived}") instead of failing the build.`,
+        `"${collection}:${name}" has ${problem}.`,
+        `This icon's SVG markup ${viewBox ? "has a viewBox that doesn't resolve to four numbers" : "is missing a viewBox attribute"}. Check the source data (or your "optimize" function, if set), or disable "strict" to fall back to a derived viewBox ("${derived}") instead of failing the build.`,
       );
     }
     logger.warn(
-      `"${collection}:${name}" has ${problem} after optimization, falling back to a derived viewBox ("${derived}"). Preserve a valid viewBox in your "optimize" function to avoid this.`,
+      `"${collection}:${name}" has ${problem}, falling back to a derived viewBox ("${derived}"). Check the source data (or your "optimize" function, if set) to avoid this.`,
     );
     viewBox = derived;
     // `deriveViewBox` always builds its result from numeric width/height (a regex-matched
