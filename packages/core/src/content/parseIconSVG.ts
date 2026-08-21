@@ -112,6 +112,95 @@ interface ParsedSVG {
   viewBox?: string;
 }
 
+const ATTR_RE = /([a-zA-Z_:][-\w:.]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+
+// Presentation attributes are inherited by the root `<svg>`'s children, so dropping
+// them silently changes how an icon paints. Heroicons, Feather, and Lucide glyphs all
+// declare `fill="none" stroke="currentColor"` there and nowhere else; without them the
+// body falls back to SVG's defaults (`fill: black; stroke: none`) and renders as a solid
+// shape that can no longer respond to CSS `color`.
+//
+// Deliberately an allowlist rather than "everything except viewBox": `class` would leak
+// an author's sizing utilities (`h-6 w-6` on a Heroicons glyph) onto the body, and
+// `width`/`height`/`xmlns`/`id` describe the element being replaced, not how it paints.
+const CARRIED_PRESENTATION_ATTRS = new Set([
+  "color",
+  "fill",
+  "fill-opacity",
+  "fill-rule",
+  "clip-rule",
+  "stroke",
+  "stroke-width",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "stroke-miterlimit",
+  "stroke-dasharray",
+  "stroke-dashoffset",
+  "stroke-opacity",
+  "paint-order",
+  "opacity",
+  "shape-rendering",
+  "font-family",
+  "font-size",
+  "font-style",
+  "font-weight",
+  "letter-spacing",
+  "text-anchor",
+  "dominant-baseline",
+]);
+
+/**
+ * Re-homes the root `<svg>`'s presentation attributes onto a wrapping `<g>` so they
+ * survive into `body`, which is all any consumer of an {@link IconEntry} ever sees -
+ * both the inline `<svg>` `<Icon>` renders and the `<symbol>` a sprite is built from.
+ *
+ * A wrapper rather than hoisting onto each child: inheritance means a child's own
+ * `fill`/`stroke` still wins over the group's, exactly as it did under the original root.
+ */
+function carryRootPresentation(body: string, attrs: string): string {
+  if (!body) return body;
+
+  const carried: string[] = [];
+  for (const match of attrs.matchAll(ATTR_RE)) {
+    const name = match[1];
+    if (!CARRIED_PRESENTATION_ATTRS.has(name.toLowerCase())) continue;
+    const value = (match[2] ?? match[3] ?? "").replaceAll('"', "&quot;");
+    carried.push(`${name}="${value}"`);
+  }
+
+  // Nothing to carry (an Iconify body, or an icon that paints entirely through its own
+  // children) - left byte-identical rather than wrapped in a `<g>` that would do nothing.
+  if (carried.length === 0) return body;
+
+  // `<title>`/`<desc>` describe the icon rather than painting it, and the sprite rewrite
+  // treats them as per-instance - it separates them from the body so each `<use>` keeps
+  // its own accessible text instead of inheriting the shared `<symbol>`'s. Wrapping them
+  // in the `<g>` would hide them below a child boundary that rewrite doesn't look past,
+  // silently folding them into the symbol. Hoisted here so they stay top-level children.
+  const { hoisted, rest } = splitLeadingTitleDesc(body);
+  return `${hoisted}<g ${carried.join(" ")}>${rest}</g>`;
+}
+
+const LEADING_TITLE_DESC_RE = /^\s*<(title|desc)\b[^>]*>[\s\S]*?<\/\1>/i;
+
+/** Peels `<title>`/`<desc>` off the front of a body, the position the SVG spec wants them in for accessibility. */
+function splitLeadingTitleDesc(body: string): {
+  hoisted: string;
+  rest: string;
+} {
+  let hoisted = "";
+  let rest = body;
+
+  let match = rest.match(LEADING_TITLE_DESC_RE);
+  while (match) {
+    hoisted += match[0].trim();
+    rest = rest.slice(match[0].length);
+    match = rest.match(LEADING_TITLE_DESC_RE);
+  }
+
+  return { hoisted, rest: rest.trim() };
+}
+
 /** Minimal SVG parser: extracts the outer `<svg>` attributes and inner markup. Not a full XML parser. */
 function parseSVG(svg: string): ParsedSVG {
   const openTagMatch = svg.match(/<svg\b([^>]*)>/i);
@@ -121,5 +210,5 @@ function parseSVG(svg: string): ParsedSVG {
 
   const viewBox = attrs.match(/viewBox=["']([^"']+)["']/i)?.[1];
 
-  return { body, viewBox };
+  return { body: carryRootPresentation(body, attrs), viewBox };
 }
