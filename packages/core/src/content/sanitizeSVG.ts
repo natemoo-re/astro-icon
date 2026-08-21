@@ -88,3 +88,35 @@ export function sanitizeSVGBody(body: string): string {
     .replace(/^<svg>/, "")
     .replace(/<\/svg>$/, "");
 }
+
+/**
+ * Strips the same active content `sanitizeSVGBody` strips from the body - `on*` event handler
+ * attributes and `javascript:`/`vbscript:`/`data:text/html` URIs in `href`/`xlink:href`/`src` -
+ * from an `IconEntry`'s root `<svg>` attributes (e.g. `fill`/`stroke`/`class`/`style`, see
+ * `extractRootAttrs`). A non-string value (`width`/`height`, both numbers) passes through
+ * untouched, as do the structural/accessibility attributes `extractRootAttrs` already excludes
+ * (`viewBox`, `xmlns`, `role`, `aria-*`, ...) - they never reach here in the first place.
+ *
+ * Applied unconditionally regardless of source, same as `sanitizeSVGBody`: a root attribute can
+ * come from a local `.svg` file authored by someone else, or from a site owner's own `optimize`
+ * function acting on fetched (partially untrusted) data.
+ */
+export function sanitizeRootAttrs<T extends Record<string, unknown>>(
+  attrs: T,
+): T {
+  let sanitized: Record<string, unknown> | undefined;
+
+  for (const [attrName, value] of Object.entries(attrs)) {
+    if (typeof value !== "string") continue;
+    const lower = attrName.toLowerCase();
+    const dangerous =
+      lower.startsWith("on") || (URI_ATTRS.has(lower) && isDangerousUri(value));
+    if (!dangerous) continue;
+    // Cloned lazily, on the first attribute that actually needs dropping, so the common case (no
+    // dangerous root attributes) returns the original object untouched.
+    sanitized ??= { ...attrs };
+    delete sanitized[attrName];
+  }
+
+  return (sanitized as T) ?? attrs;
+}

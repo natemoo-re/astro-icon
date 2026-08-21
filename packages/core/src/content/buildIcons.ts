@@ -1,5 +1,5 @@
 import { mapWithConcurrency } from "./concurrency.js";
-import { sanitizeSVGBody } from "./sanitizeSVG.js";
+import { sanitizeRootAttrs, sanitizeSVGBody } from "./sanitizeSVG.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
@@ -18,7 +18,10 @@ export async function buildIcon(
   name: string,
 ): Promise<BuiltIcon> {
   const data = await source.getIcon(name);
-  return { name, data: { ...data, body: sanitizeSVGBody(data.body) } };
+  return {
+    name,
+    data: { ...sanitizeRootAttrs(data), body: sanitizeSVGBody(data.body) },
+  };
 }
 
 /**

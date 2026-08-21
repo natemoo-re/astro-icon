@@ -3,7 +3,7 @@ import { AstroIconError } from "../internal/error.js";
 import { buildIcons } from "./buildIcons.js";
 import { consoleLogger } from "./logger.js";
 import { mergeSources } from "./compositeSource.js";
-import { sanitizeSVGBody } from "./sanitizeSVG.js";
+import { sanitizeRootAttrs, sanitizeSVGBody } from "./sanitizeSVG.js";
 import { recordCollection } from "./typegen/index.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
@@ -56,8 +56,12 @@ export function createLiveIconLoader(
     // Sanitized here, not left to `parseIconSVG`, so a custom `IconSource` backing this live
     // loader - the lowest-trust case, since its content was never validated by this library -
     // can't bypass it by building its `IconEntry` some other way. Cached post-sanitize, so the
-    // cost is paid once per unique icon name for the process lifetime, not per request.
-    const entry = { ...built, body: sanitizeSVGBody(built.body) };
+    // cost is paid once per unique icon name for the process lifetime, not per request. Covers
+    // root `<svg>` attributes (`sanitizeRootAttrs`) as well as the body, same as `buildIcon`.
+    const entry = {
+      ...sanitizeRootAttrs(built),
+      body: sanitizeSVGBody(built.body),
+    };
     cache.set(name, entry);
     return entry;
   }

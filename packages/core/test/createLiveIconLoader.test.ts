@@ -96,6 +96,33 @@ describe("createLiveIconLoader / loadEntry", () => {
       data: expect.objectContaining({ body: '<path d="M0 0" />' }),
     });
   });
+
+  it("strips a malicious root <svg> attribute from a custom source's entry", async () => {
+    const loader = createLiveIconLoader({
+      name: "untrusted",
+      getIcon: vi.fn(async () => ({
+        body: "<path/>",
+        viewBox: "0 0 24 24",
+        width: 24,
+        height: 24,
+        onload: "alert(1)",
+        fill: "currentColor",
+      })),
+    });
+
+    const result = await loader.loadEntry({
+      filter: { id: "evil" },
+      collection: "icons",
+    });
+
+    expect(result).toEqual({
+      id: "evil",
+      data: expect.objectContaining({ fill: "currentColor" }),
+    });
+    expect(
+      (result as { data: Record<string, unknown> }).data.onload,
+    ).toBeUndefined();
+  });
 });
 
 describe("createLiveIconLoader / loadCollection", () => {

@@ -88,4 +88,24 @@ describe("buildIcons / concurrency", () => {
 
     expect(built.data.body).toBe("<path />");
   });
+
+  it("strips a malicious root <svg> attribute (e.g. onload) from an entry, keeping legitimate ones", async () => {
+    const source = {
+      async getIcon() {
+        return {
+          body: "<path/>",
+          viewBox: "0 0 24 24",
+          width: 24,
+          height: 24,
+          onload: "alert(1)",
+          fill: "currentColor",
+        };
+      },
+    };
+
+    const [built] = await buildIcons(source, ["a"], () => {});
+
+    expect(built.data.onload).toBeUndefined();
+    expect(built.data.fill).toBe("currentColor");
+  });
 });

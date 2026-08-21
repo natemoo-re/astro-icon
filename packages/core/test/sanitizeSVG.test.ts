@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeSVGBody } from "../src/content/sanitizeSVG.js";
+import {
+  sanitizeRootAttrs,
+  sanitizeSVGBody,
+} from "../src/content/sanitizeSVG.js";
 
 describe("sanitizeSVGBody / removes active content", () => {
   it("removes a <script> element", () => {
@@ -109,5 +112,63 @@ describe("sanitizeSVGBody / leaves legitimate content byte-for-byte untouched", 
 
   it("returns an empty string unchanged", () => {
     expect(sanitizeSVGBody("")).toBe("");
+  });
+});
+
+describe("sanitizeRootAttrs", () => {
+  it("strips an on* event handler attribute (e.g. a malicious root <svg onload=...>)", () => {
+    expect(
+      sanitizeRootAttrs({
+        onload: "alert(1)",
+        fill: "currentColor",
+        width: 24,
+        height: 24,
+      }),
+    ).toEqual({ fill: "currentColor", width: 24, height: 24 });
+  });
+
+  it("strips an on* attribute regardless of case", () => {
+    expect(sanitizeRootAttrs({ OnLoad: "alert(1)", fill: "none" })).toEqual({
+      fill: "none",
+    });
+  });
+
+  it("strips a javascript: URI from href", () => {
+    expect(
+      sanitizeRootAttrs({ href: "javascript:alert(1)", class: "icon" }),
+    ).toEqual({ class: "icon" });
+  });
+
+  it("strips a data:text/html URI from xlink:href", () => {
+    expect(
+      sanitizeRootAttrs({
+        "xlink:href": "data:text/html;base64,PHNjcmlwdD4=",
+        stroke: "currentColor",
+      }),
+    ).toEqual({ stroke: "currentColor" });
+  });
+
+  it("keeps known-safe structural/presentation attributes untouched", () => {
+    const attrs = {
+      viewBox: "0 0 24 24",
+      width: 24,
+      height: 24,
+      xmlns: "http://www.w3.org/2000/svg",
+      fill: "currentColor",
+      "aria-hidden": "true",
+      role: "img",
+    };
+    expect(sanitizeRootAttrs(attrs)).toEqual(attrs);
+  });
+
+  it("returns the original object unchanged (same reference) when nothing needs stripping", () => {
+    const attrs = { fill: "currentColor" };
+    expect(sanitizeRootAttrs(attrs)).toBe(attrs);
+  });
+
+  it("leaves a non-string value (e.g. width/height as numbers) untouched", () => {
+    expect(sanitizeRootAttrs({ width: 24, onload: "alert(1)" })).toEqual({
+      width: 24,
+    });
   });
 });
