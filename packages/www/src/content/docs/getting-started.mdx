@@ -51,10 +51,10 @@ See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if
 
    ```ts title="src/content.config.ts"
    import { defineCollection } from "astro:content";
-   import { localIcons } from "astro-icon/loaders";
+   import { createIconLoader, localSource } from "astro-icon/loaders";
 
    export const collections = {
-     icons: defineCollection({ loader: localIcons() }),
+     icons: defineCollection({ loader: createIconLoader(localSource()) }),
    };
    ```
 
@@ -94,17 +94,17 @@ This file is generated the first time you run `astro sync`, `astro dev`, or `ast
 
 ## Quick start
 
-Define a collection in `src/content.config.ts`. Use `createIconLoader` with `iconifyLocalSource` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localIcons` for a directory of your own `.svg` files:
+Define a collection in `src/content.config.ts`. Use `createIconLoader` with `iconifyLocalSource` for an [Iconify icon set](https://icon-sets.iconify.design/), or with `localSource` for a directory of your own `.svg` files:
 
 ```ts title="src/content.config.ts"
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource, localIcons } from "astro-icon/loaders";
+import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
 
 export const collections = {
   // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
   mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
   // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
 };
 ```
 
@@ -124,7 +124,7 @@ import { Icon } from "astro-icon/components";
 
 ### Next steps
 
-- **Add local icons:** Learn how `localIcons()` picks up `.svg` files in [“Local Icons”](/guides/local-icons/).
+- **Add local icons:** Learn how `localSource()` picks up `.svg` files in [“Local Icons”](/guides/local-icons/).
 - **Add an icon set:** Browse [Iconify Icon Sets](https://icon-sets.iconify.design/) and wire one up in [“Iconify Icons”](/guides/iconify-icons/).
 - **Components:** Understand `<Icon>`'s full prop surface in [“The `<Icon>` Component”](/guides/components/).
 - **Deploy:** Before you publish your project, refer to the [“Deployment”](/guides/deployment/) guide.

@@ -19,7 +19,7 @@ An `IconSource` backed by a directory of local `.svg` files.
 function localSource(dir: URL | string, options?: LocalSourceOptions): IconSource;
 ```
 
-This is what [`localIcons()`](/reference/loaders/#localiconsdir-options) uses internally, minus the directory watching. Reach for it directly when you need to compose a local directory with other sources, or when the directory ships inside a library package:
+Wrap it in [`createIconLoader`](/reference/loaders/#createiconloadersources-options) to get a `Loader` you can hand to `defineCollection`, the same as any other source. Reach for it directly to compose a local directory with other sources, or when the directory ships inside a library package:
 
 ```ts
 import { createIconLoader, localSource } from "astro-icon/loaders";
@@ -27,7 +27,7 @@ import { createIconLoader, localSource } from "astro-icon/loaders";
 createIconLoader(localSource(new URL("../icons/", import.meta.url)));
 ```
 
-A `URL` resolves directly, independent of the consuming project's root — which is what makes it correct for [library-shipped icons](/guides/shipping-icons-from-a-library/). A plain `string` path is only resolved against `config.root` by `localIcons()`.
+A `URL` resolves directly, independent of the consuming project's root — which is what makes it correct for [library-shipped icons](/guides/shipping-icons-from-a-library/). A plain `string` path (the default, `"src/icons"`) is resolved against the project root once `createIconLoader` gives this source one.
 
 Each file's path relative to `dir`, minus the extension, becomes its icon name: `<dir>/logos/deno.svg` is `"logos/deno"`.
 
@@ -59,14 +59,14 @@ npm install -D @iconify-json/mdi
 ```
 
 ```ts
-createIconLoader(iconifyLocalSource("mdi", { icons: ["home", "account"] }));
+createIconLoader(iconifyLocalSource("mdi", { allowed: ["home", "account"] }));
 ```
 
-The `icons` option is typed and autocompleted against the pack's own catalog, once astro-icon has recorded it from a previous sync. A duplicate name in that array is deduped and logged as a warning, not rejected at the type level.
+The `allowed` option is typed and autocompleted against the pack's own catalog, once astro-icon has recorded it from a previous sync. A duplicate name in that array is deduped and logged as a warning, not rejected at the type level.
 
 ## `iconifyApiSource(pack, options?)`
 
-An `IconSource` backed by the public Iconify API **only**. Resolves any icon name in the pack, one at a time, regardless of `icons`.
+An `IconSource` backed by the public Iconify API **only**. Resolves any icon name in the pack, one at a time, regardless of `allowed`.
 
 ```ts
 function iconifyApiSource(pack: string, options?: IconifySourceOptions): IconSource;
@@ -75,7 +75,7 @@ function iconifyApiSource(pack: string, options?: IconifySourceOptions): IconSou
 Useful for a pack you'd rather not install, and the natural fit for a live collection where names aren't known ahead of time.
 
 :::caution
-Without an explicit `icons: [...]` allowlist, `listIcons()` **throws** rather than pretending to enumerate the pack — the API can only resolve icons you name, never "everything in the pack." That makes a bare `iconifyApiSource("mdi")` unusable for a build collection (which loads exactly `listIcons()`), but perfectly valid for a live one.
+Without an explicit `allowed: [...]` allowlist, `listIcons()` **throws** rather than pretending to enumerate the pack — the API can only resolve icons you name, never "everything in the pack." That makes a bare `iconifyApiSource("mdi")` unusable for a build collection (which loads exactly `listIcons()`), but perfectly valid for a live one.
 :::
 
 ### `IconifySourceOptions`
@@ -85,7 +85,7 @@ Shared by both Iconify sources:
 ```ts
 interface IconifySourceOptions {
   /** Restricts this source to a fixed list of icon names, typed against the pack's catalog once recorded. */
-  icons?: string[];
+  allowed?: string[];
   /** Transform applied to each icon's raw SVG before it's parsed and stored. */
   optimize?: OptimizeFn;
   /** Turns a recoverable warning into a build error instead. @default false */
@@ -93,7 +93,7 @@ interface IconifySourceOptions {
 }
 ```
 
-`icons` is an allowlist for pinning a design system's approved icons — and, for `iconifyApiSource`, the thing that makes the source enumerable at all. Omitting it on `iconifyLocalSource` allows the whole installed pack.
+`allowed` is an allowlist for pinning a design system's approved icons — and, for `iconifyApiSource`, the thing that makes the source enumerable at all. Omitting it on `iconifyLocalSource` allows the whole installed pack.
 
 ## `mergeSources(sources)`
 
@@ -108,8 +108,8 @@ The loaders call this for you when you pass an array, so reach for it directly w
 
 ```ts
 const mdi = mergeSources([
-  iconifyLocalSource("mdi", { icons: ["home"] }),
-  iconifyApiSource("mdi", { icons: ["home"] }),
+  iconifyLocalSource("mdi", { allowed: ["home"] }),
+  iconifyApiSource("mdi", { allowed: ["home"] }),
 ]);
 ```
 

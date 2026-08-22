@@ -93,7 +93,7 @@ optimize: svgo({
 
 ## Prefixing ids to avoid collisions
 
-`optimize` also receives the icon's `collection` and `name`, useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once without [automatic sprite optimization](/guides/sprite/) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+`optimize` also receives the icon's `collection` and `name`, useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts title="src/content.config.ts"
 import { defineCollection } from "astro:content";

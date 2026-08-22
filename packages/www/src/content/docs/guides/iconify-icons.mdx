@@ -84,7 +84,7 @@ export const collections = {
   // The API only resolves icons you name explicitly, never the whole pack,
   // and it adds a network request per icon during your build.
   mdi: defineCollection({
-    loader: createIconLoader(iconifyApiSource("mdi", { icons: ["account", "home", "heart"] })),
+    loader: createIconLoader(iconifyApiSource("mdi", { allowed: ["account", "home", "heart"] })),
   }),
 };
 ```
@@ -100,8 +100,8 @@ export const collections = {
   mdi: defineCollection({
     loader: createIconLoader(
       mergeSources([
-        iconifyLocalSource("mdi", { icons: ["account", "home", "heart"] }),
-        iconifyApiSource("mdi", { icons: ["account", "home", "heart"] }),
+        iconifyLocalSource("mdi", { allowed: ["account", "home", "heart"] }),
+        iconifyApiSource("mdi", { allowed: ["account", "home", "heart"] }),
       ]),
     ),
   }),
@@ -112,7 +112,7 @@ export const collections = {
 
 Both sources accept the same options as their second argument (see the full [Loaders reference](/reference/loaders/)):
 
-- **`icons`** — restricts the collection (and its generated types) to exactly these icons, typed and autocompleted against the pack's own catalog once a sync has recorded it.
+- **`allowed`** — restricts the collection (and its generated types) to exactly these icons, typed and autocompleted against the pack's own catalog once a sync has recorded it.
 - **`optimize`** — transforms each icon's raw SVG before Astro Icon stores it; see [“SVGO & optimize()”](/guides/optimize/).
 - **`strict`** — turns a missing icon into a build error instead of a warning.
 
@@ -123,7 +123,7 @@ export const collections = {
   mdi: defineCollection({
     loader: createIconLoader(
       iconifyLocalSource("mdi", {
-        icons: ["account", "home", "heart"],
+        allowed: ["account", "home", "heart"],
         optimize: svgo(),
         strict: true,
       }),
@@ -142,15 +142,15 @@ import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 export const collections = {
   social: defineCollection({
     loader: createIconLoader([
-      iconifyLocalSource("mdi", { icons: ["github"] }),
-      iconifyLocalSource("simple-icons", { icons: ["discord"] }),
+      iconifyLocalSource("mdi", { allowed: ["github"] }),
+      iconifyLocalSource("simple-icons", { allowed: ["discord"] }),
     ]),
   }),
 };
 ```
 
-Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of listing versus building, and whether a pack resolved locally or from the API.
+Like `localSource()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of listing versus building, and whether a pack resolved locally or from the API.
 
 :::caution
-Unlike v1's `include` integration option, there's no bundle-wide "include everything, then filter" step to worry about: each source's own `icons: [...]` option already scopes exactly what's loaded. See [“Deployment”](/guides/deployment/).
+Unlike v1's `include` integration option, there's no bundle-wide "include everything, then filter" step to worry about: each source's own `allowed: [...]` option already scopes exactly what's loaded. See [“Deployment”](/guides/deployment/).
 :::

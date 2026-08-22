@@ -7,7 +7,7 @@ sidebar:
 
 A **loader** is what a collection is defined with. It's the value Astro itself sees as `loader:`, and there is exactly one per collection.
 
-Most loaders wrap one or more [sources](/reference/sources/), which are what actually produce icons. `localIcons()` is the exception — it's a loader with a source already built in.
+Every loader wraps one or more [sources](/reference/sources/), which are what actually produce icons.
 
 ## `createIconLoader(sources, options?)`
 
@@ -28,7 +28,7 @@ export const collections = {
 
 Passing an array tries each source in order per icon, first match wins — equivalent to wrapping them in [`mergeSources`](/reference/sources/#mergesourcessources) yourself.
 
-The collection always contains exactly what the source's `listIcons()` reports; this loader does no filtering of its own, so restrict the icon set per source instead (see [`icons`](/reference/sources/#iconifysourceoptions)).
+The collection always contains exactly what the source's `listIcons()` reports; this loader does no filtering of its own, so restrict the icon set per source instead (see [`allowed`](/reference/sources/#iconifysourceoptions)).
 
 ### `IconLoaderOptions`
 
@@ -62,26 +62,4 @@ If the source implements `listIcons()`, the loader can also fulfil whole-collect
 
 See [Live Icons with `<LiveIcon>`](/guides/live-icon/) for the full guide.
 
-## `localIcons(dir?, options?)`
-
-A build-time `Loader` for a directory of local `.svg` files, watched in dev. Unlike the two loaders above, it takes no source — it builds one internally from `dir`.
-
-```ts
-function localIcons(dir?: string, options?: LocalSourceOptions): Loader;
-```
-
-- **`dir`** — defaults to `"src/icons"`, resolved against the project root.
-- **`options`** — see [`LocalSourceOptions`](/reference/sources/#localsourceoptions).
-
-```ts title="src/content.config.ts"
-import { defineCollection } from "astro:content";
-import { localIcons } from "astro-icon/loaders";
-
-export const collections = {
-  icons: defineCollection({ loader: localIcons() }),
-};
-```
-
-Adding, editing, or removing a `.svg` file updates the collection without a dev server restart. To compose a local directory *with* other sources, use [`localSource`](/reference/sources/#localsourcedir-options) inside `createIconLoader` instead.
-
-See [Local Icons](/guides/local-icons/) for the full guide.
+Adding, editing, or removing a local `.svg` file updates its collection without a dev server restart — see [`localSource`](/reference/sources/#localsourcedir-options) for the directory-backed source, and [Local Icons](/guides/local-icons/) for the full guide.

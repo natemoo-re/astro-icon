@@ -53,17 +53,17 @@ Every `icon({ ... })` option maps to something in `src/content.config.ts` now:
 
 | v1 (`icon()` option) | v2                                                                                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `include`            | The `icons` option on `iconifyLocalSource()`/`iconifyApiSource()` — see [“Iconify Icons”](/guides/iconify-icons/)         |
-| `iconDir`            | The first argument to `localIcons("your/dir")` — see [“Local Icons”](/guides/local-icons/)                                |
+| `include`            | The `allowed` option on `iconifyLocalSource()`/`iconifyApiSource()` — see [“Iconify Icons”](/guides/iconify-icons/)       |
+| `iconDir`            | The first argument to `createIconLoader(localSource("your/dir"))` — see [“Local Icons”](/guides/local-icons/)             |
 | `svgoOptions`        | The `optimize` option, with the `svgo()` helper from `astro-icon/optimize` — see [“SVGO & optimize()”](/guides/optimize/) |
 
 ```diff lang="ts" title="src/content.config.ts"
 + import { defineCollection } from "astro:content";
-+ import { createIconLoader, iconifyLocalSource, localIcons } from "astro-icon/loaders";
++ import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
 +
 + export const collections = {
-+   mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi", { icons: ["home"] })) }),
-+   icons: defineCollection({ loader: localIcons("src/assets/icons") }),
++   mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi", { allowed: ["home"] })) }),
++   icons: defineCollection({ loader: createIconLoader(localSource("src/assets/icons")) }),
 + };
 ```
 
@@ -73,12 +73,12 @@ v1 ran SVGO over local `.svg` files by default. v2 runs no optimization unless y
 
 ```ts title="src/content.config.ts" ins="optimize: svgo()"
 import { defineCollection } from "astro:content";
-import { localIcons } from "astro-icon/loaders";
+import { createIconLoader, localSource } from "astro-icon/loaders";
 import { svgo } from "astro-icon/optimize";
 
 export const collections = {
   icons: defineCollection({
-    loader: localIcons("src/assets/icons", { optimize: svgo() }),
+    loader: createIconLoader(localSource("src/assets/icons", { optimize: svgo() })),
   }),
 };
 ```
@@ -93,9 +93,9 @@ Add this reference to `src/env.d.ts` — new in v2, this is what gives `<Icon na
 
 It's generated the first time you run `astro sync`, `astro dev`, or `astro build`.
 
-## Sprite optimization is now an opt-in integration
+### Sprite deduping is gone
 
-v1 automatically deduped repeated `<Icon>` uses into a shared sprite, with no configuration. In v2, that requires installing the `icon()` integration (`astro-icon/integration`) in `astro.config.mjs` — without it, every `<Icon>` renders as a standalone `<svg>`. Once installed, deduping is on by default for every collection, same as v1; opt a single usage out with the `inline` prop, or a whole collection out with `sprite: false` on its loader. See [“Automatic sprite optimization”](/guides/sprite/).
+v1 automatically deduped repeated `<Icon>` uses into a shared sprite. v2 has no equivalent — `<Icon>` always renders a standalone `<svg>`, with no deduping between repeated uses.
 
 ## What didn't change
 

@@ -79,10 +79,10 @@ export const collections = {
 Drop `.svg` files into `src/icons/` and they're picked up automatically, with hot reload in dev.
 
 ```ts title="src/content.config.ts"
-import { localIcons } from "astro-icon/loaders";
+import { createIconLoader, localSource } from "astro-icon/loaders";
 
 export const collections = {
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
 };
 ```
 
@@ -105,27 +105,6 @@ const mySource: IconSource = {
 
 </TabItem>
 </Tabs>
-
-## Repeat an icon without repeating the markup
-
-Install the `icon()` integration and repeated icons collapse into a single `<symbol>` plus one `<use>` per instance automatically — no wrapper component needed. The more you repeat, the more you save. See [“Automatic sprite optimization”](/guides/sprite/).
-
-<Showcase resultLabel="Rendered (5 icons, 1 symbol)" code={`<Icon name="mdi:star" /> <Icon name="mdi:star" />
-<Icon name="mdi:star" /> <Icon name="mdi:star" />
-<Icon name="mdi:star" />
-
-<!-- Output: one <symbol>, five lightweight <use> refs -->
-
-<svg style="position:absolute;width:0;height:0" aria-hidden="true">
-  <symbol id="ai:mdi:star" viewBox="0 0 24 24">…</symbol>
-</svg>
-<svg …><use href="#ai:mdi:star" /></svg>`} lang="html">
-  <Icon name="mdi:star" size={28} />
-  <Icon name="mdi:star" size={28} />
-  <Icon name="mdi:star" size={28} />
-  <Icon name="mdi:star" size={28} />
-  <Icon name="mdi:star" size={28} />
-</Showcase>
 
 ## Also worth knowing
 
