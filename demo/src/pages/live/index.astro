@@ -1,0 +1,231 @@
+---
+export const prerender = false;
+
+import { getLiveEntry } from "astro:content";
+import { Icon, LiveIcon } from "astro-icon/components";
+import Base from "../../layouts/base.astro";
+
+const SOURCES = [
+  {
+    id: "mdi",
+    label: "local pack",
+    note: "@iconify-json/mdi installed - resolves from disk",
+  },
+  {
+    id: "ph",
+    label: "Iconify API",
+    note: "not installed - fetched per icon from api.iconify.design",
+  },
+  {
+    id: "service",
+    label: "custom source",
+    note: "packages/service - run `pnpm --filter service dev`",
+  },
+] as const;
+
+type SourceId = (typeof SOURCES)[number]["id"];
+
+const params = Astro.url.searchParams;
+const collection = (SOURCES.find((s) => s.id === params.get("collection"))
+  ?.id ?? "mdi") as SourceId;
+const icon = params.get("icon")?.trim() || "home";
+
+// Resolved here as well as by <LiveIcon> so the bench can report *why* an icon didn't render.
+// <LiveIcon> itself logs a warning and renders nothing on a miss, by design.
+const { entry, error } = await getLiveEntry(collection, icon);
+const active = SOURCES.find((s) => s.id === collection)!;
+---
+
+<Base title="Live icons" sub="<LiveIcon> · per request">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title"
+        >Resolve any icon name, server-side, on every request</span
+      >
+      <span class="bench__note">{active.note}</span>
+    </div>
+    <form class="bench__controls" method="get">
+      <label class="knob">
+        source
+        <select name="collection">
+          {
+            SOURCES.map((s) => (
+              <option value={s.id} selected={s.id === collection}>
+                {s.id} — {s.label}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      <label class="knob">
+        icon
+        <input
+          type="text"
+          name="icon"
+          value={icon}
+          placeholder="e.g. home, heart, alien"
+        />
+      </label>
+      <button class="chip" type="submit">resolve</button>
+      <span class="hint">try a bogus name to see the miss path</span>
+    </form>
+    <div class="stage-center">
+      <LiveIcon collection={collection} icon={icon} size={64} />
+      {!entry && <span class="hint">nothing rendered</span>}
+    </div>
+    <pre
+      class="inspector">{
+      entry
+        ? `✓ ${collection}:${icon}\n  viewBox="${(entry.data as any).viewBox}" ${(entry.data as any).width}×${(entry.data as any).height}\n  body ${(entry.data as any).body.length} bytes`
+        : `✗ ${collection}:${icon}\n  ${error ? error.message : "no entry returned"}\n  <LiveIcon> logged a warning and rendered nothing.`
+    }</pre>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Search &amp; resolve</span>
+      <span class="bench__note"
+        >Only the icons shown are ever resolved, not the whole pack</span
+      >
+    </div>
+    <div class="bench__controls">
+      <div class="segmented" data-packs role="tablist" aria-label="Search pack">
+        <button type="button" role="tab" aria-selected="true" data-pack="mdi">
+          <Icon
+            name="allowlist:baseline-storage"
+            size={14}
+            aria-hidden="true"
+          />
+          mdi
+        </button>
+        <button type="button" role="tab" aria-selected="false" data-pack="ph">
+          <Icon
+            name="allowlist:baseline-cloud-queue"
+            size={14}
+            aria-hidden="true"
+          />
+          ph
+        </button>
+      </div>
+      <label class="knob" style="flex:1">
+        <Icon name="search" size={15} aria-hidden="true" />
+        <input
+          type="search"
+          placeholder="Search icons…"
+          autocomplete="off"
+          data-query
+          style="flex:1"
+        />
+      </label>
+      <span class="stat" data-status></span>
+    </div>
+    <div class="bench__stage">
+      <div class="icon-grid" data-results></div>
+      <p class="empty" data-empty>Type to search.</p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  interface IconResult {
+    name: string;
+    body: string;
+    viewBox: string;
+    width: number;
+    height: number;
+  }
+
+  const DEBOUNCE_MS = 250;
+
+  const input = document.querySelector<HTMLInputElement>("[data-query]")!;
+  const results = document.querySelector<HTMLElement>("[data-results]")!;
+  const status = document.querySelector<HTMLElement>("[data-status]")!;
+  const empty = document.querySelector<HTMLElement>("[data-empty]")!;
+  const packButtons =
+    document.querySelectorAll<HTMLButtonElement>("[data-pack]");
+
+  let pack = "mdi";
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let controller: AbortController | undefined;
+
+  packButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      packButtons.forEach((b) =>
+        b.setAttribute("aria-selected", String(b === btn)),
+      );
+      pack = btn.dataset.pack!;
+      search(input.value);
+    });
+  });
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => search(input.value), DEBOUNCE_MS);
+  });
+
+  async function search(rawQuery: string) {
+    const query = rawQuery.trim();
+    controller?.abort();
+
+    if (!query) {
+      results.replaceChildren();
+      status.textContent = "";
+      empty.hidden = false;
+      return;
+    }
+
+    controller = new AbortController();
+    status.textContent = "resolving…";
+    empty.hidden = true;
+
+    let response: Response;
+    const started = performance.now();
+    try {
+      response = await fetch(
+        `/api/icon-search?pack=${pack}&q=${encodeURIComponent(query)}`,
+        {
+          signal: controller.signal,
+        },
+      );
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      status.textContent = "request failed";
+      return;
+    }
+
+    const data = (await response.json()) as {
+      results: IconResult[];
+      error?: string;
+    };
+    if (data.error) {
+      status.textContent = data.error;
+      return;
+    }
+
+    const ms = Math.round(performance.now() - started);
+    status.textContent = `${data.results.length} resolved in ${ms}ms`;
+    empty.hidden = data.results.length > 0;
+
+    results.replaceChildren(
+      ...data.results.map((icon) => {
+        const cell = document.createElement("div");
+        cell.className = "icon-cell";
+
+        const svg = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg",
+        );
+        svg.setAttribute("width", "24");
+        svg.setAttribute("height", "24");
+        svg.setAttribute("viewBox", icon.viewBox);
+        svg.innerHTML = icon.body;
+
+        const label = document.createElement("code");
+        label.textContent = icon.name;
+
+        cell.append(svg, label);
+        return cell;
+      }),
+    );
+  }
+</script>

@@ -19,6 +19,7 @@
     "@astrojs/node": "^11.1.2",
     "astro": "^7.2.2",
     "astro-icon": "workspace:*",
-    "service": "workspace:*"
+    "service": "workspace:*",
+    "svgo": "^4.0.0"
   }
 }

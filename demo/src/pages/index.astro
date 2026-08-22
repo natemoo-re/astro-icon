@@ -3,100 +3,142 @@ export const prerender = true;
 
 import { Icon } from "astro-icon/components";
 import Base from "../layouts/base.astro";
+
+const local = [
+  "bell",
+  "star",
+  "check",
+  "close",
+  "search",
+  "link",
+  "list",
+  "image",
+  "trash",
+  "bold",
+  "italic",
+  "underline",
+  "align-left",
+  "align-center",
+  "align-right",
+];
 ---
 
-<Base>
-  <h1>Welcome to Astro Icon!</h1>
-
-  <p>
-    The <code>icons</code> collection is backed by <code>localSource()</code>:
-    it picks up every <code>.svg</code> in <code>src/icons/</code>
-    automatically (subdirectories become part of the name), and watches that directory
-    in dev the same way Astro's built-in file-backed collections do.
-  </p>
-
-  <article>
-    <h2>Local Icons</h2>
-    <Icon size={24} name="adjustment" data-icon="adjustment" />
-    <Icon size={24} name="annotation" data-icon="annotation" />
-    <Icon size={24} name="logos/deno" data-icon="deno" />
-    <Icon name="logos/deno" data-icon="deno" />
-    <Icon width={75} name="logos/alpine" data-icon="alpine" />
-    <Icon name="logos/alpine-multi-color" data-icon="alpine-multi-color" />
-  </article>
-
-  <article>
-    <h2>Icons from Iconify</h2>
-    <p>
-      If you can find it on <a href="https://icones.js.org/">Icones</a>, you can
-      render it here. Each pack is its own collection defined in
-      <code>src/content.config.ts</code>.
-    </p>
-  </article>
-  <Icon size={32} name="ic:baseline-account-box" />
-  <Icon size={64} name="ic:baseline-account-box" />
-  <Icon size={80} name="ic:baseline-account-box" />
-
-  <Icon size={24} name="ic:baseline-directions-run" />
-  <Icon name="ic:outline-star" />
-  <Icon size={64} name="fe:building" />
-  <Icon size={64} name="ri:aliens-fill" />
-  <Icon name="bi:stars" />
-
-  <article>
-    <h2>A collection combined from multiple packs</h2>
-    <p>
-      <code>combined</code> is one collection built from an icon in <code
-        >fe</code
+<Base title="Styling" sub="currentColor · size">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Local icons follow CSS color and size</span>
+      <span class="bench__note"
+        >Swatches in the top bar recolor everything at once</span
       >
-      and an icon in <code>ri</code> via <code>createIconLoader([...])</code>.
-      See
-      <code>src/content.config.ts</code>.
-    </p>
-    <Icon size={32} name="combined:activity" />
-    <Icon size={32} name="combined:star-fill" />
-  </article>
+    </div>
+    <div class="bench__controls">
+      <label class="knob">
+        size
+        <input type="range" min="12" max="72" value="28" data-size />
+        <output data-size-out>28px</output>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" data-labels checked />
+        show names
+      </label>
+    </div>
+    <div class="bench__stage">
+      <div class="icon-grid" data-grid>
+        {
+          local.map((name) => (
+            <div class="icon-cell">
+              <Icon name={name} width={null} height={null} data-sized />
+              <code data-label>{name}</code>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
 
-  <article>
-    <h2>Accessible Icons</h2>
-    <p>
-      <code>title</code>/<code>desc</code> auto-wire <code>aria-labelledby</code
-      >/
-      <code>aria-describedby</code> on the icon itself. Pass
-      <code>{"{ id, value }"}</code> instead of a plain string when something
-      <em>outside</em> the icon needs to reference the same id, e.g. a button that
-      wraps an icon and wants to reuse its title as the button's name instead of duplicating
-      the text.
-    </p>
-    <Icon
-      size={24}
-      name="adjustment"
-      title="Adjustment"
-      desc="An icon representing adjustment controls"
-    />
-    <button aria-labelledby="adjustment-title">
-      <Icon
-        size={24}
-        name="adjustment"
-        title={{ id: "adjustment-title", value: "Adjustment" }}
-      />
-    </button>
-  </article>
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">currentColor vs. hardcoded fill</span>
+      <span class="bench__note"
+        >Only the left two should react to the swatches</span
+      >
+    </div>
+    <div class="bench__stage">
+      <div class="grid-2">
+        <div class="icon-cell">
+          <Icon name="star" size={40} />
+          <code>icons:star — stroke="currentColor"</code>
+        </div>
+        <div class="icon-cell">
+          <Icon name="lockFixed:lock" size={40} />
+          <code>lockFixed:lock — svgo() convertColors</code>
+        </div>
+        <div class="icon-cell">
+          <Icon name="lock" size={40} />
+          <code>icons:lock — hardcoded #4338ca</code>
+        </div>
+        <div class="icon-cell">
+          <Icon name="combined:stars" size={40} />
+          <code>combined:stars — Iconify, currentColor</code>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <p><a href="/live/">See the &lt;LiveIcon&gt; demo &rarr;</a></p>
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Sizing paths</span>
+      <span class="bench__note"
+        >Attribute-sized vs. CSS-sized (width={"{null}"})</span
+      >
+    </div>
+    <div class="bench__stage">
+      <div class="icon-strip">
+        <Icon name="bell" size={16} />
+        <Icon name="bell" size={24} />
+        <Icon name="bell" size={32} />
+        <Icon name="bell" size={48} />
+        <Icon name="bell" width={64} height={32} />
+        <span class="css-sized"
+          ><Icon name="bell" width={null} height={null} /></span
+        >
+        <span class="chip">width=64 height=32 · then CSS-sized at 3rem</span>
+      </div>
+    </div>
+  </div>
 </Base>
 
-<style lang="css">
-  [data-icon] {
-    color: blue;
+<script>
+  const size = document.querySelector<HTMLInputElement>("[data-size]")!;
+  const out = document.querySelector<HTMLOutputElement>("[data-size-out]")!;
+  const grid = document.querySelector<HTMLElement>("[data-grid]")!;
+  const labelToggle =
+    document.querySelector<HTMLInputElement>("[data-labels]")!;
+
+  // The icons in this grid render with `width={null} height={null}`, so they have no size
+  // attributes at all and are sized purely from CSS here.
+  function applySize() {
+    grid.style.setProperty("--sz", `${size.value}px`);
+    out.value = `${size.value}px`;
   }
-  [data-icon="annotation"] {
-    color: red;
+
+  size.addEventListener("input", applySize);
+  applySize();
+
+  labelToggle.addEventListener("change", () => {
+    grid.querySelectorAll<HTMLElement>("[data-label]").forEach((el) => {
+      el.hidden = !labelToggle.checked;
+    });
+  });
+</script>
+
+<style>
+  .icon-grid :global([data-sized]) {
+    width: var(--sz, 28px);
+    height: var(--sz, 28px);
   }
-  [data-icon="deno"] {
-    color: #12124b;
-  }
-  [data-icon="alpine"] {
-    color: rgb(45, 52, 65);
+  .css-sized :global(svg) {
+    width: 3rem;
+    height: 3rem;
   }
 </style>

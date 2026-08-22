@@ -1,0 +1,32 @@
+---
+import { Icon } from "astro-icon/components";
+
+const links = [
+  { href: "/", label: "Styling", icon: "pack:palette-outline" },
+  { href: "/props/", label: "Props & a11y", icon: "pack:tune-variant" },
+  { href: "/collections/", label: "Collections", icon: "pack:layers-outline" },
+  { href: "/live/", label: "Live icons", icon: "pack:lightning-bolt-outline" },
+  { href: "/optimize/", label: "Optimize", icon: "pack:auto-fix" },
+];
+
+const current = Astro.url.pathname;
+---
+
+<nav class="rail" aria-label="Benches">
+  <div class="rail__brand" aria-hidden="true">
+    <Icon name="mixed:star-fill" size={18} />
+  </div>
+  {
+    links.map((link) => (
+      <a
+        class="rail__link"
+        href={link.href}
+        title={link.label}
+        aria-label={link.label}
+        aria-current={current === link.href ? "page" : undefined}
+      >
+        <Icon name={link.icon} size={19} />
+      </a>
+    ))
+  }
+</nav>

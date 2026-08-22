@@ -58,6 +58,9 @@ importers:
       service:
         specifier: workspace:*
         version: link:../packages/service
+      svgo:
+        specifier: ^4.0.0
+        version: 4.0.2
 
   packages/core:
     dependencies:

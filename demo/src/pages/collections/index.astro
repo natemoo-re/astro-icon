@@ -1,0 +1,119 @@
+---
+export const prerender = true;
+
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import Base from "../../layouts/base.astro";
+
+// Counts are read from the real content store, so this page fails loudly if a loader
+// silently stops producing entries.
+const counts = Object.fromEntries(
+  await Promise.all(
+    (
+      [
+        "icons",
+        "pack",
+        "allowlist",
+        "combined",
+        "resilient",
+        "mixed",
+        "lockFixed",
+      ] as const
+    ).map(async (name) => [name, (await getCollection(name)).length] as const),
+  ),
+);
+
+const rows = [
+  {
+    name: "icons",
+    src: 'createIconLoader(localSource("src/icons", { optimize: svgo() }))',
+    samples: ["bell", "search", "trash"],
+  },
+  {
+    name: "pack",
+    src: 'createIconLoader(iconifyLocalSource("mdi"))',
+    samples: ["pack:home-outline", "pack:cog-outline", "pack:folder-outline"],
+  },
+  {
+    name: "allowlist",
+    src: 'iconifyLocalSource("ic", { allowed: [...] })',
+    samples: [
+      "allowlist:baseline-storage",
+      "allowlist:baseline-cloud-queue",
+      "allowlist:baseline-extension",
+    ],
+  },
+  {
+    name: "combined",
+    src: 'createIconLoader([ iconifyLocalSource("fe"), iconifyLocalSource("bi") ])',
+    samples: ["combined:activity", "combined:stars"],
+  },
+  {
+    name: "resilient",
+    src: 'mergeSources([ iconifyLocalSource("mdi"), iconifyApiSource("mdi") ])',
+    samples: ["resilient:home-outline", "resilient:cog-outline"],
+  },
+  {
+    name: "mixed",
+    src: 'createIconLoader([ localSource("src/icons"), iconifyLocalSource("ri") ])',
+    samples: ["mixed:star", "mixed:star-fill"],
+  },
+  {
+    name: "lockFixed",
+    src: "localSource(..., { optimize: svgo({ convertColors }) })",
+    samples: ["lockFixed:lock"],
+  },
+];
+---
+
+<Base title="Collections" sub="src/content.config.ts">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">One collection per source composition</span>
+      <span class="bench__note"
+        >Counts come from getCollection() at build time</span
+      >
+    </div>
+    <ul class="rows">
+      {
+        rows.map((row) => (
+          <li>
+            <span class="name">{row.name}</span>
+            <span class="src">{row.src}</span>
+            <span class="count">
+              {counts[row.name]?.toLocaleString()} icons
+            </span>
+            <span class="icons">
+              {row.samples.map((name) => (
+                <Icon name={name} size={20} />
+              ))}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Allowlist enforcement</span>
+      <span class="bench__note"
+        >Asking for an icon outside <code>allowed: [...]</code> is a build error,
+        not a blank</span
+      >
+    </div>
+    <div class="bench__body">
+      <pre
+        class="console"><code>{`// allowlist = iconifyLocalSource("ic", { allowed: ["baseline-storage", ...] })
+
+<Icon name="allowlist:baseline-storage" />   `}<span class="tok-good">{`✓ renders`}</span>{`
+<Icon name="allowlist:baseline-alarm" />     `}<span class="tok-bad">{`✗ build fails: not in the allowed icon list`}</span></code></pre>
+      <p class="hint" style="margin-top:.6rem">
+        Uncomment the second line in <code
+          >src/pages/collections/index.astro</code
+        > to watch it fail.
+      </p>
+      {/* <Icon name="allowlist:baseline-alarm" /> */}
+    </div>
+  </div>
+</Base>
