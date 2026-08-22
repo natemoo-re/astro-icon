@@ -15,7 +15,6 @@ astro-icon reads icons through Astro's [content layer](https://docs.astro.build/
 - [Shipping icons from a library](#shipping-icons-from-a-library)
 - [Using icons in framework components](#using-icons-in-framework-components)
 - [Upgrading from v1](#upgrading-from-v1)
-- [Examples](#examples)
 - [Contributing](#contributing)
 - [Changelog](#changelog)
 
@@ -555,10 +554,6 @@ astro-icon v2 replaces the `icon()` Astro integration with content collection lo
 - Define your collections in `src/content.config.ts` as shown in [Quick start](#quick-start), and add the `env.d.ts` reference from [Installation](#installation).
 
 If you're upgrading from v0 to v1, see the [v1 upgrade guide](https://www.astroicon.dev/guides/upgrade/v1/) first.
-
-## Examples
-
-The [`examples/`](examples) directory has four runnable Astro apps, one per persona - a static site, an SSR dashboard, a component library shipping its own icons, and a platform resolving icon names from data at request time. [`examples/PERSONA.md`](examples/PERSONA.md) explains who each one is for and which use cases it covers.
 
 ## Contributing
 

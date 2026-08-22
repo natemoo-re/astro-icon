@@ -1,0 +1,97 @@
+---
+title: Customizing Icons
+description: Using icons with Astro Icon.
+prev: false
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Astro Icon is designed to support custom icons that exist as `.svg` files in your project. 
+It also supports any open source icon set distributed by [Iconify](https://iconify.design/).
+
+## Local icons
+
+Add new icons to your site by creating `.svg` files in `/src/icons/`.
+Use sub-folders to organize your files and create multiple sets of icons.
+
+Icons in the `/src/icons/` directory can be automatically referenced by their slug, for example:
+
+```astro mark="/src/icons/logo.svg" mark="logo" mark="/src/icons/logos/astro.svg" mark="logos/astro"
+---
+import { Icon } from 'astro-icon/components'
+---
+
+<!-- Embed the contents of the `/src/icons/logo.svg` file -->
+<Icon name="logo" />
+
+<!-- Embed the contents of the `/src/icons/logos/astro.svg` file -->
+<Icon name="logos/astro" />
+```
+
+Local `.svg` files are automatically optimized with [`svgo`](https://github.com/svg/svgo). Specific `svgo` options can be [configured in the integration](/reference/configuration).
+
+## Open Source Icon Sets
+
+[Iconify](https://iconify.design/) is a project that distributes normalized packages of open source icon sets.
+After installing an icon set in your project, icons will be automatically available to the `Icon` component.
+
+### Find an icon set
+
+Visit the official [Iconify Icon Sets](https://icon-sets.iconify.design/) explorer or the popular [Icônes](https://icones.js.org/) app to browse the available icon sets.
+
+### Install dependency
+
+After identifying the icon set you would like to use, you must install the corresponding `@iconify-json/*` package.
+
+As an example, to install the [Material Design Icons](https://icones.js.org/collection/mdi) set, run the following command:
+
+<Tabs>
+<TabItem label="npm">
+
+```sh
+npm install @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm add @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add @iconify-json/mdi
+```
+
+</TabItem>
+
+</Tabs>
+
+### Using an icon set
+
+Installed icon sets can be automatically referenced by their prefixed id, for example:
+
+```astro mark="@iconify-json/mdi" mark="mdi:account"
+---
+import { Icon } from 'astro-icon/components'
+---
+
+<!-- Embed the `account` icon from `@iconify-json/mdi` -->
+<Icon name="mdi:account" />
+```
+
+### Using multiple icon sources
+
+You are not limited to a single icon source!
+
+- You may mix and match local icons with an `@iconify-json/*` icon set.
+- You may install multiple `@iconify-json/*` icon sets.
+
+:::danger
+**If your Astro project uses the `server` or `hybrid` output**, be mindful that every icon that could _potentially_ be referenced will be included in your server's JavaScript bundle by default!
+
+Reference the [Deployment](/guides/deployment/) guide to understand how to optimize your final server bundle size.
+:::

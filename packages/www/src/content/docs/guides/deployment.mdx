@@ -5,12 +5,19 @@ description: Learn how to optimize your deployments with Astro Icon.
 
 Astro Icon supports every deployment method that Astro supports. Refer to the official [Deploy your Astro Site](https://docs.astro.build/en/guides/deploy/) guide for specific instructions.
 
-## No special configuration needed
+## Rendering Modes
 
-Unlike v1, there's no project-wide "everything installed gets bundled unless you configure `include`" step to worry about. Each collection you define in `src/content.config.ts` only contains exactly what its source resolves — an `iconifyLocalSource`/`iconifyApiSource` restricted with `icons: [...]` (see [“Iconify Icons”](/guides/iconify-icons/)) never loads or bundles the rest of the pack, whether your project is [pre-rendered or on-demand rendered](https://docs.astro.build/en/guides/routing/#on-demand-rendered-routes).
+Astro projects support multiple [Rendering Modes](https://docs.astro.build/en/core-concepts/rendering-modes/), pages, routes, and API endpoints can be either [pre-rendered at build time](https://docs.astro.build/en/core-concepts/rendering-modes/#pre-rendered) or [rendered on demand by a server](https://docs.astro.build/en/core-concepts/rendering-modes/#on-demand-rendered) when a route is requested.
 
-If you omit `icons` from `iconifyLocalSource`, the whole installed pack is loaded into that collection — scope it to the icons you actually use if pack size matters for your build or server bundle.
+### Pre-rendered
 
-## `<LiveIcon>` and on-demand rendering
+Astro projects that are entirely pre-rendered do not need any special configuration to use Astro Icon.
 
-`<LiveIcon>` collections (see [“Live Icons with `<LiveIcon>`”](/guides/live-icon/)) resolve per request by design, so they require on-demand rendering for the routes that use them — a live collection can't be resolved ahead of time the way a build-time one can.
+### On-demand rendered
+
+Astro projects that have [enabled on-demand server rendering](https://docs.astro.build/en/guides/server-side-rendering/#enable-on-demand-server-rendering) should take special care when using Astro Icon.
+
+By default, all `@iconify-json/*` packages will be bundled into your server code, potentially bloating your server JavaScript bundles.
+
+For complete control over the size of your bundle, it is **highly recommended** to [configure the `include` option](/reference/configuration#include) to enable only your required icons.
+

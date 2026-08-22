@@ -1,107 +1,72 @@
 ---
-title: Styling Icons
-description: Style icons with the CSS you already know — color, size, classes, and Tailwind.
+title: CSS & Styling
+description: Learn how to style your icons with custom CSS.
 ---
 
-import { Icon } from 'astro-icon/components';
-import Showcase from '../../../components/Showcase.astro';
+You can style your icons with custom CSS.
 
-An icon rendered by Astro Icon is an inline `<svg>` in your own markup — not an `<img>`, not an icon font, not a shadow root. There's no styling API to learn, because every icon is already a first-class element in your page's CSS.
+## Custom CSS styles
 
-## Color
+Customize the styles applied to every icon by using the `[data-icon]` attribute selector.
 
-Icons drawn with `currentColor` inherit the CSS `color` of whatever contains them, exactly like text does:
-
-<Showcase code={`<Icon name="mdi:heart" size={32} class="rose" />
-<Icon name="mdi:leaf" size={32} class="green" />
-<Icon name="mdi:flash" size={32} class="amber" />
+```astro mark="Icon" mark="[data-icon]"
+<Icon name="twitter" />
+<Icon name="mastodon" />
+<Icon name="threads" />
 
 <style>
-  .rose  { color: #e11d48; }
-  .green { color: #16a34a; }
-  .amber { color: #d97706; }
-</style>`}>
-  <Icon name="mdi:heart" size={32} style="color:#e11d48" />
-  <Icon name="mdi:leaf" size={32} style="color:#16a34a" />
-  <Icon name="mdi:flash" size={32} style="color:#d97706" />
-</Showcase>
-
-That also means an icon picks up `color` from a parent for free — inside a link, a button, or a themed section, it just matches:
-
-<Showcase code={`<p class="note">
-  <Icon name="mdi:information" /> Heads up — this icon matches its paragraph.
-</p>
-
-<style>
-  .note { color: #0284c7; }
-</style>`}>
-  <span style="color:#0284c7;display:inline-flex;align-items:center;gap:0.4rem">
-    <Icon name="mdi:information" size={20} /> Inherited from the parent
-  </span>
-</Showcase>
-
-:::note
-This relies on the source SVG using `currentColor` rather than a hardcoded `fill`. Most Iconify sets already do; hand-authored files often don't. If an icon ignores `color`, see [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-css-color).
-:::
-
-## Size
-
-`size` sets both dimensions. To size from CSS instead, pass `width={null}` and `height={null}` to drop the attributes entirely, then let `font-size` and `em` units drive it:
-
-<Showcase code={`<Icon name="mdi:star" width={null} height={null} class="scalable" />
-
-<style>
-  .scalable {
-    width: 1em;
-    height: 1em;
-    font-size: 3rem;
-  }
-</style>`}>
-  <Icon name="mdi:star" width={null} height={null} style="width:1em;height:1em;font-size:3rem" />
-</Showcase>
-
-## Targeting icons with `[data-icon]`
-
-Every rendered icon carries a `data-icon` attribute set to its `name`, so you can style icons without adding a class to each one.
-
-Style every icon on the page:
-
-```astro mark="[data-icon]"
-<style>
-  [data-icon] {
-    width: 1.5rem;
-    height: 1.5rem;
-    vertical-align: -0.25em;
-  }
+[data-icon] {
+    font-size: 2rem;
+    color: var(--brand-color);
+}
 </style>
 ```
 
-Or target one specific icon:
+Customize the styles applied to a single icon by using the `[data-icon="name"]` attribute selector.
 
-```astro mark="[data-icon=\"mdi:heart\"]"
+```astro mark="Icon" mark="logo" mark="[data-icon=\"logo\"]"
+<Icon name="logo" />
+
 <style>
-  [data-icon="mdi:heart"] {
-    color: crimson;
-  }
+[data-icon="logo"] {
+    font-size: 2rem;
+    color: var(--brand-color);
+}
 </style>
 ```
 
-## Classes and Tailwind
+## Attributes redeclared on inner elements
 
-`<Icon>` forwards `class` (and every other global HTML attribute) straight to the rendered `<svg>`, so utility classes work with no special handling:
+Passing a presentation attribute like `stroke-width`, `stroke-linecap`, or `fill` to `<Icon>` sets it on the rendered `<svg>`, and it cascades to every nested element that doesn't declare its own value for that attribute — this is normal SVG/CSS inheritance and works for most icon sets.
 
-```astro mark="class=\"size-6 text-emerald-700\""
-<Icon name="logo" class="size-6 text-emerald-700" />
+It breaks down for icon sets (Tabler is a common example) that redundantly redeclare the same presentation attributes on inner `<path>`/`<g>` elements, not just the outer `<svg>`. Once an element has its own value for a property, it never falls back to inheriting it from an ancestor, no matter what you pass to `<Icon>`:
+
+```astro "stroke-width={3}"
+<!-- The outer <svg> gets stroke-width="3", but nested elements keep their
+     own redundant stroke-width from the source icon and ignore it. -->
+<Icon name="tabler:rss" stroke-width={3} />
 ```
 
-See Astro's [Tailwind guide](https://docs.astro.build/en/guides/styling/#tailwind) for adding Tailwind to your project.
+If you hit this, the fix belongs in the icon set's `optimize` step, not on every `<Icon>` usage: strip the redundant, duplicated attribute(s) from the inner markup so each is only set once, at the root, and can inherit normally. This applies to any presentation attribute redeclared this way — `stroke`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`, `fill`, and so on — for any icon source (`iconify`, `localIcons`, or a custom `IconSource`).
 
-## Presentation attributes
+```ts title="src/content.config.ts" "optimize"
+import { defineCollection } from "astro:content";
+import { iconify } from "astro-icon/loaders";
 
-Any SVG presentation attribute you pass is set on the rendered `<svg>` and inherited by the icon's inner elements:
-
-```astro
-<Icon name="mdi:heart" fill="none" stroke="currentColor" stroke-width={1.5} />
+export const collections = {
+  tabler: defineCollection({
+    loader: iconify("tabler", {
+      optimize: (svg) => svg.replace(/\sstroke-width="2"(?=[\s/>])/g, ""),
+    }),
+  }),
+};
 ```
 
-Some icon sets redeclare these attributes on their inner elements, which blocks that inheritance — see [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-stroke-width-or-another-presentation-attribute) if a value you pass appears to do nothing.
+## Tailwind CSS
+
+Tailwind CSS support in Astro projects is provided by the [Astro Tailwind integration](https://docs.astro.build/en/guides/integrations-guide/tailwind/).
+The `Icon` component automatically passes the `class` prop through to the underlying `svg` element.
+
+```astro mark="class=\"text-xl text-emerald-700\""
+<Icon name="logo" class="text-xl text-emerald-700" />
+```
