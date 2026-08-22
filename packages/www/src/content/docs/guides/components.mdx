@@ -85,10 +85,6 @@ The `{ id, value }` form lets an element outside the icon reuse the generated `<
 </button>
 ```
 
-## Deduping repeated icons
-
-`<Icon>` always renders a standalone `<svg>` — deduping between repeated uses isn't built in, but it's one `icon()` integration away. See [“Automatic sprite optimization”](/guides/sprite/) for collapsing repeated uses into one `<symbol>` and many `<use>` elements.
-
 ## Usage with framework components
 
 The `<Icon />` component, like any other Astro component, cannot be used directly inside [UI framework components](https://docs.astro.build/en/guides/framework-components/). See [“Framework Components”](/guides/framework-components/) for the `<slot>` pattern that works instead.

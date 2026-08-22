@@ -4,14 +4,14 @@ import { docsSchema } from "@astrojs/starlight/schema";
 import {
   createIconLoader,
   iconifyLocalSource,
-  localIcons,
+  localSource,
 } from "astro-icon/loaders";
 
 // This site documents astro-icon, and renders every icon on it with astro-icon.
 // Each collection below is the exact pattern its own guide describes.
 export const collections = {
   docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
   mdi: defineCollection({
     loader: createIconLoader(iconifyLocalSource("mdi")),
   }),

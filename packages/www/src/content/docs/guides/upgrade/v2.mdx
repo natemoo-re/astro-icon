@@ -93,9 +93,11 @@ Add this reference to `src/env.d.ts` — new in v2, this is what gives `<Icon na
 
 It's generated the first time you run `astro sync`, `astro dev`, or `astro build`.
 
-## Sprite optimization is now an opt-in integration
+## Repeated icons are no longer deduped into a sprite
 
-v1 automatically deduped repeated `<Icon>` uses into a shared sprite, with no configuration. In v2, that requires installing the `icon()` integration (`astro-icon/integration`) in `astro.config.mjs` — without it, every `<Icon>` renders as a standalone `<svg>`. Once installed, deduping is on by default for every collection, same as v1; opt a single usage out with the `inline` prop, or a whole collection out with `sprite: false` on its loader. See [“Automatic sprite optimization”](/guides/sprite/).
+v1 automatically collapsed repeated `<Icon>` uses into a shared `<symbol>`/`<use>` sprite, with no configuration. v2 drops this: every `<Icon>` always renders a plain, standalone `<svg>`, no matter how many times it repeats. Measured on a real page, the sprite approach cut raw HTML but usually made the gzipped/brotli'd response bigger — repeated identical icon bodies are exactly what those compressors are already good at — while still costing real things unconditionally, like CSS being unable to reach into a `<use>`'s referenced content.
+
+If a specific page really does repeat one icon enough to matter, build a sheet for it yourself — `getEntry("icons", "home")` gives you the `viewBox` and `body` to put in a `<symbol>`.
 
 ## What didn't change
 
