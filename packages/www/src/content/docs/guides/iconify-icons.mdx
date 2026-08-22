@@ -1,0 +1,156 @@
+---
+title: Iconify Icons
+description: Resolve icons from any Iconify icon set, locally installed or from the public API.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Icon } from 'astro-icon/components';
+import Showcase from '../../../components/Showcase.astro';
+
+[Iconify](https://iconify.design/) distributes thousands of open source icon sets in a normalized format. Astro Icon ships two sources for them: `iconifyLocalSource`, backed by a locally installed pack, and `iconifyApiSource`, backed by the public Iconify API.
+
+This site loads two packs — Material Design Icons and Remix Icon — and renders from both:
+
+<Showcase code={`<Icon name="mdi:rocket" size={32} />
+<Icon name="mdi:palette" size={32} />
+<Icon name="ri:star-fill" size={32} />
+<Icon name="ri:heart-fill" size={32} />`}>
+  <Icon name="mdi:rocket" size={32} />
+  <Icon name="mdi:palette" size={32} />
+  <Icon name="ri:star-fill" size={32} />
+  <Icon name="ri:heart-fill" size={32} />
+</Showcase>
+
+### Find an icon set
+
+Visit the official [Iconify Icon Sets](https://icon-sets.iconify.design/) explorer or the popular [Icônes](https://icones.js.org/) app to browse the available icon sets.
+
+## `iconifyLocalSource`
+
+Resolves icons from any Iconify icon set installed locally as `@iconify-json/<pack>`. Pass it to `createIconLoader` to use it as a collection:
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install -D @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm add -D @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add -D @iconify-json/mdi
+```
+
+</TabItem>
+</Tabs>
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+
+export const collections = {
+  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+};
+```
+
+```astro
+---
+import { Icon } from 'astro-icon/components'
+---
+
+<!-- Embed the `account` icon from `@iconify-json/mdi` -->
+<Icon name="mdi:account" />
+```
+
+`iconifyLocalSource` never falls back to the network — it throws if the pack isn't installed.
+
+## `iconifyApiSource`
+
+For a pack you'd rather not install (or a `<LiveIcon>` collection, where you can't know every icon name ahead of time), `iconifyApiSource` resolves each requested icon individually from the public Iconify API:
+
+```ts title="src/content.config.ts"
+import { createIconLoader, iconifyApiSource } from "astro-icon/loaders";
+
+export const collections = {
+  // The API only resolves icons you name explicitly, never the whole pack,
+  // and it adds a network request per icon during your build.
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyApiSource("mdi", { icons: ["account", "home", "heart"] })),
+  }),
+};
+```
+
+## Local-preferred, API-fallback with `mergeSources`
+
+Compose both with `mergeSources` — each icon is resolved by trying sources in order, first match wins:
+
+```ts title="src/content.config.ts"
+import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: createIconLoader(
+      mergeSources([
+        iconifyLocalSource("mdi", { icons: ["account", "home", "heart"] }),
+        iconifyApiSource("mdi", { icons: ["account", "home", "heart"] }),
+      ]),
+    ),
+  }),
+};
+```
+
+## Options
+
+Both sources accept the same options as their second argument (see the full [Loaders reference](/reference/loaders/)):
+
+- **`icons`** — restricts the collection (and its generated types) to exactly these icons, typed and autocompleted against the pack's own catalog once a sync has recorded it.
+- **`optimize`** — transforms each icon's raw SVG before Astro Icon stores it; see [“SVGO & optimize()”](/guides/optimize/).
+- **`strict`** — turns a missing icon into a build error instead of a warning.
+
+```ts title="src/content.config.ts"
+import { svgo } from "astro-icon/optimize";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: createIconLoader(
+      iconifyLocalSource("mdi", {
+        icons: ["account", "home", "heart"],
+        optimize: svgo(),
+        strict: true,
+      }),
+    ),
+  }),
+};
+```
+
+## Combining multiple packs into one collection
+
+Pass `createIconLoader` an array of sources to combine several packs into one collection:
+
+```ts title="src/content.config.ts"
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+
+export const collections = {
+  social: defineCollection({
+    loader: createIconLoader([
+      iconifyLocalSource("mdi", { icons: ["github"] }),
+      iconifyLocalSource("simple-icons", { icons: ["discord"] }),
+    ]),
+  }),
+};
+```
+
+Like `localSource()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of listing versus building, and whether a pack resolved locally or from the API.
+
+:::caution
+Unlike v1's `include` integration option, there's no bundle-wide "include everything, then filter" step to worry about: each source's own `icons: [...]` option already scopes exactly what's loaded. See [“Deployment”](/guides/deployment/).
+:::

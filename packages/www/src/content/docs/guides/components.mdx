@@ -1,84 +1,90 @@
 ---
-title: Components
-description: Using the Icon component
+title: The <Icon> Component
+description: Rendering a build-time icon with the Icon component.
 ---
 
-Astro Icon's main API is an `Icon` component that automatically inlines an `<svg>` directly in your markup.
+import { Icon } from "astro-icon/components";
+import Showcase from "../../../components/Showcase.astro";
 
-## Icon
+Astro Icon's main API is an `Icon` component that automatically inlines an `<svg>` directly in your markup, resolved at build time from a collection you define in `src/content.config.ts`.
 
-You can use the `Icon` component by importing it from `astro-icon/components` and rendering it as a normal [Astro Component](https://docs.astro.build/en/core-concepts/astro-components/).
-
-```astro mark="Icon" {6}
----
-import { Icon } from 'astro-icon/components'
+<Showcase code={`---
+import { Icon } from "astro-icon/components";
 ---
 
-<!-- Embed the contents of the `/src/icons/logo.svg` file -->
-<Icon name="logo" />
-```
+<!-- Embed the contents of the /src/icons/logo.svg file -->
 
-Because `astro-icon` is powered by Astro, this component only renders on the server to static HTML. It has no runtime footprint.
+<Icon name="logo" size={32} />`}>
+  <Icon name="logo" size={32} />
+</Showcase>
 
-### Props
+Because Astro Icon is powered by Astro, this component only renders on the server to static HTML. It has no runtime footprint.
 
-The `Icon` component accepts the following properties:
+## Sizing
+
+`size` sets both dimensions at once. Set `width` and `height` individually for a non-square icon, or pass `null` to omit the attribute and size the icon from CSS instead.
+
+<Showcase
+  code={`<Icon name="mdi:rocket" size={16} />
+<Icon name="mdi:rocket" size={24} />
+<Icon name="mdi:rocket" size={32} />
+<Icon name="mdi:rocket" size={48} />`}
+>
+  <Icon name="mdi:rocket" size={16} />
+  <Icon name="mdi:rocket" size={24} />
+  <Icon name="mdi:rocket" size={32} />
+  <Icon name="mdi:rocket" size={48} />
+</Showcase>
+
+## Props
 
 ```ts
 interface Props extends HTMLAttributes<"svg"> {
-  /** The name of the icon to include */
-  name: string;
-  /** Shorthand for including a <title>{props.title}</title> element in the SVG */
-  title?: string;
-  /** Shorthand for including a <desc>{props.desc}</desc> element in the SVG */
-  desc?: string;
-  /** Shorthand for setting width and height */
+  name: IconName;
+  title?: string | { id?: string; value: string };
+  desc?: string | { id?: string; value: string };
   size?: number | string;
-  width?: number | string;
-  height?: number | string;
+  width?: number | string | null;
+  height?: number | string | null;
 }
 ```
 
-The `Icon` also accepts any global HTML attributes and `aria` attributes. They will be forwarded to the rendered `<svg>` element.
+- **`name`** is `"collection:icon"` for any collection you define, or a bare icon name if you have a collection named `icons`, as in the example above. It autocompletes and type-checks against every collection you've defined, once you've run `astro sync`, `dev`, or `build`.
+- **`title`** and **`desc`** add an accessible `<title>`/`<desc>` inside the `<svg>`, and take the icon out of its decorative default (see below). Pass `{ id, value }` instead of a plain string when something _outside_ the icon needs to reference the same id — e.g. a button that wraps an icon and wants to reuse its title as the button's own accessible name.
+- **`size`** sets both `width` and `height` at once, and takes priority over either if you set both. Set `width` and `height` individually to render a non-square icon.
+- By default, `<Icon>` renders with `width`/`height` set from the icon's intrinsic size. Pass `width={null}`/`height={null}` to omit the attribute entirely, e.g. to size the icon from CSS instead.
 
-### Automatically optimized sprites
+`<Icon>` also accepts any global HTML and `aria-*` attribute, and forwards it to the rendered `<svg>`.
 
-Because Astro controls the entire rendering lifecycle for a given `Request`, `astro-icon` is able to automatically optimize repeated references to the same icon on a page.
+## Accessibility: decorative vs. labeled
 
-The approach uses a novel take on the more traditional [SVG Sprite](https://css-tricks.com/svg-sprites-use-better-icon-fonts/) system that leverages a single `<svg>` sprite for your entire site. The first time the `Icon` component is included on a page, it defines a sprite [`<symbol>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/symbol) with a unique ID and immediately renders that symbol with the [`<use>`](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use) element. If the same icon is referenced again, `Icon` will render only a `<use>` element, reducing the overall size of your HTML document by referencing the existing `<symbol>`.
+By default, `<Icon>` renders as decorative: `aria-hidden="true"`, invisible to assistive tech. That's the common case, since most icons sit next to visible text or inside an already-labeled control. Set `title`, `desc`, or your own `aria-label`, `aria-labelledby`, `aria-description`, or `aria-describedby` to render it instead as a labeled, standalone graphic:
 
-```astro
----
-import { Icon } from 'astro-icon/components'
----
+<Showcase resultLabel="Result (inspect to compare)" code={`<!-- Decorative: assistive tech skips it, the button's own label is enough -->
+<button><Icon name="mdi:close" /> Close</button>
 
-<Icon name="logo" />
-<!-- First usage generates the following HTML -->
-<svg data-icon="logo">
-	<symbol id="ai:uniqueid"><!-- contents of /src/icons/logo.svg --></symbol>
-	<use href="#ai:uniqueid"></use>
-</svg>
+<!-- Labeled: title becomes the icon's accessible name -->
 
-<Icon name="logo" />
-<!-- Additional usage generates the following HTML -->
-<svg data-icon="logo">
-	<use href="#ai:uniqueid"></use>
-</svg>
-```
+<Icon name="mdi:alert" title="Warning" />`}>
+  <button style="display:inline-flex;align-items:center;gap:0.4rem;font:inherit;color:inherit;background:none;border:1px solid currentColor;border-radius:0.3rem;padding:0.25rem 0.6rem;cursor:pointer">
+    <Icon name="mdi:close" size={18} /> Close
+  </button>
+  <Icon name="mdi:alert" size={24} title="Warning" />
+</Showcase>
 
-## Usage with Framework Components
+Inspect those two in your browser's dev tools: the first renders `aria-hidden="true"`, the second renders `role="img"` with an `aria-labelledby` pointing at its own `<title>`.
 
-The `<Icon />` component, like any other Astro component, cannot be used directly in [UI framework components](https://docs.astro.build/en/core-concepts/framework-components/).
-
-But, you can pass the static content generated by `<Icon />` to a framework component inside a `.astro` file as children or using a [named `<slot/>`](https://docs.astro.build/en/core-concepts/framework-components/#can-i-use-astro-components-inside-my-framework-components):
+The `{ id, value }` form lets an element outside the icon reuse the generated `<title>` as its own accessible name, instead of duplicating the text:
 
 ```astro
----
-import ReactComponent from './ReactComponent.jsx'
-import { Icon } from "astro-icon/components"
----
-
-<ReactComponent>
-  <Icon name="logo" />
-</ReactComponent>
+<button aria-labelledby="adjustment-title">
+  <Icon
+    name="adjustment"
+    title={{ id: "adjustment-title", value: "Adjustment" }}
+  />
+</button>
 ```
+
+## Usage with framework components
+
+The `<Icon />` component, like any other Astro component, cannot be used directly inside [UI framework components](https://docs.astro.build/en/guides/framework-components/). See [“Framework Components”](/guides/framework-components/) for the `<slot>` pattern that works instead.

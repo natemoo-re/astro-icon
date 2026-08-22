@@ -1,36 +1,136 @@
 ---
 title: Astro Icon
-description: Astro Icon simplifies working with icons in Astro
+description: Render SVG icons in Astro as inline <svg> elements, with full TypeScript autocomplete for every icon name.
 template: splash
 editUrl: false
 lastUpdated: false
 hero:
-  tagline: Icons made easy, powered by Astro
+  tagline: Every icon on this page was rendered by Astro Icon at build time. No client-side JavaScript, no icon fonts, no <code>&lt;img&gt;</code> requests — just inline <code>&lt;svg&gt;</code>.
   actions:
     - text: Get Started
       link: /getting-started/
       icon: right-arrow
       variant: primary
-    - text: View Repo
+    - text: View on GitHub
       link: https://github.com/natemoo-re/astro-icon
       icon: external
+      variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import {
+  CardGrid,
+  LinkCard,
+  Tabs,
+  TabItem,
+} from "@astrojs/starlight/components";
+import { Icon } from "astro-icon/components";
+import Showcase from "../../components/Showcase.astro";
+import Features from "../../components/Features.astro";
 
-## Next steps
+## Declare a collection, render an icon
+
+Point a collection at an icon set once, in `src/content.config.ts`:
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
+};
+```
+
+Then reference any icon in it, from any page. The `name` prop autocompletes against every collection you define, so a typo is a type error at build time — not a broken image in production.
+
+<Showcase code={`---
+import { Icon } from "astro-icon/components";
+---
+
+<Icon name="mdi:rocket" size={32} />
+<Icon name="mdi:heart" size={32} />
+<Icon name="mdi:star" size={32} />`}>
+  <Icon name="mdi:rocket" size={32} />
+  <Icon name="mdi:heart" size={32} />
+  <Icon name="mdi:star" size={32} />
+</Showcase>
+
+## Bring icons from anywhere
+
+<Tabs>
+<TabItem label="Iconify sets">
+
+Install any of [Iconify's](https://icon-sets.iconify.design/) 200,000+ icons and reference them by name.
+
+```ts title="src/content.config.ts"
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+
+export const collections = {
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
+};
+```
+
+</TabItem>
+<TabItem label="Your own SVGs">
+
+Drop `.svg` files into `src/icons/` and they're picked up automatically, with hot reload in dev.
+
+```ts title="src/content.config.ts"
+import { createIconLoader, localSource } from "astro-icon/loaders";
+
+export const collections = {
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+};
+```
+
+</TabItem>
+<TabItem label="A custom source">
+
+Fetch icons from a design tool, a database, or an internal API by implementing `IconSource`.
+
+```ts title="src/content.config.ts"
+const mySource: IconSource = {
+  name: "my-source",
+  async getIcon(name) {
+    /* ...return an IconEntry */
+  },
+  async listIcons() {
+    /* ...return every name */
+  },
+};
+```
+
+</TabItem>
+</Tabs>
+
+## Also worth knowing
+
+<Features />
+
+## Where to next
 
 <CardGrid>
-	<Card title="Local Icons" icon="setting">
-		Automatically embed custom `svg` icons
-	</Card>
-	<Card title="Icon Sets" icon="puzzle">
-		Support for all [`@iconify-json/*`](https://iconify.design/) packages
-	</Card>
-	<Card title="Intelligent Sprites" icon="star">
-		Deduplicated sprites with zero overhead
-	</Card>
-	<Card title="Fully Dynamic" icon="open-book">
-		Fully dynamic icon references without imports
-	</Card>
+  <LinkCard
+    title="Get Started"
+    description="Install the package and render your first icon."
+    href="/getting-started/"
+  />
+  <LinkCard
+    title="Upgrading from v1?"
+    description="v2 replaces the icon() integration with content collection loaders."
+    href="/guides/upgrade/v2/"
+  />
+  <LinkCard
+    title="Live Icons"
+    description="Resolve icons per request for names you can't know at build time."
+    href="/guides/live-icon/"
+  />
+  <LinkCard
+    title="Reference"
+    description="Every loader, source, and component option in one place."
+    href="/reference/loaders/"
+  />
 </CardGrid>

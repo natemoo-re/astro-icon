@@ -1,0 +1,76 @@
+---
+title: Local Icons
+description: Load a directory of your own .svg files with localSource().
+prev: false
+---
+
+import { Icon } from 'astro-icon/components';
+import { FileTree } from '@astrojs/starlight/components';
+import Showcase from '../../../components/Showcase.astro';
+
+`localSource()` reads every `.svg` file in a directory, `src/icons/` by default, and watches it in dev: add, edit, or remove a file, and the collection updates without a server restart.
+
+```ts title="src/content.config.ts"
+import { defineCollection } from "astro:content";
+import { createIconLoader, localSource } from "astro-icon/loaders";
+
+export const collections = {
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+};
+```
+
+This site's own logo is a local icon loaded exactly this way, from `src/icons/logo.svg`:
+
+<Showcase code={`---
+import { Icon } from "astro-icon/components";
+---
+
+<!-- Embed the contents of the /src/icons/logo.svg file -->
+<Icon name="logo" size={40} />`}>
+  <Icon name="logo" size={40} />
+</Showcase>
+
+## Naming
+
+A file's path relative to the directory, without its extension, becomes its icon name. Subdirectories join with `/`, so use sub-folders to organize your files into multiple logical sets:
+
+<FileTree>
+- src/icons
+  - logo.svg
+  - annotation.svg
+  - logos
+    - deno.svg
+    - alpine.svg
+</FileTree>
+
+| File | Icon name |
+| --- | --- |
+| `src/icons/logo.svg` | `<Icon name="logo" />` |
+| `src/icons/annotation.svg` | `<Icon name="annotation" />` |
+| `src/icons/logos/deno.svg` | `<Icon name="logos/deno" />` |
+| `src/icons/logos/alpine.svg` | `<Icon name="logos/alpine" />` |
+
+## A different directory
+
+Pass a different directory as the first argument:
+
+```ts title="src/content.config.ts"
+icons: defineCollection({ loader: createIconLoader(localSource("src/assets/icons")) }),
+```
+
+## Sync logging
+
+Each sync logs how many icons it loaded and how long it took (e.g. `Loaded 42 icon(s) from "icons" in 18ms`), so a slow build step is easy to attribute to icon loading versus everything else.
+
+## Optimizing local icons
+
+Astro Icon doesn't run any optimization on local `.svg` files by default — unlike v1, which ran SVGO automatically. Opt in with the `optimize` option and the `svgo()` helper from `astro-icon/optimize`; see [“SVGO & optimize()”](/guides/optimize/).
+
+:::caution
+If you were relying on automatic SVGO optimization from v1, see [“Upgrading to v2”](/guides/upgrade/v2/) to restore it explicitly.
+:::
+
+## Colors and `currentColor`
+
+`localSource()` never rewrites a file's colors for you. If an icon looks like a single-color glyph with no `currentColor` anywhere, a sync-time warning names it so the fix is easy to find. See [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-css-color) for the full explanation and the `svgo()` recipe to fix it.
+
