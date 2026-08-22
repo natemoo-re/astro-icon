@@ -10,7 +10,6 @@ astro-icon reads icons through Astro's [content layer](https://docs.astro.build/
 - [Styling icons](#styling-icons)
 - [Local icons](#local-icons)
 - [Iconify icons](#iconify-icons)
-- [Deduping repeated icons with `<Sprite>`](#deduping-repeated-icons-with-sprite)
 - [Resolving icons per request with `<LiveIcon>`](#resolving-icons-per-request-with-liveicon)
 - [Bringing your own icon source](#bringing-your-own-icon-source)
 - [Shipping icons from a library](#shipping-icons-from-a-library)
@@ -349,7 +348,7 @@ optimize: svgo({
 });
 ```
 
-`optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once outside `<Sprite>` (see [below](#deduping-repeated-icons-with-sprite)) duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+`optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts
 import { svgo, defaultOverrides } from "astro-icon/optimize";
@@ -393,26 +392,6 @@ export const collections = {
 ```
 
 Like a local collection, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of how long listing icons took versus resolving/building them, so you can tell a slow local pack lookup apart from a slow Iconify API fallback, plus whether a pack resolved locally or from the API.
-
-## Deduping repeated icons with `<Sprite>`
-
-`<Icon>` always renders a standalone `<svg>`, with no deduping between repeated uses. If you render the same icon many times on a page, wrap those uses in `<Sprite>` to dedupe them into one `<symbol>` and many `<use>` elements:
-
-```astro
----
-import { Icon, Sprite } from "astro-icon/components";
----
-
-<Sprite>
-  <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-  <Icon name="mdi:star" />
-</Sprite>
-```
-
-`<Sprite>` only affects `<Icon>` uses nested inside it. Anything outside a `<Sprite>` renders as before. Use one `<Sprite>` per page; a dev-only warning fires if a second one renders, since each dedupes independently and won't share `<symbol>`s with another.
-
-`<Sprite>` requires a prerendered page (`export const prerender = true;`, or a project with `output: "static"`). It has to buffer and rewrite its slot's full HTML, which would otherwise break streaming on a server-rendered route.
 
 ## Resolving icons per request with `<LiveIcon>`
 

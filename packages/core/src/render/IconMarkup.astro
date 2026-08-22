@@ -26,11 +26,9 @@ export interface Props {
   };
   /** The `data-icon` marker's value - see CONTEXT.md's "Icon marker". */
   dataIcon: string;
-  /** Set on `<LiveIcon>` output only - see CONTEXT.md's "Sprite boundary" for why. */
-  dataIconLive?: boolean;
 }
 
-const { entry, title, desc, svgProps, dataIcon, dataIconLive } = Astro.props;
+const { entry, title, desc, svgProps, dataIcon } = Astro.props;
 
 // `entry.title`/`.desc` are the icon's own defaults (e.g. a local `.svg`'s inline `<title>`/
 // `<desc>`) - only used when the caller didn't pass their own, same as every other prop here.
@@ -46,7 +44,7 @@ const { normalizedProps } = renderableIconProps(entry, {
 const renderedBody = replaceIDs(entry.body);
 ---
 
-<svg {...normalizedProps} data-icon={dataIcon} data-icon-live={dataIconLive}>
+<svg {...normalizedProps} data-icon={dataIcon}>
   {titleId && <title id={titleId}>{titleText}</title>}
   {descId && <desc id={descId}>{descText}</desc>}
   <Fragment set:html={renderedBody} />

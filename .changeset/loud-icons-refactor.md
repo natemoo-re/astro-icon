@@ -46,17 +46,10 @@ Rebuilt astro-icon on top of Astro's Content Layer instead of a custom Vite reso
 - **No more bundled SVGO.** Loaders accept an optional `optimize(svg, { collection, name })` function instead, a plain transform with no default and no dependency pulled in for you.
 - **`viewBox` handling**: the source `viewBox` is used when present; otherwise one is derived from the icon's width/height, with a warning. Pass `strict: true` to a loader to turn that warning (and a few others, such as a source failing to provide/build a requested icon) into a build error instead.
 - Name types are generated per-collection (`.astro/astro-icon/<kind>-<collection>.d.ts`), referenced from a single `.astro/astro-icon.d.ts` you point `src/env.d.ts` at.
-- **`<Icon>` no longer dedupes on its own, and `is:inline` is gone.** `<Icon>` always renders a plain, standalone `<svg>` now. To dedupe repeated icons into one `<symbol>` + many `<use>`s, wrap them in the new `<Sprite>` component instead:
-  ```astro
-  ---
-  import { Icon, Sprite } from "astro-icon/components";
-  ---
+- **`<Icon>` no longer dedupes repeated icons, and `is:inline` is gone.** Every `<Icon>` renders a plain, standalone `<svg>`. v1 collapsed repeated icons into one `<symbol>` plus many `<use>` elements; v2 doesn't, in either direction - there's no per-icon flag and no wrapper component to reach for.
 
-  <Sprite>
-    <Icon name="mdi:home" />
-    <Icon name="mdi:home" />
-  </Sprite>
-  ```
-  Only `<Icon>` usages nested inside a `<Sprite>` are affected: nothing outside it is ever deduped, so there's no per-icon flag to remember. Deduping only works on prerendered pages; on a server-rendered route `<Sprite>` falls back to rendering its children untouched (each `<Icon>` as its own standalone `<svg>`, same as not using `<Sprite>` at all) instead of throwing, with a dev-only warning.
+  Compression is why. Repeated identical icon bodies are exactly what gzip and brotli are best at, so the sheet that looks smaller in raw bytes usually isn't smaller over the wire until an icon repeats dozens of times on one page - while `<symbol>`/`<use>` costs you real things unconditionally: CSS can't style into a `<use>`'s referenced content, and a `<use>` breaks if the element it points at is removed or navigated away from.
+
+  If a specific page really does repeat one icon enough to matter, build a sheet for it yourself - `getEntry("icons", "home")` gives you the `viewBox` and `body` to put in a `<symbol>`.
 
 A full migration guide for the docs site is tracked separately and not yet published.
