@@ -1,0 +1,22 @@
+---
+import { Icon } from "astro-icon/components";
+import Base from "../../layouts/base.astro";
+---
+
+<Base title="Hello, world">
+  <article>
+    <h1>Hello, world</h1>
+    <p class="meta">
+      <Icon name="calendar" size={16} /> Published 2026-01-12 &middot;
+      <Icon name="heart" size={16} /> 12 likes &middot;
+      <Icon name="check" size={16} /> Verified author
+    </p>
+    <p>
+      Every icon on this page - <code>calendar</code>, <code>heart</code>,
+      <code>check</code> here, plus the nav icons in the header/footer - comes from
+      the same <code>icons</code> collection: a directory of local
+      <code>.svg</code> files, nothing else. There's no other configuration anywhere
+      in this project.
+    </p>
+  </article>
+</Base>

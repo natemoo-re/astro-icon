@@ -1,0 +1,85 @@
+---
+// No `export const prerender`, so with `output: "server"` this route is SSR
+// by default - a real dashboard, rendered fresh per request. `<Icon>`
+// resolves against the same `mdi`/`brand` collections either way; nothing
+// about this page differs from a prerendered one except when it runs.
+import { Icon } from "astro-icon/components";
+import App from "../layouts/app.astro";
+
+const rows = Array.from({ length: 40 }, (_, i) => ({
+  id: i + 1,
+  name: `user-${i + 1}@example.com`,
+  role: i % 5 === 0 ? "Admin" : "Member",
+}));
+---
+
+<App title="Users">
+  <div class="toolbar">
+    <h1>Users</h1>
+    <button><Icon name="mdi:plus" size={16} /> Invite</button>
+  </div>
+
+  <p class="note">
+    Every row below repeats the same three action icons -
+    <code>mdi:eye</code>, <code>mdi:pencil</code>, <code>mdi:delete</code> - 40 times
+    each, 120 icon usages total, each a plain inline
+    <code>&lt;svg&gt;</code>. Rendered fresh per request, same as everything
+    else on this route.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) => (
+          <tr>
+            <td>{row.name}</td>
+            <td>{row.role}</td>
+            <td class="actions">
+              <Icon name="mdi:eye" size={16} />
+              <Icon name="mdi:pencil" size={16} />
+              <Icon name="mdi:delete" size={16} />
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</App>
+
+<style>
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .note {
+    color: #666;
+    max-width: 42rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid #eee;
+  }
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+</style>
