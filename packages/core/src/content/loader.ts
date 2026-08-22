@@ -116,10 +116,6 @@ function syncIcons(
     // `config.root` exists) gets a chance to anchor itself now that a real one is available.
     source.resolveRoot?.(context.config.root);
 
-    // Before anything else: a source built eagerly (in `content.config.ts`, before Astro's
-    // `config.root` exists) gets a chance to anchor itself now that a real one is available.
-    source.resolveRoot?.(context.config.root);
-
     const syncStart = performance.now();
 
     const listStart = syncStart;
