@@ -19,7 +19,7 @@ An `IconSource` backed by a directory of local `.svg` files.
 function localSource(dir: URL | string, options?: LocalSourceOptions): IconSource;
 ```
 
-This is what [`localIcons()`](/reference/loaders/#localiconsdir-options) uses internally, minus the directory watching. Reach for it directly when you need to compose a local directory with other sources, or when the directory ships inside a library package:
+Reach for it directly, passed to [`createIconLoader`](/reference/loaders/#createiconloadersources-options), when you need to compose a local directory with other sources, or when the directory ships inside a library package:
 
 ```ts
 import { createIconLoader, localSource } from "astro-icon/loaders";
@@ -27,7 +27,7 @@ import { createIconLoader, localSource } from "astro-icon/loaders";
 createIconLoader(localSource(new URL("../icons/", import.meta.url)));
 ```
 
-A `URL` resolves directly, independent of the consuming project's root — which is what makes it correct for [library-shipped icons](/guides/shipping-icons-from-a-library/). A plain `string` path is only resolved against `config.root` by `localIcons()`.
+A `URL` resolves directly, independent of the consuming project's root — which is what makes it correct for [library-shipped icons](/guides/shipping-icons-from-a-library/). A plain `string` path is only resolved against `config.root` once `createIconLoader`/`createLiveIconLoader` calls `resolveRoot()` on it.
 
 Each file's path relative to `dir`, minus the extension, becomes its icon name: `<dir>/logos/deno.svg` is `"logos/deno"`.
 

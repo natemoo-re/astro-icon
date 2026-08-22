@@ -1,6 +1,6 @@
 ---
 title: Local Icons
-description: Load a directory of your own .svg files with localIcons().
+description: Load a directory of your own .svg files with localSource().
 prev: false
 ---
 
@@ -8,14 +8,14 @@ import { Icon } from 'astro-icon/components';
 import { FileTree } from '@astrojs/starlight/components';
 import Showcase from '../../../components/Showcase.astro';
 
-`localIcons()` reads every `.svg` file in a directory, `src/icons/` by default, and watches it in dev: add, edit, or remove a file, and the collection updates without a server restart.
+`localSource()` reads every `.svg` file in a directory, `src/icons/` by default, and watches it in dev: add, edit, or remove a file, and the collection updates without a server restart.
 
 ```ts title="src/content.config.ts"
 import { defineCollection } from "astro:content";
-import { localIcons } from "astro-icon/loaders";
+import { createIconLoader, localSource } from "astro-icon/loaders";
 
 export const collections = {
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
 };
 ```
 
@@ -55,7 +55,7 @@ A file's path relative to the directory, without its extension, becomes its icon
 Pass a different directory as the first argument:
 
 ```ts title="src/content.config.ts"
-icons: defineCollection({ loader: localIcons("src/assets/icons") }),
+icons: defineCollection({ loader: createIconLoader(localSource("src/assets/icons")) }),
 ```
 
 ## Sync logging
@@ -72,5 +72,5 @@ If you were relying on automatic SVGO optimization from v1, see [“Upgrading to
 
 ## Colors and `currentColor`
 
-`localIcons()` never rewrites a file's colors for you. If an icon looks like a single-color glyph with no `currentColor` anywhere, a sync-time warning names it so the fix is easy to find. See [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-css-color) for the full explanation and the `svgo()` recipe to fix it.
+`localSource()` never rewrites a file's colors for you. If an icon looks like a single-color glyph with no `currentColor` anywhere, a sync-time warning names it so the fix is easy to find. See [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-css-color) for the full explanation and the `svgo()` recipe to fix it.
 

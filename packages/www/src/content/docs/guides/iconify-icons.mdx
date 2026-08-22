@@ -149,7 +149,7 @@ export const collections = {
 };
 ```
 
-Like `localIcons()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of listing versus building, and whether a pack resolved locally or from the API.
+Like `localSource()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of listing versus building, and whether a pack resolved locally or from the API.
 
 :::caution
 Unlike v1's `include` integration option, there's no bundle-wide "include everything, then filter" step to worry about: each source's own `icons: [...]` option already scopes exactly what's loaded. See [“Deployment”](/guides/deployment/).
