@@ -1,0 +1,32 @@
+---
+import { Icon } from "astro-icon/components";
+import Base from "../layouts/base.astro";
+---
+
+<Base title="Home">
+  <h1>Welcome to Acme Blog</h1>
+  <p>
+    This is the <strong>site builder</strong> persona: a marketing site with a handful
+    of prerendered pages and ~10 local icons. Look at
+    <code>src/content.config.ts</code> - that's the entire setup.
+  </p>
+
+  <section>
+    <h2>Why teams pick us</h2>
+    <ul class="features">
+      <li><Icon name="check" size={20} /> Ships static HTML, no client JS</li>
+      <li>
+        <Icon name="star" size={20} /> Full TypeScript autocomplete for icon names
+      </li>
+    </ul>
+    <a class="cta" href="/blog">
+      Read the blog <Icon name="arrow-right" size={16} />
+    </a>
+  </section>
+
+  <p class="note">
+    View source on this page: every icon, here and in the header/footer nav, is
+    a plain, standalone <code>&lt;svg&gt;</code> - resolved at build time, no client-side
+    JavaScript.
+  </p>
+</Base>

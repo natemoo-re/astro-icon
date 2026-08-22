@@ -1,0 +1,55 @@
+---
+export const prerender = true;
+
+import { Icon } from "astro-icon/components";
+import IconButton from "../lib/IconButton.astro";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Library author example</title>
+  </head>
+  <body>
+    <h1><Icon name="icons:logo" size={24} /> Consumer app</h1>
+    <p>
+      This page belongs to the "consumer", but it imports and renders
+      <code>&lt;IconButton&gt;</code> from <code>src/lib/</code> - a stand-in for
+      a component library like <code>acme-ui</code>. See
+      <code>src/content.config.ts</code> for the one line that wires the library's
+      icons in: <code>...acmeUiIcons</code>.
+    </p>
+
+    <section>
+      <h2>A library component, used normally</h2>
+      <IconButton icon="chevron-right">Next</IconButton>
+      <IconButton icon="close">Dismiss</IconButton>
+    </section>
+
+    <section>
+      <h2>Styling an icon's internals</h2>
+      <p>
+        <code>spinner.svg</code> has two paths meant to be styled independently (<code
+          >.spinner-track</code
+        >, <code>.spinner-head</code>).
+        <code>&lt;Icon&gt;</code> always renders a plain, standalone
+        <code>&lt;svg&gt;</code>, so <code>IconButton.astro</code>'s
+        <code>.spinner-head</code> animation reaches every usage below with no opt-in
+        required.
+      </p>
+      <IconButton icon="spinner">Loading</IconButton>
+      <IconButton icon="spinner">Loading</IconButton>
+    </section>
+
+    <section>
+      <h2>Using a library icon directly</h2>
+      <p>
+        Consumers aren't limited to <code>&lt;IconButton&gt;</code> - any icon the
+        library ships is addressable the normal way, with the collection key as its
+        namespace:
+      </p>
+      <Icon name="acme-ui-icons:chevron-right" size={24} />
+    </section>
+  </body>
+</html>

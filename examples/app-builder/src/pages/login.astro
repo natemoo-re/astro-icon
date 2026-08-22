@@ -1,0 +1,71 @@
+---
+// Prerendered even though the app's default output is "server" - a login
+// screen has nothing user-specific to render per request. Same `mdi`/`brand`
+// collections as /dashboard, resolved at build time instead of per request.
+export const prerender = true;
+
+import { Icon } from "astro-icon/components";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Sign in · Dashboard</title>
+  </head>
+  <body>
+    <main>
+      <div class="card">
+        <Icon name="brand:logo" size={28} />
+        <h1>Sign in</h1>
+        <label>
+          <Icon name="mdi:email" size={16} /> Email
+          <input type="email" name="email" />
+        </label>
+        <label>
+          <Icon name="mdi:lock" size={16} /> Password
+          <input type="password" name="password" />
+        </label>
+        <button type="submit">Sign in</button>
+        <a class="back" href="/dashboard"
+          ><Icon name="mdi:arrow-left" size={14} /> Back to dashboard</a
+        >
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background: #f7f7f8;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    width: 20rem;
+  }
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+  }
+  .back {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #666;
+  }
+</style>
