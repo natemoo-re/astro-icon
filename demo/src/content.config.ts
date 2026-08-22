@@ -30,7 +30,11 @@ export const collections = {
   allowlist: defineCollection({
     loader: createIconLoader(
       iconifyLocalSource("ic", {
-        allowed: ["baseline-storage", "baseline-cloud-queue", "baseline-extension"],
+        allowed: [
+          "baseline-storage",
+          "baseline-cloud-queue",
+          "baseline-extension",
+        ],
       }),
     ),
   }),
