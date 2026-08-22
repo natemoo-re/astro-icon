@@ -26,13 +26,13 @@ export const myLibIcons = {
 
 ```ts title="consumer's src/content.config.ts"
 import { defineCollection } from "astro:content";
-import { localIcons } from "astro-icon/loaders";
+import { createIconLoader, localSource } from "astro-icon/loaders";
 import { myLibIcons } from "my-lib/icons";
 
 export const collections = {
   ...myLibIcons,
   // The consumer's own icons, defined the normal way.
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
 };
 ```
 
@@ -40,7 +40,7 @@ The consumer now renders both without adding a loader themselves: `<Icon name="m
 
 ## Two things worth knowing as a library author
 
-- **Use `localSource`, not `localIcons()`, for bundled `.svg` files.** `localIcons(dir)` resolves `dir` against the *consuming* project's root (`config.root`), which is correct for a directory the consumer owns but wrong for one that ships inside your package. `localSource` takes a `URL` and resolves it directly, so `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file, no matter who imports it. Wrap it in `createIconLoader([...])` to get a `Loader` you can hand to `defineCollection`.
+- **Pass `localSource` a `URL`, not a plain string, for bundled `.svg` files.** A plain relative string resolves against the *consuming* project's root (`config.root`), which is correct for a directory the consumer owns but wrong for one that ships inside your package. A `URL` resolves directly, so `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file, no matter who imports it.
 - **Pick a collection key that won't collide.** Two collections can't share a key when their objects are spread together; prefix yours with your package name (`"my-lib-icons"`) rather than something generic like `"icons"`.
 
 The same pattern works for a live collection: export an object of `defineLiveCollection({ loader: createLiveIconLoader(...) })` entries for a consumer to spread into their own `src/live.config.ts`.

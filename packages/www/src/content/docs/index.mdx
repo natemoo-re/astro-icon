@@ -79,10 +79,10 @@ export const collections = {
 Drop `.svg` files into `src/icons/` and they're picked up automatically, with hot reload in dev.
 
 ```ts title="src/content.config.ts"
-import { localIcons } from "astro-icon/loaders";
+import { createIconLoader, localSource } from "astro-icon/loaders";
 
 export const collections = {
-  icons: defineCollection({ loader: localIcons() }),
+  icons: defineCollection({ loader: createIconLoader(localSource()) }),
 };
 ```
 

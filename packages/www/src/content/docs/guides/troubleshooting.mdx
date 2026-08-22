@@ -30,7 +30,7 @@ Most Iconify icon sets use `currentColor` already — their maintainers normaliz
 
 ### How Astro Icon warns you
 
-`localIcons()` never rewrites a file's colors for you: only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships.
+`localSource()` never rewrites a file's colors for you: only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships.
 
 What it does instead is warn. After each sync, if any icon looks like a single-color glyph that would benefit — no `currentColor` anywhere, and no more than one distinct explicit `fill`/`stroke` — it logs how many. Multi-color icons (two or more distinct explicit colors, read as a deliberate graphic) are never flagged.
 
@@ -40,26 +40,28 @@ Edit the `.svg` file to use `currentColor`, or convert a whole collection at onc
 
 ```ts title="src/content.config.ts"
 import { defineCollection } from "astro:content";
-import { localIcons } from "astro-icon/loaders";
+import { createIconLoader, localSource } from "astro-icon/loaders";
 import { svgo, defaultOverrides } from "astro-icon/optimize";
 
 export const collections = {
   icons: defineCollection({
-    loader: localIcons("src/icons", {
-      optimize: svgo({
-        plugins: [
-          {
-            name: "preset-default",
-            params: {
-              overrides: {
-                ...defaultOverrides,
-                convertColors: { currentColor: true },
+    loader: createIconLoader(
+      localSource("src/icons", {
+        optimize: svgo({
+          plugins: [
+            {
+              name: "preset-default",
+              params: {
+                overrides: {
+                  ...defaultOverrides,
+                  convertColors: { currentColor: true },
+                },
               },
             },
-          },
-        ],
+          ],
+        }),
       }),
-    }),
+    ),
   }),
 };
 ```
