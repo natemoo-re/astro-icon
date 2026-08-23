@@ -6,9 +6,9 @@ next:
   label: Local Icons
 ---
 
-import { Tabs, TabItem, Steps, FileTree } from '@astrojs/starlight/components';
-import { Icon } from 'astro-icon/components';
-import Showcase from '../../components/Showcase.astro';
+import { Tabs, TabItem, Steps, FileTree } from "@astrojs/starlight/components";
+import { Icon } from "astro-icon/components";
+import Showcase from "../../components/Showcase.astro";
 
 Astro Icon is a straightforward icon system for the [Astro](https://astro.build) framework.
 This guide assumes that you have an existing Astro project.
@@ -19,66 +19,72 @@ See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if
 
 <Steps>
 
-1. Install the `astro-icon` package using your package manager:
+1.  Install the `astro-icon` package using your package manager:
 
-   <Tabs syncKey="pkg">
-   <TabItem label="npm">
+          <Tabs syncKey="pkg">
 
-   ```sh
-   npm install astro-icon
-   ```
+    <TabItem label="npm">
 
-   </TabItem>
-   <TabItem label="pnpm">
+    ```sh
+    npm install astro-icon
+    ```
 
-   ```sh
-   pnpm add astro-icon
-   ```
+          </TabItem>
 
-   </TabItem>
-   <TabItem label="Yarn">
+    <TabItem label="pnpm">
 
-   ```sh
-   yarn add astro-icon
-   ```
+    ```sh
+    pnpm add astro-icon
+    ```
 
-   </TabItem>
-   </Tabs>
+          </TabItem>
 
-   Astro Icon isn't an Astro integration, so there's nothing to add to `integrations` in `astro.config.mjs`.
+    <TabItem label="bun">
 
-2. Define an icon collection in `src/content.config.ts`, the same way you'd define any other [content collection](https://docs.astro.build/en/guides/content-collections/):
+    ```sh
+    bun add astro-icon
+    ```
 
-   ```ts title="src/content.config.ts"
-   import { defineCollection } from "astro:content";
-   import { createIconLoader, localSource } from "astro-icon/loaders";
+          </TabItem>
 
-   export const collections = {
-     icons: defineCollection({ loader: createIconLoader(localSource()) }),
-   };
-   ```
+    <TabItem label="Yarn">
 
-3. Add your `.svg` files to `src/icons/`:
+    ```sh
+    yarn add astro-icon
+    ```
 
-   <FileTree>
-   - src
-     - icons
-       - logo.svg
-       - logos
-         - astro.svg
-     - content.config.ts
-     - pages/
-   </FileTree>
+          </TabItem>
 
-4. Render one with the `<Icon>` component:
+    </Tabs>
 
-   ```astro
-   ---
-   import { Icon } from "astro-icon/components";
-   ---
+    Astro Icon isn't an Astro integration, so there's nothing to add to `integrations` in `astro.config.mjs`.
 
-   <Icon name="logo" />
-   ```
+2.  Define an icon collection in `src/content.config.ts`, the same way you'd define any other [content collection](https://docs.astro.build/en/guides/content-collections/):
+
+    ```ts title="src/content.config.ts"
+    import { defineCollection } from "astro:content";
+    import { createIconLoader, localSource } from "astro-icon/loaders";
+
+    export const collections = {
+      icons: defineCollection({ loader: createIconLoader(localSource()) }),
+    };
+    ```
+
+3.  Add your `.svg` files to `src/icons/`:
+
+    <FileTree>
+      - src - icons - logo.svg - logos - astro.svg - content.config.ts - pages/
+    </FileTree>
+
+4.  Render one with the `<Icon>` component:
+
+    ```astro
+    ---
+    import { Icon } from "astro-icon/components";
+    ---
+
+    <Icon name="logo" />
+    ```
 
 </Steps>
 
@@ -86,7 +92,7 @@ See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if
 
 Add this line to `src/env.d.ts` so `<Icon name="...">` autocompletes against every icon in your collections, and gives you a type error for a name that doesn't exist:
 
-```ts title="src/env.d.ts" ins="/// <reference path=\"../.astro/astro-icon.d.ts\" />"
+```ts title="src/env.d.ts" ins="/// <reference path="../.astro/astro-icon.d.ts" />"
 /// <reference path="../.astro/astro-icon.d.ts" />
 ```
 
@@ -98,11 +104,17 @@ Define a collection in `src/content.config.ts`. Use `createIconLoader` with `ico
 
 ```ts title="src/content.config.ts"
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyLocalSource,
+  localSource,
+} from "astro-icon/loaders";
 
 export const collections = {
   // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
   // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
   icons: defineCollection({ loader: createIconLoader(localSource()) }),
 };
@@ -145,6 +157,13 @@ npm install astro-icon@latest
 
 ```sh
 pnpm add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="bun">
+
+```sh
+bun add astro-icon@latest
 ```
 
 </TabItem>

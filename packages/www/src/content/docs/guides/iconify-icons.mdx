@@ -3,18 +3,20 @@ title: Iconify Icons
 description: Resolve icons from any Iconify icon set, locally installed or from the public API.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-import { Icon } from 'astro-icon/components';
-import Showcase from '../../../components/Showcase.astro';
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+import { Icon } from "astro-icon/components";
+import Showcase from "../../../components/Showcase.astro";
 
 [Iconify](https://iconify.design/) distributes thousands of open source icon sets in a normalized format. Astro Icon ships two sources for them: `iconifyLocalSource`, backed by a locally installed pack, and `iconifyApiSource`, backed by the public Iconify API.
 
 This site loads two packs — Material Design Icons and Remix Icon — and renders from both:
 
-<Showcase code={`<Icon name="mdi:rocket" size={32} />
+<Showcase
+  code={`<Icon name="mdi:rocket" size={32} />
 <Icon name="mdi:palette" size={32} />
 <Icon name="ri:star-fill" size={32} />
-<Icon name="ri:heart-fill" size={32} />`}>
+<Icon name="ri:heart-fill" size={32} />`}
+>
   <Icon name="mdi:rocket" size={32} />
   <Icon name="mdi:palette" size={32} />
   <Icon name="ri:star-fill" size={32} />
@@ -44,6 +46,13 @@ pnpm add -D @iconify-json/mdi
 ```
 
 </TabItem>
+<TabItem label="bun">
+
+```sh
+bun add -D @iconify-json/mdi
+```
+
+</TabItem>
 <TabItem label="Yarn">
 
 ```sh
@@ -58,13 +67,15 @@ import { defineCollection } from "astro:content";
 import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 
 export const collections = {
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
 };
 ```
 
 ```astro
 ---
-import { Icon } from 'astro-icon/components'
+import { Icon } from "astro-icon/components";
 ---
 
 <!-- Embed the `account` icon from `@iconify-json/mdi` -->
@@ -84,7 +95,9 @@ export const collections = {
   // The API only resolves icons you name explicitly, never the whole pack,
   // and it adds a network request per icon during your build.
   mdi: defineCollection({
-    loader: createIconLoader(iconifyApiSource("mdi", { icons: ["account", "home", "heart"] })),
+    loader: createIconLoader(
+      iconifyApiSource("mdi", { icons: ["account", "home", "heart"] }),
+    ),
   }),
 };
 ```
@@ -94,7 +107,12 @@ export const collections = {
 Compose both with `mergeSources` — each icon is resolved by trying sources in order, first match wins:
 
 ```ts title="src/content.config.ts"
-import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyApiSource,
+  iconifyLocalSource,
+  mergeSources,
+} from "astro-icon/loaders";
 
 export const collections = {
   mdi: defineCollection({
