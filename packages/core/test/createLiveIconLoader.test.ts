@@ -27,7 +27,10 @@ async function flush() {
 describe("createLiveIconLoader / loadEntry", () => {
   it("resolves an entry via the source's getIcon and returns it", async () => {
     const getIcon = vi.fn(async () => entry);
-    const loader = createLiveIconLoader({ name: "test", getIcon });
+    const loader = createLiveIconLoader(
+      { name: "test", getIcon },
+      { collection: "icons" },
+    );
 
     const result = await loader.loadEntry({
       filter: { id: "search" },
@@ -40,7 +43,10 @@ describe("createLiveIconLoader / loadEntry", () => {
 
   it("caches resolved entries and doesn't call getIcon again", async () => {
     const getIcon = vi.fn(async () => entry);
-    const loader = createLiveIconLoader({ name: "test", getIcon });
+    const loader = createLiveIconLoader(
+      { name: "test", getIcon },
+      { collection: "icons" },
+    );
 
     await loader.loadEntry({ filter: { id: "search" }, collection: "icons" });
     await loader.loadEntry({ filter: { id: "search" }, collection: "icons" });
@@ -52,7 +58,10 @@ describe("createLiveIconLoader / loadEntry", () => {
     const getIcon = vi.fn(async () => {
       throw new Error("nope");
     });
-    const loader = createLiveIconLoader({ name: "test", getIcon });
+    const loader = createLiveIconLoader(
+      { name: "test", getIcon },
+      { collection: "icons" },
+    );
 
     const result = await loader.loadEntry({
       filter: { id: "missing" },
@@ -65,10 +74,13 @@ describe("createLiveIconLoader / loadEntry", () => {
   });
 
   it("namespaces the loader name with the source name", () => {
-    const loader = createLiveIconLoader({
-      name: "iconify:mdi",
-      getIcon: vi.fn(async () => entry),
-    });
+    const loader = createLiveIconLoader(
+      {
+        name: "iconify:mdi",
+        getIcon: vi.fn(async () => entry),
+      },
+      { collection: "icons" },
+    );
 
     expect(loader.name).toBe("astro-icon/loaders/live/iconify:mdi");
   });
@@ -76,15 +88,18 @@ describe("createLiveIconLoader / loadEntry", () => {
   it("sanitizes a custom source's entry even though it never calls parseIconSVG", async () => {
     // A custom IconSource builds its IconEntry directly (see the IconSource contract) - it
     // never has to go through parseIconSVG, so sanitization can't be allowed to live there.
-    const loader = createLiveIconLoader({
-      name: "untrusted",
-      getIcon: vi.fn(async () => ({
-        body: '<path d="M0 0" onload="alert(1)"/><script>alert(1)</script>',
-        viewBox: "0 0 24 24",
-        width: 24,
-        height: 24,
-      })),
-    });
+    const loader = createLiveIconLoader(
+      {
+        name: "untrusted",
+        getIcon: vi.fn(async () => ({
+          body: '<path d="M0 0" onload="alert(1)"/><script>alert(1)</script>',
+          viewBox: "0 0 24 24",
+          width: 24,
+          height: 24,
+        })),
+      },
+      { collection: "icons" },
+    );
 
     const result = await loader.loadEntry({
       filter: { id: "evil" },
@@ -100,10 +115,13 @@ describe("createLiveIconLoader / loadEntry", () => {
 
 describe("createLiveIconLoader / loadCollection", () => {
   it("errors when the source doesn't implement listIcons", async () => {
-    const loader = createLiveIconLoader({
-      name: "test",
-      getIcon: vi.fn(async () => entry),
-    });
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcon: vi.fn(async () => entry),
+      },
+      { collection: "icons" },
+    );
 
     const result = await loader.loadCollection({ collection: "icons" });
 
@@ -112,11 +130,14 @@ describe("createLiveIconLoader / loadCollection", () => {
 
   it("lists + resolves every icon when the source implements listIcons", async () => {
     const getIcon = vi.fn(async (name: string) => ({ ...entry, body: name }));
-    const loader = createLiveIconLoader({
-      name: "test",
-      getIcon,
-      listIcons: async () => ["a", "b"],
-    });
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcon,
+        listIcons: async () => ["a", "b"],
+      },
+      { collection: "icons" },
+    );
 
     const result = await loader.loadCollection({ collection: "icons" });
 
@@ -133,11 +154,14 @@ describe("createLiveIconLoader / loadCollection", () => {
       if (name === "bad") throw new Error("nope");
       return entry;
     });
-    const loader = createLiveIconLoader({
-      name: "test",
-      getIcon,
-      listIcons: async () => ["good", "bad"],
-    });
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcon,
+        listIcons: async () => ["good", "bad"],
+      },
+      { collection: "icons" },
+    );
 
     const result = await loader.loadCollection({ collection: "icons" });
 
@@ -146,11 +170,14 @@ describe("createLiveIconLoader / loadCollection", () => {
 
   it("reuses the loadEntry cache when listing a collection", async () => {
     const getIcon = vi.fn(async () => entry);
-    const loader = createLiveIconLoader({
-      name: "test",
-      getIcon,
-      listIcons: async () => ["search"],
-    });
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcon,
+        listIcons: async () => ["search"],
+      },
+      { collection: "icons" },
+    );
 
     await loader.loadEntry({ filter: { id: "search" }, collection: "icons" });
     await loader.loadCollection({ collection: "icons" });
@@ -162,11 +189,14 @@ describe("createLiveIconLoader / loadCollection", () => {
 describe("createLiveIconLoader / resolveRoot + checkPreconditions", () => {
   it("calls resolveRoot at construction with a process.cwd()-based root", () => {
     const resolveRoot = vi.fn();
-    createLiveIconLoader({
-      name: "test",
-      getIcon: vi.fn(async () => entry),
-      resolveRoot,
-    });
+    createLiveIconLoader(
+      {
+        name: "test",
+        getIcon: vi.fn(async () => entry),
+        resolveRoot,
+      },
+      { collection: "icons" },
+    );
 
     expect(resolveRoot).toHaveBeenCalledWith(expect.any(URL));
   });
@@ -174,13 +204,16 @@ describe("createLiveIconLoader / resolveRoot + checkPreconditions", () => {
   it("warns via the console when checkPreconditions() rejects, without throwing", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      createLiveIconLoader({
-        name: "broken",
-        getIcon: vi.fn(async () => entry),
-        checkPreconditions: async () => {
-          throw new Error("not installed");
+      createLiveIconLoader(
+        {
+          name: "broken",
+          getIcon: vi.fn(async () => entry),
+          checkPreconditions: async () => {
+            throw new Error("not installed");
+          },
         },
-      });
+        { collection: "icons" },
+      );
 
       await flush();
 
@@ -197,11 +230,14 @@ describe("createLiveIconLoader / loadCollection duration logging", () => {
   it("debug-logs loadCollection's duration on success", async () => {
     const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
     try {
-      const loader = createLiveIconLoader({
-        name: "test",
-        getIcon: vi.fn(async () => entry),
-        listIcons: async () => ["a"],
-      });
+      const loader = createLiveIconLoader(
+        {
+          name: "test",
+          getIcon: vi.fn(async () => entry),
+          listIcons: async () => ["a"],
+        },
+        { collection: "icons" },
+      );
 
       await loader.loadCollection({ collection: "icons" });
 
@@ -221,15 +257,18 @@ describe("createLiveIconLoader typegen", () => {
     mockedRecordCollection.mockClear();
   });
 
-  it("records an empty list keyed by source.name, without waiting on listIcons()", async () => {
+  it("records an empty list keyed by the collection option, not source.name, without waiting on listIcons()", async () => {
     // `LiveCollectionName` only needs the collection key to exist - a live icon's specific name is never
     // validated against a catalog (see names.d.ts), so this per-collection list stays empty.
     const listIcons = vi.fn(async () => ["home", "search"]);
-    createLiveIconLoader({
-      name: "mdi",
-      getIcon: vi.fn(async () => entry),
-      listIcons,
-    });
+    createLiveIconLoader(
+      {
+        name: "iconify-local:mdi",
+        getIcon: vi.fn(async () => entry),
+        listIcons,
+      },
+      { collection: "mdi" },
+    );
 
     await flush();
 
@@ -244,37 +283,114 @@ describe("createLiveIconLoader typegen", () => {
   });
 
   it("records an empty list when the source has no listIcons", async () => {
-    createLiveIconLoader({
-      name: "no-listing",
-      getIcon: vi.fn(async () => entry),
-    });
+    createLiveIconLoader(
+      {
+        name: "no-listing",
+        getIcon: vi.fn(async () => entry),
+      },
+      { collection: "custom" },
+    );
 
     await flush();
 
     expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "live",
-      "no-listing",
+      "custom",
       [],
     );
   });
 
   it("falls back to an empty list when listIcons rejects", async () => {
-    createLiveIconLoader({
-      name: "api-only",
-      getIcon: vi.fn(async () => entry),
-      listIcons: async () => {
-        throw new Error("not installed locally");
+    createLiveIconLoader(
+      {
+        name: "api-only",
+        getIcon: vi.fn(async () => entry),
+        listIcons: async () => {
+          throw new Error("not installed locally");
+        },
       },
-    });
+      { collection: "remote" },
+    );
 
     await flush();
 
     expect(mockedRecordCollection).toHaveBeenCalledWith(
       expect.any(URL),
       "live",
-      "api-only",
+      "remote",
       [],
     );
+  });
+});
+
+describe("createLiveIconLoader / collection key verification", () => {
+  beforeEach(() => {
+    mockedRecordCollection.mockClear();
+  });
+
+  it("stays quiet when the declared collection matches the key Astro reports", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const loader = createLiveIconLoader(
+        { name: "test", getIcon: vi.fn(async () => entry) },
+        { collection: "icons" },
+      );
+
+      await loader.loadEntry({ filter: { id: "a" }, collection: "icons" });
+
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("warns once and re-records typegen under the real key on a mismatch", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const loader = createLiveIconLoader(
+        { name: "test", getIcon: vi.fn(async () => entry) },
+        { collection: "typo" },
+      );
+      await flush();
+      mockedRecordCollection.mockClear();
+
+      await loader.loadEntry({ filter: { id: "a" }, collection: "icons" });
+      await loader.loadEntry({ filter: { id: "b" }, collection: "icons" });
+      await flush();
+
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('"icons"'));
+      expect(mockedRecordCollection).toHaveBeenCalledWith(
+        expect.any(URL),
+        "live",
+        "icons",
+        [],
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("verifies via loadCollection too", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const loader = createLiveIconLoader(
+        {
+          name: "test",
+          getIcon: vi.fn(async () => entry),
+          listIcons: async () => ["a"],
+        },
+        { collection: "typo" },
+      );
+
+      await loader.loadCollection({ collection: "icons" });
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('created with `collection: "typo"`'),
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

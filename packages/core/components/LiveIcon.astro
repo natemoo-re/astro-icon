@@ -13,7 +13,8 @@ import type { IconEntry } from "../typings/types";
  * request time instead of build time. Use it when you can't know your icon
  * names ahead of time, such as a user-driven icon search.
  *
- * Requires `defineLiveCollection()` in `live.config.ts`; live content
+ * Requires a live collection registered in `live.config.ts` (see
+ * `liveIconCollections()`); live content
  * collections are stable as of Astro 6, no experimental flag needed.
  * If the icon fails to resolve,
  * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so

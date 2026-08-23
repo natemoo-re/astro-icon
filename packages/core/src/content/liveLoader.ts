@@ -9,11 +9,26 @@ import { recordCollection } from "./typegen/index.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
+export interface LiveIconLoaderOptions {
+  /**
+   * The key this loader is registered under in `live.config.ts`'s `collections` object, used
+   * as the generated `LiveCollectionName` type. Prefer `liveIconCollections()`, which supplies
+   * it from its own object keys so the two can't drift; declare it here only when calling
+   * Astro's `defineLiveCollection()` yourself. Astro only reveals the real key at request time,
+   * so a mismatch is warned about (and typegen corrected) on the collection's first request.
+   */
+  collection: string;
+}
+
 /**
  * Builds a live content collection loader (`defineLiveCollection()`) around
  * one or more {@link IconSource}s, resolving icons on demand per request
  * instead of at build time. Use this when you can't know your icon names
  * ahead of time, such as a user-driven icon search.
+ *
+ * Prefer `liveIconCollections()`, which calls this and never repeats the
+ * collection key; use this directly when you need Astro's raw registration
+ * form:
  *
  * ```ts
  * // src/live.config.ts
@@ -22,7 +37,9 @@ import type { IconEntry } from "../../typings/types";
  *
  * export const collections = {
  *   mdi: defineLiveCollection({
- *     loader: createLiveIconLoader(iconifyLocalSource("mdi", { allowed: ["home"] })),
+ *     loader: createLiveIconLoader(iconifyLocalSource("mdi", { allowed: ["home"] }), {
+ *       collection: "mdi",
+ *     }),
  *   }),
  * };
  * ```
@@ -34,11 +51,15 @@ import type { IconEntry } from "../../typings/types";
  */
 export function createLiveIconLoader(
   sources: IconSource | IconSource[],
+  options: LiveIconLoaderOptions,
 ): LiveLoader<IconEntry, { id: string }, never> {
   const source = mergeSources(sources);
+  const { collection } = options;
   const cache = new Map<string, IconEntry>();
 
-  // Best-effort typegen at construction time, since `LiveLoader`'s context exposes no project root or collection name.
+  // Best-effort typegen at construction time, since `LiveLoader`'s context exposes no project
+  // root, and reveals the real collection key only per request - hence the declared `collection`
+  // option, verified against the real key on first request (see `verifyCollectionKey`).
   // `LiveCollectionName` only needs the collection key to exist: a live collection's specific icons resolve per
   // request and are never validated against a catalog (see names.d.ts), so this records an empty list rather than
   // resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
@@ -58,7 +79,22 @@ export function createLiveIconLoader(
     );
   });
   if (source.listIcons) source.listIcons().catch(() => {});
-  recordCollection(rootDir, "live", source.name, []).catch(() => {});
+  recordCollection(rootDir, "live", collection, []).catch(() => {});
+
+  // Astro tells a live loader its real collection key per request, and only there. Checked once:
+  // a `collection` option that doesn't match the registered key means the construction-time
+  // typegen above recorded a nonexistent `LiveCollectionName`, so re-record under the real key
+  // and say so, instead of leaving type errors on correct call sites.
+  let checkedCollectionKey = false;
+  function verifyCollectionKey(actual: string | undefined): void {
+    if (checkedCollectionKey || !actual) return;
+    checkedCollectionKey = true;
+    if (actual === collection) return;
+    consoleLogger.warn(
+      `This live icon loader is registered as the "${actual}" collection, but was created with \`collection: "${collection}"\` - generated LiveCollectionName types used the wrong key. Update the \`collection\` option (or build this collection with \`liveIconCollections()\`) so they match.`,
+    );
+    recordCollection(rootDir, "live", actual, []).catch(() => {});
+  }
 
   async function getCachedIcon(name: string): Promise<IconEntry> {
     const cached = cache.get(name);
@@ -75,7 +111,8 @@ export function createLiveIconLoader(
 
   return {
     name: `astro-icon/loaders/live/${source.name}`,
-    loadEntry: async ({ filter }) => {
+    loadEntry: async ({ filter, collection: actual }) => {
+      verifyCollectionKey(actual);
       try {
         const entry = await getCachedIcon(filter.id);
         return { id: filter.id, data: entry };
@@ -83,7 +120,8 @@ export function createLiveIconLoader(
         return { error: ex instanceof Error ? ex : new Error(String(ex)) };
       }
     },
-    loadCollection: async () => {
+    loadCollection: async (context) => {
+      verifyCollectionKey(context?.collection);
       if (!source.listIcons) {
         return {
           error: new AstroIconError(
@@ -104,9 +142,9 @@ export function createLiveIconLoader(
             );
           },
         );
-        // Debug-only, matching `createIconLoader`'s own build-duration log - no `LoaderContext`
-        // to log through here (`LiveLoader` gives `loadCollection` no arguments at all), so this
-        // falls back to `consoleLogger` the same way the warning above does.
+        // Debug-only, matching `createIconLoader`'s own build-duration log - `LiveLoader`'s
+        // context has no Astro logger, so this falls back to `consoleLogger` the same way the
+        // warning above does.
         consoleLogger.debug(
           `Loaded ${built.length} icon(s) for "${source.name}"'s live collection in ${formatDuration(performance.now() - loadStart)}.`,
         );
