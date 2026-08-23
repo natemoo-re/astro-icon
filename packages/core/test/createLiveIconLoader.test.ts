@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createLiveIconLoader } from "../src/content/liveLoader.js";
+import { sanitizeSVGBody } from "../src/content/sanitizeSVG.js";
 import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconEntry } from "../../typings/types";
 
@@ -8,7 +9,15 @@ vi.mock("../src/content/typegen/index.js", () => ({
   recordCatalog: vi.fn(async () => {}),
 }));
 
+// Pass-through spy, only for counting calls - real sanitization still runs.
+vi.mock("../src/content/sanitizeSVG.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/content/sanitizeSVG.js")>();
+  return { sanitizeSVGBody: vi.fn(actual.sanitizeSVGBody) };
+});
+
 const mockedRecordCollection = vi.mocked(recordCollection);
+const mockedSanitize = vi.mocked(sanitizeSVGBody);
 
 const entry: IconEntry = {
   body: "<path/>",
@@ -166,6 +175,49 @@ describe("createLiveIconLoader / loadCollection", () => {
     const result = await loader.loadCollection({ collection: "icons" });
 
     expect(result).toEqual({ entries: [{ id: "good", data: entry }] });
+  });
+
+  it("respects the source's concurrency cap when listing a collection", async () => {
+    // Guards against buildIcons being handed an ad-hoc shape that drops `concurrency`,
+    // fanning every request out at once against a rate-limited backend.
+    let concurrent = 0;
+    let peak = 0;
+    const loader = createLiveIconLoader(
+      {
+        name: "api",
+        concurrency: 2,
+        getIcon: async () => {
+          concurrent++;
+          peak = Math.max(peak, concurrent);
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          concurrent--;
+          return entry;
+        },
+        listIcons: async () => ["a", "b", "c", "d", "e", "f"],
+      },
+      { collection: "icons" },
+    );
+
+    const result = await loader.loadCollection({ collection: "icons" });
+
+    expect(peak).toBe(2);
+    expect(result).toHaveProperty("entries");
+  });
+
+  it("sanitizes each icon exactly once when listing a collection", async () => {
+    mockedSanitize.mockClear();
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcon: vi.fn(async () => entry),
+        listIcons: async () => ["a", "b"],
+      },
+      { collection: "icons" },
+    );
+
+    await loader.loadCollection({ collection: "icons" });
+
+    expect(mockedSanitize).toHaveBeenCalledTimes(2);
   });
 
   it("reuses the loadEntry cache when listing a collection", async () => {

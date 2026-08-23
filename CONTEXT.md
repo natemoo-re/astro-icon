@@ -72,7 +72,7 @@ Three caches existed; only two survived review, on the principle that a cache is
 
 - **Dropped**: the old `entryCache` (per-icon, build-side) wrapped Astro's own `getEntry()`, which already reads from an in-memory content store - the cache was paying for a Map, a `${collection}:${name}` key format, and dev/prod branching to save a lookup that was already O(1) in memory. Removed; `resolveIconEntry` (`render/lookupEntry.ts`) now just calls `getEntry()` directly.
 - **Kept**: `content/iconify/pack.ts`'s `packCache` - dedupes real I/O (local `@iconify-json/*` file reads) and real network calls (Iconify API fetches) across concurrent `getIcon()` calls for the same pack. Runs at both build-sync time and per-request live time.
-- **Kept**: the live loader's own per-icon `cache` in `content/liveLoader.ts` - avoids re-deriving an `IconEntry` (SVG parsing/rendering via `iconToSVG`/`parseIconSVG`) on every request for a repeat icon. Runtime-visible cost, hidden entirely behind the loader's own closure - no separate cache-handling function, no key format exposed to callers.
+- **Kept**: the live loader's per-icon cache in `content/liveLoader.ts`, now shaped as a private `cachingSource(source)` adapter - avoids re-deriving an `IconEntry` (SVG parsing/rendering via `iconToSVG`/`parseIconSVG`) on every request for a repeat icon. The adapter keeps the source's full `IconSource` shape (`concurrency`, `listIcons`, ...) so `buildIcons` still sees and enforces the source's own cap, and it caches pre-sanitize: sanitizing is `buildIcon`'s job alone, the single choke point both `loadEntry` and `loadCollection` funnel through. No key format exposed to callers.
 
 ## Recording a Collection vs a Catalog
 

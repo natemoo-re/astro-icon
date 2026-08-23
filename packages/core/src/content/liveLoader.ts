@@ -1,13 +1,33 @@
 import type { LiveLoader } from "astro/loaders";
 import { AstroIconError } from "../internal/error.js";
-import { buildIcons } from "./buildIcons.js";
+import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
 import { consoleLogger } from "./logger.js";
 import { mergeSources } from "./compositeSource.js";
-import { sanitizeSVGBody } from "./sanitizeSVG.js";
 import { recordCollection } from "./typegen/index.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
+
+/**
+ * Wraps a source so repeat `getIcon` calls for the same name are served from memory for the
+ * process lifetime, keeping the source's full shape - `concurrency`, `listIcons`, and the rest
+ * pass through untouched, so downstream consumers like `buildIcons` see a real `IconSource`.
+ * Caches what the source built, pre-sanitize: sanitizing stays `buildIcon`'s job alone, and a
+ * cache below it can't become a second path around that choke point.
+ */
+function cachingSource(source: IconSource): IconSource {
+  const cache = new Map<string, IconEntry>();
+  return {
+    ...source,
+    async getIcon(name) {
+      const cached = cache.get(name);
+      if (cached) return cached;
+      const entry = await source.getIcon(name);
+      cache.set(name, entry);
+      return entry;
+    },
+  };
+}
 
 export interface LiveIconLoaderOptions {
   /**
@@ -53,9 +73,10 @@ export function createLiveIconLoader(
   sources: IconSource | IconSource[],
   options: LiveIconLoaderOptions,
 ): LiveLoader<IconEntry, { id: string }, never> {
-  const source = mergeSources(sources);
+  // Cached at the source seam (not per load function) so `loadEntry` and `loadCollection`
+  // share one cache, and everything downstream handles a plain `IconSource`.
+  const source = cachingSource(mergeSources(sources));
   const { collection } = options;
-  const cache = new Map<string, IconEntry>();
 
   // Best-effort typegen at construction time, since `LiveLoader`'s context exposes no project
   // root, and reveals the real collection key only per request - hence the declared `collection`
@@ -96,26 +117,17 @@ export function createLiveIconLoader(
     recordCollection(rootDir, "live", actual, []).catch(() => {});
   }
 
-  async function getCachedIcon(name: string): Promise<IconEntry> {
-    const cached = cache.get(name);
-    if (cached) return cached;
-    const built = await source.getIcon(name);
-    // Sanitized here, not left to `parseIconSVG`, so a custom `IconSource` backing this live
-    // loader - the lowest-trust case, since its content was never validated by this library -
-    // can't bypass it by building its `IconEntry` some other way. Cached post-sanitize, so the
-    // cost is paid once per unique icon name for the process lifetime, not per request.
-    const entry = { ...built, body: sanitizeSVGBody(built.body) };
-    cache.set(name, entry);
-    return entry;
-  }
-
   return {
     name: `astro-icon/loaders/live/${source.name}`,
     loadEntry: async ({ filter, collection: actual }) => {
       verifyCollectionKey(actual);
       try {
-        const entry = await getCachedIcon(filter.id);
-        return { id: filter.id, data: entry };
+        // Through `buildIcon`, not `source.getIcon` directly, so this per-request path gets the
+        // same sanitize choke point as everything else - a custom `IconSource` backing this live
+        // loader (the lowest-trust case, its content never validated by this library) can't
+        // bypass it by building its `IconEntry` some other way.
+        const { data } = await buildIcon(source, filter.id);
+        return { id: filter.id, data };
       } catch (ex) {
         return { error: ex instanceof Error ? ex : new Error(String(ex)) };
       }
@@ -133,15 +145,11 @@ export function createLiveIconLoader(
       const loadStart = performance.now();
       try {
         const names = await source.listIcons();
-        const built = await buildIcons(
-          { getIcon: getCachedIcon },
-          names,
-          (name, ex) => {
-            consoleLogger.warn(
-              `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
-            );
-          },
-        );
+        const built = await buildIcons(source, names, (name, ex) => {
+          consoleLogger.warn(
+            `"${source.name}" failed to load "${name}" while listing its collection: ${ex instanceof Error ? ex.message : ex}`,
+          );
+        });
         // Debug-only, matching `createIconLoader`'s own build-duration log - `LiveLoader`'s
         // context has no Astro logger, so this falls back to `consoleLogger` the same way the
         // warning above does.
