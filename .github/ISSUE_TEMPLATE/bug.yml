@@ -1,24 +1,56 @@
 name: "Bug Report"
 description: Report an issue or possible bug
-labels: []
+title: "[Bug]: "
+labels: ["needs triage"]
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        ##  Quick Checklist
         Thank you for taking the time to file a bug report! Please fill out this form as completely as possible.
 
-        ✅ I am using the **latest version of Astro Icon**.
-        ✅ Astro Icon has been added to my `astro.config.mjs` file as an `integration`.
-        ✅ I have installed the corresponding `@iconify-json/*` packages.
-        ✅ I am using the **latest version of Astro** and all plugins.
-        ✅ I am using a version of Node that Astro supports (`>=18.14.1`)
+        💡 The fastest way to get your issue fixed is a minimal reproduction. [Open our pre-configured playground](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/examples/repro?title=astro-icon%20repro) to build one in your browser.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Quick Checklist
+      description: Please confirm the following before submitting.
+      options:
+        - label: I am using the **latest version of Astro Icon**.
+          required: true
+        - label: I have defined my icon collections in `src/content.config.ts` using loaders from `astro-icon/loaders`.
+          required: true
+        - label: I have installed the corresponding `@iconify-json/*` packages for any Iconify icon sets I use.
+        - label: I am using a version of Node that Astro Icon supports (`>=22.12.0`).
+          required: true
+        - label: I have searched [existing issues](https://github.com/natemoo-re/astro-icon/issues) and this bug has not already been reported.
+          required: true
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Which area is affected?
+      description: Select all that apply.
+      multiple: true
+      options:
+        - "`<Icon />` component"
+        - "`<LiveIcon />` component"
+        - "Local icons (`localSource`)"
+        - "Iconify icons (`iconifyLocalSource`)"
+        - "Custom loaders / `createIconLoader`"
+        - "TypeScript types"
+        - "Dev server / HMR"
+        - "Build output"
+        - "Other / not sure"
+    validations:
+      required: true
   - type: input
-    id: astro-icon
+    id: astro-icon-version
     attributes:
       label: What version of `astro-icon` are you using?
-      placeholder: v1.0.0
+      description: Since `astro-icon` is no longer an integration, `astro info` will not report it — run `npm ls astro-icon` (or check your lockfile) for the exact version.
+      placeholder: v2.0.0
+    validations:
+      required: true
   - type: textarea
     id: astro-info
     attributes:
@@ -36,21 +68,32 @@ body:
     id: bug-description
     attributes:
       label: Describe the Bug
-      description: A clear and concise description of what the bug is.
+      description: A clear and concise description of what the bug is, including what you expected to happen instead.
     validations:
       required: true
   - type: textarea
-    id: bug-expectation
+    id: bug-steps
     attributes:
-      label: What's the expected result?
-      description: Describe what you expect to happen.
+      label: Steps to Reproduce
+      description: How do we make the bug happen? Precise steps help us fix it faster.
+      placeholder: |
+        1. Define a collection with `localSource()` in `src/content.config.ts`
+        2. Render `<Icon name="..." />` in a page
+        3. Run `astro build`
+        4. See error
     validations:
       required: true
   - type: input
     id: bug-reproduction
     attributes:
       label: Link to Minimal Reproducible Example
-      description: 'Use [astro.new](https://astro.new) to create a minimal reproduction of the problem. **A minimal reproduction is required** so that we can help debug your issue!'
-      placeholder: 'https://stackblitz.com/abcd1234'
+      description: '[Open our pre-configured playground](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/examples/repro?title=astro-icon%20repro), edit it until it reproduces your issue, then save and paste the URL here. A link to a minimal GitHub repository also works. **A minimal reproduction is required** — issues without one may be closed.'
+      placeholder: "https://stackblitz.com/edit/..."
     validations:
       required: true
+  - type: checkboxes
+    id: participation
+    attributes:
+      label: Participation
+      options:
+        - label: I am willing to submit a pull request for this issue.

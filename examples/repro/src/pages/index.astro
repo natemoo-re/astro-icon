@@ -1,0 +1,22 @@
+---
+import { Icon } from "astro-icon/components";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>astro-icon reproduction</title>
+  </head>
+  <body>
+    <h1>astro-icon reproduction</h1>
+
+    <h2>Local icon (from <code>src/icons/</code>)</h2>
+    <Icon name="example" size={48} />
+
+    <h2>Iconify icon (from <code>@iconify-json/mdi</code>)</h2>
+    <Icon name="mdi:account" size={48} />
+
+    <p>Edit this page until it reproduces your issue, then save and share the URL.</p>
+  </body>
+</html>
