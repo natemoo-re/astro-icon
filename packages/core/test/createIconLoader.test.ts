@@ -178,6 +178,40 @@ describe("createIconLoader", () => {
 
     await expect(sync(source, true)(fakeContext())).rejects.toThrow();
   });
+
+  it("warns and loads nothing when checkPreconditions() fails, without calling listIcons()", async () => {
+    const listIcons = vi.fn(async () => ["home"]);
+    const source = fakeSource({
+      listIcons,
+      checkPreconditions: async () => {
+        throw new Error("not installed");
+      },
+    });
+    const context = fakeContext();
+
+    await sync(source, false)(context);
+
+    expect([...context.store.keys()]).toEqual([]);
+    expect(listIcons).not.toHaveBeenCalled();
+    expect(context.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("not installed"),
+    );
+  });
+
+  it("throws under strict when checkPreconditions() fails, without calling listIcons()", async () => {
+    const listIcons = vi.fn(async () => ["home"]);
+    const source = fakeSource({
+      listIcons,
+      checkPreconditions: async () => {
+        throw new Error("not installed");
+      },
+    });
+
+    await expect(sync(source, true)(fakeContext())).rejects.toThrow(
+      "not installed",
+    );
+    expect(listIcons).not.toHaveBeenCalled();
+  });
 });
 
 describe("createIconLoader / multiple sources", () => {

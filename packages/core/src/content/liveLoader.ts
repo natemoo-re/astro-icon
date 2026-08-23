@@ -47,8 +47,8 @@ export function createLiveIconLoader(
   // Best-effort only: `process.cwd()` isn't necessarily the project root (see
   // `IconSource.resolveRoot`'s doc comment), but it's the only thing a live collection has.
   source.resolveRoot?.(rootDir);
-  // Same "fail loudly, up front" intent as `createIconLoader`'s own `checkPreconditions()` call
-  // (see `listIconsOrFallback`), just downgraded to a warning: a `LiveLoader` has no "build
+  // Same "fail loudly, up front" intent as `createIconLoader`'s own `checkPreconditions()` call,
+  // just downgraded to a warning: a `LiveLoader` has no "build
   // failed" concept to hook into - `loadEntry`/`loadCollection` already turn a broken source into
   // `{ error }` per request regardless - so this only gets a source's problem into the logs
   // immediately instead of waiting for the first request to surface it.
