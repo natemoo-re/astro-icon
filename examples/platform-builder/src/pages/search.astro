@@ -1,11 +1,24 @@
 ---
-import { LiveIcon } from "astro-icon/components";
-import Base from "../layouts/base.astro";
+// UC5: icon names nobody can know at build time. These names depend on what a
+// visitor just typed, so no build-time collection could contain them without
+// enumerating the whole pack up front. The `ph` *live* collection (see
+// src/live.config.ts) uses `iconifyApiSource` with no allowlist: each result
+// below is fetched individually from api.iconify.design at request time, and
+// only the icons actually shown are ever resolved.
+export const prerender = false;
+
+import { LiveIcon } from 'astro-icon/components';
+import HeroText from '~/components/widgets/HeroText.astro';
+import Layout from '~/layouts/PageLayout.astro';
+
+const metadata = {
+  title: 'Live icon search',
+};
 
 const RESULT_LIMIT = 12;
-const PACK = "ph";
+const PACK = 'ph';
 
-const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+const query = Astro.url.searchParams.get('q')?.trim() ?? '';
 
 let results: string[] = [];
 let error: string | undefined;
@@ -13,14 +26,14 @@ let error: string | undefined;
 if (query) {
   try {
     const res = await fetch(
-      `https://api.iconify.design/search?query=${encodeURIComponent(query)}&prefix=${PACK}&limit=${RESULT_LIMIT}`,
+      `https://api.iconify.design/search?query=${encodeURIComponent(query)}&prefix=${PACK}&limit=${RESULT_LIMIT}`
     );
     if (!res.ok) {
       error = `Iconify search returned ${res.status}.`;
     } else {
       const data = (await res.json()) as { icons?: string[] };
       // Results come back prefixed ("ph:heart"); <LiveIcon> wants the bare name.
-      results = (data.icons ?? []).map((icon) => icon.split(":").pop()!);
+      results = (data.icons ?? []).map((icon) => icon.split(':').pop()!);
     }
   } catch {
     error = "Couldn't reach the Iconify search API.";
@@ -28,91 +41,52 @@ if (query) {
 }
 ---
 
-<Base title="Live search">
-  <h1>Icon names nobody can know at build time</h1>
+<Layout metadata={metadata}>
+  <HeroText
+    tagline="Icons from user input"
+    title="Icon names nobody can know at build time"
+    subtitle={`Where <code>&lt;Icon&gt;</code> genuinely can't help: these names depend on what a visitor just typed, so this route opts out of prerendering and resolves each result through the <code>ph</code> live collection - fetched individually from api.iconify.design, per request.`}
+  />
 
-  <p class="note">
-    <strong>Where <code>&lt;Icon&gt;</code> genuinely can't help.</strong> These names
-    depend on what a visitor just typed, so no build-time collection could contain
-    them without enumerating the pack up front. The <code>ph</code> live collection
-    uses <code>iconifyApiSource</code> with no allowlist: each result below is fetched
-    individually from <code>api.iconify.design</code> at request time. Only the {
-      RESULT_LIMIT
-    } icons shown are ever resolved.
-  </p>
+  <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16 md:pb-20">
+    <form method="get" class="flex gap-3 mb-8">
+      <input
+        type="search"
+        name="q"
+        value={query}
+        placeholder="e.g. heart, cloud, arrow…"
+        autocomplete="off"
+        class="py-3 px-4 block w-full text-md rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-slate-900 flex-1"
+      />
+      <button type="submit" class="btn-primary">Search</button>
+    </form>
 
-  <form method="get">
-    <input
-      type="search"
-      name="q"
-      value={query}
-      placeholder="e.g. heart, cloud, arrow..."
-      autocomplete="off"
-    />
-    <button type="submit">Search</button>
-  </form>
+    {error && <p class="text-red-600 dark:text-red-400 mb-8">{error}</p>}
 
-  {error && <p class="error">{error}</p>}
+    {
+      query && !error && results.length === 0 && (
+        <p class="text-muted mb-8">
+          No <code>{PACK}</code> icons matched "{query}".
+        </p>
+      )
+    }
 
-  {
-    query && !error && results.length === 0 && (
-      <p>
-        No <code>{PACK}</code> icons matched "{query}".
-      </p>
-    )
-  }
+    {
+      results.length > 0 && (
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mb-8">
+          {results.map((name) => (
+            <div class="flex flex-col items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-800 p-4 text-center">
+              <LiveIcon collection={PACK} icon={name} size={28} class="text-primary" />
+              <code class="text-xs text-muted break-all">{name}</code>
+            </div>
+          ))}
+        </div>
+      )
+    }
 
-  {
-    results.length > 0 && (
-      <div class="grid">
-        {results.map((name) => (
-          <div class="cell">
-            <LiveIcon collection={PACK} icon={name} size={28} />
-            <code>{name}</code>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  <p class="note">
-    A name that doesn't resolve makes <code>&lt;LiveIcon&gt;</code> log a warning
-    and render nothing, rather than throwing - one bad row from a data source can't
-    take down the page around it.
-  </p>
-</Base>
-
-<style>
-  form {
-    display: flex;
-    gap: 0.6rem;
-    margin-bottom: 1.5rem;
-  }
-  input {
-    flex: 1;
-    font: inherit;
-    padding: 0.6rem 0.9rem;
-    border: 1px solid rgb(var(--gray-light));
-    border-radius: 8px;
-  }
-  input:focus {
-    outline: 2px solid var(--accent-light);
-    border-color: var(--accent);
-  }
-  button {
-    font: inherit;
-    font-weight: 600;
-    padding: 0.6rem 1.2rem;
-    border: none;
-    border-radius: 8px;
-    background: var(--accent);
-    color: white;
-    cursor: pointer;
-  }
-  button:hover {
-    background: var(--accent-dark);
-  }
-  .error {
-    color: #b00020;
-  }
-</style>
+    <p class="text-sm text-muted">
+      A name that doesn't resolve makes <code>&lt;LiveIcon&gt;</code> log a warning and render nothing, rather than
+      throwing - one bad row from a data source can't take down the page around it.
+    </p>
+  </section>
+</Layout>

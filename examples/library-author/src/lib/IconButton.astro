@@ -2,16 +2,18 @@
 // A library-authored component. It renders one of *its own* icons - never a
 // name the consumer supplies - so it can guarantee the name exists without
 // the consumer configuring anything.
-interface Props {
-  icon: "chevron-right" | "close" | "spinner";
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"button"> {
+  icon: "chevron-right" | "close" | "spinner" | "copy" | "check";
 }
 
 import { Icon } from "astro-icon/components";
 
-const { icon } = Astro.props;
+const { icon, ...attrs } = Astro.props;
 ---
 
-<button class="acme-icon-button">
+<button class="acme-icon-button" {...attrs}>
   <Icon name={`acme-ui-icons:${icon}`} size={18} />
   <slot />
 </button>
@@ -33,6 +35,12 @@ const { icon } = Astro.props;
   .acme-icon-button:hover {
     border-color: var(--accent);
     color: var(--accent);
+  }
+  /* `display: inline-flex` above otherwise outranks the UA `[hidden] { display:
+     none }` rule, since a class selector beats a bare attribute selector -
+     without this, a consumer's `hidden` attribute would silently do nothing. */
+  .acme-icon-button[hidden] {
+    display: none;
   }
   .acme-icon-button :global(.spinner-head) {
     transform-origin: center;

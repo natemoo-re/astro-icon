@@ -1,0 +1,136 @@
+---
+// Reveal-on-scroll animation controller. A single instance is rendered by the
+// layout; it observes elements using the `intersect` Tailwind variants and
+// staggers their reveal. The custom-element lifecycle re-runs it on each
+// client-side navigation, so no manual `astro:after-swap` wiring is needed.
+---
+
+<aw-intersect aria-hidden="true"></aw-intersect>
+
+<style>
+  aw-intersect {
+    display: none;
+  }
+</style>
+
+<script>
+  /* Inspired by: https://github.com/heidkaemper/tailwindcss-intersect */
+  class AwIntersect extends HTMLElement {
+    private observer: IntersectionObserver | null = null;
+    private elements: HTMLElement[] = [];
+    private thresholds = new WeakMap<Element, number>();
+    private animationCounter = 0;
+    private readonly delayBetweenAnimations = 100;
+    private onThemeChange = () => this.removeAnimationDelay();
+
+    connectedCallback() {
+      // The custom-element lifecycle re-runs this on every client-side
+      // navigation, so each page (initial load and navigations alike) reveals
+      // its sections with the same fade-in as you scroll them into view.
+      this.start();
+      document.addEventListener('aw:theme-change', this.onThemeChange);
+    }
+
+    disconnectedCallback() {
+      this.observer?.disconnect();
+      document.removeEventListener('aw:theme-change', this.onThemeChange);
+    }
+
+    private getThreshold(el: HTMLElement): number {
+      if (el.classList.contains('intersect-full')) return 0.99;
+      if (el.classList.contains('intersect-half')) return 0.5;
+      if (el.classList.contains('intersect-quarter')) return 0.25;
+      return 0;
+    }
+
+    private start() {
+      this.observer?.disconnect();
+      this.animationCounter = 0;
+
+      const selectors = [
+        '[class*=" intersect:"]',
+        '[class*=":intersect:"]',
+        '[class^="intersect:"]',
+        '[class="intersect"]',
+        '[class*=" intersect "]',
+        '[class^="intersect "]',
+        '[class$=" intersect"]',
+      ];
+
+      this.elements = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(',')));
+
+      this.elements.forEach((el) => {
+        el.setAttribute('no-intersect', '');
+        this.thresholds.set(el, this.getThreshold(el));
+      });
+
+      const callback: IntersectionObserverCallback = (entries) => {
+        entries.forEach((entry) => {
+          requestAnimationFrame(() => {
+            const target = entry.target as HTMLElement;
+            const threshold = this.thresholds.get(target) ?? 0;
+
+            if (target.classList.contains('intersect-no-queue')) {
+              if (entry.isIntersecting) {
+                target.removeAttribute('no-intersect');
+                if (target.classList.contains('intersect-once')) this.observer?.unobserve(target);
+              } else {
+                target.setAttribute('no-intersect', '');
+              }
+              return;
+            }
+
+            if (entry.intersectionRatio >= threshold) {
+              if (!target.hasAttribute('data-animated')) {
+                target.removeAttribute('no-intersect');
+                target.setAttribute('data-animated', 'true');
+                target.style.animationDuration = '';
+
+                const delay = this.animationCounter * this.delayBetweenAnimations;
+                this.animationCounter++;
+
+                target.style.transitionDelay = `${delay}ms`;
+                target.style.animationDelay = `${delay}ms`;
+
+                if (target.classList.contains('intersect-once')) this.observer?.unobserve(target);
+              }
+            } else {
+              target.setAttribute('no-intersect', '');
+              target.removeAttribute('data-animated');
+              target.style.transitionDelay = '';
+              target.style.animationDelay = '';
+              target.style.animationDuration = '';
+
+              this.animationCounter = 0;
+            }
+          });
+        });
+      };
+
+      this.observer = new IntersectionObserver(callback, { threshold: [0, 0.25, 0.5, 0.99] });
+
+      this.elements.forEach((el) => {
+        if (!el.hasAttribute('data-animated')) this.observer?.observe(el);
+      });
+    }
+
+    /*
+      REF: #643;
+      Remove the stagger delay so toggling the theme doesn't flicker. The
+      Observer only clears delays once elements leave the viewport, so the
+      <aw-theme-toggle> element asks us to clear them on demand.
+    */
+    private removeAnimationDelay() {
+      this.elements.forEach((el) => {
+        if (el.getAttribute('data-animated') === 'true') {
+          el.style.transitionDelay = '';
+          el.style.animationDelay = '';
+        }
+      });
+    }
+  }
+
+  if (!customElements.get('aw-intersect')) {
+    customElements.define('aw-intersect', AwIntersect);
+  }
+</script>

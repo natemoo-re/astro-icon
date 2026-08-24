@@ -1,6 +1,35 @@
-import { defineConfig } from "astro/config";
+// @ts-check
 
-// The consumer's config. Nothing here is aware that `acme-ui`'s icons
-// (src/lib/icons.ts) even exist as a separate "package" - that's the point:
-// a library's icons work under whatever rendering mode the consumer picks.
-export default defineConfig({});
+import mdx from '@astrojs/mdx';
+import sitemap from '@astrojs/sitemap';
+import { defineConfig, fontProviders } from 'astro/config';
+
+// https://astro.build/config
+export default defineConfig({
+	site: 'https://example.com',
+	integrations: [mdx(), sitemap()],
+	fonts: [
+		{
+			provider: fontProviders.local(),
+			name: 'Atkinson',
+			cssVariable: '--font-atkinson',
+			fallbacks: ['sans-serif'],
+			options: {
+				variants: [
+					{
+						src: ['./src/assets/fonts/atkinson-regular.woff'],
+						weight: 400,
+						style: 'normal',
+						display: 'swap',
+					},
+					{
+						src: ['./src/assets/fonts/atkinson-bold.woff'],
+						weight: 700,
+						style: 'normal',
+						display: 'swap',
+					},
+				],
+			},
+		},
+	],
+});

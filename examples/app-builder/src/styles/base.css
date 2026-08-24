@@ -1,0 +1,5 @@
+/* Injected by the @astrojs/tailwind integration upstream; imported manually
+   here since Tailwind now runs as a plain PostCSS plugin. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,82 +1,49 @@
 ---
-export const prerender = true;
-
-import { Icon } from "astro-icon/components";
-import IconButton from "../lib/IconButton.astro";
-import "../styles/global.css";
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 ---
 
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Library author example</title>
-  </head>
-  <body>
-    <main>
-      <h1><Icon name="icons:logo" size={24} /> Consumer app</h1>
-      <p>
-        This page belongs to the "consumer", but it imports and renders
-        <code>&lt;IconButton&gt;</code> from <code>src/lib/</code> - a stand-in for
-        a component library like <code>acme-ui</code>. See
-        <code>src/content.config.ts</code> for the one line that wires the library's
-        icons in: <code>...acmeUiIcons</code>.
-      </p>
-
-      <section class="card">
-        <h2>A library component, used normally</h2>
-        <div class="row">
-          <IconButton icon="chevron-right">Next</IconButton>
-          <IconButton icon="close">Dismiss</IconButton>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Styling an icon's internals</h2>
-        <p>
-          <code>spinner.svg</code> has two paths meant to be styled independently
-          (<code>.spinner-track</code>, <code>.spinner-head</code>).
-          <code>&lt;Icon&gt;</code> always renders a plain, standalone
-          <code>&lt;svg&gt;</code>, so <code>IconButton.astro</code>'s
-          <code>.spinner-head</code> animation reaches every usage below with no opt-in
-          required.
-        </p>
-        <div class="row">
-          <IconButton icon="spinner">Loading</IconButton>
-          <IconButton icon="spinner">Loading</IconButton>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Using a library icon directly</h2>
-        <p>
-          Consumers aren't limited to <code>&lt;IconButton&gt;</code> - any icon the
-          library ships is addressable the normal way, with the collection key as
-          its namespace:
-        </p>
-        <Icon name="acme-ui-icons:chevron-right" size={24} />
-      </section>
-    </main>
-  </body>
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>🧑‍🚀 Hello, Astronaut!</h1>
+			<p>
+				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
+				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
+				website, blog, or portfolio with Astro.
+			</p>
+			<p>
+				This template comes with a few integrations already configured in your
+				<code>astro.config.mjs</code> file. You can customize your setup with
+				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
+				React, or Vue to your project.
+			</p>
+			<p>Here are a few ideas on how to get started with the template:</p>
+			<ul>
+				<li>Edit this page in <code>src/pages/index.astro</code></li>
+				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
+				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
+				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
+				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
+			</ul>
+			<p>
+				Have fun! If you get stuck, remember to
+				<a href="https://docs.astro.build/">read the docs</a>
+				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
+			</p>
+			<p>
+				Looking for a blog template with a bit more personality? Check out
+				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
+				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
+			</p>
+		</main>
+		<Footer />
+	</body>
 </html>
-
-<style>
-  main {
-    max-width: 38rem;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  section {
-    padding: 1.5rem;
-  }
-  section h2 {
-    font-size: 1.1rem;
-  }
-  .row {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-  }
-</style>
