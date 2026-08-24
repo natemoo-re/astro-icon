@@ -14,6 +14,7 @@ This app is the official [Flowbite Astro Admin Dashboard](https://github.com/the
 - **What deliberately stayed inline** - country flags in the language picker, payment-network logos, social glyphs in the footer, and illustration artwork. Those aren't design-system icons, so they don't belong in an icon collection; the boundary is the point.
 - `src/pages/users.astro` - the CRUD table renders per request with freshly randomized (faker) data; every row repeats the same action icons as plain standalone `<svg>`s.
 - `src/modules/DashBoard.client.ts` - untouched upstream chart code (`@ts-nocheck`d), to stay diffable against the template.
+- `src/components/FavoriteToggle.tsx` - a hydrated React island (`client:visible`) added to each row of the users table. It never imports `astro-icon`: the star `<Icon>` renders server-side in `src/modules/CrudUsers.astro` and reaches the island only as pre-rendered markup through the default slot (`children`). The island owns the toggle state; astro-icon owns the icon.
 
 **Try it:**
 

@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 /* eslint max-lines: 'off' */
 
+import FavoriteToggle from '../components/FavoriteToggle.tsx';
 import NavPagination from '../components/NavPagination.astro';
 import { asset } from '../lib/data.js';
 import { getUsers } from '../services/users.js';
@@ -188,6 +189,9 @@ const users = getUsers();
 								>
 									Actions
 								</th>
+								<th scope="col" class="p-4">
+									<span class="sr-only">Favorite</span>
+								</th>
 							</tr>
 						</thead>
 						<tbody
@@ -263,6 +267,11 @@ const users = getUsers();
 													<Icon name="heroicons-solid:trash" class="w-4 h-4 mr-2" />
 													Delete user
 												</button>
+											</td>
+											<td class="p-4 whitespace-nowrap">
+												<FavoriteToggle client:visible userName={user.name}>
+													<Icon name="heroicons-solid:star" class="w-5 h-5" />
+												</FavoriteToggle>
 											</td>
 										</tr>
 									</div>

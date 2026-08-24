@@ -1,4 +1,5 @@
 import node from "@astrojs/node";
+import react from "@astrojs/react";
 import { defineConfig } from "astro/config";
 
 // Server output: `/` (dashboard) and `/users` are SSR by default - fresh data
@@ -7,4 +8,5 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
+  integrations: [react()],
 });

@@ -7,17 +7,14 @@ const today = new Date();
 <footer>
 	&copy; {today.getFullYear()} Your name here. All rights reserved.
 	<div class="social-links">
-		<a href="https://m.webtoo.ls/@astro" target="_blank">
-			<span class="sr-only">Follow Astro on Mastodon</span>
-			<Icon name="mastodon" size={32} />
+		<a href="https://m.webtoo.ls/@astro" target="_blank" aria-labelledby="social-mastodon-title">
+			<Icon name="mastodon" size={32} title={{ id: 'social-mastodon-title', value: 'Follow Astro on Mastodon' }} />
 		</a>
-		<a href="https://twitter.com/astrodotbuild" target="_blank">
-			<span class="sr-only">Follow Astro on Twitter</span>
-			<Icon name="twitter" size={32} />
+		<a href="https://twitter.com/astrodotbuild" target="_blank" aria-labelledby="social-twitter-title">
+			<Icon name="twitter" size={32} title={{ id: 'social-twitter-title', value: 'Follow Astro on Twitter' }} />
 		</a>
-		<a href="https://github.com/withastro/astro" target="_blank">
-			<span class="sr-only">Go to Astro's GitHub repo</span>
-			<Icon name="github" size={32} />
+		<a href="https://github.com/withastro/astro" target="_blank" aria-labelledby="social-github-title">
+			<Icon name="github" size={32} title={{ id: 'social-github-title', value: "Go to Astro's GitHub repo" }} />
 		</a>
 	</div>
 </footer>
