@@ -5,7 +5,7 @@ import type { IconifyJSON } from "@iconify/types";
 
 /**
  * Resolves a locally installed `@iconify-json/<pack>`'s `<subpath>` (e.g. `icons.json`, or
- * `package.json` for `getPackVersion` in `../iconify/source.ts`) via `createRequire(...).resolve(...)`,
+ * `package.json` for `getPackVersion` in `../iconify/localSource.ts`) via `createRequire(...).resolve(...)`,
  * real Node CJS resolution rather than a filesystem walk. Under Yarn Berry's PnP linker,
  * `require.resolve` goes through the `.pnp.cjs` hook and finds the package; a plain ESM dynamic
  * `import()` of the same subpath does not - verified against a real `@iconify-json/*`-shaped

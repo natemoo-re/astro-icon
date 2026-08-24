@@ -12,11 +12,11 @@ const pack: IconifyJSON = {
 // `pack.ts` (used internally by `iconifyApiSource`) caches resolved packs in a module-level Map.
 // Resetting the registry before each test - rather than exposing a test-only cache-clearing
 // export - gets every test a fresh, empty cache.
-let iconifyApiSource: (typeof import("../src/content/iconify/source.js"))["iconifyApiSource"];
+let iconifyApiSource: (typeof import("../src/content/iconify/apiSource.js"))["iconifyApiSource"];
 
 beforeEach(async () => {
   vi.resetModules();
-  ({ iconifyApiSource } = await import("../src/content/iconify/source.js"));
+  ({ iconifyApiSource } = await import("../src/content/iconify/apiSource.js"));
 });
 
 afterEach(() => {

@@ -19,12 +19,12 @@ const pack: IconifyJSON = {
 // `pack.ts` (used internally by `iconifyLocalSource`) caches resolved packs in a module-level
 // Map. Resetting the registry before each test - rather than exposing a test-only cache-clearing
 // export - gets every test a fresh, empty cache.
-let iconifyLocalSource: (typeof import("../src/content/iconify/source.js"))["iconifyLocalSource"];
+let iconifyLocalSource: (typeof import("../src/content/iconify/localSource.js"))["iconifyLocalSource"];
 let mockedLoadCollectionFromFS: ReturnType<typeof vi.fn>;
 
 beforeEach(async () => {
   vi.resetModules();
-  ({ iconifyLocalSource } = await import("../src/content/iconify/source.js"));
+  ({ iconifyLocalSource } = await import("../src/content/iconify/localSource.js"));
   const { loadCollectionFromFS } = await import("@iconify/utils/lib/loader/fs");
   mockedLoadCollectionFromFS = vi.mocked(loadCollectionFromFS);
   mockedLoadCollectionFromFS.mockReset();

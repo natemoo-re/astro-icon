@@ -1,5 +1,6 @@
 export { AstroIconError } from "../internal/error.js";
-export { iconifyLocalSource, iconifyApiSource } from "./iconify/source.js";
+export { iconifyLocalSource } from "./iconify/localSource.js";
+export { iconifyApiSource } from "./iconify/apiSource.js";
 export { localSource } from "./local/source.js";
 export type { LocalSourceOptions } from "./local/source.js";
 export { createIconLoader } from "./loader.js";
