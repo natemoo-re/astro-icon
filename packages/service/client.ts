@@ -1,4 +1,4 @@
-import { parseIconSVG } from "astro-icon/loaders";
+import { entryFromSVG } from "astro-icon/loaders";
 import type { IconSource } from "astro-icon/loaders";
 
 export interface ServiceSourceOptions {
@@ -44,11 +44,13 @@ export function serviceSource(
         `pack=${pack}&name=${encodeURIComponent(iconName)}`,
       );
       const svg = await res.text();
-      return parseIconSVG(svg, {
-        collection: pack,
-        name: iconName,
-        logger: { warn: (msg) => console.warn(msg) },
-      });
+      const { entry, facts } = entryFromSVG(svg);
+      if (facts.viewBox !== "present") {
+        console.warn(
+          `[service] "${pack}:${iconName}" has no usable viewBox, one was ${facts.viewBox}.`,
+        );
+      }
+      return entry;
     },
     async listIcons() {
       const res = await request(`pack=${pack}`);

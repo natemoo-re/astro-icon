@@ -119,9 +119,9 @@ describe("createLiveIconLoader / loadEntry", () => {
     expect(loader.name).toBe("astro-icon/loaders/live/iconify:mdi");
   });
 
-  it("sanitizes a custom source's entry even though it never calls parseIconSVG", async () => {
+  it("sanitizes a custom source's entry even though it never calls entryFromSVG/entryFromIconifyData", async () => {
     // A custom IconSource builds its IconEntry directly (see the IconSource contract) - it
-    // never has to go through parseIconSVG, so sanitization can't be allowed to live there.
+    // never has to go through entryFromSVG/entryFromIconifyData, so sanitization can't be allowed to live there.
     const loader = createLiveIconLoader(
       {
         name: "untrusted",

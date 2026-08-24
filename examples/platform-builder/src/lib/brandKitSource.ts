@@ -1,4 +1,4 @@
-import { parseIconSVG, type IconSource } from "astro-icon/loaders";
+import { entryFromSVG, type IconSource } from "astro-icon/loaders";
 import type { IconEntry } from "astro-icon";
 
 // Stands in for the internal API a platform would really call here - a design-tool
@@ -40,16 +40,16 @@ export function brandKitSource({
           result.set(name, new Error(`No brand-kit icon named "${name}".`));
           continue;
         }
-        // Turns a raw `<svg>...</svg>` string into the shape astro-icon stores,
-        // deriving a viewBox if the source didn't provide one.
-        result.set(
-          name,
-          await parseIconSVG(svg, {
-            collection: sourceName,
-            name,
-            logger: { warn: console.warn },
-          }),
-        );
+        // Turns a raw `<svg>...</svg>` string into the shape astro-icon stores, deriving a
+        // viewBox if the source didn't provide one - `facts` reports when that happened, for
+        // this source to turn into its own warning (astro-icon itself has no opinion on it).
+        const { entry, facts } = entryFromSVG(svg);
+        if (facts.viewBox !== "present") {
+          console.warn(
+            `[brand-kit] "${name}" has no usable viewBox, one was ${facts.viewBox}.`,
+          );
+        }
+        result.set(name, entry);
       }
       return result;
     },
