@@ -427,10 +427,7 @@ export const collections = liveIconCollections({
 For a pack you'd rather not install, `iconifyApiSource` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
 
 ```ts
-import {
-  iconifyApiSource,
-  liveIconCollections,
-} from "astro-icon/loaders/live";
+import { iconifyApiSource, liveIconCollections } from "astro-icon/loaders/live";
 
 export const collections = liveIconCollections({
   ph: iconifyApiSource("ph"),
@@ -457,7 +454,9 @@ import {
 
 export const collections = {
   mdi: defineLiveCollection({
-    loader: createLiveIconLoader(iconifyLocalSource("mdi"), { collection: "mdi" }),
+    loader: createLiveIconLoader(iconifyLocalSource("mdi"), {
+      collection: "mdi",
+    }),
   }),
 };
 ```

@@ -7,5 +7,7 @@ import {
 
 export const collections = {
   icons: defineCollection({ loader: createIconLoader(localSource()) }),
-  mdi: defineCollection({ loader: createIconLoader(iconifyLocalSource("mdi")) }),
+  mdi: defineCollection({
+    loader: createIconLoader(iconifyLocalSource("mdi")),
+  }),
 };
