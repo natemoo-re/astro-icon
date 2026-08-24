@@ -1,5 +1,5 @@
 import { execFile, spawn, type ChildProcess } from "node:child_process";
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -102,6 +102,24 @@ describe("createLiveIconLoader(iconifyLocalSource()) + <LiveIcon> against a real
       [...block.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]),
     );
     expect(new Set(allIds).size).toBe(allIds.length);
+  });
+
+  it("generates LiveCollectionName types keyed by the registered collection key, not source.name", async () => {
+    // The live loader has no project root to record typegen against, so it uses its process
+    // cwd. This fixture is `output: "server"`, so `live.config.ts` only evaluates once the
+    // runtime server starts - in `fixtureRoot`, per the spawn above - and the write is
+    // fire-and-forget, hence the brief retry.
+    const partialPath = join(
+      fixtureRoot,
+      ".astro/astro-icon/live-spinners.d.ts",
+    );
+    let partial: string | undefined;
+    for (let attempt = 0; attempt < 20 && partial === undefined; attempt++) {
+      partial = await readFile(partialPath, "utf-8").catch(() => undefined);
+      if (partial === undefined)
+        await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    expect(partial).toContain('"spinners"');
   });
 
   it("degrades a missing live icon to nothing instead of crashing the page", () => {

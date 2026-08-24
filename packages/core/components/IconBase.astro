@@ -4,9 +4,9 @@ import type { HTMLAttributes } from "astro/types";
 import {
   iconA11yProps,
   renderableIconProps,
-  type AccessibleElementInput,
-} from "./props.js";
-import type { IconEntry } from "../../typings/types";
+  type SharedIconProps,
+} from "../src/render/props.js";
+import type { IconEntry } from "../typings/types";
 
 /**
  * Everything shared by `<Icon>`/`<LiveIcon>` once each has already resolved its entry: computing
@@ -14,21 +14,19 @@ import type { IconEntry } from "../../typings/types";
  * generating unique element ids in the body (`replaceIDs`), and the markup itself. The only parts
  * that differ between the two - how an entry is resolved, and each's own error-vs-warn philosophy
  * on a miss - stay in their own `.astro` files.
+ *
+ * Takes a caller's props directly rather than through a wrapper object, so all three components
+ * accept the same {@link SharedIconProps} instead of restating it a third time here.
  */
-export interface Props {
+export interface Props extends HTMLAttributes<"svg">, SharedIconProps {
   entry: IconEntry;
-  title?: string | AccessibleElementInput;
-  desc?: string | AccessibleElementInput;
-  /** Every other prop the caller passed - spread onto the rendered `<svg>` after the computed a11y/size defaults, so the caller's own values always win. */
-  svgProps: HTMLAttributes<"svg"> & {
-    "aria-description"?: string;
-    size?: number | string;
-  };
   /** The `data-icon` marker's value - see CONTEXT.md's "Icon marker". */
   dataIcon: string;
 }
 
-const { entry, title, desc, svgProps, dataIcon } = Astro.props;
+// Everything left after the props this component consumes itself is spread onto the rendered
+// `<svg>` after the computed a11y/size defaults, so the caller's own values always win.
+const { entry, dataIcon, title, desc, ...svgProps } = Astro.props;
 
 // `entry.title`/`.desc` are the icon's own defaults (e.g. a local `.svg`'s inline `<title>`/
 // `<desc>`) - only used when the caller didn't pass their own, same as every other prop here.

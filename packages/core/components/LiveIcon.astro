@@ -3,8 +3,8 @@ import { getLiveEntry } from "astro:content";
 import type { HTMLAttributes } from "astro/types";
 import { AstroIconError } from "../src/internal/error.js";
 import { renderTimeError } from "../src/render/error.js";
-import IconMarkup from "../src/render/IconMarkup.astro";
-import type { AccessibleElementInput } from "../src/render/props.js";
+import IconBase from "./IconBase.astro";
+import type { SharedIconProps } from "../src/render/props.js";
 import type { LiveCollectionName } from "../typings/names";
 import type { IconEntry } from "../typings/types";
 
@@ -13,7 +13,8 @@ import type { IconEntry } from "../typings/types";
  * request time instead of build time. Use it when you can't know your icon
  * names ahead of time, such as a user-driven icon search.
  *
- * Requires `defineLiveCollection()` in `live.config.ts`; live content
+ * Requires a live collection registered in `live.config.ts` (see
+ * `liveIconCollections()`); live content
  * collections are stable as of Astro 6, no experimental flag needed.
  * If the icon fails to resolve,
  * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
@@ -28,7 +29,7 @@ import type { IconEntry } from "../typings/types";
  * Use `<Icon>` instead when your icon names are known at build time; it's
  * cheaper since it resolves once, not on every request.
  */
-interface Props extends HTMLAttributes<"svg"> {
+interface Props extends HTMLAttributes<"svg">, SharedIconProps {
   /** The live collection to resolve `icon` from; live collections have no default, unlike `<Icon>`. */
   collection: LiveCollectionName;
   /**
@@ -37,38 +38,9 @@ interface Props extends HTMLAttributes<"svg"> {
    * at runtime (e.g. a user-driven search) and can't be checked at sync time.
    */
   icon: string;
-  /**
-   * Adds an accessible `<title>` before the icon body, and takes the icon out
-   * of its decorative default. Pass `{ id, value }` instead of a plain string
-   * to control the `<title>`'s id, e.g. so something outside the icon can
-   * reference it directly.
-   */
-  title?: string | AccessibleElementInput;
-  /**
-   * Adds an accessible `<desc>` after `title`, and takes the icon out of its
-   * decorative default. Pass `{ id, value }` instead of a plain string to
-   * control the `<desc>`'s id, e.g. so something outside the icon can
-   * reference it directly.
-   */
-  desc?: string | AccessibleElementInput;
-  /**
-   * Sets the icon's accessible description inline, without a separate
-   * `<desc>` element to reference. Same relationship to `aria-describedby`
-   * as `aria-label` has to `aria-labelledby`.
-   *
-   * This is a WAI-ARIA 1.3 attribute that Astro's `HTMLAttributes` type
-   * doesn't include yet, so it's declared here explicitly.
-   */
-  "aria-description"?: string;
-  /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
-  size?: number | string;
-  /** The icon's rendered width; defaults to the source SVG's own width. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
-  width?: number | string | null;
-  /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
-  height?: number | string | null;
 }
 
-const { collection, icon, title, desc, ...props } = Astro.props;
+const { collection, icon, ...props } = Astro.props;
 
 if (!collection || !icon) {
   throw renderTimeError(
@@ -90,10 +62,4 @@ if (error || !entry) {
 const data = entry.data as IconEntry;
 ---
 
-<IconMarkup
-  entry={data}
-  title={title}
-  desc={desc}
-  svgProps={props}
-  dataIcon={`${collection}:${icon}`}
-/>
+<IconBase entry={data} dataIcon={`${collection}:${icon}`} {...props} />

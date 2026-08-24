@@ -1,4 +1,7 @@
 export { createLiveIconLoader } from "./liveLoader.js";
+export type { LiveIconLoaderOptions } from "./liveLoader.js";
+export { liveIconCollections } from "./liveCollections.js";
+export type { LiveIconCollectionConfig } from "./liveCollections.js";
 export { iconifyLocalSource, iconifyApiSource } from "./iconify/source.js";
 export { mergeSources } from "./compositeSource.js";
 export type { CompositeSource } from "./compositeSource.js";

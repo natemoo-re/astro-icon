@@ -1,17 +1,25 @@
 import type { Loader, LoaderContext } from "astro/loaders";
+import { z } from "astro/zod";
 import { AstroIconError } from "../internal/error.js";
 import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
-import { iconEntrySchema } from "./entrySchema.js";
-import { listIconsOrFallback } from "./listIconsOrFallback.js";
 import { mergeSources } from "./compositeSource.js";
-import { isUpToDate, recordVersionKey } from "./syncFreshness.js";
 import { recordCollection } from "./typegen/index.js";
 import type {
   IconChangeEvent,
   IconSource,
   IconSourceWatcher,
 } from "./source.js";
+
+/** Default schema for an `IconEntry`, overridable via `defineCollection({ loader, schema })`. */
+const iconEntrySchema = z
+  .object({
+    body: z.string(),
+    viewBox: z.string(),
+    width: z.number(),
+    height: z.number(),
+  })
+  .catchall(z.union([z.string(), z.number()]));
 
 function metaKeyFor(collection: string): string {
   return `astro-icon:version:${collection}`;
@@ -118,14 +126,25 @@ function syncIcons(
 
     const syncStart = performance.now();
 
+    // `checkPreconditions()` first - is this source usable at all, as a distinct concern from
+    // what `listIcons()` reports (see `IconSource.checkPreconditions`'s doc comment). Either
+    // failing falls back to an empty list with a warning, or a build error under `strict`.
     const listStart = syncStart;
-    const names = await listIconsOrFallback(source, {
-      strict,
-      logger,
-      failureMessage: (detail) =>
-        `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`,
-      hint: `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
-    });
+    let names: string[] = [];
+    try {
+      await source.checkPreconditions?.();
+      names = source.listIcons ? await source.listIcons() : [];
+    } catch (ex) {
+      const detail = ex instanceof Error ? ex.message : String(ex);
+      const message = `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`;
+      if (strict) {
+        throw new AstroIconError(
+          message,
+          `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
+        );
+      }
+      logger.warn(message);
+    }
     const listDuration = performance.now() - listStart;
 
     if (names.length === 0) {
@@ -139,10 +158,16 @@ function syncIcons(
       logger.warn(message);
     }
 
-    // Skip resolving if every source's version + the requested icon set matches the last sync.
+    // Skip resolving if every source's version + the requested icon set matches the last sync
+    // and every requested name is still in the store. No `versionKey` means no reliable
+    // freshness signal, so never skip.
     const metaKey = metaKeyFor(collection);
     const versionKey = await getSourceVersionKey(source, names);
-    if (isUpToDate(versionKey, metaKey, meta, names, store)) {
+    const upToDate =
+      !!versionKey &&
+      versionKey === meta.get(metaKey) &&
+      names.every((name) => store.has(name));
+    if (upToDate) {
       await recordCollection(context.config.root, "build", collection, names);
       logger.debug(
         `"${collection}" is already up to date (${names.length} icon(s) from "${source.name}"), skipped in ${formatDuration(performance.now() - syncStart)}.`,
@@ -176,7 +201,10 @@ function syncIcons(
       });
     }
 
-    recordVersionKey(meta, metaKey, versionKey);
+    // Record this sync's version key for the next up-to-date check - or clear a stale one, so
+    // a source that stopped reporting a version always rebuilds.
+    if (versionKey) meta.set(metaKey, versionKey);
+    else meta.delete(metaKey);
 
     // Typed from `built`, not `names`: a failed icon is skipped from the store in non-strict mode.
     await recordCollection(

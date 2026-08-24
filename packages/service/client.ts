@@ -5,10 +5,8 @@ export interface ServiceSourceOptions {
   /** Base URL of a running `packages/service` instance. Defaults to `ASTRO_ICON_SERVICE_URL`, or `http://localhost:3001`. */
   url?: string;
   /**
-   * Identifies the returned {@link IconSource}. For a live collection this
-   * must match the collection key it's registered under in `live.config.ts`
-   * (a `LiveLoader` is never told its own name), so it defaults to `pack`
-   * only as a convenience for build-time use.
+   * Identifies the returned {@link IconSource} in error and log messages.
+   * Defaults to `pack`.
    */
   name?: string;
 }

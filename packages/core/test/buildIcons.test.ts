@@ -20,6 +20,7 @@ describe("buildIcons / concurrency", () => {
     let concurrent = 0;
     let peak = 0;
     const source = {
+      name: "test",
       async getIcon(name: string) {
         concurrent++;
         peak = Math.max(peak, concurrent);
@@ -39,6 +40,7 @@ describe("buildIcons / concurrency", () => {
     let concurrent = 0;
     let peak = 0;
     const source = {
+      name: "test",
       concurrency: 2,
       async getIcon(name: string) {
         concurrent++;
@@ -57,6 +59,7 @@ describe("buildIcons / concurrency", () => {
 
   it("still reports a per-icon failure via onError under a concurrency cap, without dropping the others", async () => {
     const source = {
+      name: "test",
       concurrency: 2,
       async getIcon(name: string) {
         if (name === "bad") throw new Error("nope");
@@ -73,6 +76,7 @@ describe("buildIcons / concurrency", () => {
 
   it("sanitizes every built icon's body regardless of concurrency", async () => {
     const source = {
+      name: "test",
       concurrency: 1,
       async getIcon() {
         return {

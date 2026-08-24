@@ -6,10 +6,7 @@ import { fileURLToPath } from "node:url";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
-import { parseIconSVG } from "../parseIconSVG.js";
-import { looksLikeItNeedsCurrentColor } from "./currentColorHint.js";
-import { extractRootAttrs } from "./extractRootAttrs.js";
-import { extractTitleDesc } from "./extractTitleDesc.js";
+import { parseLocalIconSVG } from "./parseLocalIconSVG.js";
 import type { IconSource } from "../source.js";
 import type { IconEntry, OptimizeFn } from "../../../typings/types";
 
@@ -127,43 +124,12 @@ export function localSource(
     const cached = cache.get(name);
     if (cached && cached.hash === hash) return cached.entry;
 
-    // Applied here, not left to `parseIconSVG`'s own `optimize` handling: `parseIconSVG`'s `body`
-    // deliberately excludes the root `<svg>` tag's own attributes, but a local source is meant to
-    // be a passthrough of the author's own file, so whatever's left there (`fill`/`stroke`/
-    // `color`/`class`/...) needs reading back out via `extractRootAttrs` below - which means the
-    // optimized SVG has to stay in scope long enough for that.
-    const optimizedSvg = optimize
-      ? await optimize(svg, { collection: "local", name })
-      : svg;
-    const parsed = await parseIconSVG(optimizedSvg, {
-      collection: "local",
+    const { entry, needsCurrentColor } = await parseLocalIconSVG(svg, {
       name,
+      optimize,
       strict,
       logger,
-      // `rootAttrs` (below) already extracts these as entry fields; carrying them into
-      // `body` too would duplicate them onto an inner `<g>` that wins over a caller's own
-      // override landing on the outer `<svg>`.
-      carryPresentationAttrs: false,
     });
-
-    // `rootAttrs` are stored as plain entry fields, not baked into `body`: `renderableIconProps`
-    // spreads them onto the *rendered* `<svg>` as defaults, the same as `width`/`height`/`viewBox`
-    // already are, so a caller's own prop for the same attribute actually overrides it. Wrapping
-    // `body` in a `<g fill="..." stroke="...">` instead would put the source's colors on an inner
-    // element whose own attributes always win over whatever a caller sets on the outer `<svg>` -
-    // silently defeating `<Icon fill="..." />`.
-    const rootAttrs = extractRootAttrs(optimizedSvg);
-    // Stripped out of `body` for the same reason as the color attributes above: a caller-supplied
-    // `title`/`desc` prop needs to win outright, not coexist with the source's own untouched
-    // `<title>`/`<desc>` element still sitting in the markup.
-    const stripped = extractTitleDesc(parsed.body);
-    const entry: IconEntry = {
-      ...parsed,
-      body: stripped.body,
-      ...rootAttrs,
-      ...(stripped.title ? { title: stripped.title } : {}),
-      ...(stripped.desc ? { desc: stripped.desc } : {}),
-    };
     cache.set(name, { hash, entry });
 
     // A one-time, best-effort nudge (never a mutation - see the "Styling icons" README section
@@ -171,7 +137,7 @@ export function localSource(
     // recipe, logged whenever a freshly-parsed icon looks like it won't respond to CSS `color`.
     // Runs per icon, on every fresh parse (cache misses only) rather than once per whole-directory
     // sync, so it also covers an icon added/edited later via `watch()`, not just the initial load.
-    if (looksLikeItNeedsCurrentColor(entry.body, rootAttrs)) {
+    if (needsCurrentColor) {
       logger.warn(
         `"${name}" in "${displayDirPath()}" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
       );

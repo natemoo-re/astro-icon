@@ -410,10 +410,42 @@ export default defineConfig({
 });
 ```
 
-Define one in `src/live.config.ts` with `createLiveIconLoader`, the live equivalent of `createIconLoader`:
+Define one in `src/live.config.ts` with `liveIconCollections`: each key becomes both the collection's name and its generated `LiveCollectionName` type, written exactly once:
 
 ```ts
 // src/live.config.ts
+import {
+  iconifyLocalSource,
+  liveIconCollections,
+} from "astro-icon/loaders/live";
+
+export const collections = liveIconCollections({
+  mdi: iconifyLocalSource("mdi"),
+});
+```
+
+For a pack you'd rather not install, `iconifyApiSource` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
+
+```ts
+import { iconifyApiSource, liveIconCollections } from "astro-icon/loaders/live";
+
+export const collections = liveIconCollections({
+  ph: iconifyApiSource("ph"),
+});
+```
+
+Live icon collections mix freely with other live collections - spread them into the same `collections` object:
+
+```ts
+export const collections = {
+  ...liveIconCollections({ mdi: iconifyLocalSource("mdi") }),
+  products: defineLiveCollection({ loader: myProductsLoader }),
+};
+```
+
+To register with Astro's `defineLiveCollection()` yourself, use `createLiveIconLoader` (the live equivalent of `createIconLoader`) and tell it its collection key - Astro only reveals the real key at request time, so the loader needs it up front to generate types (it warns on the first request if the two don't match):
+
+```ts
 import { defineLiveCollection } from "astro:content";
 import {
   createLiveIconLoader,
@@ -422,22 +454,9 @@ import {
 
 export const collections = {
   mdi: defineLiveCollection({
-    loader: createLiveIconLoader(iconifyLocalSource("mdi")),
-  }),
-};
-```
-
-For a pack you'd rather not install, `iconifyApiSource` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
-
-```ts
-import {
-  createLiveIconLoader,
-  iconifyApiSource,
-} from "astro-icon/loaders/live";
-
-export const collections = {
-  ph: defineLiveCollection({
-    loader: createLiveIconLoader(iconifyApiSource("ph")),
+    loader: createLiveIconLoader(iconifyLocalSource("mdi"), {
+      collection: "mdi",
+    }),
   }),
 };
 ```
@@ -459,9 +478,8 @@ Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props inste
 Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `createIconLoader` (build time) or `createLiveIconLoader` (per request):
 
 ```ts
-import { defineLiveCollection } from "astro:content";
 import { parseIconSVG } from "astro-icon/loaders";
-import { createLiveIconLoader } from "astro-icon/loaders/live";
+import { liveIconCollections } from "astro-icon/loaders/live";
 import type { IconSource } from "astro-icon/loaders/live";
 
 const mySource: IconSource = {
@@ -481,9 +499,7 @@ const mySource: IconSource = {
   },
 };
 
-export const collections = {
-  custom: defineLiveCollection({ loader: createLiveIconLoader(mySource) }),
-};
+export const collections = liveIconCollections({ custom: mySource });
 ```
 
 `getIcon` resolves one icon by name; throw a descriptive error if it can't be found or built. `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete. `parseIconSVG` turns a raw `<svg>...</svg>` string into the shape astro-icon stores, deriving a `viewBox` if one is missing.

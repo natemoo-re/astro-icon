@@ -24,10 +24,9 @@ export type IconChangeEvent =
  */
 export interface IconSource {
   /**
-   * Identifies this source in error messages and, for a live collection,
-   * generated types. Set it to the same key you register the loader under
-   * in `live.config.ts`: a `LiveLoader` is never told its own collection
-   * name by Astro, so this is the only identity typegen has to key off of.
+   * Identifies this source in error and log messages, e.g. `iconify-local:mdi`.
+   * A diagnostic label only - nothing keys off it; a live collection's typegen
+   * key comes from `createLiveIconLoader`'s own `collection` option.
    */
   name: string;
   /**
