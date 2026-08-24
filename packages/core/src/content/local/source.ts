@@ -29,12 +29,6 @@ export interface LocalSourceOptions {
   optimize?: OptimizeFn;
   /** Transform applied to each icon's built `IconEntry`, after `optimize`, last, before it's returned. */
   transform?: TransformFn;
-  /**
-   * When true, turns a missing/unreadable icon file into a build error
-   * instead of a warning.
-   * @default false
-   */
-  strict?: boolean;
   /** Where warnings are reported; defaults to `console.warn` if not passed a loader's own logger. */
   logger?: Pick<AstroIntegrationLogger, "warn">;
 }
@@ -86,7 +80,6 @@ export function localSource(
     allowed: allowedList,
     optimize,
     transform,
-    strict = false,
     logger = consoleLogger,
   } = options;
   const allowed = allowedList && new Set(allowedList);

@@ -4,7 +4,7 @@ import { renderTimeError } from "../src/render/error.js";
 import IconBase from "./IconBase.astro";
 import type { SharedIconProps } from "../src/render/props.js";
 import { parseIconName } from "../src/render/parseIconName.js";
-import { resolveIconEntry } from "../src/render/lookupEntry.js";
+import { isCollectionEmpty, resolveIconEntry } from "../src/render/lookupEntry.js";
 import type { IconName } from "../typings/names";
 
 /**
@@ -40,11 +40,16 @@ if (!iconName) {
 const entry = await resolveIconEntry(collection, iconName);
 
 if (!entry) {
+  const empty = await isCollectionEmpty(collection);
   throw renderTimeError(
     `Unable to locate "${name}" icon!`,
     hasPrefix
-      ? `The "${collection}" collection doesn't have an icon named "${iconName}".\n\nDid you define a collection named "${collection}" in "src/content.config.ts", and does it include this icon?`
-      : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`,
+      ? empty
+        ? `The "${collection}" collection loaded no icons at all, so it can't have "${iconName}" either.\n\nThis usually means its source failed to load - check the terminal (or your dev server logs) for a warning from "${collection}"'s loader.`
+        : `The "${collection}" collection doesn't have an icon named "${iconName}".\n\nDid you define a collection named "${collection}" in "src/content.config.ts", and does it include this icon?`
+      : empty
+        ? `The "icons" collection loaded no icons at all, so it can't have "${iconName}" either.\n\nThis usually means its source failed to load - check the terminal (or your dev server logs) for a warning from "icons"'s loader.`
+        : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`,
   );
 }
 ---

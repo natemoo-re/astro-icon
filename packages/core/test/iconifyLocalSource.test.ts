@@ -211,10 +211,10 @@ describe("iconifyLocalSource / icons allowlist", () => {
 describe("iconifyLocalSource / checkPreconditions", () => {
   // Regression: before checkPreconditions() existed, a missing pack only ever surfaced from
   // individual getIcon calls during a build - listIcons() returned an allowed allowlist without
-  // ever checking, and in non-strict mode (the default) each getIcon failure is just warned-and-
-  // skipped, burying "the whole pack is missing" as N separate per-icon warnings instead of one
-  // clear failure. createIconLoader/createLiveIconLoader both call checkPreconditions() before
-  // anything else specifically to catch this.
+  // ever checking, and in dev each getIcon failure is just warned-and-skipped, burying "the whole
+  // pack is missing" as N separate per-icon warnings instead of one clear failure.
+  // createIconLoader/createLiveIconLoader both call checkPreconditions() before anything else
+  // specifically to catch this.
   it("throws when the pack isn't installed, even with an allowlist set", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
     // A pack name that doesn't exist anywhere on disk (unlike "mdi", genuinely installed for

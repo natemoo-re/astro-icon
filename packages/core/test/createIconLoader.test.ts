@@ -18,8 +18,8 @@ vi.mock("../src/content/typegen/index.js", () => ({
 const mockedRecordCollection = vi.mocked(recordCollection);
 
 /** Exercises the loader's own `.load()`, the same entry point Astro calls - just via the public `createIconLoader()` rather than Astro's full `LoaderContext`. */
-function sync(source: IconSource | IconSource[], strict: boolean) {
-  return createIconLoader(source, { strict }).load;
+function sync(source: IconSource | IconSource[]) {
+  return createIconLoader(source).load;
 }
 
 function entryFor(id: string): IconEntry {
@@ -87,7 +87,7 @@ describe("createIconLoader", () => {
     const source = fakeSource({ listIcons: async () => ["home", "menu"] });
     const context = fakeContext();
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("menu")).toEqual(entryFor("menu"));
@@ -103,7 +103,7 @@ describe("createIconLoader", () => {
     const source = fakeSource({ listIcons: async () => ["home"] });
     const context = fakeContext();
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect(context.parseData).toHaveBeenCalledWith({
       id: "home",
@@ -116,7 +116,7 @@ describe("createIconLoader", () => {
     expect(loader.schema).toBeDefined();
   });
 
-  it("warns and skips an icon the source fails to build, without throwing", async () => {
+  it("in dev (a watcher on the context), warns and skips an icon the source fails to build, without throwing", async () => {
     const source = fakeSource({
       listIcons: async () => ["home", "missing"],
       getIcons: vi.fn(async (names: string[]) => {
@@ -128,9 +128,9 @@ describe("createIconLoader", () => {
         );
       }),
     });
-    const context = fakeContext();
+    const context = fakeContext(fakeWatcher());
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("missing")).toBeUndefined();
@@ -145,7 +145,7 @@ describe("createIconLoader", () => {
     );
   });
 
-  it("throws under strict instead of warning when building an icon fails", async () => {
+  it("in a build (no watcher on the context), throws instead of warning when building an icon fails", async () => {
     const source = fakeSource({
       listIcons: async () => ["missing"],
       getIcons: vi.fn(async (names: string[]) => {
@@ -155,40 +155,40 @@ describe("createIconLoader", () => {
       }),
     });
 
-    await expect(sync(source, true)(fakeContext())).rejects.toThrow();
+    await expect(sync(source)(fakeContext())).rejects.toThrow();
   });
 
-  it("warns and loads nothing when the source has no listIcons at all", async () => {
+  it("in dev, warns and loads nothing when the source has no listIcons at all", async () => {
     const source = fakeSource({ listIcons: undefined });
-    const context = fakeContext();
+    const context = fakeContext(fakeWatcher());
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect([...context.store.keys()]).toEqual([]);
     expect(context.logger.warn).toHaveBeenCalled();
   });
 
-  it("throws under strict when the source can't list any icons", async () => {
+  it("in a build, throws when the source can't list any icons", async () => {
     const source = fakeSource({ listIcons: undefined });
 
-    await expect(sync(source, true)(fakeContext())).rejects.toThrow();
+    await expect(sync(source)(fakeContext())).rejects.toThrow();
   });
 
-  it("throws (or warns) when listIcons() itself rejects", async () => {
+  it("throws in a build, warns in dev, when listIcons() itself rejects", async () => {
     const source = fakeSource({
       listIcons: async () => {
         throw new Error("can't enumerate");
       },
     });
-    const context = fakeContext();
+    const context = fakeContext(fakeWatcher());
 
-    await sync(source, false)(context);
+    await sync(source)(context);
     expect(context.logger.warn).toHaveBeenCalled();
 
-    await expect(sync(source, true)(fakeContext())).rejects.toThrow();
+    await expect(sync(source)(fakeContext())).rejects.toThrow();
   });
 
-  it("warns and loads nothing when checkPreconditions() fails, without calling listIcons()", async () => {
+  it("in dev, warns and loads nothing when checkPreconditions() fails, without calling listIcons()", async () => {
     const listIcons = vi.fn(async () => ["home"]);
     const source = fakeSource({
       listIcons,
@@ -196,9 +196,9 @@ describe("createIconLoader", () => {
         throw new Error("not installed");
       },
     });
-    const context = fakeContext();
+    const context = fakeContext(fakeWatcher());
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect([...context.store.keys()]).toEqual([]);
     expect(listIcons).not.toHaveBeenCalled();
@@ -207,7 +207,7 @@ describe("createIconLoader", () => {
     );
   });
 
-  it("throws under strict when checkPreconditions() fails, without calling listIcons()", async () => {
+  it("in a build, throws when checkPreconditions() fails, without calling listIcons()", async () => {
     const listIcons = vi.fn(async () => ["home"]);
     const source = fakeSource({
       listIcons,
@@ -216,7 +216,7 @@ describe("createIconLoader", () => {
       },
     });
 
-    await expect(sync(source, true)(fakeContext())).rejects.toThrow(
+    await expect(sync(source)(fakeContext())).rejects.toThrow(
       "not installed",
     );
     expect(listIcons).not.toHaveBeenCalled();
@@ -255,7 +255,7 @@ describe("createIconLoader / multiple sources", () => {
     });
     const context = fakeContext();
 
-    await sync(mergeSources([mdi, ic]), false)(context);
+    await sync(mergeSources([mdi, ic]))(context);
 
     expect(context.store.get("home")).toEqual(entryFor("mdi-home"));
     expect(context.store.get("star")).toEqual(entryFor("ic-star"));
@@ -284,7 +284,7 @@ describe("createIconLoader / version-based skip", () => {
       listIcons: async () => ["home", "menu"],
       getVersion: async () => "1.0.0",
     });
-    const load = sync(source, false);
+    const load = sync(source);
     const context = fakeContext();
 
     await load(context);
@@ -302,7 +302,7 @@ describe("createIconLoader / version-based skip", () => {
       listIcons: async () => ["home"],
       getVersion: async () => version,
     });
-    const load = sync(source, false);
+    const load = sync(source);
     const context = fakeContext();
 
     await load(context);
@@ -319,7 +319,7 @@ describe("createIconLoader / version-based skip", () => {
       listIcons: async () => names,
       getVersion: async () => "1.0.0",
     });
-    const load = sync(source, false);
+    const load = sync(source);
     const context = fakeContext();
 
     await load(context);
@@ -333,7 +333,7 @@ describe("createIconLoader / version-based skip", () => {
 
   it("never skips when the source doesn't report a version", async () => {
     const source = fakeSource({ listIcons: async () => ["home"] });
-    const load = sync(source, false);
+    const load = sync(source);
     const context = fakeContext();
 
     await load(context);
@@ -353,7 +353,7 @@ describe("createIconLoader / version-based skip", () => {
       getVersion: async () => "1.0.0",
     });
     const sourceB = fakeSource({ name: "b", listIcons: async () => ["menu"] });
-    const load = sync(mergeSources([sourceA, sourceB]), false);
+    const load = sync(mergeSources([sourceA, sourceB]));
     const context = fakeContext();
 
     await load(context);
@@ -373,7 +373,7 @@ describe("createIconLoader / timing logs", () => {
     });
     const context = fakeContext();
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect(context.logger.info).toHaveBeenCalledOnce();
     const [message] = context.logger.info.mock.calls[0];
@@ -390,7 +390,7 @@ describe("createIconLoader / timing logs", () => {
     });
     const context = fakeContext();
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     const [message] = context.logger.debug.mock.calls.at(-1)!;
     expect(message).toMatch(
@@ -403,7 +403,7 @@ describe("createIconLoader / timing logs", () => {
       listIcons: async () => ["home"],
       getVersion: async () => "1.0.0",
     });
-    const load = sync(source, false);
+    const load = sync(source);
     const context = fakeContext();
 
     await load(context);
@@ -439,7 +439,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
 
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     expect(watcher.add).toHaveBeenCalledWith(dirA);
     expect(watcher.add).toHaveBeenCalledWith(dirB);
@@ -449,7 +449,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
     const source = mergeSources([localSource(dirA), localSource(dirB)]);
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     await writeFile(join(dirA, "logo.svg"), SQUARE_SVG);
     watcher.emit("add", join(dirA, "logo.svg"));
@@ -471,7 +471,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
     const source = mergeSources([localSource(dirA), localSource(dirB)]);
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
-    await sync(source, false)(context);
+    await sync(source)(context);
 
     const before = context.store.get("home");
 
@@ -513,7 +513,7 @@ describe("createIconLoader / localSource re-sync caching", () => {
     await writeFile(join(dir, "menu.svg"), SQUARE_SVG);
     const optimize = vi.fn((svg: string) => svg);
     const source = localSource(dir, { optimize });
-    const load = sync(source, false);
+    const load = sync(source);
     const context = fakeContext();
 
     await load(context);

@@ -105,9 +105,9 @@ export interface IconSource {
    * unreachable API, a misconfigured credential - as a distinct concern from `listIcons`/
    * `getIcons` themselves. Called once, after `resolveRoot` but before anything else,
    * so a broken source fails clearly and immediately instead of silently surfacing later as a
-   * `listIcons`/`getIcons` failure (in non-strict mode, a name `getIcons` reports as an `Error`
-   * is warned and skipped, one at a time, which buries a whole-source problem in noise rather
-   * than reporting it once, up front).
+   * `listIcons`/`getIcons` failure (in dev, a name `getIcons` reports as an `Error` is warned and
+   * skipped, one at a time, which buries a whole-source problem in noise rather than reporting it
+   * once, up front).
    *
    * When composed via `mergeSources`, every member's `checkPreconditions()` runs, but a single
    * member failing doesn't fail the whole composite by itself: it's warned about and the

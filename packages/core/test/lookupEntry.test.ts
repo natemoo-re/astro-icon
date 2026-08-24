@@ -7,7 +7,9 @@ vi.mock("astro:content", () => ({
   getCollection: (...args: unknown[]) => getCollection(...args),
 }));
 
-const { resolveIconEntry } = await import("../src/render/lookupEntry.js");
+const { resolveIconEntry, isCollectionEmpty } = await import(
+  "../src/render/lookupEntry.js"
+);
 
 afterEach(() => {
   getEntry.mockReset();
@@ -89,5 +91,22 @@ describe("resolveIconEntry", () => {
     getCollection.mockRejectedValueOnce(new Error("boom"));
 
     await expect(resolveIconEntry("local", "deno")).resolves.toBeUndefined();
+  });
+});
+
+describe("isCollectionEmpty", () => {
+  it("is true when the collection resolved to zero entries", async () => {
+    getCollection.mockResolvedValueOnce([]);
+    await expect(isCollectionEmpty("local")).resolves.toBe(true);
+  });
+
+  it("is false when the collection has at least one entry", async () => {
+    getCollection.mockResolvedValueOnce([{ id: "home" }]);
+    await expect(isCollectionEmpty("local")).resolves.toBe(false);
+  });
+
+  it("is false (not 'empty') when the collection doesn't exist at all", async () => {
+    getCollection.mockRejectedValueOnce(new Error("unknown collection"));
+    await expect(isCollectionEmpty("nope")).resolves.toBe(false);
   });
 });

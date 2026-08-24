@@ -53,14 +53,7 @@ export interface IconLoaderSyncContext {
   watcher?: IconSourceWatcher;
 }
 
-export interface IconLoaderOptions {
-  /**
-   * When true, turns warnings (a source couldn't provide a requested icon,
-   * or couldn't list its icons at all) into build errors.
-   * @default false
-   */
-  strict?: boolean;
-}
+export interface IconLoaderOptions {}
 
 /**
  * The sync logic behind `createIconLoader`, taking only {@link IconLoaderSyncContext} instead of
@@ -69,7 +62,6 @@ export interface IconLoaderOptions {
  */
 function syncIcons(
   source: IconSource,
-  strict: boolean,
 ): (context: IconLoaderSyncContext) => Promise<void> {
   return async function load(context: IconLoaderSyncContext): Promise<void> {
     const {
@@ -82,10 +74,19 @@ function syncIcons(
       watcher,
     } = context;
 
+    // A watcher on the context means this sync is running under `astro dev`: a hard failure there
+    // (a source that can't be used at all, an icon that fails to build) warns and continues,
+    // since a broken icon shouldn't take down the whole dev server and `<Icon>` already surfaces
+    // a per-render overlay error for one that's actually missing at render time. Without a
+    // watcher (`astro build`/`astro sync`), the same failure fails the build instead - there's no
+    // later render pass to catch it, and a content collection that silently dropped icons is
+    // worse than a build that says so.
+    const dev = !!watcher;
+
     // Turns one `report()`ed file-level change into a surgical store update - re-resolving just
     // that name for an "add"/"change", or deleting it for an "unlink" - instead of a full resync.
-    // Never throws, even under `strict`: this runs from inside a watcher event handler, where an
-    // unhandled rejection would be far worse than a logged warning.
+    // Never throws, even in a build: this runs from inside a watcher event handler (dev-only to
+    // begin with), where an unhandled rejection would be far worse than a logged warning.
     async function handleChange(event: IconChangeEvent): Promise<void> {
       try {
         if (event.type === "unlink") {
@@ -128,7 +129,7 @@ function syncIcons(
 
     // `checkPreconditions()` first - is this source usable at all, as a distinct concern from
     // what `listIcons()` reports (see `IconSource.checkPreconditions`'s doc comment). Either
-    // failing falls back to an empty list with a warning, or a build error under `strict`.
+    // failing falls back to an empty list with a warning in dev, or fails the build.
     const listStart = syncStart;
     let names: string[] = [];
     try {
@@ -137,10 +138,10 @@ function syncIcons(
     } catch (ex) {
       const detail = ex instanceof Error ? ex.message : String(ex);
       const message = `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`;
-      if (strict) {
+      if (!dev) {
         throw new AstroIconError(
           message,
-          `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
+          `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the collection is empty.`,
         );
       }
       logger.warn(message);
@@ -149,7 +150,7 @@ function syncIcons(
 
     if (names.length === 0) {
       const message = `"${source.name}" has no icons to load for the "${collection}" collection.`;
-      if (strict) {
+      if (!dev) {
         throw new AstroIconError(
           message,
           `Check that "${source.name}" is configured correctly and that its icon list (or \`allowed: [...]\` option) isn't empty.`,
@@ -179,10 +180,10 @@ function syncIcons(
     const buildStart = performance.now();
     const built = await buildIcons(source, names, (name, ex) => {
       const detail = ex instanceof Error ? ex.message : String(ex);
-      if (strict) {
+      if (!dev) {
         throw new AstroIconError(
           `"${source.name}" failed to build "${name}": ${detail}`,
-          `Fix the error above, or disable "strict" to skip this icon with a warning instead.`,
+          `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the icon is missing from the collection.`,
         );
       }
       logger.warn(`"${source.name}" failed to build "${name}": ${detail}`);
@@ -206,7 +207,8 @@ function syncIcons(
     if (versionKey) meta.set(metaKey, versionKey);
     else meta.delete(metaKey);
 
-    // Typed from `built`, not `names`: a failed icon is skipped from the store in non-strict mode.
+    // Typed from `built`, not `names`: a failed icon is skipped from the store in dev, where a
+    // build failure above would have already stopped the sync entirely.
     await recordCollection(
       context.config.root,
       "build",
@@ -271,11 +273,13 @@ export function createIconLoader(
   options: IconLoaderOptions = {},
 ): Loader & { load: (context: IconLoaderSyncContext) => Promise<void> } {
   const source = mergeSources(sources);
-  const { strict = false } = options;
+  // `options` is unused today - reserved for future loader-level options now that `strict` is
+  // gone. Failure handling is derived from the sync context itself (`context.watcher`, i.e. dev
+  // vs. build) rather than configured.
 
   return {
     name: "astro-icon/loaders",
-    load: syncIcons(source, strict),
+    load: syncIcons(source),
     schema: iconEntrySchema,
   };
 }

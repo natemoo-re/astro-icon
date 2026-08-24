@@ -243,7 +243,7 @@ const localSpec: IconifySourceSpec = {
       // The eager pack load's actual "fail loudly, up front" payoff: called once by both bundled
       // loaders before listIcons/getIcons are ever touched, so a missing pack is one clear
       // failure instead of an `allowed` allowlist masking it in listIcons, surfacing only later
-      // as a non-strict getIcons warning once each icon is individually built. The only place
+      // as a per-icon getIcons warning (in dev) once each icon is individually built. The only place
       // "pack isn't installed" is checked - `anchor.loadedPack()` below trusts it already ran
       // (both bundled loaders call this before either) and doesn't re-check `!data` itself.
       async checkPreconditions() {

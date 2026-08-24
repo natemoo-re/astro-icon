@@ -69,10 +69,4 @@ export interface IconifySourceOptions {
   allowed?: string[];
   /** Transform applied to each icon's built `IconEntry`, last, before it's returned. */
   transform?: TransformFn;
-  /**
-   * Turns a recoverable warning (pack resolved only through the API
-   * fallback, a requested icon that's missing) into a build error instead.
-   * @default false
-   */
-  strict?: boolean;
 }
