@@ -1,8 +1,8 @@
 ---
 import type { HTMLAttributes } from "astro/types";
 import { renderTimeError } from "../src/render/error.js";
-import IconMarkup from "../src/render/IconMarkup.astro";
-import type { AccessibleElementInput } from "../src/render/props.js";
+import IconBase from "./IconBase.astro";
+import type { SharedIconProps } from "../src/render/props.js";
 import { parseIconName } from "../src/render/parseIconName.js";
 import { resolveIconEntry } from "../src/render/lookupEntry.js";
 import type { IconName } from "../typings/names";
@@ -20,41 +20,12 @@ import type { IconName } from "../typings/names";
  *
  * Use `<LiveIcon>` instead when you need to resolve an icon per request.
  */
-interface Props extends HTMLAttributes<"svg"> {
+interface Props extends HTMLAttributes<"svg">, SharedIconProps {
   /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
   name: IconName;
-  /**
-   * Adds an accessible `<title>` before the icon body, and takes the icon out
-   * of its decorative default. Pass `{ id, value }` instead of a plain string
-   * to control the `<title>`'s id, e.g. so something outside the icon can
-   * reference it directly.
-   */
-  title?: string | AccessibleElementInput;
-  /**
-   * Adds an accessible `<desc>` after `title`, and takes the icon out of its
-   * decorative default. Pass `{ id, value }` instead of a plain string to
-   * control the `<desc>`'s id, e.g. so something outside the icon can
-   * reference it directly.
-   */
-  desc?: string | AccessibleElementInput;
-  /**
-   * Sets the icon's accessible description inline, without a separate
-   * `<desc>` element to reference. Same relationship to `aria-describedby`
-   * as `aria-label` has to `aria-labelledby`.
-   *
-   * This is a WAI-ARIA 1.3 attribute that Astro's `HTMLAttributes` type
-   * doesn't include yet, so it's declared here explicitly.
-   */
-  "aria-description"?: string;
-  /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
-  size?: number | string;
-  /** The icon's rendered width; defaults to the source SVG's own width. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
-  width?: number | string | null;
-  /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
-  height?: number | string | null;
 }
 
-const { name = "", title, desc, ...props } = Astro.props;
+const { name = "", ...props } = Astro.props;
 
 const parsedName = parseIconName(name as string);
 const { collection, name: iconName, hasPrefix } = parsedName;
@@ -78,10 +49,4 @@ if (!entry) {
 }
 ---
 
-<IconMarkup
-  entry={entry.data}
-  title={title}
-  desc={desc}
-  svgProps={props}
-  dataIcon={name}
-/>
+<IconBase entry={entry.data} dataIcon={name} {...props} />

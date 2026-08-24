@@ -14,7 +14,7 @@ export interface BuiltIcon {
  * builds its own `IconEntry` without going through `parseIconSVG`.
  */
 export async function buildIcon(
-  source: Pick<IconSource, "getIcon">,
+  source: IconSource,
   name: string,
 ): Promise<BuiltIcon> {
   const data = await source.getIcon(name);
@@ -25,9 +25,14 @@ export async function buildIcon(
  * Builds every name via `source.getIcon()`, skipping (and reporting via `onError`) any that
  * fail. Respects `source.concurrency` if set (see `IconSource.concurrency`); otherwise every
  * name is resolved at once, as before.
+ *
+ * Takes a whole `IconSource`, not just the fields read here: an ad-hoc `{ getIcon }` shape
+ * would typecheck while silently dropping the source's `concurrency` cap, unbounding a
+ * rate-limited backend's request fan-out. Wrap a source (keeping its full shape) instead of
+ * hand-rolling a partial one.
  */
 export async function buildIcons(
-  source: Pick<IconSource, "getIcon" | "concurrency">,
+  source: IconSource,
   names: string[],
   onError: (name: string, cause: unknown) => void,
 ): Promise<BuiltIcon[]> {

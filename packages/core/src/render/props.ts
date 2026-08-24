@@ -21,6 +21,50 @@ export interface AccessibleElementInput {
   value: string;
 }
 
+/**
+ * The props `<Icon>` and `<LiveIcon>` both take, declared once so the two can't document
+ * different semantics for the same prop. Each component adds only how its icon is *addressed*
+ * (`name` vs. `collection`/`icon`); everything a caller can say about how the icon *renders*
+ * lives here, alongside the `HTMLAttributes<"svg">` both also extend.
+ *
+ * The decorative/labeled distinction this encodes: an icon is decorative by default
+ * (`aria-hidden`, invisible to assistive tech), and passing `title`/`desc` - or any of
+ * `aria-label`/`aria-labelledby`/`aria-description`/`aria-describedby` - opts it into being a
+ * labeled, standalone graphic. It's a runtime distinction, not a structural one (the same props
+ * type describes both), so `iconA11yProps` is where it's actually decided.
+ */
+export interface SharedIconProps {
+  /**
+   * Adds an accessible `<title>` before the icon body, and takes the icon out
+   * of its decorative default. Pass `{ id, value }` instead of a plain string
+   * to control the `<title>`'s id, e.g. so something outside the icon can
+   * reference it directly.
+   */
+  title?: string | AccessibleElementInput;
+  /**
+   * Adds an accessible `<desc>` after `title`, and takes the icon out of its
+   * decorative default. Pass `{ id, value }` instead of a plain string to
+   * control the `<desc>`'s id, e.g. so something outside the icon can
+   * reference it directly.
+   */
+  desc?: string | AccessibleElementInput;
+  /**
+   * Sets the icon's accessible description inline, without a separate
+   * `<desc>` element to reference. Same relationship to `aria-describedby`
+   * as `aria-label` has to `aria-labelledby`.
+   *
+   * This is a WAI-ARIA 1.3 attribute that Astro's `HTMLAttributes` type
+   * doesn't include yet, so it's declared here explicitly.
+   */
+  "aria-description"?: string;
+  /** Sets both `width` and `height` at once. Takes priority over either if both are set. */
+  size?: number | string;
+  /** The icon's rendered width; defaults to the source SVG's own width. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
+  width?: number | string | null;
+  /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
+  height?: number | string | null;
+}
+
 export interface IconA11yResult {
   /**
    * Attributes to spread onto the rendered `<svg>` *before* the caller's own
@@ -153,7 +197,7 @@ export interface RenderableIconProps<P> {
  *
  * Spreads the whole entry (minus `body`/`title`/`desc`, which aren't `<svg>` attributes) as
  * defaults, not just `width`/`height`/`viewBox`: a local icon's own root-tag attributes
- * (`fill`/`stroke`/`class`/... - see `extractRootAttrs`) land here too, so a caller's own prop for
+ * (`fill`/`stroke`/`class`/... - see `parseLocalIconSVG`) land here too, so a caller's own prop for
  * the same attribute genuinely overrides it by landing on the same element, rather than losing to
  * an inner element's own value the way baking them into `body` would.
  */
