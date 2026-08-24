@@ -1,7 +1,7 @@
-import { defineCollection } from 'astro:content';
-import { z } from 'astro/zod';
-import { glob } from 'astro/loaders';
-import { createIconLoader, iconifyLocalSource } from 'astro-icon/loaders';
+import { defineCollection } from "astro:content";
+import { z } from "astro/zod";
+import { glob } from "astro/loaders";
+import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
 
 const metadataDefinition = () =>
   z
@@ -30,7 +30,7 @@ const metadataDefinition = () =>
                 url: z.string(),
                 width: z.number().optional(),
                 height: z.number().optional(),
-              })
+              }),
             )
             .optional(),
           locale: z.string().optional(),
@@ -49,7 +49,7 @@ const metadataDefinition = () =>
     .optional();
 
 const postCollection = defineCollection({
-  loader: glob({ pattern: ['*.md', '*.mdx'], base: 'src/data/post' }),
+  loader: glob({ pattern: ["*.md", "*.mdx"], base: "src/data/post" }),
   schema: z.object({
     publishDate: z.date().optional(),
     updateDate: z.date().optional(),
@@ -84,27 +84,27 @@ export const collections = {
   // every sync loads and types all 5,000+ icons, and a name assembled at
   // runtime needs an `as IconName` cast.
   tabler: defineCollection({
-    loader: createIconLoader(iconifyLocalSource('tabler')),
+    loader: createIconLoader(iconifyLocalSource("tabler")),
   }),
 
   // The nine flat-color-icons stay a curated `allowed` list ([UC3]): the set
   // is small enough to write down, so the collection (and its types) are
   // exactly these names, and a typo in page data is a build error.
-  'flat-color-icons': defineCollection({
+  "flat-color-icons": defineCollection({
     loader: createIconLoader(
-      iconifyLocalSource('flat-color-icons', {
+      iconifyLocalSource("flat-color-icons", {
         allowed: [
-          'template',
-          'gallery',
-          'approval',
-          'document',
-          'advertising',
-          'currency-exchange',
-          'voice-presentation',
-          'business-contact',
-          'database',
+          "template",
+          "gallery",
+          "approval",
+          "document",
+          "advertising",
+          "currency-exchange",
+          "voice-presentation",
+          "business-contact",
+          "database",
         ],
-      })
+      }),
     ),
   }),
 };

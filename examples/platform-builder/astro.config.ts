@@ -1,18 +1,21 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from "path";
+import { fileURLToPath } from "url";
 
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig, fontProviders } from "astro/config";
 
-import { unified } from '@astrojs/markdown-remark';
+import { unified } from "@astrojs/markdown-remark";
 
-import node from '@astrojs/node';
-import sitemap from '@astrojs/sitemap';
-import tailwindcss from '@tailwindcss/vite';
-import mdx from '@astrojs/mdx';
+import node from "@astrojs/node";
+import sitemap from "@astrojs/sitemap";
+import tailwindcss from "@tailwindcss/vite";
+import mdx from "@astrojs/mdx";
 
-import astrowind from './vendor/integration';
+import astrowind from "./vendor/integration";
 
-import { readingTimeRemarkPlugin, responsiveTablesRehypePlugin } from './src/utils/frontmatter';
+import {
+  readingTimeRemarkPlugin,
+  responsiveTablesRehypePlugin,
+} from "./src/utils/frontmatter";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,14 +24,14 @@ export default defineConfig({
   // stays prerendered. The node adapter is only here for the two routes that
   // opt into `prerender = false` (/search and /brand), which resolve icons
   // per request via live collections.
-  output: 'static',
-  adapter: node({ mode: 'standalone' }),
+  output: "static",
+  adapter: node({ mode: "standalone" }),
 
   // Prefetch links as they enter the viewport for snappier navigations
   // (works together with <ClientRouter />, which enables prefetch by default).
   prefetch: {
     prefetchAll: true,
-    defaultStrategy: 'viewport',
+    defaultStrategy: "viewport",
   },
 
   // Native Fonts API: self-hosts + subsets + preloads Inter and generates
@@ -37,12 +40,12 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Inter',
-      cssVariable: '--font-inter',
-      weights: ['100 900'],
-      styles: ['normal'],
-      subsets: ['latin'],
-      fallbacks: ['sans-serif'],
+      name: "Inter",
+      cssVariable: "--font-inter",
+      weights: ["100 900"],
+      styles: ["normal"],
+      subsets: ["latin"],
+      fallbacks: ["sans-serif"],
     },
   ],
 
@@ -59,7 +62,7 @@ export default defineConfig({
     // that `include` map.
 
     astrowind({
-      config: './src/config.yaml',
+      config: "./src/config.yaml",
     }),
   ],
 
@@ -74,7 +77,7 @@ export default defineConfig({
     // `domains` only matters for remote URLs that fall through to Astro's
     // native <Image /> (i.e. providers Unpic can't detect, like Pixabay).
     // Listed entries are authorized to be processed by Sharp.
-    domains: ['cdn.pixabay.com'],
+    domains: ["cdn.pixabay.com"],
 
     // Emit responsive styles for the native <Image layout=…> used by
     // src/components/common/Image.astro (local images). Utility classes on
@@ -93,7 +96,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     resolve: {
       alias: {
-        '~': path.resolve(__dirname, './src'),
+        "~": path.resolve(__dirname, "./src"),
       },
     },
   },

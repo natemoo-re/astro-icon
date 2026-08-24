@@ -1,5 +1,9 @@
 import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+import {
+  createIconLoader,
+  iconifyLocalSource,
+  localSource,
+} from "astro-icon/loaders";
 
 // The design-system icon set for a real dashboard: three Heroicons packs
 // (the sets Flowbite's components draw from), each curated down with an
