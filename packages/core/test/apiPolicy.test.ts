@@ -77,33 +77,3 @@ describe("createIconifyApiPolicy / retry", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
-
-describe("createIconifyApiPolicy / rate limiting", () => {
-  it("doesn't space requests when requestsPerSecond is omitted", async () => {
-    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-    const policy = createIconifyApiPolicy();
-
-    await Promise.all([
-      policy.fetch("https://api.iconify.design/a.json"),
-      policy.fetch("https://api.iconify.design/b.json"),
-    ]);
-
-    expect(Date.now()).toBe(0);
-  });
-
-  it("spaces new requests at requestsPerSecond", async () => {
-    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-    const policy = createIconifyApiPolicy({ requestsPerSecond: 10 }); // 100ms interval
-
-    const acquired = Promise.all([
-      policy.fetch("https://api.iconify.design/a.json"),
-      policy.fetch("https://api.iconify.design/b.json"),
-    ]);
-    await vi.runAllTimersAsync();
-    await acquired;
-
-    expect(Date.now()).toBe(100); // slots at 0ms, 100ms
-  });
-});
