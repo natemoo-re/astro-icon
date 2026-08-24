@@ -241,6 +241,64 @@ This still watches every composed directory in dev, add/edit/remove included - `
 
 **Keep icon names disjoint across composed local directories.** Like `mergeSources`, watching resolves a name to whichever source listed it first; editing a file in a later directory that shares a name with an earlier one still triggers a resync, it just re-resolves to the same, unchanged winner - so the edit will silently appear to do nothing. If two directories can genuinely overlap, give the later one an `allowed: [...]` allowlist that excludes the shared names, or merge the directories instead.
 
+### `optimize` and `svgo()`
+
+`svgo()` with no arguments runs SVGO's `preset-default` with astro-icon's own `defaultOverrides` layered on top: mechanical cleanup only (whitespace, numeric precision, structurally-empty nodes), nothing that changes an icon's color or DOM shape (see `defaultOverrides`' own doc comment for the full list and reasoning). Pass SVGO's own config through as-is - a `plugins` option replaces the default list entirely rather than merging with it:
+
+```ts
+import { svgo } from "astro-icon/optimize";
+
+optimize: svgo({ plugins: ["preset-default"] }); // SVGO's own untouched default
+```
+
+To keep most of astro-icon's defaults and adjust one plugin, build on `defaultOverrides` yourself instead of retyping the whole list:
+
+```ts
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+optimize: svgo({
+  plugins: [
+    {
+      name: "preset-default",
+      params: {
+        overrides: {
+          ...defaultOverrides,
+          convertColors: { currentColor: true },
+        },
+      },
+    },
+  ],
+});
+```
+
+`optimize` also receives the icon's `collection` (always `"local"` for `localSource`) and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+
+```ts
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+export const collections = {
+  icons: defineCollection({
+    loader: createIconLoader(
+      localSource("src/icons", {
+        optimize: (svg, { collection, name }) =>
+          svgo({
+            plugins: [
+              {
+                name: "prefixIds",
+                params: { prefix: `${collection}-${name}` },
+              },
+              {
+                name: "preset-default",
+                params: { overrides: defaultOverrides },
+              },
+            ],
+          })(svg, { collection, name }),
+      }),
+    ),
+  }),
+};
+```
+
 ## Iconify icons
 
 `iconifyLocalSource` resolves icons from any [Iconify icon set](https://icon-sets.iconify.design/) installed locally as `@iconify-json/<pack>`. Pass it to `createIconLoader` to use it as a collection:
@@ -299,11 +357,9 @@ export const collections = {
 };
 ```
 
-Pass options as the second argument to either source. astro-icon doesn't run any optimization on its own, but `astro-icon/optimize` ships an `svgo()` helper ([SVGO](https://github.com/svg/svgo) is an optional peer dependency: `npm install svgo`) for the `optimize` option:
+Pass options as the second argument to either source:
 
 ```ts
-import { svgo } from "astro-icon/optimize";
-
 export const collections = {
   mdi: defineCollection({
     loader: createIconLoader(
@@ -311,71 +367,18 @@ export const collections = {
         // Restrict the collection (and its generated types) to exactly these icons,
         // typed and autocompleted against "mdi"'s catalog once a sync has recorded it.
         allowed: ["account", "home", "heart"],
-        // Transform each icon's raw SVG before astro-icon stores it.
-        optimize: svgo(),
-        // Turn a missing icon into a build error instead of a warning.
-        strict: true,
+        // Transform each icon's already-built IconEntry before astro-icon stores it.
+        transform: (entry) => ({
+          ...entry,
+          body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
+        }),
       }),
     ),
   }),
 };
 ```
 
-`svgo()` with no arguments runs SVGO's `preset-default` with astro-icon's own `defaultOverrides` layered on top: mechanical cleanup only (whitespace, numeric precision, structurally-empty nodes), nothing that changes an icon's color or DOM shape (see `defaultOverrides`' own doc comment for the full list and reasoning). Pass SVGO's own config through as-is - a `plugins` option replaces the default list entirely rather than merging with it:
-
-```ts
-import { svgo } from "astro-icon/optimize";
-
-optimize: svgo({ plugins: ["preset-default"] }); // SVGO's own untouched default
-```
-
-To keep most of astro-icon's defaults and adjust one plugin, build on `defaultOverrides` yourself instead of retyping the whole list:
-
-```ts
-import { svgo, defaultOverrides } from "astro-icon/optimize";
-
-optimize: svgo({
-  plugins: [
-    {
-      name: "preset-default",
-      params: {
-        overrides: {
-          ...defaultOverrides,
-          convertColors: { currentColor: true },
-        },
-      },
-    },
-  ],
-});
-```
-
-`optimize` also receives the icon's `collection` and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
-
-```ts
-import { svgo, defaultOverrides } from "astro-icon/optimize";
-
-export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(
-      iconifyLocalSource("mdi", {
-        optimize: (svg, { collection, name }) =>
-          svgo({
-            plugins: [
-              {
-                name: "prefixIds",
-                params: { prefix: `${collection}-${name}` },
-              },
-              {
-                name: "preset-default",
-                params: { overrides: defaultOverrides },
-              },
-            ],
-          })(svg, { collection, name }),
-      }),
-    ),
-  }),
-};
-```
+`optimize` (below) is `localSource`'s alone - an Iconify source builds its `IconEntry` straight out of structured Iconify icon data, so there's never a raw SVG string in play for it to transform. `transform`, on the other hand, is the one hook every source kind shares: it runs last, on the already-built `IconEntry`, after any source-specific policy (`optimize` included). Use it to recolor, add a field every icon in a collection should have, or normalize fields your `<Icon>` usage relies on. See [Local icons](#local-icons) for more on `optimize` and `svgo()`.
 
 Combine several packs into one collection by passing `createIconLoader` an array of sources:
 
@@ -393,6 +396,10 @@ export const collections = {
 ```
 
 Like a local collection, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of how long listing icons took versus resolving/building them, so you can tell a slow local pack lookup apart from a slow Iconify API fallback, plus whether a pack resolved locally or from the API.
+
+### When a source can't provide an icon
+
+A hard failure - a source that can't be used at all (a pack not installed, an unreachable API), an empty icon list, or one icon that fails to build - is handled differently depending on where the sync runs. In `astro dev`, it's logged as a warning and the sync continues without that icon (or that source), so one broken icon doesn't take down your whole dev server; `<Icon>` itself still throws its own render-time error (with a dev-only overlay) the moment you actually try to render the missing icon, so it's never silently absent. In `astro build`/`astro sync`, the same failure fails the build instead - there's no later dev-server pass to catch a silently-incomplete collection, so it's surfaced immediately as a build error instead of shipping a collection that's missing icons.
 
 ## Resolving icons per request with `<LiveIcon>`
 
@@ -479,20 +486,27 @@ Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props inste
 Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `createIconLoader` (build time) or `createLiveIconLoader` (per request):
 
 ```ts
-import { parseIconSVG } from "astro-icon/loaders";
+import { entryFromSVG } from "astro-icon/loaders";
 import { liveIconCollections } from "astro-icon/loaders/live";
 import type { IconSource } from "astro-icon/loaders/live";
 
 const mySource: IconSource = {
   name: "my-source",
-  async getIcon(name) {
-    const res = await fetch(`https://icons.example.com/${name}.svg`);
-    if (!res.ok) throw new Error(`Icon "${name}" not found`);
-    return parseIconSVG(await res.text(), {
-      collection: "my-source",
-      name,
-      logger: { warn: console.warn },
-    });
+  async getIcons(names) {
+    const result = new Map();
+    await Promise.all(
+      names.map(async (name) => {
+        try {
+          const res = await fetch(`https://icons.example.com/${name}.svg`);
+          if (!res.ok) throw new Error(`Icon "${name}" not found`);
+          const { entry } = entryFromSVG(await res.text());
+          result.set(name, entry);
+        } catch (ex) {
+          result.set(name, ex instanceof Error ? ex : new Error(String(ex)));
+        }
+      }),
+    );
+    return result;
   },
   async listIcons() {
     const res = await fetch("https://icons.example.com/list.json");
@@ -503,7 +517,9 @@ const mySource: IconSource = {
 export const collections = liveIconCollections({ custom: mySource });
 ```
 
-`getIcon` resolves one icon by name; throw a descriptive error if it can't be found or built. `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete. `parseIconSVG` turns a raw `<svg>...</svg>` string into the shape astro-icon stores, deriving a `viewBox` if one is missing.
+`getIcons(names)` always resolves the *whole* requested batch at once, into a `Map` covering every name asked for - one entry per name, either its `IconEntry` or an `Error` for that one name alone (a source with a real batch endpoint pays for one request no matter how many names it's asked for in one call; a source with nothing to batch, like this one, just resolves each name independently). `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete.
+
+`entryFromSVG` turns a raw `<svg>...</svg>` string into `{ entry, facts }`: `entry` is the `IconEntry` astro-icon stores (fields describe the rendered root `<svg>`; `body` is its children), and `facts` reports what had to be inferred - `facts.viewBox` (`"present"` | `"derived"` | `"defaulted"`) and `facts.monochromeWithoutCurrentColor` - for you to turn into your own warning, the same way `localSource()` does internally. It throws only when the input has no `<svg>` element at all. For structured Iconify icon data specifically (not a raw SVG string), use `entryFromIconifyData` instead - see `iconifyLocalSource`'s/`iconifyApiSource`'s own source for an example.
 
 Implement `watch(watcher, report)` to opt a build-time source into dev watching, the same mechanism `localSource()` uses for a directory of files: register whatever paths the source depends on with `watcher`, and call `report({ type: "add" | "change" | "unlink", name })` whenever one of them changes - `createIconLoader` turns that into a surgical store update, re-resolving just that name instead of the whole collection. `createLiveIconLoader` never calls `watch` - a live collection resolves per request, so there's nothing to keep in sync.
 
@@ -567,7 +583,7 @@ astro-icon v2 replaces the `icon()` Astro integration with content collection lo
 - Remove `icon()` from `integrations` in `astro.config.mjs`.
 - Replace `config.include` with the `allowed` option on `iconifyLocalSource()`/`iconifyApiSource()` (see [Iconify icons](#iconify-icons)).
 - Replace `config.iconDir` with `createIconLoader(localSource("your/dir"))`.
-- Replace `config.svgoOptions` with the `optimize` option - astro-icon no longer runs any optimization by default. `svgo()` from `astro-icon/optimize` (see [Iconify icons](#iconify-icons)) covers the common case; for full control, `npm install svgo` and write your own `optimize` function.
+- Replace `config.svgoOptions` with the `optimize` option on `localSource()` (see [Local icons](#local-icons)) - astro-icon no longer runs any optimization by default. `svgo()` from `astro-icon/optimize` covers the common case; for full control, `npm install svgo` and write your own `optimize` function.
 - Define your collections in `src/content.config.ts` as shown in [Quick start](#quick-start), and add the `env.d.ts` reference from [Installation](#installation).
 
 If you're upgrading from v0 to v1, see the [v1 upgrade guide](https://www.astroicon.dev/guides/upgrade/v1/) first.

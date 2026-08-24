@@ -53,4 +53,17 @@ Rebuilt astro-icon on top of Astro's Content Layer instead of a custom Vite reso
 
   If a specific page really does repeat one icon enough to matter, build a sheet for it yourself - `getEntry("icons", "home")` gives you the `viewBox` and `body` to put in a `<symbol>`.
 
+- **Icon ingestion is rebuilt around two canonical functions**, exported from `astro-icon/loaders`: `entryFromIconifyData(data, name)` maps structured Iconify icon data straight to an `IconEntry`, and `entryFromSVG(svg)` turns a raw `<svg>...</svg>` string into `{ entry, facts }` via one real parse (no more regex-based SVG parsing). `parseIconSVG`/`ParseIconSVGOptions` are removed - if you called `parseIconSVG` from a custom `IconSource`, switch to `entryFromSVG`, which takes no policy parameters (no `optimize`, no `strict`, no logger) and returns `facts` (`viewBox: "present" | "derived" | "defaulted"`, `monochromeWithoutCurrentColor`) for you to turn into your own warning, the same way `localSource()` does internally. The `IconEntry` contract itself hasn't changed: fields describe the rendered root `<svg>` element, and `body` is its children.
+- **`optimize` is `localSource`-only now.** `iconifyLocalSource`/`iconifyApiSource` build their `IconEntry` straight out of structured Iconify icon data, so there's no raw SVG string in that path anymore for `optimize` to transform - the option is removed from `IconifySourceOptions`. A new `transform(entry, { collection, name })` option lands on **every** source kind instead (`IconifySourceOptions` and `LocalSourceOptions`), applied last, on the already-built `IconEntry`, after any source-specific policy (`optimize` included):
+  ```ts
+  iconifyLocalSource("tabler", {
+    transform: (entry) => ({
+      ...entry,
+      body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
+    }),
+  });
+  ```
+- **`strict` is removed** from `IconLoaderOptions`, `IconifySourceOptions`, and `LocalSourceOptions`. In its place, a hard failure (an unusable source, an empty icon list, an icon that fails to build) now depends on where the sync runs: in `astro dev` it warns and continues, same as the old non-strict default (with `<Icon>`'s own render-time overlay still catching a genuinely missing icon); in `astro build`/`astro sync` it now always fails the build - there's no more opt-out, since there's no later dev-server pass to recover a silently-incomplete collection from.
+- **Local icon bodies may change cosmetically.** `localSource()` now parses through `entryFromSVG`'s ultrahtml-based parser instead of the old regex-based one, whose serializer normalizes formatting it previously left untouched (e.g. `<path/>` becomes `<path />`). No change to the actual markup/attributes.
+
 A full migration guide for the docs site is tracked separately and not yet published.
