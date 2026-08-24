@@ -2,11 +2,22 @@
 // UC5: icon names nobody can know at build time. These names depend on what a
 // visitor just typed, so no build-time collection could contain them without
 // enumerating the whole pack up front. The `ph` *live* collection (see
-// src/live.config.ts) uses `iconifyApiSource` with no allowlist: each result
-// below is fetched individually from api.iconify.design at request time, and
-// only the icons actually shown are ever resolved.
+// src/live.config.ts) uses `iconifyApiSource` with no allowlist, resolved per
+// request.
+//
+// Naively, that's one request per result: a search page renders N results,
+// each an independent `<LiveIcon>` lookup with no visibility into its
+// siblings. `getLiveCollection(collection, { ids })` fixes that at the one
+// point it actually can be fixed - here, before any individual icon has been
+// fetched, where every result name is already known. It resolves the whole
+// batch in one request (for a source like `iconifyApiSource` that supports
+// batching - see `IconSource.getIcons`) and warms `<LiveIcon>`'s cache for
+// every id it resolves, so the render loop below still gets full
+// sanitization/accessibility/id-rewriting from `<LiveIcon>` itself - nothing
+// about how each icon renders had to change, only when the fetch happens.
 export const prerender = false;
 
+import { getLiveCollection } from 'astro:content';
 import { LiveIcon } from 'astro-icon/components';
 import HeroText from '~/components/widgets/HeroText.astro';
 import Layout from '~/layouts/PageLayout.astro';
@@ -19,6 +30,19 @@ const RESULT_LIMIT = 12;
 const PACK = 'ph';
 
 const query = Astro.url.searchParams.get('q')?.trim() ?? '';
+
+// Counts every request this page makes to api.iconify.design, so the payoff is measured, not
+// asserted. `fetch` is looked up fresh on every call inside astro-icon's own request code (see
+// packages/core/src/content/iconify/apiPolicy.ts), not captured at module load, so reassigning
+// the global here does intercept the batched request `getLiveCollection` triggers below.
+let requestCount = 0;
+const realFetch = globalThis.fetch;
+globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
+  if (String(args[0]).includes('api.iconify.design')) requestCount++;
+  return realFetch(...args);
+}) as typeof fetch;
+
+const timerStart = performance.now();
 
 let results: string[] = [];
 let error: string | undefined;
@@ -39,13 +63,22 @@ if (query) {
     error = "Couldn't reach the Iconify search API.";
   }
 }
+
+// The batched fetch: every result name in one call, before any single `<LiveIcon>` below has
+// asked for anything. See src/live.config.ts for the `ph` collection this resolves against.
+if (results.length > 0 && !error) {
+  await getLiveCollection(PACK, { ids: results });
+}
+
+const elapsedMs = Math.round(performance.now() - timerStart);
+globalThis.fetch = realFetch;
 ---
 
 <Layout metadata={metadata}>
   <HeroText
     tagline="Icons from user input"
     title="Icon names nobody can know at build time"
-    subtitle={`Where <code>&lt;Icon&gt;</code> genuinely can't help: these names depend on what a visitor just typed, so this route opts out of prerendering and resolves each result through the <code>ph</code> live collection - fetched individually from api.iconify.design, per request.`}
+    subtitle={`Where <code>&lt;Icon&gt;</code> genuinely can't help: these names depend on what a visitor just typed, so this route opts out of prerendering and resolves every result in one batched request through the <code>ph</code> live collection - see <code>getLiveCollection(collection, { ids })</code> below.`}
   />
 
   <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16 md:pb-20">
@@ -60,6 +93,16 @@ if (query) {
       />
       <button type="submit" class="btn-primary">Search</button>
     </form>
+
+    {
+      query && (
+        <p class="text-sm text-muted mb-6">
+          <strong>{requestCount}</strong> request{requestCount === 1 ? '' : 's'} to api.iconify.design, in{' '}
+          <strong>{elapsedMs}ms</strong> for {results.length} result{results.length === 1 ? '' : 's'} (1 search + 1
+          batched icon request, instead of 1 per result).
+        </p>
+      )
+    }
 
     {error && <p class="text-red-600 dark:text-red-400 mb-8">{error}</p>}
 
@@ -76,6 +119,8 @@ if (query) {
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mb-8">
           {results.map((name) => (
             <div class="flex flex-col items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-800 p-4 text-center">
+              {/* Every one of these is a cache hit: getLiveCollection above already resolved
+                 (and cached) this exact name as part of the batch. */}
               <LiveIcon collection={PACK} icon={name} size={28} class="text-primary" />
               <code class="text-xs text-muted break-all">{name}</code>
             </div>
@@ -86,7 +131,8 @@ if (query) {
 
     <p class="text-sm text-muted">
       A name that doesn't resolve makes <code>&lt;LiveIcon&gt;</code> log a warning and render nothing, rather than
-      throwing - one bad row from a data source can't take down the page around it.
+      throwing - one bad row from a data source can't take down the page around it, whether it's resolved
+      individually or as part of a batch.
     </p>
   </section>
 </Layout>

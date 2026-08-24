@@ -239,7 +239,7 @@ export const collections = {
 
 This still watches every composed directory in dev, add/edit/remove included - `localSource()` implements the same dev-watching `createIconLoader` uses for any watchable source, not just local ones.
 
-**Keep icon names disjoint across composed local directories.** Like `mergeSources`, watching resolves a name to whichever source listed it first; editing a file in a later directory that shares a name with an earlier one still triggers a resync, it just re-resolves to the same, unchanged winner - so the edit will silently appear to do nothing. If two directories can genuinely overlap, give the later one an `icons: [...]` allowlist that excludes the shared names, or merge the directories instead.
+**Keep icon names disjoint across composed local directories.** Like `mergeSources`, watching resolves a name to whichever source listed it first; editing a file in a later directory that shares a name with an earlier one still triggers a resync, it just re-resolves to the same, unchanged winner - so the edit will silently appear to do nothing. If two directories can genuinely overlap, give the later one an `allowed: [...]` allowlist that excludes the shared names, or merge the directories instead.
 
 ## Iconify icons
 

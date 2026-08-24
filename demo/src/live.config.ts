@@ -10,7 +10,7 @@ export const collections = liveIconCollections({
   mdi: iconifyLocalSource("mdi"),
 
   // "ph" isn't installed, so this resolves each requested icon individually
-  // from the public Iconify API (https://api.iconify.design). No `icons`
+  // from the public Iconify API (https://api.iconify.design). No `allowed`
   // allowlist, since a live collection's icon names aren't known ahead of time.
   ph: iconifyApiSource("ph"),
 

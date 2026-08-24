@@ -37,14 +37,6 @@ describe("iconifyApiSource naming", () => {
   });
 });
 
-describe("iconifyApiSource / concurrency", () => {
-  it("sets a default concurrency cap, as a shared-public-API source", () => {
-    expect(iconifyApiSource("mdi", { allowed: ["search"] }).concurrency).toBe(
-      20,
-    );
-  });
-});
-
 describe("iconifyApiSource / batches an allowlist into one request", () => {
   it("resolves every allowed icon from a single fetch covering the whole allowlist", async () => {
     const fetchMock = vi.fn(async (url: string) => {
@@ -59,13 +51,17 @@ describe("iconifyApiSource / batches an allowlist into one request", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const source = iconifyApiSource("mdi", { allowed: ["search", "menu"] });
-    const first = await source.getIcon("search");
-    const second = await source.getIcon("menu");
+    const first = await source.getIcons(["search"]);
+    const second = await source.getIcons(["menu"]);
 
-    expect(first.viewBox).toBe("0 0 24 24");
-    expect(second.viewBox).toBe("0 0 24 24");
+    expect((first.get("search") as { viewBox: string }).viewBox).toBe(
+      "0 0 24 24",
+    );
+    expect((second.get("menu") as { viewBox: string }).viewBox).toBe(
+      "0 0 24 24",
+    );
     // Both names come from the same allowlist, so `loadPackFromAPI`'s cache (keyed by the full
-    // sorted list) is shared across both `getIcon` calls - one fetch covers both icons.
+    // sorted list) is shared across both `getIcons` calls - one fetch covers both icons.
     expect(fetchMock).toHaveBeenCalledOnce();
     const requestedUrl = new URL(fetchMock.mock.calls[0][0] as string);
     expect(requestedUrl.searchParams.get("icons")!.split(",").sort()).toEqual([
@@ -75,8 +71,28 @@ describe("iconifyApiSource / batches an allowlist into one request", () => {
   });
 });
 
-describe("iconifyApiSource / resolves each requested icon individually without an allowlist", () => {
-  it("fetches only the requested icon when there's no known set to batch against", async () => {
+describe("iconifyApiSource / batches a single getIcons call, even without an allowlist", () => {
+  it("fetches every name in one call's batch with a single request", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const requested = new URL(url).searchParams.get("icons")!.split(",");
+      const icons = Object.fromEntries(
+        requested.map((name) => [name, pack.icons[name]]),
+      );
+      return new Response(JSON.stringify({ prefix: "mdi", icons }), {
+        status: 200,
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const source = iconifyApiSource("mdi");
+    const result = await source.getIcons(["search", "menu"]);
+
+    expect(result.get("search")).toMatchObject({ viewBox: "0 0 24 24" });
+    expect(result.get("menu")).toMatchObject({ viewBox: "0 0 24 24" });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("still fetches separately across two independent getIcons calls - batching is per call, not across time", async () => {
     const fetchMock = vi.fn(async (url: string) => {
       const requested = new URL(url).searchParams.get("icons");
       return new Response(
@@ -90,8 +106,8 @@ describe("iconifyApiSource / resolves each requested icon individually without a
     vi.stubGlobal("fetch", fetchMock);
 
     const source = iconifyApiSource("mdi");
-    await source.getIcon("search");
-    await source.getIcon("menu");
+    await source.getIcons(["search"]);
+    await source.getIcons(["menu"]);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -106,14 +122,15 @@ describe("iconifyApiSource / resolves each requested icon individually without a
 });
 
 describe("iconifyApiSource / icons allowlist is required", () => {
-  it("rejects a name not in the allowlist without fetching", async () => {
+  it("puts a per-name Error in the map for a name outside the allowlist, without fetching", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const source = iconifyApiSource("mdi", { allowed: ["search"] });
 
-    await expect(source.getIcon("menu")).rejects.toThrow(
-      /isn't in the allowed/i,
-    );
+    const result = await source.getIcons(["menu"]);
+
+    expect(result.get("menu")).toBeInstanceOf(Error);
+    expect((result.get("menu") as Error).message).toMatch(/isn't in the allowed/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -125,7 +142,7 @@ describe("iconifyApiSource / icons allowlist is required", () => {
 });
 
 describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against an uninstalled pack)", () => {
-  it("resolves any icon name one at a time", async () => {
+  it("resolves any icon name", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
@@ -141,9 +158,9 @@ describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against
     );
     const source = iconifyApiSource("mdi");
 
-    await expect(source.getIcon("search")).resolves.toMatchObject({
-      viewBox: "0 0 24 24",
-    });
+    const result = await source.getIcons(["search"]);
+
+    expect(result.get("search")).toMatchObject({ viewBox: "0 0 24 24" });
   });
 
   it("throws from listIcons instead of pretending to enumerate the whole pack", async () => {
@@ -156,14 +173,14 @@ describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against
 });
 
 describe("iconifyApiSource / failure modes", () => {
-  it("throws when the API fallback fails to resolve", async () => {
+  it("rejects the whole batch when the API request itself fails", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response("Not Found", { status: 404 })),
     );
     const source = iconifyApiSource("mdi", { allowed: ["search"] });
 
-    await expect(source.getIcon("search")).rejects.toThrow(/mdi/);
+    await expect(source.getIcons(["search"])).rejects.toThrow(/mdi/);
   });
 });
 
@@ -172,8 +189,8 @@ describe("iconifyApiSource / pack cache sharing", () => {
     const fetchMock = fetchReturning(() => pack);
     vi.stubGlobal("fetch", fetchMock);
 
-    await iconifyApiSource("mdi", { allowed: ["search"] }).getIcon("search");
-    await iconifyApiSource("mdi", { allowed: ["search"] }).getIcon("search");
+    await iconifyApiSource("mdi", { allowed: ["search"] }).getIcons(["search"]);
+    await iconifyApiSource("mdi", { allowed: ["search"] }).getIcons(["search"]);
 
     expect(fetchMock).toHaveBeenCalledOnce();
   });

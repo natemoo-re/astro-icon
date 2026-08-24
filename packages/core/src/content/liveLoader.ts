@@ -9,22 +9,39 @@ import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
 /**
- * Wraps a source so repeat `getIcon` calls for the same name are served from memory for the
- * process lifetime, keeping the source's full shape - `concurrency`, `listIcons`, and the rest
- * pass through untouched, so downstream consumers like `buildIcons` see a real `IconSource`.
- * Caches what the source built, pre-sanitize: sanitizing stays `buildIcon`'s job alone, and a
- * cache below it can't become a second path around that choke point.
+ * Wraps a source so repeat `getIcons` calls for the same name are served from memory for the
+ * process lifetime, keeping the source's full shape - `listIcons` and the rest pass through
+ * untouched, so downstream consumers like `buildIcons` see a real `IconSource`. Caches what the
+ * source built, pre-sanitize: sanitizing stays `buildIcons`'s job alone, and a cache below it
+ * can't become a second path around that choke point.
+ *
+ * Only ever asks the underlying source for names that aren't cached yet - a `getIcons(names)`
+ * call with every name already cached never reaches `source` at all, and one with a mix of
+ * cached and uncached names fetches only the uncached ones, still in a single call. This is also
+ * what makes a batched `loadCollection({ filter: { ids } })` request (below) warm the cache for
+ * every id it resolves, so a later single `getLiveEntry`/`<LiveIcon>` lookup for one of those
+ * same ids is a cache hit instead of a fresh fetch.
  */
 function cachingSource(source: IconSource): IconSource {
   const cache = new Map<string, IconEntry>();
   return {
     ...source,
-    async getIcon(name) {
-      const cached = cache.get(name);
-      if (cached) return cached;
-      const entry = await source.getIcon(name);
-      cache.set(name, entry);
-      return entry;
+    async getIcons(names) {
+      const result = new Map<string, IconEntry | Error>();
+      const missing: string[] = [];
+      for (const name of names) {
+        const cached = cache.get(name);
+        if (cached) result.set(name, cached);
+        else missing.push(name);
+      }
+      if (missing.length > 0) {
+        const fetched = await source.getIcons(missing);
+        for (const [name, entry] of fetched) {
+          result.set(name, entry);
+          if (!(entry instanceof Error)) cache.set(name, entry);
+        }
+      }
+      return result;
     },
   };
 }
@@ -68,11 +85,17 @@ export interface LiveIconLoaderOptions {
  * thrown errors as `{ error }` for `getLiveEntry()`/`getLiveCollection()`,
  * and, when the source supports `listIcons()`, fulfills whole-collection
  * loads and generates autocomplete types for it.
+ *
+ * `getLiveCollection(collection, { ids: [...] })` resolves exactly that
+ * subset in one batched call instead - the shape a search-as-you-type page
+ * wants: every result name is already known before any of them are fetched,
+ * so there's no reason to resolve them one `<LiveIcon>` at a time. See
+ * `loadCollection` below.
  */
 export function createLiveIconLoader(
   sources: IconSource | IconSource[],
   options: LiveIconLoaderOptions,
-): LiveLoader<IconEntry, { id: string }, never> {
+): LiveLoader<IconEntry, { id: string }, { ids: string[] }> {
   // Cached at the source seam (not per load function) so `loadEntry` and `loadCollection`
   // share one cache, and everything downstream handles a plain `IconSource`.
   const source = cachingSource(mergeSources(sources));
@@ -134,11 +157,30 @@ export function createLiveIconLoader(
     },
     loadCollection: async (context) => {
       verifyCollectionKey(context?.collection);
+      const ids = context?.filter?.ids;
+
+      // The batched, specific-subset path: every id in `filter.ids` in one `buildIcons` call -
+      // which, for a source with a real batching backend (`iconifyApiSource`), is one HTTP
+      // request no matter how many ids that is. Doesn't need `listIcons()` at all: unlike the
+      // whole-collection path below, the caller already knows exactly which names it wants.
+      if (ids) {
+        const loadStart = performance.now();
+        const built = await buildIcons(source, ids, (name, ex) => {
+          consoleLogger.warn(
+            `"${source.name}" failed to load "${name}" for a batched live collection request: ${ex instanceof Error ? ex.message : ex}`,
+          );
+        });
+        consoleLogger.debug(
+          `Loaded ${built.length}/${ids.length} requested icon(s) for "${source.name}"'s live collection in ${formatDuration(performance.now() - loadStart)}.`,
+        );
+        return { entries: built.map(({ name, data }) => ({ id: name, data })) };
+      }
+
       if (!source.listIcons) {
         return {
           error: new AstroIconError(
             `"${source.name}" doesn't support loading an entire live icon collection.`,
-            `Request icons individually via \`getLiveEntry(collection, name)\` instead of \`getLiveCollection(collection)\`.`,
+            `Request icons individually via \`getLiveEntry(collection, name)\`, pass \`{ ids: [...] }\` to \`getLiveCollection(collection, filter)\` for a specific subset, or use \`iconifyLocalSource\`/\`localSource\` (which both support \`listIcons()\`) instead of \`getLiveCollection(collection)\` with no filter at all.`,
           ),
         };
       }

@@ -20,9 +20,9 @@ function sleep(ms: number): Promise<void> {
  * unlike any other error status (a 404 or a malformed pack name won't start working on retry,
  * so those still resolve/reject as-is on the first try).
  *
- * Distinct from `IconSource.concurrency` (`buildIcons`'s cap on in-flight `getIcon` calls) - this
- * governs the HTTP layer underneath, independent of how many `getIcon` calls happen to be
- * in flight at once.
+ * Governs the HTTP layer only - how many requests may start per second, and how an individual
+ * request recovers from a 429 - independent of how many `getIcons` batches happen to be in
+ * flight at once, or how large any one of them is.
  */
 export function createIconifyApiPolicy(
   options: IconifyApiPolicyOptions = {},

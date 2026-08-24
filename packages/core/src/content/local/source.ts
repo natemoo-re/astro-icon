@@ -13,10 +13,10 @@ import type { IconEntry, OptimizeFn } from "../../../typings/types";
 export interface LocalSourceOptions {
   /**
    * Restricts this source to a fixed list of icon names, the same
-   * deliberate allowlist semantics as {@link IconifySourceOptions.icons}.
+   * deliberate allowlist semantics as {@link IconifySourceOptions.allowed}.
    * Omit it to allow every `.svg` file found in the directory.
    */
-  icons?: string[];
+  allowed?: string[];
   /** Optional transform applied to each icon's raw SVG markup before it is parsed and stored. */
   optimize?: OptimizeFn;
   /**
@@ -69,16 +69,21 @@ export function localSource(
   options: LocalSourceOptions = {},
 ): IconSource {
   let dirPath = resolveDirPath(dir);
-  const { icons, optimize, strict = false, logger = consoleLogger } = options;
-  const allowed = icons && new Set(icons);
+  const {
+    allowed: allowedList,
+    optimize,
+    strict = false,
+    logger = consoleLogger,
+  } = options;
+  const allowed = allowedList && new Set(allowedList);
 
-  if (icons && allowed && allowed.size !== icons.length) {
+  if (allowedList && allowed && allowed.size !== allowedList.length) {
     const seen = new Set<string>();
-    const duplicates = icons.filter(
+    const duplicates = allowedList.filter(
       (name) => seen.size === seen.add(name).size,
     );
     logger.warn(
-      `The local source's \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+      `The local source's \`allowed: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
     );
   }
 
@@ -108,8 +113,8 @@ export function localSource(
   async function readIcon(name: string): Promise<IconEntry> {
     if (allowed && !allowed.has(name)) {
       throw new AstroIconError(
-        `"${name}" isn't in the allowed icon list for the local source at "${dirPath}" (${icons!.length} icon(s) allowed).`,
-        `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow every ".svg" file in the directory.`,
+        `"${name}" isn't in the allowed icon list for the local source at "${dirPath}" (${allowedList!.length} icon(s) allowed).`,
+        `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow every ".svg" file in the directory.`,
       );
     }
     const filePath = join(dirPath, `${name}.svg`);
@@ -147,7 +152,8 @@ export function localSource(
   }
 
   async function listNames(): Promise<string[]> {
-    if (allowed) return [...icons!];
+    // A Set, so a duplicated `allowed: [...]` name is deduped here too, matching the warning above.
+    if (allowed) return [...allowed];
     warnIfDirMissing();
     return walkSvgFiles(dirPath);
   }
@@ -167,12 +173,28 @@ export function localSource(
 
   return {
     name: "local",
-    getIcon: readIcon,
+    // Nothing to batch at the request level (each name is its own file read), so this just fans
+    // `readIcon` out over every name in `names` at once - already cheap, and each file's own
+    // content-hash cache (above) means a repeat request for the same unchanged file doesn't even
+    // hit the filesystem twice.
+    async getIcons(names) {
+      const result = new Map<string, IconEntry | Error>();
+      await Promise.all(
+        names.map(async (name) => {
+          try {
+            result.set(name, await readIcon(name));
+          } catch (ex) {
+            result.set(name, ex instanceof Error ? ex : new Error(String(ex)));
+          }
+        }),
+      );
+      return result;
+    },
     async listIcons() {
       return listNames();
     },
     // Cheap (no file reads) fingerprint of the whole directory: `mtime` + `size` per file via
-    // `stat`, so `createIconLoader` can skip an entire resync - including every `getIcon` call -
+    // `stat`, so `createIconLoader` can skip an entire resync - including every `getIcons` call -
     // without reading (let alone re-optimizing) a single `.svg`.
     async getVersion() {
       const names = await listNames().catch(() => undefined);

@@ -26,6 +26,13 @@ const entry: IconEntry = {
   height: 24,
 };
 
+/** A `getIcons` that resolves every requested name to the same fixed `entry`. */
+function fixedGetIcons() {
+  return vi.fn(async (names: string[]) => {
+    return new Map<string, IconEntry>(names.map((name) => [name, entry]));
+  });
+}
+
 // Typegen registration is fire-and-forget at construction time (see
 // createLiveIconLoader.ts) - flush microtasks before asserting on it.
 async function flush() {
@@ -34,10 +41,10 @@ async function flush() {
 }
 
 describe("createLiveIconLoader / loadEntry", () => {
-  it("resolves an entry via the source's getIcon and returns it", async () => {
-    const getIcon = vi.fn(async () => entry);
+  it("resolves an entry via the source's getIcons and returns it", async () => {
+    const getIcons = fixedGetIcons();
     const loader = createLiveIconLoader(
-      { name: "test", getIcon },
+      { name: "test", getIcons },
       { collection: "icons" },
     );
 
@@ -47,28 +54,28 @@ describe("createLiveIconLoader / loadEntry", () => {
     });
 
     expect(result).toEqual({ id: "search", data: entry });
-    expect(getIcon).toHaveBeenCalledWith("search");
+    expect(getIcons).toHaveBeenCalledWith(["search"]);
   });
 
-  it("caches resolved entries and doesn't call getIcon again", async () => {
-    const getIcon = vi.fn(async () => entry);
+  it("caches resolved entries and doesn't call getIcons again", async () => {
+    const getIcons = fixedGetIcons();
     const loader = createLiveIconLoader(
-      { name: "test", getIcon },
+      { name: "test", getIcons },
       { collection: "icons" },
     );
 
     await loader.loadEntry({ filter: { id: "search" }, collection: "icons" });
     await loader.loadEntry({ filter: { id: "search" }, collection: "icons" });
 
-    expect(getIcon).toHaveBeenCalledOnce();
+    expect(getIcons).toHaveBeenCalledOnce();
   });
 
   it("wraps a thrown error as { error } instead of throwing", async () => {
-    const getIcon = vi.fn(async () => {
+    const getIcons = vi.fn(async (): Promise<never> => {
       throw new Error("nope");
     });
     const loader = createLiveIconLoader(
-      { name: "test", getIcon },
+      { name: "test", getIcons },
       { collection: "icons" },
     );
 
@@ -82,11 +89,29 @@ describe("createLiveIconLoader / loadEntry", () => {
     });
   });
 
+  it("wraps a per-name Error in the map as { error } too", async () => {
+    const cause = new Error("nope");
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcons: vi.fn(async () => new Map([["missing", cause]])),
+      },
+      { collection: "icons" },
+    );
+
+    const result = await loader.loadEntry({
+      filter: { id: "missing" },
+      collection: "icons",
+    });
+
+    expect(result).toEqual({ error: cause });
+  });
+
   it("namespaces the loader name with the source name", () => {
     const loader = createLiveIconLoader(
       {
         name: "iconify:mdi",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
       },
       { collection: "icons" },
     );
@@ -100,12 +125,20 @@ describe("createLiveIconLoader / loadEntry", () => {
     const loader = createLiveIconLoader(
       {
         name: "untrusted",
-        getIcon: vi.fn(async () => ({
-          body: '<path d="M0 0" onload="alert(1)"/><script>alert(1)</script>',
-          viewBox: "0 0 24 24",
-          width: 24,
-          height: 24,
-        })),
+        getIcons: vi.fn(
+          async () =>
+            new Map([
+              [
+                "evil",
+                {
+                  body: '<path d="M0 0" onload="alert(1)"/><script>alert(1)</script>',
+                  viewBox: "0 0 24 24",
+                  width: 24,
+                  height: 24,
+                },
+              ],
+            ]),
+        ),
       },
       { collection: "icons" },
     );
@@ -122,12 +155,12 @@ describe("createLiveIconLoader / loadEntry", () => {
   });
 });
 
-describe("createLiveIconLoader / loadCollection", () => {
-  it("errors when the source doesn't implement listIcons", async () => {
+describe("createLiveIconLoader / loadCollection (whole collection, via listIcons)", () => {
+  it("errors when the source implements neither listIcons nor gets a filter", async () => {
     const loader = createLiveIconLoader(
       {
         name: "test",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
       },
       { collection: "icons" },
     );
@@ -138,11 +171,15 @@ describe("createLiveIconLoader / loadCollection", () => {
   });
 
   it("lists + resolves every icon when the source implements listIcons", async () => {
-    const getIcon = vi.fn(async (name: string) => ({ ...entry, body: name }));
+    const getIcons = vi.fn(async (names: string[]) => {
+      return new Map<string, IconEntry>(
+        names.map((name) => [name, { ...entry, body: name }]),
+      );
+    });
     const loader = createLiveIconLoader(
       {
         name: "test",
-        getIcon,
+        getIcons,
         listIcons: async () => ["a", "b"],
       },
       { collection: "icons" },
@@ -156,17 +193,23 @@ describe("createLiveIconLoader / loadCollection", () => {
         { id: "b", data: { ...entry, body: "b" } },
       ],
     });
+    // One batched call for the whole listed set, not one per name.
+    expect(getIcons).toHaveBeenCalledOnce();
+    expect(getIcons).toHaveBeenCalledWith(["a", "b"]);
   });
 
   it("skips icons that fail to resolve instead of failing the whole collection", async () => {
-    const getIcon = vi.fn(async (name: string) => {
-      if (name === "bad") throw new Error("nope");
-      return entry;
-    });
     const loader = createLiveIconLoader(
       {
         name: "test",
-        getIcon,
+        getIcons: vi.fn(async (names: string[]) => {
+          return new Map<string, IconEntry | Error>(
+            names.map((name) => [
+              name,
+              name === "bad" ? new Error("nope") : entry,
+            ]),
+          );
+        }),
         listIcons: async () => ["good", "bad"],
       },
       { collection: "icons" },
@@ -177,39 +220,12 @@ describe("createLiveIconLoader / loadCollection", () => {
     expect(result).toEqual({ entries: [{ id: "good", data: entry }] });
   });
 
-  it("respects the source's concurrency cap when listing a collection", async () => {
-    // Guards against buildIcons being handed an ad-hoc shape that drops `concurrency`,
-    // fanning every request out at once against a rate-limited backend.
-    let concurrent = 0;
-    let peak = 0;
-    const loader = createLiveIconLoader(
-      {
-        name: "api",
-        concurrency: 2,
-        getIcon: async () => {
-          concurrent++;
-          peak = Math.max(peak, concurrent);
-          await new Promise((resolve) => setTimeout(resolve, 0));
-          concurrent--;
-          return entry;
-        },
-        listIcons: async () => ["a", "b", "c", "d", "e", "f"],
-      },
-      { collection: "icons" },
-    );
-
-    const result = await loader.loadCollection({ collection: "icons" });
-
-    expect(peak).toBe(2);
-    expect(result).toHaveProperty("entries");
-  });
-
   it("sanitizes each icon exactly once when listing a collection", async () => {
     mockedSanitize.mockClear();
     const loader = createLiveIconLoader(
       {
         name: "test",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
         listIcons: async () => ["a", "b"],
       },
       { collection: "icons" },
@@ -221,11 +237,11 @@ describe("createLiveIconLoader / loadCollection", () => {
   });
 
   it("reuses the loadEntry cache when listing a collection", async () => {
-    const getIcon = vi.fn(async () => entry);
+    const getIcons = fixedGetIcons();
     const loader = createLiveIconLoader(
       {
         name: "test",
-        getIcon,
+        getIcons,
         listIcons: async () => ["search"],
       },
       { collection: "icons" },
@@ -234,7 +250,100 @@ describe("createLiveIconLoader / loadCollection", () => {
     await loader.loadEntry({ filter: { id: "search" }, collection: "icons" });
     await loader.loadCollection({ collection: "icons" });
 
-    expect(getIcon).toHaveBeenCalledOnce();
+    expect(getIcons).toHaveBeenCalledOnce();
+  });
+});
+
+describe("createLiveIconLoader / loadCollection (specific subset, via filter.ids)", () => {
+  it("resolves exactly the given ids in one batched call, without calling listIcons again", async () => {
+    const getIcons = vi.fn(async (names: string[]) => {
+      return new Map<string, IconEntry>(
+        names.map((name) => [name, { ...entry, body: name }]),
+      );
+    });
+    const listIcons = vi.fn(async () => ["should", "not", "be", "used"]);
+    const loader = createLiveIconLoader(
+      { name: "test", getIcons, listIcons },
+      { collection: "icons" },
+    );
+    // `listIcons` already ran once at construction, for typegen's own side effect (see
+    // createLiveIconLoader's doc comment) - unrelated to this loadCollection call, so it's
+    // cleared here rather than asserted on.
+    await flush();
+    listIcons.mockClear();
+
+    const result = await loader.loadCollection({
+      collection: "icons",
+      filter: { ids: ["a", "b"] },
+    });
+
+    expect(result).toEqual({
+      entries: [
+        { id: "a", data: { ...entry, body: "a" } },
+        { id: "b", data: { ...entry, body: "b" } },
+      ],
+    });
+    expect(getIcons).toHaveBeenCalledOnce();
+    expect(getIcons).toHaveBeenCalledWith(["a", "b"]);
+    expect(listIcons).not.toHaveBeenCalled();
+  });
+
+  it("works even when the source has no listIcons at all - unlike the whole-collection path", async () => {
+    const loader = createLiveIconLoader(
+      { name: "test", getIcons: fixedGetIcons() },
+      { collection: "icons" },
+    );
+
+    const result = await loader.loadCollection({
+      collection: "icons",
+      filter: { ids: ["a"] },
+    });
+
+    expect(result).toEqual({ entries: [{ id: "a", data: entry }] });
+  });
+
+  it("skips ids that fail to resolve instead of failing the whole batch", async () => {
+    const loader = createLiveIconLoader(
+      {
+        name: "test",
+        getIcons: vi.fn(async (names: string[]) => {
+          return new Map<string, IconEntry | Error>(
+            names.map((name) => [
+              name,
+              name === "bad" ? new Error("nope") : entry,
+            ]),
+          );
+        }),
+      },
+      { collection: "icons" },
+    );
+
+    const result = await loader.loadCollection({
+      collection: "icons",
+      filter: { ids: ["good", "bad"] },
+    });
+
+    expect(result).toEqual({ entries: [{ id: "good", data: entry }] });
+  });
+
+  it("warms the loadEntry cache, so a later getLiveEntry for the same id is a cache hit", async () => {
+    const getIcons = vi.fn(async (names: string[]) => {
+      return new Map<string, IconEntry>(names.map((name) => [name, entry]));
+    });
+    const loader = createLiveIconLoader(
+      { name: "test", getIcons },
+      { collection: "icons" },
+    );
+
+    await loader.loadCollection({
+      collection: "icons",
+      filter: { ids: ["a", "b"] },
+    });
+    getIcons.mockClear();
+
+    await loader.loadEntry({ filter: { id: "a" }, collection: "icons" });
+
+    expect(getIcons).not.toHaveBeenCalled();
   });
 });
 
@@ -244,7 +353,7 @@ describe("createLiveIconLoader / resolveRoot + checkPreconditions", () => {
     createLiveIconLoader(
       {
         name: "test",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
         resolveRoot,
       },
       { collection: "icons" },
@@ -259,7 +368,7 @@ describe("createLiveIconLoader / resolveRoot + checkPreconditions", () => {
       createLiveIconLoader(
         {
           name: "broken",
-          getIcon: vi.fn(async () => entry),
+          getIcons: fixedGetIcons(),
           checkPreconditions: async () => {
             throw new Error("not installed");
           },
@@ -285,7 +394,7 @@ describe("createLiveIconLoader / loadCollection duration logging", () => {
       const loader = createLiveIconLoader(
         {
           name: "test",
-          getIcon: vi.fn(async () => entry),
+          getIcons: fixedGetIcons(),
           listIcons: async () => ["a"],
         },
         { collection: "icons" },
@@ -316,7 +425,7 @@ describe("createLiveIconLoader typegen", () => {
     createLiveIconLoader(
       {
         name: "iconify-local:mdi",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
         listIcons,
       },
       { collection: "mdi" },
@@ -338,7 +447,7 @@ describe("createLiveIconLoader typegen", () => {
     createLiveIconLoader(
       {
         name: "no-listing",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
       },
       { collection: "custom" },
     );
@@ -357,7 +466,7 @@ describe("createLiveIconLoader typegen", () => {
     createLiveIconLoader(
       {
         name: "api-only",
-        getIcon: vi.fn(async () => entry),
+        getIcons: fixedGetIcons(),
         listIcons: async () => {
           throw new Error("not installed locally");
         },
@@ -385,7 +494,7 @@ describe("createLiveIconLoader / collection key verification", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const loader = createLiveIconLoader(
-        { name: "test", getIcon: vi.fn(async () => entry) },
+        { name: "test", getIcons: fixedGetIcons() },
         { collection: "icons" },
       );
 
@@ -401,7 +510,7 @@ describe("createLiveIconLoader / collection key verification", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const loader = createLiveIconLoader(
-        { name: "test", getIcon: vi.fn(async () => entry) },
+        { name: "test", getIcons: fixedGetIcons() },
         { collection: "typo" },
       );
       await flush();
@@ -430,7 +539,7 @@ describe("createLiveIconLoader / collection key verification", () => {
       const loader = createLiveIconLoader(
         {
           name: "test",
-          getIcon: vi.fn(async () => entry),
+          getIcons: fixedGetIcons(),
           listIcons: async () => ["a"],
         },
         { collection: "typo" },

@@ -130,8 +130,14 @@ function checkForDuplicateIcons(
 
 /** Everything a backing store - a local install vs. the public Iconify API - has to answer for; the allowlist accounting, error shapes and entry building around it are identical either way. */
 interface IconifyBackend {
-  /** Loads the pack backing one `getIcon(name)` call, already validated/recorded as that store needs. */
-  loadPack(name: string): Promise<IconifyJSON>;
+  /**
+   * Loads the pack backing one `getIcons(names)` call, already validated/recorded as that store
+   * needs. `names` is the whole batch this source was asked to build (minus any allowlist
+   * rejections, filtered out before this is called) - a local install ignores it and returns its
+   * one already-loaded pack regardless; the API backend uses it as the `?icons=a,b,c` request
+   * body when there's no fixed `allowed` set to fetch instead.
+   */
+  loadPack(names: string[]): Promise<IconifyJSON>;
   /** `listIcons()` for a source no `allowed: [...]` restricts: a local install enumerates its pack, the API has nothing to enumerate and rejects. */
   listAllIcons(): Promise<string[]>;
   resolveRoot?(root: URL): void;
@@ -147,8 +153,6 @@ interface IconifySourceSpec {
   label: string;
   /** How the allowlist-rejection error's second sentence should finish - "the whole pack" (local) vs. "any icon name" (API). */
   allowlistHint: string;
-  /** See `IconSource.concurrency`; omitted where there's no shared resource to protect. */
-  concurrency?: number;
   createBackend(context: {
     pack: string;
     allowed: Set<string> | undefined;
@@ -156,7 +160,7 @@ interface IconifySourceSpec {
   }): IconifyBackend;
 }
 
-/** The skeleton both Iconify sources are: allowlist bookkeeping, allowlist-check-then-build `getIcon`, and `listIcons()` over the allowlist - all of it delegating to `spec` wherever local and API genuinely differ. */
+/** The skeleton both Iconify sources are: allowlist bookkeeping, allowlist-check-then-batch-build `getIcons`, and `listIcons()` over the allowlist - all of it delegating to `spec` wherever local and API genuinely differ. */
 function createIconifySource(
   spec: IconifySourceSpec,
   pack: string,
@@ -169,33 +173,47 @@ function createIconifySource(
 
   return {
     name: `${spec.namePrefix}:${pack}`,
-    concurrency: spec.concurrency,
     resolveRoot: backend.resolveRoot,
     checkPreconditions: backend.checkPreconditions,
     getVersion: backend.getVersion,
-    async getIcon(name) {
-      if (allowed && !allowed.has(name)) {
-        // Counts the `allowed: [...]` option's own length, not `allowed.size` - duplicates
-        // included, since that's what "N icon(s) allowed" has always reported.
-        throw new AstroIconError(
-          `"${name}" isn't in the allowed icon list for "${pack}" (${allowedList?.length ?? 0} icon(s) allowed).`,
-          `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow ${spec.allowlistHint}.`,
-        );
+    async getIcons(names) {
+      const result = new Map<string, IconEntry | Error>();
+      const toFetch: string[] = [];
+      for (const name of names) {
+        if (allowed && !allowed.has(name)) {
+          // Counts the `allowed: [...]` option's own length, not `allowed.size` - duplicates
+          // included, since that's what "N icon(s) allowed" has always reported.
+          result.set(
+            name,
+            new AstroIconError(
+              `"${name}" isn't in the allowed icon list for "${pack}" (${allowedList?.length ?? 0} icon(s) allowed).`,
+              `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow ${spec.allowlistHint}.`,
+            ),
+          );
+        } else {
+          toFetch.push(name);
+        }
       }
-      const data = await backend.loadPack(name);
-      const entry = await buildIconEntry(data, name, {
-        collection: pack,
-        optimize,
-        strict,
-        logger,
-      });
-      if (!entry) {
-        throw new AstroIconError(
-          `"${pack}" does not include an icon named "${name}".`,
-          `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
-        );
+      if (toFetch.length > 0) {
+        const data = await backend.loadPack(toFetch);
+        for (const name of toFetch) {
+          const entry = await buildIconEntry(data, name, {
+            collection: pack,
+            optimize,
+            strict,
+            logger,
+          });
+          result.set(
+            name,
+            entry ??
+              new AstroIconError(
+                `"${pack}" does not include an icon named "${name}".`,
+                `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
+              ),
+          );
+        }
       }
-      return entry;
+      return result;
     },
     async listIcons() {
       // Not verified against the pack upfront - `checkPreconditions()` owns "is this source
@@ -212,9 +230,10 @@ const localSpec: IconifySourceSpec = {
   label: "iconifyLocalSource",
   allowlistHint: "the whole pack",
   createBackend({ pack }) {
-    // Started here, not inside getIcon/listIcons/checkPreconditions, so a missing pack fails the
-    // build as soon as this source is constructed instead of only once the first icon is actually
-    // requested - see createPackAnchor's own doc comment for the eager-load/resolveRoot details.
+    // Started here, not inside getIcons/listIcons/checkPreconditions, so a missing pack fails
+    // the build as soon as this source is constructed instead of only once the first icon is
+    // actually requested - see createPackAnchor's own doc comment for the eager-load/resolveRoot
+    // details.
     const anchor = createPackAnchor(pack);
 
     return {
@@ -222,9 +241,9 @@ const localSpec: IconifySourceSpec = {
         anchor.resolveRoot(root);
       },
       // The eager pack load's actual "fail loudly, up front" payoff: called once by both bundled
-      // loaders before listIcons/getIcon are ever touched, so a missing pack is one clear failure
-      // instead of an `allowed` allowlist masking it in listIcons, surfacing only later as N
-      // separate non-strict getIcon warnings once each icon is individually built. The only place
+      // loaders before listIcons/getIcons are ever touched, so a missing pack is one clear
+      // failure instead of an `allowed` allowlist masking it in listIcons, surfacing only later
+      // as a non-strict getIcons warning once each icon is individually built. The only place
       // "pack isn't installed" is checked - `anchor.loadedPack()` below trusts it already ran
       // (both bundled loaders call this before either) and doesn't re-check `!data` itself.
       async checkPreconditions() {
@@ -239,6 +258,8 @@ const localSpec: IconifySourceSpec = {
       getVersion() {
         return anchor.getVersion();
       },
+      // Ignores `names`: a local install has the whole pack in memory either way, so there's
+      // nothing to narrow the fetch to.
       loadPack() {
         return anchor.loadedPack();
       },
@@ -253,21 +274,17 @@ const apiSpec: IconifySourceSpec = {
   namePrefix: "iconify-api",
   label: "iconifyApiSource",
   allowlistHint: "any icon name",
-  // A deliberate cap on a shared public resource, not a speed optimization (see
-  // `IconSource.concurrency`). Batching (see `loadPack` below) already collapses concurrent
-  // `getIcon` calls sharing an allowlist into one request, so this mostly guards call patterns
-  // batching doesn't cover - a very large allowlist split into multiple chunk requests, or a
-  // future change that reintroduces per-name fetches - rather than the common case.
-  concurrency: 20,
   createBackend({ pack, allowed, logger }) {
     return {
-      // With an allowlist, the whole set is known upfront - fetch it once (cached by
-      // `loadPackFromAPI` under the full sorted list, so every other name in `allowed` hits
-      // that same cached response) instead of one request per icon. Without one (e.g.
-      // `<LiveIcon>` against a pack with no fixed set), there's nothing to batch against -
-      // fetch just `name`.
-      loadPack(name) {
-        return loadPackFromAPI(pack, allowed ? [...allowed] : [name], {
+      // With an allowlist, the whole set is known upfront - fetch it (cached by
+      // `loadPackFromAPI` under the full sorted list, so every `getIcons` call against this
+      // source hits that same cached response) instead of whatever subset `names` happens to be.
+      // Without one (e.g. a live search against a pack with no fixed set), `names` *is* the
+      // batch: every name `getIcons` was asked to build in this call, fetched in one request
+      // regardless of how many that is - `loadPackFromAPI` itself splits a very large list across
+      // multiple chunked requests, run concurrently (see `MAX_ICONS_PER_REQUEST` in pack.ts).
+      loadPack(names) {
+        return loadPackFromAPI(pack, allowed ? [...allowed] : names, {
           logger,
         });
       },
@@ -318,9 +335,9 @@ export function iconifyApiSource<
 ): IconSource;
 /**
  * An {@link IconSource} backed by the public Iconify API only - never a
- * local install. `getIcon` resolves any icon name from the pack one at a
- * time regardless of `allowed`, useful for `<LiveIcon>` against a pack you
- * don't want to install; the API can't return "the whole pack" the way a
+ * local install. `getIcons` resolves any icon names from the pack in one
+ * batched request regardless of `allowed`, useful for `<LiveIcon>` against a
+ * pack you don't want to install; the API can't return "the whole pack" the way a
  * local install can, so omitting `allowed` (an explicit allowlist) also
  * means `listIcons()` throws instead of pretending to enumerate one.
  *

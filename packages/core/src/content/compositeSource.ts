@@ -1,8 +1,8 @@
 import type { AstroIntegrationLogger } from "astro";
-import { createConcurrencyGate } from "./concurrency.js";
 import { AstroIconError } from "../internal/error.js";
 import { consoleLogger } from "./logger.js";
 import type { IconSource, IconSourceWatcher } from "./source.js";
+import type { IconEntry } from "../../typings/types";
 
 /**
  * An `IconSource` composed from an ordered list of member sources, tried in
@@ -16,56 +16,73 @@ export type CompositeSource = IconSource;
  * Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per
  * icon (first match wins).
  *
- * `logger` has no bearing on `getIcon`'s own success/failure - it only receives a debug line each
- * time one member fails and execution falls through to the next. Defaults to `consoleLogger`,
- * like `iconifyLocalSource`/`iconifyApiSource`, since `mergeSources` is normally called while
- * building `content.config.ts`'s collections - before Astro hands a loader its own
+ * `logger` has no bearing on `getIcons`'s own success/failure - it receives a debug line each
+ * time one member fails to resolve a name and execution falls through to the next member for
+ * that name, and a warning for each member that fails `checkPreconditions()` without making the
+ * whole composite unusable. Defaults to `consoleLogger`, like
+ * `iconifyLocalSource`/`iconifyApiSource`, since `mergeSources` is normally called while building
+ * `content.config.ts`'s collections - before Astro hands a loader its own
  * `AstroIntegrationLogger`.
  */
 export function mergeSources(
   sources: IconSource | IconSource[],
-  logger: Pick<AstroIntegrationLogger, "debug"> = consoleLogger,
+  logger: Pick<AstroIntegrationLogger, "debug" | "warn"> = consoleLogger,
 ): CompositeSource {
   if (!Array.isArray(sources)) return sources;
   if (sources.length === 1) return sources[0];
 
   const name = sources.map((source) => source.name).join("+");
 
-  // Each source's own cap only gates calls that actually reach that source - not the composite as
-  // a whole. Merging into one shared cap (e.g. the minimum across members) would throttle a fast,
-  // uncapped member (a local pack) down to a slow fallback's limit even when calls never reach it.
-  const gates = new Map(
-    sources
-      .filter((source) => source.concurrency !== undefined)
-      .map((source) => [source, createConcurrencyGate(source.concurrency!)]),
-  );
-
   return {
     name,
-    async getIcon(iconName) {
-      const failures: string[] = [];
+    // Tries each member in turn, but per *batch*, not per name: the first member gets the whole
+    // `names` list in one `getIcons` call (so a batching member - `iconifyApiSource` - still gets
+    // to fetch everything it can in one request), and only the names it didn't resolve carry over
+    // to the next member's call. First-match-wins is preserved per name; batching is preserved
+    // per member.
+    async getIcons(names) {
+      const result = new Map<string, IconEntry | Error>();
+      const failures = new Map<string, string[]>();
+      let remaining = names;
+
       for (const [index, source] of sources.entries()) {
-        try {
-          const gate = gates.get(source);
-          return gate
-            ? await gate(() => source.getIcon(iconName))
-            : await source.getIcon(iconName);
-        } catch (ex) {
-          const detail = ex instanceof Error ? ex.message : String(ex);
-          failures.push(`${source.name}: ${detail}`);
-          // Only worth a log when there's actually another source left to try - the last
-          // failure is already reflected in the aggregate error thrown below.
+        if (remaining.length === 0) break;
+        const memberResult = await source.getIcons(remaining);
+        const stillRemaining: string[] = [];
+        for (const iconName of remaining) {
+          const entry = memberResult.get(iconName);
+          if (entry && !(entry instanceof Error)) {
+            result.set(iconName, entry);
+            continue;
+          }
+          const detail =
+            entry instanceof Error ? entry.message : "didn't resolve";
+          const tried = failures.get(iconName) ?? [];
+          tried.push(`${source.name}: ${detail}`);
+          failures.set(iconName, tried);
+          stillRemaining.push(iconName);
+          // Only worth a log when there's actually another source left to try - a name still
+          // unresolved after the last member is already reflected in the aggregate error below.
           if (index < sources.length - 1) {
             logger.debug(
               `"${source.name}" failed to resolve "${iconName}" (${detail}), falling back to the next source in "${name}".`,
             );
           }
         }
+        remaining = stillRemaining;
       }
-      throw new AstroIconError(
-        `No source in "${name}" provided an icon named "${iconName}".`,
-        `Check that "${iconName}" is spelled correctly and included in every source's icon list, if one is set.\n\nTried:\n${failures.map((failure) => `  - ${failure}`).join("\n")}`,
-      );
+
+      for (const iconName of remaining) {
+        const tried = failures.get(iconName) ?? [];
+        result.set(
+          iconName,
+          new AstroIconError(
+            `No source in "${name}" provided an icon named "${iconName}".`,
+            `Check that "${iconName}" is spelled correctly and included in every source's icon list, if one is set.\n\nTried:\n${tried.map((failure) => `  - ${failure}`).join("\n")}`,
+          ),
+        );
+      }
+      return result;
     },
     async listIcons() {
       const lists = await Promise.all(
@@ -103,26 +120,41 @@ export function mergeSources(
         member.resolveRoot?.(root);
       }
     },
+    // Checks every member, not just up to the first usable one: a broken member is worth knowing
+    // about even when another member covers for it, and it may be the only one holding icons a
+    // later `getIcons` call actually needs. Fatal only when no member is usable at all - the
+    // whole point of composing sources is that one of them being unusable isn't fatal - with
+    // partial failures downgraded to a warning each.
     async checkPreconditions() {
       const failures: string[] = [];
+      let usable = false;
       for (const source of sources) {
-        // No precondition to check for this member at all - same as one succeeding, since
-        // there's nothing wrong to report. Matches getIcon's first-match-wins tolerance: the
-        // whole point of composing sources is that one of them being unusable isn't fatal.
-        if (!source.checkPreconditions) return;
+        // No precondition to check for this member - same as it passing, since there's nothing
+        // wrong to report.
+        if (!source.checkPreconditions) {
+          usable = true;
+          continue;
+        }
         try {
           await source.checkPreconditions();
-          return;
+          usable = true;
         } catch (ex) {
           failures.push(
             `${source.name}: ${ex instanceof Error ? ex.message : String(ex)}`,
           );
         }
       }
-      throw new AstroIconError(
-        `No source in "${name}" is usable.`,
-        `Tried:\n${failures.map((failure) => `  - ${failure}`).join("\n")}`,
-      );
+      if (!usable) {
+        throw new AstroIconError(
+          `No source in "${name}" is usable.`,
+          `Tried:\n${failures.map((failure) => `  - ${failure}`).join("\n")}`,
+        );
+      }
+      for (const failure of failures) {
+        logger.warn(
+          `A source in "${name}" isn't usable (${failure}); its icons will only resolve if another source provides them.`,
+        );
+      }
     },
   };
 }

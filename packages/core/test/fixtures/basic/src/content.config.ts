@@ -10,16 +10,20 @@ import type { IconSource } from "astro-icon/loaders";
 // limited to combining iconify packs.
 const customSource: IconSource = {
   name: "custom",
-  async getIcon(name) {
-    if (name !== "custom-square") {
-      throw new Error(`"custom" has no icon named "${name}"`);
-    }
-    return {
-      body: '<rect x="4" y="4" width="16" height="16"/>',
-      viewBox: "0 0 24 24",
-      width: 24,
-      height: 24,
-    };
+  async getIcons(names) {
+    return new Map(
+      names.map((name) => [
+        name,
+        name === "custom-square"
+          ? {
+              body: '<rect x="4" y="4" width="16" height="16"/>',
+              viewBox: "0 0 24 24",
+              width: 24,
+              height: 24,
+            }
+          : new Error(`"custom" has no icon named "${name}"`),
+      ]),
+    );
   },
   async listIcons() {
     return ["custom-square"];

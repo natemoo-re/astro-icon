@@ -37,20 +37,33 @@ describe("iconifyLocalSource naming", () => {
 });
 
 describe("iconifyLocalSource / local pack", () => {
-  it("resolves a single icon via getIcon", async () => {
+  it("resolves a single icon via getIcons", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
-    const entry = await source.getIcon("search");
+    const result = await source.getIcons(["search"]);
 
-    expect(entry.viewBox).toBe("0 0 24 24");
+    expect(result.get("search")).toMatchObject({ viewBox: "0 0 24 24" });
   });
 
-  it("throws for an icon the pack doesn't have", async () => {
+  it("resolves several icons from one getIcons call", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
-    await expect(source.getIcon("does-not-exist")).rejects.toThrow(/mdi/);
+    const result = await source.getIcons(["search", "menu"]);
+
+    expect(result.get("search")).toMatchObject({ viewBox: "0 0 24 24" });
+    expect(result.get("menu")).toMatchObject({ viewBox: "0 0 24 24" });
+  });
+
+  it("puts a descriptive Error in the map for an icon the pack doesn't have", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
+    const source = iconifyLocalSource("mdi");
+
+    const result = await source.getIcons(["does-not-exist"]);
+
+    expect(result.get("does-not-exist")).toBeInstanceOf(Error);
+    expect((result.get("does-not-exist") as Error).message).toMatch(/mdi/);
   });
 
   it("lists icon and alias names via listIcons", async () => {
@@ -62,13 +75,13 @@ describe("iconifyLocalSource / local pack", () => {
     expect(names).toEqual(["search", "menu", "find"]);
   });
 
-  it("only resolves the local pack once across getIcon/listIcons calls", async () => {
+  it("only resolves the local pack once across getIcons/listIcons calls", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi");
 
-    await source.getIcon("search");
+    await source.getIcons(["search"]);
     await source.listIcons?.();
-    await source.getIcon("menu");
+    await source.getIcons(["menu"]);
 
     expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
@@ -86,19 +99,26 @@ describe("iconifyLocalSource / not installed", () => {
     await expect(source.getVersion?.()).resolves.toBeUndefined();
   });
 
-  // getIcon/listIcons no longer independently guard "pack isn't installed" - only
+  // getIcons/listIcons no longer independently guard "pack isn't installed" - only
   // checkPreconditions() does (see "iconifyLocalSource / checkPreconditions" below). Real usage
   // through createIconLoader/createLiveIconLoader always calls checkPreconditions() first, so
-  // getIcon/listIcons trust it already ran; calling either directly, first, without it, is
-  // unsupported and surfaces whatever low-level error the missing data happens to cause instead
-  // of a descriptive AstroIconError.
-  it("doesn't produce a descriptive error from getIcon/listIcons on their own, without checkPreconditions() run first", async () => {
+  // getIcons/listIcons trust it already ran; calling either directly, first, without it, is
+  // unsupported and surfaces whatever low-level failure the missing data happens to cause instead
+  // of a descriptive AstroIconError - either a rejected getIcons() call, or a per-name Error in
+  // its result map, but never that specific "isn't installed locally" message either way.
+  it("doesn't produce a descriptive error from getIcons/listIcons on their own, without checkPreconditions() run first", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
     const source = iconifyLocalSource(notInstalled);
 
-    await expect(source.getIcon("search")).rejects.not.toThrow(
-      /isn't installed locally/i,
-    );
+    try {
+      const result = await source.getIcons(["search"]);
+      const entry = result.get("search");
+      if (entry instanceof Error) {
+        expect(entry.message).not.toMatch(/isn't installed locally/i);
+      }
+    } catch (ex) {
+      expect((ex as Error).message).not.toMatch(/isn't installed locally/i);
+    }
   });
 });
 
@@ -106,22 +126,23 @@ describe("iconifyLocalSource / icons allowlist", () => {
   // The pack load now starts eagerly at construction regardless of the allowlist (see "fails
   // eagerly" below), so these no longer assert the pack is never touched - only that neither
   // check *waits* on that load, by leaving it permanently unresolved.
-  it("rejects a name not in the allowlist without waiting on the pack load", async () => {
+  it("puts a per-name Error in the map for a name not in the allowlist, without waiting on the pack load", async () => {
     mockedLoadCollectionFromFS.mockReturnValueOnce(new Promise(() => {}));
     const source = iconifyLocalSource("mdi", { allowed: ["search"] });
 
-    await expect(source.getIcon("menu")).rejects.toThrow(
-      /isn't in the allowed/i,
-    );
+    const result = await source.getIcons(["menu"]);
+
+    expect(result.get("menu")).toBeInstanceOf(Error);
+    expect((result.get("menu") as Error).message).toMatch(/isn't in the allowed/i);
   });
 
   it("resolves an allowed name normally", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
     const source = iconifyLocalSource("mdi", { allowed: ["search"] });
 
-    await expect(source.getIcon("search")).resolves.toMatchObject({
-      viewBox: "0 0 24 24",
-    });
+    const result = await source.getIcons(["search"]);
+
+    expect(result.get("search")).toMatchObject({ viewBox: "0 0 24 24" });
   });
 
   it("types exactly the given allowlist, without waiting on the pack load", async () => {
@@ -168,20 +189,20 @@ describe("iconifyLocalSource / pack cache sharing", () => {
   it("shares a resolved local pack across separate iconifyLocalSource() instances", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
 
-    await iconifyLocalSource("mdi").getIcon("search");
-    await iconifyLocalSource("mdi").getIcon("menu");
+    await iconifyLocalSource("mdi").getIcons(["search"]);
+    await iconifyLocalSource("mdi").getIcons(["menu"]);
 
     expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
 });
 
 describe("iconifyLocalSource / fails eagerly", () => {
-  it("starts resolving the local pack as soon as the source is constructed, not on first getIcon/listIcons", () => {
+  it("starts resolving the local pack as soon as the source is constructed, not on first getIcons/listIcons", () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(pack);
 
     iconifyLocalSource("mdi");
 
-    // No getIcon()/listIcons() call above - the pack load already started regardless.
+    // No getIcons()/listIcons() call above - the pack load already started regardless.
     expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
 });

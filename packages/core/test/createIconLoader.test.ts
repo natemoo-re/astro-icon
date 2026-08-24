@@ -66,10 +66,13 @@ function fakeContext(watcher?: ReturnType<typeof fakeWatcher>) {
   };
 }
 
+/** A `getIcons` that resolves every requested name via `entryFor`, regardless of what it is. */
 function fakeSource(overrides: Partial<IconSource> = {}): IconSource {
   return {
     name: "test",
-    getIcon: vi.fn(async (name: string) => entryFor(name)),
+    getIcons: vi.fn(async (names: string[]) => {
+      return new Map<string, IconEntry>(names.map((name) => [name, entryFor(name)]));
+    }),
     listIcons: vi.fn(async () => []),
     ...overrides,
   };
@@ -116,9 +119,13 @@ describe("createIconLoader", () => {
   it("warns and skips an icon the source fails to build, without throwing", async () => {
     const source = fakeSource({
       listIcons: async () => ["home", "missing"],
-      getIcon: vi.fn(async (name: string) => {
-        if (name === "missing") throw new Error("nope");
-        return entryFor(name);
+      getIcons: vi.fn(async (names: string[]) => {
+        return new Map<string, IconEntry | Error>(
+          names.map((name) => [
+            name,
+            name === "missing" ? new Error("nope") : entryFor(name),
+          ]),
+        );
       }),
     });
     const context = fakeContext();
@@ -141,8 +148,10 @@ describe("createIconLoader", () => {
   it("throws under strict instead of warning when building an icon fails", async () => {
     const source = fakeSource({
       listIcons: async () => ["missing"],
-      getIcon: vi.fn(async () => {
-        throw new Error("nope");
+      getIcons: vi.fn(async (names: string[]) => {
+        return new Map<string, IconEntry | Error>(
+          names.map((name) => [name, new Error("nope")]),
+        );
       }),
     });
 
@@ -219,19 +228,29 @@ describe("createIconLoader / multiple sources", () => {
     const mdi = fakeSource({
       name: "mdi",
       listIcons: async () => ["home"],
-      getIcon: vi.fn(async (name: string) => {
-        if (name !== "home")
-          throw new Error(`"mdi" has no icon named "${name}"`);
-        return entryFor(`mdi-${name}`);
+      getIcons: vi.fn(async (names: string[]) => {
+        return new Map<string, IconEntry | Error>(
+          names.map((name) => [
+            name,
+            name === "home"
+              ? entryFor(`mdi-${name}`)
+              : new Error(`"mdi" has no icon named "${name}"`),
+          ]),
+        );
       }),
     });
     const ic = fakeSource({
       name: "ic",
       listIcons: async () => ["star"],
-      getIcon: vi.fn(async (name: string) => {
-        if (name !== "star")
-          throw new Error(`"ic" has no icon named "${name}"`);
-        return entryFor(`ic-${name}`);
+      getIcons: vi.fn(async (names: string[]) => {
+        return new Map<string, IconEntry | Error>(
+          names.map((name) => [
+            name,
+            name === "star"
+              ? entryFor(`ic-${name}`)
+              : new Error(`"ic" has no icon named "${name}"`),
+          ]),
+        );
       }),
     });
     const context = fakeContext();
@@ -261,85 +280,76 @@ describe("createIconLoader / multiple sources", () => {
 
 describe("createIconLoader / version-based skip", () => {
   it("skips resolving anything when the source's version is unchanged", async () => {
-    const getIcon = vi.fn(async (name: string) => entryFor(name));
     const source = fakeSource({
       listIcons: async () => ["home", "menu"],
-      getIcon,
       getVersion: async () => "1.0.0",
     });
     const load = sync(source, false);
     const context = fakeContext();
 
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(2);
+    expect(source.getIcons).toHaveBeenCalledTimes(1);
 
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(2);
+    expect(source.getIcons).toHaveBeenCalledTimes(1);
     expect(context.store.get("home")).toEqual(entryFor("home"));
     expect(context.store.get("menu")).toEqual(entryFor("menu"));
   });
 
   it("re-resolves everything once the source's version changes", async () => {
-    const getIcon = vi.fn(async (name: string) => entryFor(name));
     let version = "1.0.0";
     const source = fakeSource({
       listIcons: async () => ["home"],
-      getIcon,
       getVersion: async () => version,
     });
     const load = sync(source, false);
     const context = fakeContext();
 
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(1);
+    expect(source.getIcons).toHaveBeenCalledTimes(1);
 
     version = "2.0.0";
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(2);
+    expect(source.getIcons).toHaveBeenCalledTimes(2);
   });
 
   it("re-resolves everything when the requested icon set changes, even with the same version", async () => {
-    const getIcon = vi.fn(async (name: string) => entryFor(name));
     let names = ["home"];
     const source = fakeSource({
       listIcons: async () => names,
-      getIcon,
       getVersion: async () => "1.0.0",
     });
     const load = sync(source, false);
     const context = fakeContext();
 
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(1);
+    expect(source.getIcons).toHaveBeenCalledTimes(1);
 
     names = ["home", "menu"];
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(3);
+    // One batched getIcons call per sync, regardless of how many names are in it.
+    expect(source.getIcons).toHaveBeenCalledTimes(2);
   });
 
   it("never skips when the source doesn't report a version", async () => {
-    const getIcon = vi.fn(async (name: string) => entryFor(name));
-    const source = fakeSource({ listIcons: async () => ["home"], getIcon });
+    const source = fakeSource({ listIcons: async () => ["home"] });
     const load = sync(source, false);
     const context = fakeContext();
 
     await load(context);
     await load(context);
-    expect(getIcon).toHaveBeenCalledTimes(2);
+    expect(source.getIcons).toHaveBeenCalledTimes(2);
   });
 
   it("never skips a multi-source loader unless every source reports a version", async () => {
-    // mergeSources tries each source in order for every requested name, so
-    // a fake that resolves anything (like this one) "wins" for every name
-    // regardless of which source actually listed it - the point here is
-    // just that a per-load call count that *doesn't* double on the second
-    // load would mean a skip happened, which shouldn't be possible since
-    // "b" reports no version at all.
-    const getIconA = vi.fn(async (name: string) => entryFor(name));
+    // mergeSources tries each source in order for the whole batch, so a fake that resolves
+    // anything (like this one) "wins" for every name regardless of which source actually listed
+    // it - the point here is just that a per-load call count that *doesn't* double on the second
+    // load would mean a skip happened, which shouldn't be possible since "b" reports no version
+    // at all.
     const sourceA = fakeSource({
       name: "a",
       listIcons: async () => ["home"],
-      getIcon: getIconA,
       getVersion: async () => "1.0.0",
     });
     const sourceB = fakeSource({ name: "b", listIcons: async () => ["menu"] });
@@ -347,11 +357,11 @@ describe("createIconLoader / version-based skip", () => {
     const context = fakeContext();
 
     await load(context);
-    const afterFirstLoad = getIconA.mock.calls.length;
+    const afterFirstLoad = vi.mocked(sourceA.getIcons).mock.calls.length;
     expect(afterFirstLoad).toBeGreaterThan(0);
 
     await load(context);
-    expect(getIconA).toHaveBeenCalledTimes(afterFirstLoad * 2);
+    expect(sourceA.getIcons).toHaveBeenCalledTimes(afterFirstLoad * 2);
   });
 });
 
@@ -452,7 +462,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
   });
 
   // The shadowing footgun documented on `IconSource.watch`: two composed sources defining the
-  // same icon name always resolve to the earlier source's file, `getIcon`'s own order. Editing
+  // same icon name always resolve to the earlier source's file, `getIcons`'s own order. Editing
   // the shadowed (later) source's file still triggers a resync, it just re-resolves to the same
   // unchanged winner - so the edit appears to do nothing.
   it("shadows a later source's same-named icon, even after that file changes", async () => {

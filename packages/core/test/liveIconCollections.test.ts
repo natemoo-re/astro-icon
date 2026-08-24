@@ -19,7 +19,10 @@ const entry: IconEntry = {
 };
 
 function fakeSource(name: string): IconSource {
-  return { name, getIcon: vi.fn(async () => entry) };
+  return {
+    name,
+    getIcons: vi.fn(async (names: string[]) => new Map(names.map((n) => [n, entry]))),
+  };
 }
 
 describe("liveIconCollections", () => {

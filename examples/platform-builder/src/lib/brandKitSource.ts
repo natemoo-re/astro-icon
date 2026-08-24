@@ -1,9 +1,11 @@
 import { parseIconSVG, type IconSource } from "astro-icon/loaders";
+import type { IconEntry } from "astro-icon";
 
 // Stands in for the internal API a platform would really call here - a design-tool
 // export, a tenant's uploaded brand kit, a database table. Inlined so this example
-// runs with `pnpm dev` and nothing else; swap the lookup in `getIcon` for a `fetch`
-// and the rest of the source is unchanged.
+// runs with `pnpm dev` and nothing else; swap the lookup in `getIcons` for a `fetch`
+// (ideally one request for the whole batch, the way a real backend would) and the
+// rest of the source is unchanged.
 const BRAND_KIT: Record<string, string> = {
   "acme/logo": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z" /><path d="M12 12l9-5M12 12v10M12 12L3 7" /></svg>`,
   "acme/spark": `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" /></svg>`,
@@ -12,20 +14,13 @@ const BRAND_KIT: Record<string, string> = {
 };
 
 export interface BrandKitSourceOptions {
-  /**
-   * Must match the key this source's collection is registered under in
-   * `live.config.ts`. A `LiveLoader` is never told its own collection name, so
-   * typegen records the live collection under the *source's* name - if the two
-   * disagree, `<LiveIcon collection="...">` autocompletes to a name that
-   * doesn't exist. Taken as an option rather than hardcoded so the caller can
-   * keep them in sync at the one place both are visible.
-   */
+  /** A diagnostic label for this source, shown in error/log messages - doesn't have to match the collection key it's registered under in `live.config.ts` (see `liveIconCollections()`, which supplies that key from its own object keys). */
   name: string;
 }
 
 /**
  * A custom `IconSource` - the plug point for any backend astro-icon doesn't
- * ship. The contract is small on purpose: a `name`, `getIcon(name)`, and an
+ * ship. The contract is small on purpose: a `name`, `getIcons(names)`, and an
  * optional `listIcons()`.
  */
 export function brandKitSource({
@@ -34,19 +29,29 @@ export function brandKitSource({
   return {
     name: sourceName,
 
-    async getIcon(name) {
-      const svg = BRAND_KIT[name];
-      // Throwing (rather than returning undefined) is the contract: it's what lets
-      // <LiveIcon> report *which* icon failed instead of rendering a silent blank.
-      if (!svg) throw new Error(`No brand-kit icon named "${name}".`);
-
-      // Turns a raw `<svg>...</svg>` string into the shape astro-icon stores,
-      // deriving a viewBox if the source didn't provide one.
-      return parseIconSVG(svg, {
-        collection: sourceName,
-        name,
-        logger: { warn: console.warn },
-      });
+    async getIcons(names) {
+      const result = new Map<string, IconEntry | Error>();
+      for (const name of names) {
+        const svg = BRAND_KIT[name];
+        // An `Error` in the map (rather than throwing) is the contract: it's what lets
+        // <LiveIcon> report *which* icon failed instead of rendering a silent blank, without
+        // taking the rest of the batch down with it.
+        if (!svg) {
+          result.set(name, new Error(`No brand-kit icon named "${name}".`));
+          continue;
+        }
+        // Turns a raw `<svg>...</svg>` string into the shape astro-icon stores,
+        // deriving a viewBox if the source didn't provide one.
+        result.set(
+          name,
+          await parseIconSVG(svg, {
+            collection: sourceName,
+            name,
+            logger: { warn: console.warn },
+          }),
+        );
+      }
+      return result;
     },
 
     // Optional for a live collection, but implementing it is what makes
