@@ -70,3 +70,13 @@ export interface IconifySourceOptions {
   /** Transform applied to each icon's built `IconEntry`, last, before it's returned. */
   transform?: TransformFn;
 }
+
+/** {@link iconifyApiSource}'s options: everything {@link IconifySourceOptions} has, plus where the API lives. */
+export interface IconifyApiSourceOptions extends IconifySourceOptions {
+  /**
+   * The Iconify API instance to resolve icons from, for self-hosted deployments
+   * (https://iconify.design/docs/api/hosting.html). Defaults to the public
+   * `https://api.iconify.design`. A trailing slash is tolerated.
+   */
+  host?: string;
+}

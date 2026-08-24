@@ -8,6 +8,15 @@ import { requireResolvePack } from "./requireResolvePack.js";
 
 export interface LoadPackFromAPIOptions {
   logger: Pick<AstroIntegrationLogger, "debug">;
+  /** The Iconify API instance to fetch from (a self-hosted deployment); defaults to the public `https://api.iconify.design`. */
+  host?: string;
+}
+
+const DEFAULT_API_HOST = "https://api.iconify.design";
+
+/** Normalizes a `host` option for use in URLs and cache keys: default applied, trailing slash dropped. */
+function normalizeHost(host: string | undefined): string {
+  return (host ?? DEFAULT_API_HOST).replace(/\/+$/, "");
 }
 
 export interface PackLoader {
@@ -79,13 +88,12 @@ export function createPackLoader(): PackLoader {
   }
 
   async function fetchPackChunk(
+    host: string,
     pack: string,
     icons: string[],
   ): Promise<IconifyJSON | undefined> {
     const search = `?icons=${encodeURIComponent(icons.join(","))}`;
-    const res = await apiPolicy.fetch(
-      `https://api.iconify.design/${pack}.json${search}`,
-    );
+    const res = await apiPolicy.fetch(`${host}/${pack}.json${search}`);
     if (!res || !res.ok) return undefined;
     const data = await res.json().catch(() => undefined);
     if (data == null || !Object.prototype.hasOwnProperty.call(data, "icons"))
@@ -104,12 +112,13 @@ export function createPackLoader(): PackLoader {
    * existing all-or-nothing contract for a single request.
    */
   async function fetchPackFromAPI(
+    host: string,
     pack: string,
     icons: string[],
   ): Promise<IconifyJSON | undefined> {
     const groups = chunk(icons, MAX_ICONS_PER_REQUEST);
     const results = await Promise.all(
-      groups.map((group) => fetchPackChunk(pack, group)),
+      groups.map((group) => fetchPackChunk(host, pack, group)),
     );
     if (results.some((result) => !result)) return undefined;
     return mergePackChunks(results as IconifyJSON[]);
@@ -157,8 +166,9 @@ export function createPackLoader(): PackLoader {
     async loadPackFromAPI(
       pack: string,
       icons: string[],
-      { logger }: LoadPackFromAPIOptions,
+      { logger, host: rawHost }: LoadPackFromAPIOptions,
     ): Promise<IconifyJSON> {
+      const host = normalizeHost(rawHost);
       if (!icons.length) {
         throw new AstroIconError(
           `"${pack}" was requested from the Iconify API with no icons named.`,
@@ -168,9 +178,11 @@ export function createPackLoader(): PackLoader {
 
       const apiStart = performance.now();
       const sortedIcons = Array.from(new Set(icons)).sort();
+      // `host` is part of the key: the same pack/name subset from two different API instances
+      // (e.g. a self-hosted mirror and the public API composed in one process) isn't one response.
       const remote = await cachedPackLoad(
-        `${pack}:${sortedIcons.join(",")}`,
-        () => fetchPackFromAPI(pack, sortedIcons),
+        `${host}|${pack}:${sortedIcons.join(",")}`,
+        () => fetchPackFromAPI(host, pack, sortedIcons),
       );
       const apiDuration = formatDuration(performance.now() - apiStart);
       if (!remote) {

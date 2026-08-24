@@ -143,6 +143,41 @@ describe("loadPackFromAPI", () => {
     );
   });
 
+  it("fetches from a self-hosted API when `host` is given, tolerating a trailing slash", async () => {
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify(search), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await loadPackFromAPI("mdi", ["search"], {
+      logger: logger(),
+      host: "https://icons.example.com/",
+    });
+
+    expect(result).toEqual(search);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://icons.example.com/mdi.json?icons=search",
+    );
+  });
+
+  it("caches per host, so the same subset from two hosts is two fetches", async () => {
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify(search), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await loadPackFromAPI("mdi", ["search"], {
+      logger: logger(),
+      host: "https://icons.example.com",
+    });
+    await loadPackFromAPI("mdi", ["search"], { logger: logger() });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("api.iconify.design/mdi.json?icons=search"),
+    );
+  });
+
   it("throws when no icons are requested", async () => {
     // The public Iconify API can't return "the whole pack" - only an
     // explicit `icons=` subset - so a full-pack request has nothing to resolve.

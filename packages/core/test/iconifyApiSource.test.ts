@@ -37,6 +37,24 @@ describe("iconifyApiSource naming", () => {
   });
 });
 
+describe("iconifyApiSource / host", () => {
+  it("resolves icons from a self-hosted API instance instead of the public one", async () => {
+    const fetchMock = fetchReturning(() => pack);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const source = iconifyApiSource("mdi", {
+      allowed: ["search"],
+      host: "https://icons.example.com",
+    });
+    const result = await source.getIcons(["search"]);
+
+    expect(result.get("search")).toMatchObject({ viewBox: "0 0 24 24" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://icons.example.com/mdi.json?icons=search",
+    );
+  });
+});
+
 describe("iconifyApiSource / batches an allowlist into one request", () => {
   it("resolves every allowed icon from a single fetch covering the whole allowlist", async () => {
     const fetchMock = vi.fn(async (url: string) => {

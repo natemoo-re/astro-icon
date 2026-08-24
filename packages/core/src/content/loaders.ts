@@ -17,6 +17,7 @@ export { entryFromIconifyData } from "./ingest/entryFromIconifyData.js";
 export type { EntryFacts, EntryFromSVGResult } from "./ingest/entryFromSVG.js";
 export type {
   IconifySourceOptions,
+  IconifyApiSourceOptions,
   OptimizeFn,
   TransformFn,
   IconEntry,

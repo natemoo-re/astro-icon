@@ -335,6 +335,15 @@ export const collections = {
 };
 ```
 
+`iconifyApiSource` talks to the public `api.iconify.design` by default. If you [self-host an Iconify API instance](https://iconify.design/docs/api/hosting.html) (for privacy, or to keep icon traffic on your own infrastructure), point the source at it with `host`:
+
+```ts
+iconifyApiSource("mdi", {
+  allowed: ["account", "home"],
+  host: "https://icons.example.com",
+});
+```
+
 Want "prefer a local install, fall back to the API"? Compose both with `mergeSources` - each icon is resolved by trying sources in order, first match wins:
 
 ```ts

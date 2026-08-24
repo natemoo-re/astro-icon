@@ -8,7 +8,7 @@ import {
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
 import type { IconSource } from "../source.js";
-import type { IconifySourceOptions } from "../../../typings/types";
+import type { IconifyApiSourceOptions } from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
 
 export function iconifyApiSource<
@@ -17,7 +17,7 @@ export function iconifyApiSource<
     readonly IconifyIconName<Pack>[],
 >(
   pack: Pack,
-  options?: Omit<IconifySourceOptions, "allowed"> & { allowed?: Icons },
+  options?: Omit<IconifyApiSourceOptions, "allowed"> & { allowed?: Icons },
 ): IconSource;
 /**
  * An {@link IconSource} backed by the public Iconify API only - never a
@@ -26,6 +26,11 @@ export function iconifyApiSource<
  * pack you don't want to install; the API can't return "the whole pack" the way a
  * local install can, so omitting `allowed` (an explicit allowlist) also
  * means `listIcons()` throws instead of pretending to enumerate one.
+ *
+ * Resolves from the public `api.iconify.design` by default; point `host` at
+ * a self-hosted Iconify API instance
+ * (https://iconify.design/docs/api/hosting.html) to keep icon traffic
+ * on your own infrastructure.
  *
  * Meant either standalone (e.g. deliberately avoiding an install) or
  * composed with `iconifyLocalSource` via `mergeSources` for a
@@ -46,9 +51,9 @@ export function iconifyApiSource<
  */
 export function iconifyApiSource(
   pack: string,
-  options: IconifySourceOptions = {},
+  options: IconifyApiSourceOptions = {},
 ): IconSource {
-  const { allowed: allowedList, transform } = options;
+  const { allowed: allowedList, transform, host } = options;
   const logger = consoleLogger;
   const allowed = dedupeAllowed(pack, "iconifyApiSource", allowedList, logger);
   // Counts the `allowed: [...]` option's own length, not `allowed.size` - duplicates included,
@@ -74,7 +79,7 @@ export function iconifyApiSource(
         const data = await loadPackFromAPI(
           pack,
           allowed ? [...allowed] : toFetch,
-          { logger },
+          { logger, host },
         );
         await addPackEntries(result, data, toFetch, pack, transform);
       }
