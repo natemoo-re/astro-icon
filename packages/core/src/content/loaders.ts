@@ -11,10 +11,12 @@ export type {
   IconSourceWatcher,
   IconChangeEvent,
 } from "./source.js";
-export { parseIconSVG } from "./parseIconSVG.js";
-export type { ParseIconSVGOptions } from "./parseIconSVG.js";
+export { entryFromSVG } from "./ingest/entryFromSVG.js";
+export { entryFromIconifyData } from "./ingest/entryFromIconifyData.js";
+export type { EntryFacts, EntryFromSVGResult } from "./ingest/entryFromSVG.js";
 export type {
   IconifySourceOptions,
   OptimizeFn,
+  TransformFn,
   IconEntry,
 } from "../../typings/types";

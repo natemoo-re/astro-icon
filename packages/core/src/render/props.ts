@@ -197,7 +197,7 @@ export interface RenderableIconProps<P> {
  *
  * Spreads the whole entry (minus `body`/`title`/`desc`, which aren't `<svg>` attributes) as
  * defaults, not just `width`/`height`/`viewBox`: a local icon's own root-tag attributes
- * (`fill`/`stroke`/`class`/... - see `parseLocalIconSVG`) land here too, so a caller's own prop for
+ * (`fill`/`stroke`/`class`/... - see `entryFromSVG`) land here too, so a caller's own prop for
  * the same attribute genuinely overrides it by landing on the same element, rather than losing to
  * an inner element's own value the way baking them into `body` would.
  */

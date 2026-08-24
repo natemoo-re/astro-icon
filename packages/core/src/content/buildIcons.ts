@@ -9,7 +9,7 @@ export interface BuiltIcon {
 
 /**
  * Builds one or many icons via `source.getIcons()` - the one choke point that can't be bypassed
- * by a source that builds its own `IconEntry` without going through `parseIconSVG`. Skips (and
+ * by a source that builds its own `IconEntry` without going through `entryFromSVG`. Skips (and
  * reports via `onError`) any name that comes back missing or as an `Error`, rather than failing
  * the whole batch for one bad name.
  *

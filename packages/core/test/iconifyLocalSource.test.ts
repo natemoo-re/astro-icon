@@ -87,6 +87,59 @@ describe("iconifyLocalSource / local pack", () => {
   });
 });
 
+describe("iconifyLocalSource / transform", () => {
+  const strokePack: IconifyJSON = {
+    prefix: "tabler",
+    icons: {
+      search: {
+        body: '<path stroke-width="2" d="M10 10h4v4h-4z"/>',
+        width: 24,
+        height: 24,
+      },
+    },
+  };
+
+  it("applies transform to the built entry, last, before it's returned", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(strokePack);
+    const source = iconifyLocalSource("tabler", {
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
+      }),
+    });
+
+    const result = await source.getIcons(["search"]);
+
+    expect((result.get("search") as { body: string }).body).toContain(
+      'stroke-width="1.5"',
+    );
+  });
+
+  it("passes the built entry and { collection, name } context to transform", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(strokePack);
+    const transform = vi.fn((entry) => entry);
+    const source = iconifyLocalSource("tabler", { transform });
+
+    await source.getIcons(["search"]);
+
+    expect(transform).toHaveBeenCalledWith(
+      expect.objectContaining({ viewBox: "0 0 24 24" }),
+      { collection: "tabler", name: "search" },
+    );
+  });
+
+  it("supports an async transform", async () => {
+    mockedLoadCollectionFromFS.mockResolvedValueOnce(strokePack);
+    const source = iconifyLocalSource("tabler", {
+      transform: async (entry) => ({ ...entry, title: "Search" }),
+    });
+
+    const result = await source.getIcons(["search"]);
+
+    expect(result.get("search")).toMatchObject({ title: "Search" });
+  });
+});
+
 describe("iconifyLocalSource / not installed", () => {
   // A pack name that doesn't actually exist anywhere on disk - unlike "mdi" (installed for
   // other tests in this suite), so the `require.resolve` fallback (#263) can't find it either

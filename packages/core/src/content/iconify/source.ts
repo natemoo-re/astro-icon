@@ -1,19 +1,18 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import type { IconifyJSON } from "@iconify/types";
-import { getIconData, iconToHTML, iconToSVG } from "@iconify/utils";
 import type { AstroIntegrationLogger } from "astro";
 import { loadLocalPack, loadPackFromAPI } from "./pack.js";
 import { resolveIconifyPackFile } from "./requireResolvePack.js";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
-import { parseIconSVG } from "../parseIconSVG.js";
+import { entryFromIconifyData } from "../ingest/entryFromIconifyData.js";
 import { recordCatalog } from "../typegen/index.js";
 import type { IconSource } from "../source.js";
 import type {
   IconEntry,
   IconifySourceOptions,
-  OptimizeFn,
+  TransformFn,
 } from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
 
@@ -166,7 +165,7 @@ function createIconifySource(
   pack: string,
   options: IconifySourceOptions,
 ): IconSource {
-  const { allowed: allowedList, optimize, strict = false } = options;
+  const { allowed: allowedList, transform } = options;
   const logger = consoleLogger;
   const allowed = checkForDuplicateIcons(pack, spec.label, allowedList, logger);
   const backend = spec.createBackend({ pack, allowed, logger });
@@ -197,19 +196,20 @@ function createIconifySource(
       if (toFetch.length > 0) {
         const data = await backend.loadPack(toFetch);
         for (const name of toFetch) {
-          const entry = await buildIconEntry(data, name, {
-            collection: pack,
-            optimize,
-            strict,
-            logger,
-          });
-          result.set(
-            name,
-            entry ??
+          const entry = entryFromIconifyData(data, name);
+          if (!entry) {
+            result.set(
+              name,
               new AstroIconError(
                 `"${pack}" does not include an icon named "${name}".`,
                 `Check the icon's name at https://icon-sets.iconify.design/${pack}/, or that you didn't mean a different pack.`,
               ),
+            );
+            continue;
+          }
+          result.set(
+            name,
+            transform ? await transform(entry, { collection: pack, name }) : entry,
           );
         }
       }
@@ -363,36 +363,4 @@ export function iconifyApiSource(
   options: IconifySourceOptions = {},
 ): IconSource {
   return createIconifySource(apiSpec, pack, options);
-}
-
-export interface BuildIconEntryOptions {
-  collection: string;
-  optimize?: OptimizeFn;
-  strict?: boolean;
-  logger: Pick<AstroIntegrationLogger, "warn">;
-}
-
-/**
- * Renders a single icon out of a loaded iconify pack (see `loadLocalPack`/`loadPackFromAPI`)
- * into an `IconEntry`, running it through `optimize` if given.
- */
-export async function buildIconEntry(
-  data: IconifyJSON,
-  name: string,
-  { collection, optimize, strict = false, logger }: BuildIconEntryOptions,
-): Promise<IconEntry | undefined> {
-  const iconData = getIconData(data, name);
-  if (!iconData) return undefined;
-
-  const rendered = iconToSVG(iconData);
-  const svg = iconToHTML(rendered.body, rendered.attributes);
-
-  return parseIconSVG(svg, {
-    collection,
-    name,
-    optimize,
-    strict,
-    logger,
-    fallbackSize: { width: rendered.viewBox[2], height: rendered.viewBox[3] },
-  });
 }

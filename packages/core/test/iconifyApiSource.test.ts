@@ -172,6 +172,43 @@ describe("iconifyApiSource / without an icons allowlist (e.g. <LiveIcon> against
   });
 });
 
+describe("iconifyApiSource / transform", () => {
+  it("applies transform to the built entry, last, before it's returned", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              prefix: "tabler",
+              icons: {
+                search: {
+                  body: '<path stroke-width="2" d="M10 10h4v4h-4z"/>',
+                  width: 24,
+                  height: 24,
+                },
+              },
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+    const source = iconifyApiSource("tabler", {
+      allowed: ["search"],
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
+      }),
+    });
+
+    const result = await source.getIcons(["search"]);
+
+    expect((result.get("search") as { body: string }).body).toContain(
+      'stroke-width="1.5"',
+    );
+  });
+});
+
 describe("iconifyApiSource / failure modes", () => {
   it("rejects the whole batch when the API request itself fails", async () => {
     vi.stubGlobal(

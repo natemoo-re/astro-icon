@@ -6,9 +6,13 @@ import { fileURLToPath } from "node:url";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
-import { parseLocalIconSVG } from "./parseLocalIconSVG.js";
+import { entryFromSVG } from "../ingest/entryFromSVG.js";
 import type { IconSource } from "../source.js";
-import type { IconEntry, OptimizeFn } from "../../../typings/types";
+import type {
+  IconEntry,
+  OptimizeFn,
+  TransformFn,
+} from "../../../typings/types";
 
 export interface LocalSourceOptions {
   /**
@@ -17,8 +21,14 @@ export interface LocalSourceOptions {
    * Omit it to allow every `.svg` file found in the directory.
    */
   allowed?: string[];
-  /** Optional transform applied to each icon's raw SVG markup before it is parsed and stored. */
+  /**
+   * Transform applied to each icon's raw file contents before it's parsed and stored - the one
+   * place `optimize` still lives, since `localSource` is the one built-in source that starts
+   * from a raw SVG string in the first place.
+   */
   optimize?: OptimizeFn;
+  /** Transform applied to each icon's built `IconEntry`, after `optimize`, last, before it's returned. */
+  transform?: TransformFn;
   /**
    * When true, turns a missing/unreadable icon file into a build error
    * instead of a warning.
@@ -28,6 +38,9 @@ export interface LocalSourceOptions {
   /** Where warnings are reported; defaults to `console.warn` if not passed a loader's own logger. */
   logger?: Pick<AstroIntegrationLogger, "warn">;
 }
+
+/** The collection name a local icon reports in warnings, errors, and `optimize`'s context. */
+const COLLECTION = "local";
 
 function hashContent(raw: string): string {
   return createHash("sha1").update(raw).digest("hex");
@@ -72,6 +85,7 @@ export function localSource(
   const {
     allowed: allowedList,
     optimize,
+    transform,
     strict = false,
     logger = consoleLogger,
   } = options;
@@ -129,25 +143,32 @@ export function localSource(
     const cached = cache.get(name);
     if (cached && cached.hash === hash) return cached.entry;
 
-    const { entry, needsCurrentColor } = await parseLocalIconSVG(svg, {
-      name,
-      optimize,
-      strict,
-      logger,
-    });
-    cache.set(name, { hash, entry });
+    const optimizedSvg = optimize
+      ? await optimize(svg, { collection: COLLECTION, name })
+      : svg;
+
+    let { entry, facts } = entryFromSVG(optimizedSvg);
+
+    if (facts.viewBox !== "present") {
+      logger.warn(
+        `"${name}" in "${displayDirPath()}" has ${facts.viewBox === "derived" ? "no usable viewBox, so one was derived from its width/height" : "no usable viewBox and no width/height to derive one from, so it defaulted to \"0 0 24 24\""}. Check the source file (or your "optimize" function, if set) to avoid this.`,
+      );
+    }
 
     // A one-time, best-effort nudge (never a mutation - see the "Styling icons" README section
     // for why astro-icon doesn't rewrite colors automatically) toward the `svgo()` currentColor
     // recipe, logged whenever a freshly-parsed icon looks like it won't respond to CSS `color`.
     // Runs per icon, on every fresh parse (cache misses only) rather than once per whole-directory
     // sync, so it also covers an icon added/edited later via `watch()`, not just the initial load.
-    if (needsCurrentColor) {
+    if (facts.monochromeWithoutCurrentColor) {
       logger.warn(
         `"${name}" in "${displayDirPath()}" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
       );
     }
 
+    if (transform) entry = await transform(entry, { collection: COLLECTION, name });
+
+    cache.set(name, { hash, entry });
     return entry;
   }
 

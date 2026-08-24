@@ -25,17 +25,35 @@ export interface IconEntry {
 }
 
 /**
- * A hook to transform an icon's SVG before astro-icon parses and stores it.
- * Common uses: running it through SVGO, stripping hardcoded `fill`/`stroke`
- * colors so CSS can control them, or adding `aria-hidden`.
+ * A hook to transform an icon's raw SVG markup before astro-icon parses and
+ * stores it. Common uses: running it through SVGO, stripping hardcoded
+ * `fill`/`stroke` colors so CSS can control them, or adding `aria-hidden`.
  *
- * Pass one via the `optimize` option on {@link iconifyLocalSource},
- * {@link iconifyApiSource}, or {@link localSource}.
+ * Pass one via the `optimize` option on {@link localSource}. Iconify sources
+ * never have a raw SVG string to hand it (they build an `IconEntry` straight
+ * out of structured Iconify icon data) - reach for {@link TransformFn}
+ * there instead.
  */
 export type OptimizeFn = (
   svg: string,
   ctx: { collection: string; name: string },
 ) => string | Promise<string>;
+
+/**
+ * A hook to transform an icon's already-built `IconEntry` - the last step
+ * every source applies before returning it, after any source-specific
+ * policy (like {@link localSource}'s `optimize`) has already run. The one
+ * transform hook every {@link IconSource} kind shares, since unlike
+ * `OptimizeFn` it doesn't assume there's a raw SVG string in play.
+ *
+ * Common uses: recoloring (`entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"')`),
+ * adding a field every icon in a collection should have, or normalizing
+ * fields a design system's `<Icon>` usage relies on.
+ */
+export type TransformFn = (
+  entry: IconEntry,
+  ctx: { collection: string; name: string },
+) => IconEntry | Promise<IconEntry>;
 
 /** Options shared by {@link iconifyLocalSource} and {@link iconifyApiSource} for configuring an Iconify pack. */
 export interface IconifySourceOptions {
@@ -49,12 +67,11 @@ export interface IconifySourceOptions {
    * only resolve icons you name explicitly, never "every icon in the pack."
    */
   allowed?: string[];
-  /** Transform applied to each icon's raw SVG markup before astro-icon parses and stores it. */
-  optimize?: OptimizeFn;
+  /** Transform applied to each icon's built `IconEntry`, last, before it's returned. */
+  transform?: TransformFn;
   /**
    * Turns a recoverable warning (pack resolved only through the API
-   * fallback, a requested icon that's missing, a viewBox that had to be
-   * derived) into a build error instead.
+   * fallback, a requested icon that's missing) into a build error instead.
    * @default false
    */
   strict?: boolean;

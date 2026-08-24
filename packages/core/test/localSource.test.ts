@@ -108,7 +108,8 @@ describe("localSource / getIcons", () => {
       stroke: "currentColor",
       // Not baked into body: an inner element's own fill/stroke would always beat whatever a
       // caller's <Icon fill="..." /> prop sets on the outer <svg>, silently defeating the override.
-      body: '<path d="M12 6V4"/>',
+      // `/>` -> ` />` is ultrahtml's own serializer normalization, applied once during ingestion.
+      body: '<path d="M12 6V4" />',
     });
   });
 
@@ -123,7 +124,7 @@ describe("localSource / getIcons", () => {
     expect(entry).toMatchObject({
       title: "Adjustment",
       desc: "An adjustment icon",
-      body: '<path d="M12 6V4"/>',
+      body: '<path d="M12 6V4" />',
     });
   });
 
@@ -183,6 +184,83 @@ describe("localSource / getIcons", () => {
 
     expect(optimize).toHaveBeenCalledTimes(2);
     expect(entry).toMatchObject({ viewBox: "0 0 32 32" });
+  });
+});
+
+describe("localSource / viewBox derivation warning", () => {
+  it("warns, naming the file's directory, when a viewBox has to be derived", async () => {
+    await write("logo.svg", `<svg width="32" height="32"><rect width="32" height="32"/></svg>`);
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    const entry = await getOne(source, "logo");
+
+    expect(entry).toMatchObject({ viewBox: "0 0 32 32" });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"logo"'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(dir));
+  });
+
+  it("doesn't warn when the file has a usable viewBox", async () => {
+    // currentColor set, so the unrelated "doesn't use currentColor" nudge can't fire either.
+    await write(
+      "logo.svg",
+      `<svg viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24"/></svg>`,
+    );
+    const warn = vi.fn();
+    const source = localSource(dir, { logger: { warn } });
+
+    await getOne(source, "logo");
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe("localSource / transform", () => {
+  it("applies transform to the built entry, after optimize, before it's returned", async () => {
+    await write(
+      "search.svg",
+      `<svg viewBox="0 0 24 24"><path stroke-width="2" d="M10 10h4v4h-4z"/></svg>`,
+    );
+    const source = localSource(dir, {
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
+      }),
+    });
+
+    const entry = await getOne(source, "search");
+
+    expect((entry as { body: string }).body).toContain('stroke-width="1.5"');
+  });
+
+  it("passes the built entry and { collection, name } context to transform", async () => {
+    await write("search.svg", SQUARE_SVG);
+    const transform = vi.fn((entry) => entry);
+    const source = localSource(dir, { transform });
+
+    await getOne(source, "search");
+
+    expect(transform).toHaveBeenCalledWith(
+      expect.objectContaining({ viewBox: "0 0 24 24" }),
+      { collection: "local", name: "search" },
+    );
+  });
+
+  it("runs transform after optimize, so it sees optimize's output", async () => {
+    await write("search.svg", SQUARE_SVG);
+    const source = localSource(dir, {
+      optimize: (svg) => svg.replace("<rect", '<rect fill="red"'),
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.includes('fill="red"')
+          ? entry.body.replace('fill="red"', 'fill="currentColor"')
+          : entry.body,
+      }),
+    });
+
+    const entry = await getOne(source, "search");
+
+    expect((entry as { body: string }).body).toContain('fill="currentColor"');
   });
 });
 
