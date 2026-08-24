@@ -142,9 +142,9 @@ export function localSource(
 
     let { entry, facts } = entryFromSVG(optimizedSvg);
 
-    if (facts.viewBox !== "present") {
+    if (facts.viewBox === "missing") {
       logger.warn(
-        `"${name}" in "${displayDirPath()}" has ${facts.viewBox === "derived" ? "no usable viewBox, so one was derived from its width/height" : "no usable viewBox and no width/height to derive one from, so it defaulted to \"0 0 24 24\""}. Check the source file (or your "optimize" function, if set) to avoid this.`,
+        `"${name}" in "${displayDirPath()}" has no usable viewBox, falling back to "${entry.viewBox}". Check the source file (or your "optimize" function, if set) to avoid this.`,
       );
     }
 

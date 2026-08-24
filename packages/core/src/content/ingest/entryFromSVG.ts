@@ -12,10 +12,11 @@ import type { IconEntry } from "../../../typings/types";
 export interface EntryFacts {
   /**
    * `"present"`: the root `<svg>` had a `viewBox` that parsed to four finite numbers, used as-is.
-   * `"derived"`: no usable `viewBox`, but unit-less numeric `width`/`height` root attributes were
-   * found and turned into one. `"defaulted"`: neither was available, so `"0 0 24 24"` was used.
+   * `"missing"`: it didn't, so one was recovered - from unit-less numeric `width`/`height` root
+   * attributes when available, else the `"0 0 24 24"` default. The entry's own `viewBox` field
+   * always holds whatever was resolved; callers that warn can simply quote it.
    */
-  viewBox: "present" | "derived" | "defaulted";
+  viewBox: "present" | "missing";
   /**
    * Whether this icon looks like it won't respond to CSS `color`: `currentColor` appears nowhere
    * (root or body), and every explicit `fill`/`stroke` found (if any) agrees on a single color -
@@ -30,8 +31,6 @@ export interface EntryFromSVGResult {
   facts: EntryFacts;
 }
 
-// Handled elsewhere - `viewBox`/`width`/`height` are read separately and reapplied by the
-// rendered `<svg>` wrapper itself, and the other two are only meaningful on a document root.
 const STRUCTURAL_ROOT_ATTRS = new Set([
   "xmlns",
   "xmlns:xlink",
@@ -40,19 +39,30 @@ const STRUCTURAL_ROOT_ATTRS = new Set([
   "width",
   "height",
 ]);
-// Accessibility is `<Icon>`/`<LiveIcon>`'s contract, not the source file's: `iconA11yProps`
-// computes `role`/`aria-hidden`/`aria-labelledby`/`aria-describedby`/`focusable` on the rendered
-// `<svg>` itself based on the caller's `title`/`desc` props. A source file's own copies of these
-// are almost always export-tool boilerplate, not a deliberate per-usage choice.
 const A11Y_ROOT_ATTRS = new Set(["role", "focusable", "tabindex"]);
 
-function isSkippedRootAttr(name: string): boolean {
+/**
+ * Which part of the system owns a root `<svg>` attribute decides where it goes - this is a
+ * partition by ownership, not a skip-list:
+ *
+ * - `"structure"`: `viewBox`/`width`/`height` are already the entry's typed fields (lifting a
+ *   string copy would put the same fact on the entry twice), and `xmlns`/`xmlns:xlink`/`version`
+ *   are meaningless on an inline `<svg>` in HTML.
+ * - `"component"`: accessibility (`role`, `aria-*`, `focusable`, `tabindex`) is `<Icon>`/
+ *   `<LiveIcon>`'s contract - `iconA11yProps` computes it per usage from the caller's `title`/
+ *   `desc` props. Entry fields spread *after* those computed props, so lifting a file's
+ *   boilerplate copy (e.g. an export tool's blanket `aria-hidden="true"`) would silently defeat
+ *   them: a labeled icon would stay invisible to assistive tech.
+ * - `"entry"`: everything else is the author's presentation intent (`fill`, `stroke`, `class`,
+ *   `style`, ...), lifted onto the entry as defaults the caller's own props override.
+ */
+function rootAttrOwner(name: string): "structure" | "component" | "entry" {
   const lower = name.toLowerCase();
-  return (
-    STRUCTURAL_ROOT_ATTRS.has(lower) ||
-    A11Y_ROOT_ATTRS.has(lower) ||
-    lower.startsWith("aria-")
-  );
+  if (STRUCTURAL_ROOT_ATTRS.has(lower)) return "structure";
+  if (A11Y_ROOT_ATTRS.has(lower) || lower.startsWith("aria-")) {
+    return "component";
+  }
+  return "entry";
 }
 
 function getAttrCI(
@@ -90,18 +100,24 @@ function removeNode(node: Node): void {
   parent.children = parent.children.filter((child) => child !== node);
 }
 
-/** Pulls the first `<tagName>` anywhere in `root`'s subtree (excluding `root` itself) out, removing it from the tree. Trimmed text content, or `undefined` if absent/empty. */
-function extractFirst(root: Node, tagName: string): string | undefined {
-  let found: ElementNode | undefined;
-  walkSync(root, (node) => {
-    if (found || node === root) return;
-    if (node.type === ELEMENT_NODE && node.name.toLowerCase() === tagName) {
-      found = node;
-    }
-  });
+/**
+ * Pulls the first direct-child `<tagName>` of the root `<svg>` out of the tree, returning its
+ * trimmed text (or `undefined` if absent/empty). Direct children only: per the SVG spec, only a
+ * `<title>`/`<desc>` that's a direct child of an element names *that element* - one nested inside
+ * a `<g>` labels the group, not the icon, and stays where it is.
+ */
+function extractFirstChild(
+  svgEl: ElementNode,
+  tagName: string,
+): string | undefined {
+  const found = svgEl.children.find(
+    (node): node is ElementNode =>
+      node.type === ELEMENT_NODE &&
+      (node as ElementNode).name.toLowerCase() === tagName,
+  );
   if (!found) return undefined;
-  const text = textContent(found).trim();
   removeNode(found);
+  const text = textContent(found).trim();
   return text || undefined;
 }
 
@@ -135,49 +151,51 @@ function deriveViewBoxFromSize(
   return { viewBox: `0 0 ${width} ${height}`, width, height };
 }
 
-const COLOR_ATTR_RE = /\b(?:fill|stroke)="([^"]*)"/g;
 const IGNORED_COLOR_VALUES = new Set([
   "none",
   "transparent",
   "currentcolor",
   "inherit",
 ]);
+const CURRENT_COLOR_RE = /currentcolor/i;
 
 /**
  * A cheap, deliberately conservative signal for "this icon probably won't respond to
  * `color: ...` in CSS" - not a decision to act on, only to report via `EntryFacts` (see
- * `localSource()`, the one caller that turns it into a warning). Checks `body`'s own `fill`/
- * `stroke` attributes plus `rootAttrs` (the root `<svg>` tag's own, lifted separately). True when
- * `currentColor` is used nowhere, and every explicit `fill`/`stroke` found (if any) agrees on a
- * single color - the same shape a monochrome UI glyph has. An icon with two or more distinct
- * explicit colors reads as a deliberate multi-color graphic/logo, not a candidate for the
- * suggestion.
+ * `localSource()`, the one caller that turns it into a warning). Walks the tree (root `<svg>`
+ * included) rather than the serialized body: true when `currentColor` appears nowhere (any
+ * attribute value, or text such as an inline `<style>` block), and every explicit `fill`/`stroke`
+ * found (if any) agrees on a single color - the same shape a monochrome UI glyph has. An icon
+ * with two or more distinct explicit colors reads as a deliberate multi-color graphic/logo, not
+ * a candidate for the suggestion.
  */
-function looksLikeItNeedsCurrentColor(
-  body: string,
-  rootAttrs: Record<string, string>,
-): boolean {
-  const rootColors = [rootAttrs.fill, rootAttrs.stroke].filter(
-    (value): value is string => value != null,
-  );
-  if (rootColors.some((value) => value.toLowerCase() === "currentcolor")) {
-    return false;
-  }
-  if (/currentcolor/i.test(body)) return false;
-
+function looksLikeItNeedsCurrentColor(svgEl: ElementNode): boolean {
+  let usesCurrentColor = false;
   const colors = new Set<string>();
-  for (const value of rootColors) {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "" || IGNORED_COLOR_VALUES.has(normalized)) continue;
-    colors.add(normalized);
-  }
-  for (const match of body.matchAll(COLOR_ATTR_RE)) {
-    const value = match[1].trim().toLowerCase();
-    if (value === "" || IGNORED_COLOR_VALUES.has(value)) continue;
-    colors.add(value);
-  }
 
-  return colors.size <= 1;
+  walkSync(svgEl, (node) => {
+    if (usesCurrentColor) return;
+    if (node.type === TEXT_NODE) {
+      if (CURRENT_COLOR_RE.test(node.value)) usesCurrentColor = true;
+      return;
+    }
+    if (node.type !== ELEMENT_NODE) return;
+    for (const [attrName, value] of Object.entries(
+      (node as ElementNode).attributes,
+    )) {
+      if (CURRENT_COLOR_RE.test(value)) {
+        usesCurrentColor = true;
+        return;
+      }
+      const lower = attrName.toLowerCase();
+      if (lower !== "fill" && lower !== "stroke") continue;
+      const normalized = value.trim().toLowerCase();
+      if (normalized === "" || IGNORED_COLOR_VALUES.has(normalized)) continue;
+      colors.add(normalized);
+    }
+  });
+
+  return !usesCurrentColor && colors.size <= 1;
 }
 
 /** Renders `children` (already stripped of anything that shouldn't survive into `body`) back to markup, minus the `<svg>` wrapper they came from. */
@@ -199,11 +217,12 @@ function serializeChildren(children: Node[]): string {
  *
  * 1. sanitize (`sanitizeTree` - the same rules `sanitizeSVGBody` applies, shared rather than
  *    duplicated);
- * 2. lift the root `<svg>`'s own non-structural, non-a11y attributes onto the entry, spread
- *    first so a stray one (e.g. a literal `body="..."` attribute) can never shadow a real field;
- * 3. lift the first `<title>`/`<desc>` anywhere in the body onto `title`/`desc`, removing them;
- * 4. resolve `viewBox`/`width`/`height` (present, derived from `width`/`height`, or defaulted to
- *    `24x24`), recorded as `facts.viewBox`;
+ * 2. lift the entry-owned root `<svg>` attributes onto the entry (see `rootAttrOwner` for the
+ *    ownership partition), spread first so a stray one (e.g. a literal `body="..."` attribute)
+ *    can never shadow a real field;
+ * 3. lift the root's own direct-child `<title>`/`<desc>` onto `title`/`desc`, removing them;
+ * 4. resolve `viewBox`/`width`/`height` (used as-is when present, else recovered from
+ *    `width`/`height` or a `24x24` default), recorded as `facts.viewBox`;
  * 5. serialize what's left as `body`.
  *
  * Takes no policy parameters (no `optimize`, no `strict`, no logger): callers apply their own
@@ -224,12 +243,12 @@ export function entryFromSVG(svg: string): EntryFromSVGResult {
 
   const rootAttrs: Record<string, string> = {};
   for (const [name, value] of Object.entries(svgEl.attributes)) {
-    if (isSkippedRootAttr(name)) continue;
+    if (rootAttrOwner(name) !== "entry") continue;
     rootAttrs[name] = value;
   }
 
-  const title = extractFirst(svgEl, "title");
-  const desc = extractFirst(svgEl, "desc");
+  const title = extractFirstChild(svgEl, "title");
+  const desc = extractFirstChild(svgEl, "desc");
 
   const rawViewBox = getAttrCI(svgEl.attributes, "viewBox");
   const presentDimensions = rawViewBox
@@ -239,24 +258,22 @@ export function entryFromSVG(svg: string): EntryFromSVGResult {
   let viewBox: string;
   let width: number;
   let height: number;
-  let viewBoxFact: EntryFacts["viewBox"];
   if (presentDimensions) {
     viewBox = rawViewBox!;
     ({ width, height } = presentDimensions);
-    viewBoxFact = "present";
   } else {
-    const derived = deriveViewBoxFromSize(svgEl.attributes);
-    if (derived) {
-      ({ viewBox, width, height } = derived);
-      viewBoxFact = "derived";
-    } else {
-      viewBox = "0 0 24 24";
-      width = 24;
-      height = 24;
-      viewBoxFact = "defaulted";
-    }
+    ({
+      viewBox,
+      width,
+      height,
+    } = deriveViewBoxFromSize(svgEl.attributes) ?? {
+      viewBox: "0 0 24 24",
+      width: 24,
+      height: 24,
+    });
   }
 
+  const monochromeWithoutCurrentColor = looksLikeItNeedsCurrentColor(svgEl);
   const body = serializeChildren(svgEl.children);
 
   const entry: IconEntry = {
@@ -272,11 +289,8 @@ export function entryFromSVG(svg: string): EntryFromSVGResult {
   return {
     entry,
     facts: {
-      viewBox: viewBoxFact,
-      monochromeWithoutCurrentColor: looksLikeItNeedsCurrentColor(
-        body,
-        rootAttrs,
-      ),
+      viewBox: presentDimensions ? "present" : "missing",
+      monochromeWithoutCurrentColor,
     },
   };
 }

@@ -28,39 +28,39 @@ describe("entryFromSVG / viewBox facts", () => {
     expect(entry).toMatchObject({ viewBox: "0 0 32 32", width: 32, height: 32 });
   });
 
-  it("reports 'derived' and builds one from unit-less width/height when the viewBox is missing", () => {
+  it("reports 'missing' and recovers one from unit-less width/height when the viewBox is absent", () => {
     const { entry, facts } = entryFromSVG(
       `<svg width="20" height="20"><path d="M0 0"/></svg>`,
     );
-    expect(facts.viewBox).toBe("derived");
+    expect(facts.viewBox).toBe("missing");
     expect(entry).toMatchObject({ viewBox: "0 0 20 20", width: 20, height: 20 });
   });
 
-  it("reports 'derived' when the viewBox has too few tokens", () => {
+  it("reports 'missing' when the viewBox has too few tokens", () => {
     const { facts } = entryFromSVG(
       `<svg viewBox="0 0 24" width="24" height="24"><path d="M0 0"/></svg>`,
     );
-    expect(facts.viewBox).toBe("derived");
+    expect(facts.viewBox).toBe("missing");
   });
 
-  it("reports 'derived' when the viewBox has non-numeric values", () => {
+  it("reports 'missing' when the viewBox has non-numeric values", () => {
     const { facts } = entryFromSVG(
       `<svg viewBox="0 0 NaN NaN" width="24" height="24"><path d="M0 0"/></svg>`,
     );
-    expect(facts.viewBox).toBe("derived");
+    expect(facts.viewBox).toBe("missing");
   });
 
-  it("doesn't derive from a unit-suffixed width/height (e.g. '1em')", () => {
+  it("doesn't recover from a unit-suffixed width/height (e.g. '1em'), using the 24x24 default", () => {
     const { facts, entry } = entryFromSVG(
       `<svg width="1em" height="1em"><path d="M0 0"/></svg>`,
     );
-    expect(facts.viewBox).toBe("defaulted");
+    expect(facts.viewBox).toBe("missing");
     expect(entry).toMatchObject({ viewBox: "0 0 24 24", width: 24, height: 24 });
   });
 
-  it("reports 'defaulted' and falls back to 0 0 24 24 with neither viewBox nor width/height", () => {
+  it("falls back to 0 0 24 24 with neither viewBox nor width/height", () => {
     const { entry, facts } = entryFromSVG(`<svg><path d="M0 0"/></svg>`);
-    expect(facts.viewBox).toBe("defaulted");
+    expect(facts.viewBox).toBe("missing");
     expect(entry).toMatchObject({ viewBox: "0 0 24 24", width: 24, height: 24 });
   });
 });
@@ -148,6 +148,14 @@ describe("entryFromSVG / title and desc", () => {
       title: "Adjustment",
       desc: "An adjustment icon",
     });
+  });
+
+  it("leaves a <title> nested inside a <g> alone - it labels the group, not the icon", () => {
+    const { entry } = entryFromSVG(
+      `<svg viewBox="0 0 24 24"><g><title>Group label</title><path d="M0 0"/></g></svg>`,
+    );
+    expect("title" in entry).toBe(false);
+    expect(entry.body).toContain("<title>Group label</title>");
   });
 
   it("leaves title/desc unset when absent", () => {
