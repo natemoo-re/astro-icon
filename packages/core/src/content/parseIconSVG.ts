@@ -15,7 +15,7 @@ export interface ParseIconSVGOptions {
   /**
    * Whether to re-home the root `<svg>`'s presentation attributes onto a wrapping `<g>` in
    * `body`. Defaults to `true`. Set `false` when the caller already extracts those attributes
-   * itself (e.g. `localSource`'s `extractRootAttrs`, applied as entry fields rather than baked
+   * itself (e.g. `parseLocalIconSVG`, which applies them as entry fields rather than baking them
    * into `body`) - carrying them here too would duplicate them, and a hardcoded value on the
    * inner `<g>` would silently win over a caller's `<Icon fill="..." />` landing on the outer
    * `<svg>` instead.
