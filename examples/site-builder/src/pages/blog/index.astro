@@ -12,9 +12,9 @@ const posts = [
   <ul class="posts">
     {
       posts.map((post) => (
-        <li>
+        <li class="card">
           <a href={`/blog/${post.slug}`}>{post.title}</a>
-          <span>
+          <span class="date">
             <Icon name="calendar" size={14} /> {post.date}
           </span>
         </li>
@@ -22,3 +22,34 @@ const posts = [
     }
   </ul>
 </Base>
+
+<style>
+  .posts {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+  }
+  .posts li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1em 1.25em;
+  }
+  .posts a {
+    font-weight: 600;
+    color: rgb(var(--black));
+    text-decoration: none;
+  }
+  .posts a:hover {
+    color: var(--accent);
+  }
+  .date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    color: rgb(var(--gray));
+    font-size: 0.9em;
+  }
+</style>

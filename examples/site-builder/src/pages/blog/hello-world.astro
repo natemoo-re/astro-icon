@@ -4,12 +4,12 @@ import Base from "../../layouts/base.astro";
 ---
 
 <Base title="Hello, world">
-  <article>
+  <article class="card">
     <h1>Hello, world</h1>
     <p class="meta">
-      <Icon name="calendar" size={16} /> Published 2026-01-12 &middot;
-      <Icon name="heart" size={16} /> 12 likes &middot;
-      <Icon name="check" size={16} /> Verified author
+      <span><Icon name="calendar" size={16} /> Published 2026-01-12</span>
+      <span><Icon name="heart" size={16} /> 12 likes</span>
+      <span><Icon name="check" size={16} /> Verified author</span>
     </p>
     <p>
       Every icon on this page - <code>calendar</code>, <code>heart</code>,
@@ -20,3 +20,18 @@ import Base from "../../layouts/base.astro";
     </p>
   </article>
 </Base>
+
+<style>
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25em;
+    color: rgb(var(--gray));
+    font-size: 0.9em;
+  }
+  .meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+  }
+</style>

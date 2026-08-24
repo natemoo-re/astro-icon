@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import "../styles/global.css";
 
 interface Props {
   title: string;
@@ -24,20 +25,22 @@ const navLinks = [
   </head>
   <body>
     <header>
-      <a class="brand" href="/">
-        <Icon name="menu" size={20} />
-        Acme Blog
-      </a>
-      <nav>
-        {
-          navLinks.map((link) => (
-            <a href={link.href}>
-              <Icon name={link.icon} size={18} />
-              {link.label}
-            </a>
-          ))
-        }
-      </nav>
+      <div class="wrap">
+        <a class="brand" href="/">
+          <Icon name="menu" size={20} />
+          Acme Blog
+        </a>
+        <nav>
+          {
+            navLinks.map((link) => (
+              <a href={link.href}>
+                <Icon name={link.icon} size={18} />
+                {link.label}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
     </header>
 
     <main>
@@ -45,66 +48,77 @@ const navLinks = [
     </main>
 
     <footer>
-      <nav>
-        {
-          navLinks.map((link) => (
-            <a href={link.href}>
-              <Icon name={link.icon} size={16} />
-              {link.label}
-            </a>
-          ))
-        }
-      </nav>
-      <p>
-        <Icon name="star" size={16} /> Star us on GitHub
-      </p>
+      <div class="wrap">
+        <nav>
+          {
+            navLinks.map((link) => (
+              <a href={link.href}>
+                <Icon name={link.icon} size={16} />
+                {link.label}
+              </a>
+            ))
+          }
+        </nav>
+        <p>
+          <Icon name="star" size={16} /> Star us on GitHub
+        </p>
+      </div>
     </footer>
   </body>
 </html>
 
 <style>
-  body {
-    font-family: system-ui, sans-serif;
-    max-width: 40rem;
-    margin: 0 auto;
-    padding: 1rem;
-    color: #1a1a1a;
+  header {
+    border-bottom: 1px solid rgb(var(--gray-light));
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
   }
-  header,
-  footer {
+  header .wrap,
+  footer .wrap {
+    width: 42rem;
+    max-width: calc(100% - 2em);
+    margin: auto;
     display: flex;
     align-items: center;
     gap: 1.5rem;
     padding: 1rem 0;
   }
-  header {
+  header .wrap {
     justify-content: space-between;
-    border-bottom: 1px solid #e2e2e2;
   }
   footer {
+    border-top: 1px solid rgb(var(--gray-light));
+    margin-top: 2rem;
+  }
+  footer .wrap {
     flex-direction: column;
     align-items: flex-start;
-    border-top: 1px solid #e2e2e2;
-    margin-top: 2rem;
-    color: #666;
+    color: rgb(var(--gray));
   }
   .brand {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-weight: 700;
+    font-size: 1.1rem;
     text-decoration: none;
-    color: inherit;
+    color: rgb(var(--black));
   }
   nav {
     display: flex;
-    gap: 1rem;
+    gap: 1.25rem;
   }
   nav a {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     text-decoration: none;
-    color: inherit;
+    color: rgb(var(--gray-dark));
+    font-weight: 500;
+  }
+  nav a:hover {
+    color: var(--accent);
   }
 </style>

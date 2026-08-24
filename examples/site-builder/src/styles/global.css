@@ -1,0 +1,109 @@
+/*
+  Design tokens and base styles adapted from Astro's official `blog` example
+  (withastro/astro/examples/blog/src/styles/global.css), itself based on
+  Bear Blog's default CSS. Swapped its Atkinson webfont (loaded via the
+  experimental `astro:assets` Font API) for a plain system font stack, so
+  this stays a zero-extra-config example.
+*/
+:root {
+  --accent: #2337ff;
+  --accent-dark: #000d8a;
+  --black: 15, 18, 25;
+  --gray: 96, 115, 159;
+  --gray-light: 229, 233, 240;
+  --gray-dark: 34, 41, 57;
+  --gray-gradient: rgba(var(--gray-light), 50%), #fff;
+  --box-shadow:
+    0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 12%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(var(--gray-gradient)) no-repeat;
+  background-size: 100% 600px;
+  color: rgb(var(--gray-dark));
+  line-height: 1.7;
+}
+
+main {
+  width: 42rem;
+  max-width: calc(100% - 2em);
+  margin: auto;
+  padding: 2.5em 1em;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 0.5rem 0;
+  color: rgb(var(--black));
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2.4em;
+}
+
+h2 {
+  font-size: 1.5em;
+  margin-top: 1.5em;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-dark);
+}
+
+code {
+  padding: 0.15em 0.4em;
+  background-color: rgb(var(--gray-light));
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--box-shadow);
+  padding: 1.5em;
+}
+
+.note {
+  background: rgb(var(--gray-light));
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 0.8em 1.2em;
+  color: rgb(var(--gray-dark));
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: 0.5em;
+  padding: 0.6em 1.1em;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.cta:hover {
+  background: var(--accent-dark);
+  color: white;
+}

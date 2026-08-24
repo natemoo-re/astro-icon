@@ -5,7 +5,19 @@ import Base from "../layouts/base.astro";
 
 <Base title="About">
   <h1>About Acme Blog</h1>
-  <p>
+  <p class="lead">
     <Icon name="user" size={20} /> We're a small team writing about things we build.
   </p>
 </Base>
+
+<style>
+  .lead {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+  .lead :global(svg) {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+</style>

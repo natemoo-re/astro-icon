@@ -10,3 +10,5 @@ Start with [PERSONA.md](./PERSONA.md): it defines who each persona is, ranks the
 - [`platform-builder`](./platform-builder) - icon names from a CMS, a database, or a user's search box, via bounded and unbounded Iconify collections, live collections, and a custom `IconSource`.
 
 Unlike [`demo/`](../demo) - a kitchen-sink app exercising every loader and API surface for manual testing during development - each app here is scoped to what one real persona would actually build, so it can be read start to finish.
+
+Each app's `src/styles/global.css` carries the same small set of design tokens (accent color, gray scale, box-shadow), adapted from Astro's official [`blog`](https://github.com/withastro/astro/tree/main/examples/blog) example template - `site-builder`'s layout follows that template's structure directly; the other three reuse its tokens for a consistent look, since Astro doesn't ship an official dashboard/app-shell template to vendor instead.

@@ -1,0 +1,85 @@
+/*
+  Same design tokens as examples/site-builder (itself adapted from Astro's
+  official `blog` example), reused here so the four persona apps read as one
+  family.
+*/
+:root {
+  --accent: #2337ff;
+  --accent-dark: #000d8a;
+  --accent-light: #e8eaff;
+  --black: 15, 18, 25;
+  --gray: 96, 115, 159;
+  --gray-light: 229, 233, 240;
+  --gray-dark: 34, 41, 57;
+  --box-shadow:
+    0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 12%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  margin: 0;
+  background: #f6f7fb;
+  color: rgb(var(--gray-dark));
+  line-height: 1.6;
+}
+
+h1,
+h2 {
+  margin: 0 0 0.5rem 0;
+  color: rgb(var(--black));
+}
+
+code {
+  padding: 0.15em 0.4em;
+  background-color: rgb(var(--gray-light));
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--box-shadow);
+}
+
+.note {
+  color: rgb(var(--gray-dark));
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 0.8em 1.2em;
+  margin: 1.25em 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.75rem;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem 0.6rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+  font-size: 0.75rem;
+  text-align: center;
+  color: rgb(var(--gray-dark));
+}
+
+.cell svg {
+  color: var(--accent);
+}

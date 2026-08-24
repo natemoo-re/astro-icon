@@ -16,7 +16,7 @@ const rows = Array.from({ length: 40 }, (_, i) => ({
 <App title="Users">
   <div class="toolbar">
     <h1>Users</h1>
-    <button><Icon name="mdi:plus" size={16} /> Invite</button>
+    <button class="btn"><Icon name="mdi:plus" size={16} /> Invite</button>
   </div>
 
   <p class="note">
@@ -27,30 +27,36 @@ const rows = Array.from({ length: 40 }, (_, i) => ({
     else on this route.
   </p>
 
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Role</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {
-        rows.map((row) => (
-          <tr>
-            <td>{row.name}</td>
-            <td>{row.role}</td>
-            <td class="actions">
-              <Icon name="mdi:eye" size={16} />
-              <Icon name="mdi:pencil" size={16} />
-              <Icon name="mdi:delete" size={16} />
-            </td>
-          </tr>
-        ))
-      }
-    </tbody>
-  </table>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((row) => (
+            <tr>
+              <td>{row.name}</td>
+              <td>
+                <span class:list={["badge", { admin: row.role === "Admin" }]}>
+                  {row.role}
+                </span>
+              </td>
+              <td class="actions">
+                <Icon name="mdi:eye" size={16} />
+                <Icon name="mdi:pencil" size={16} />
+                <Icon name="mdi:delete" size={16} />
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
 </App>
 
 <style>
@@ -58,28 +64,56 @@ const rows = Array.from({ length: 40 }, (_, i) => ({
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 1rem;
   }
   .note {
-    color: #666;
+    color: rgb(var(--gray));
     max-width: 42rem;
+    margin: 0 0 1.25rem 0;
+  }
+  .card {
+    overflow: hidden;
   }
   table {
     width: 100%;
     border-collapse: collapse;
   }
-  th,
+  th {
+    text-align: left;
+    padding: 0.7rem 1.25rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgb(var(--gray));
+    border-bottom: 1px solid rgb(var(--gray-light));
+  }
   td {
     text-align: left;
-    padding: 0.4rem 0.6rem;
-    border-bottom: 1px solid #eee;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid rgb(var(--gray-light));
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.2em 0.7em;
+    border-radius: 999px;
+    font-size: 0.8em;
+    font-weight: 600;
+    background: rgb(var(--gray-light));
+    color: rgb(var(--gray-dark));
+  }
+  .badge.admin {
+    background: var(--accent-light);
+    color: var(--accent-dark);
   }
   .actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    color: rgb(var(--gray));
   }
-  button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
+  .actions :global(svg:hover) {
+    color: var(--accent);
   }
 </style>

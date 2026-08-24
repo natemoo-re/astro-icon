@@ -85,14 +85,34 @@ if (query) {
 <style>
   form {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
   }
   input {
     flex: 1;
-    padding: 0.4rem 0.6rem;
+    font: inherit;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgb(var(--gray-light));
+    border-radius: 8px;
+  }
+  input:focus {
+    outline: 2px solid var(--accent-light);
+    border-color: var(--accent);
+  }
+  button {
+    font: inherit;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+  }
+  button:hover {
+    background: var(--accent-dark);
   }
   .error {
-    color: #b00;
+    color: #b00020;
   }
 </style>
