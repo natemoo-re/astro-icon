@@ -1,0 +1,46 @@
+---
+// A consumer component using a library component (`acme-ui`'s IconButton)
+// the same way any real page would - not a demo appendage, just the "copy
+// link" action every blog post needs. IconButton always renders one of its
+// own icons; this component only owns the swap between its three states.
+// The "copying" state is also where `IconButton`'s `.spinner-head` animation
+// (see src/lib/IconButton.astro) actually earns its place, rather than
+// spinning forever in a static demo.
+import IconButton from '../lib/IconButton.astro';
+---
+
+<copy-link-button>
+	<IconButton icon="copy" data-state="idle">Copy link</IconButton>
+	<IconButton icon="spinner" data-state="copying" hidden>Copying…</IconButton>
+	<IconButton icon="check" data-state="copied" hidden>Copied!</IconButton>
+</copy-link-button>
+
+<script>
+	class CopyLinkButton extends HTMLElement {
+		constructor() {
+			super();
+			const idle = this.querySelector<HTMLButtonElement>('[data-state="idle"]')!;
+			const copying = this.querySelector<HTMLButtonElement>('[data-state="copying"]')!;
+			const copied = this.querySelector<HTMLButtonElement>('[data-state="copied"]')!;
+
+			const showOnly = (visible: HTMLButtonElement) => {
+				for (const btn of [idle, copying, copied]) btn.hidden = btn !== visible;
+			};
+
+			idle.addEventListener('click', async () => {
+				showOnly(copying);
+				await navigator.clipboard.writeText(location.href);
+				showOnly(copied);
+				setTimeout(() => showOnly(idle), 1500);
+			});
+		}
+	}
+	customElements.define('copy-link-button', CopyLinkButton);
+</script>
+
+<style>
+	copy-link-button {
+		display: inline-block;
+		margin-top: 0.5em;
+	}
+</style>

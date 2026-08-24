@@ -1,0 +1,20 @@
+---
+interface Props {
+	repository: string;
+}
+const { repository } = Astro.props;
+---
+
+<div class="hidden mr-3 -mb-1 sm:block">
+	<a
+		class="github-button"
+		href={`https://github.com/${repository}`}
+		data-color-scheme="no-preference: dark; light: light; dark: light;"
+		data-icon="octicon-star"
+		data-size="large"
+		data-show-count="true"
+		aria-label={`Star ${repository} on GitHub`}>Star</a
+	>
+</div>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>

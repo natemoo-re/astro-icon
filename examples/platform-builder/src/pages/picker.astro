@@ -1,0 +1,56 @@
+---
+// UC4, the harder half of "icon names from data": an end user picking from the
+// full catalog can land on any of tabler's 5,000+ icons, which is why the
+// `tabler` collection has no `allowed` list (src/content.config.ts) - the 1:1
+// port of upstream AstroWind's `tabler: ['*']`. Rendered per request, the way
+// per-user saved choices would really arrive from a database.
+export const prerender = false;
+
+import type { IconName } from 'astro-icon';
+import { Icon } from 'astro-icon/components';
+import HeroText from '~/components/widgets/HeroText.astro';
+import Layout from '~/layouts/PageLayout.astro';
+
+const metadata = {
+  title: 'Catalog picker',
+};
+
+// The user's saved choices, as they'd come back from a database: arbitrary
+// names from anywhere in the tabler pack, not a curated shortlist.
+const SAVED = ['rocket', 'ufo', 'coffee', 'guitar-pick', 'bolt', 'cactus', 'sailboat', 'planet'];
+---
+
+<Layout metadata={metadata}>
+  <HeroText
+    tagline="Icons from an open catalog"
+    title="Icon names from an open catalog"
+    subtitle={`AstroWind already treats <code>tabler</code> as an open catalog - every widget takes <code>icon: 'tabler:…'</code> strings in page data. This page is the end state of that pattern: names picked by an end user, drawn from anywhere in the pack.`}
+  />
+
+  <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16 md:pb-20">
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-8 gap-4 mb-8">
+      {
+        SAVED.map((name) => (
+          <div class="flex flex-col items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-800 p-4 text-center">
+            {/*
+              The cast is the real cost of an open catalog. `IconName` is a union of
+              concrete names, so a string assembled at runtime can never satisfy it.
+              The template's own literal `icon: 'tabler:…'` strings still type-check
+              with no cast, because they're written down where the data is defined;
+              once the value is "any of 5,000, chosen at runtime", a typo stops being
+              a compile error and becomes a missing icon at request time.
+            */}
+            <Icon name={`tabler:${name}` as IconName} size={28} class="text-primary" />
+            <code class="text-xs text-muted break-all">{name}</code>
+          </div>
+        ))
+      }
+    </div>
+
+    <p class="text-sm text-muted">
+      Compare with the curated <code>flat-color-icons</code> collection (nine names, <code>allowed: [...]</code>): same
+      "names from data" problem, opposite right answer on both counts, decided entirely by whether the set of possible
+      names is small enough to write down.
+    </p>
+  </section>
+</Layout>

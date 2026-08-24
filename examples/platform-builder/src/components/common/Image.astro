@@ -1,0 +1,189 @@
+---
+/**
+ * AstroWind <Image /> wrapper.
+ *
+ * Behaviour:
+ *   • Detectable CDN URL (Unsplash, Cloudinary, Imgix…) → rewritten with
+ *     CDN-side parameters via `transformUrl` from `unpic` and emitted as a
+ *     plain <img> served straight from the source. No download, no Sharp.
+ *   • Local image (ESM import or `~/assets/...` path) → delegated to Astro's
+ *     native <Image /> from `astro:assets`, which optimizes through Sharp and
+ *     emits responsive `srcset` + styles for the chosen `layout` (enabled by
+ *     `image.responsiveStyles` in astro.config.ts).
+ *
+ * Layout modes (native Astro values, plus `cover`):
+ *   • `constrained` (default) — scales down to fit, never above intrinsic size.
+ *   • `full-width` — spans the container width, maintaining aspect ratio.
+ *   • `fixed` — exact pixel dimensions, no scaling.
+ *   • `cover` — fills the parent and crops with object-fit (overlays).
+ *   • `none` — no layout styles; control sizing via classes.
+ *
+ * Accessibility:
+ *   `alt` is required. Pass `alt=""` explicitly for purely decorative images.
+ */
+import { Image as AstroImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import type { HTMLAttributes } from 'astro/types';
+import { transformUrl, parseUrl } from 'unpic';
+import { findImage } from '~/utils/images';
+
+type Layout = 'constrained' | 'full-width' | 'fixed' | 'cover' | 'none';
+type Format = 'avif' | 'jpeg' | 'jpg' | 'png' | 'webp';
+
+interface Props extends Omit<HTMLAttributes<'img'>, 'src' | 'width' | 'height'> {
+  src?: string | ImageMetadata | null;
+  width?: number | string;
+  height?: number | string;
+  widths?: number[];
+  format?: Format;
+  layout?: Layout;
+}
+
+const { src, alt, width, height, widths, format, layout = 'constrained', ...rest } = Astro.props;
+
+// --- Accessibility ---------------------------------------------------------
+if (alt === undefined || alt === null) {
+  throw new Error(
+    `Image: missing required \`alt\` prop (src=${String(src)}). ` + `Pass alt="" explicitly for decorative images.`
+  );
+}
+
+// --- Prop coercion (tolerate stringified numbers) --------------------------
+const toNumber = (v: number | string | undefined): number | undefined =>
+  typeof v === 'string' ? (Number.isFinite(Number(v)) ? Number(v) : undefined) : v;
+let w = toNumber(width);
+let h = toNumber(height);
+
+// --- Defaults --------------------------------------------------------------
+rest.loading ??= 'lazy';
+rest.decoding ??= 'async';
+
+// --- Resolve src (handles `~/assets/...` paths) ----------------------------
+const resolved = await findImage(src);
+
+const isCdnUrl =
+  typeof resolved === 'string' &&
+  (resolved.startsWith('http://') || resolved.startsWith('https://')) &&
+  parseUrl(resolved) !== undefined;
+
+// Infer missing dimension(s) from ESM-imported ImageMetadata. If only one of
+// width/height is provided, derive the other from the source aspect ratio.
+if (resolved && typeof resolved === 'object' && 'width' in resolved && 'height' in resolved) {
+  const { width: srcW, height: srcH } = resolved;
+  if (!w && !h) {
+    w = srcW;
+    h = srcH;
+  } else if (w && !h) {
+    h = Math.round((w * srcH) / srcW);
+  } else if (h && !w) {
+    w = Math.round((h * srcW) / srcH);
+  }
+}
+
+const aspectRatio = w && h ? w / h : undefined;
+
+// --- Local images: native <Image layout> ----------------------------------
+// `cover` has no native layout equivalent; render it as `none` plus an
+// object-fit style (the usage's own classes usually cover this too).
+const nativeLayout = layout === 'cover' ? 'none' : layout;
+const localStyle =
+  [layout === 'cover' ? 'object-fit:cover;width:100%;height:100%' : undefined, rest.style].filter(Boolean).join(';') ||
+  undefined;
+
+// --- CDN images: emit an equivalent minimal style --------------------------
+// The native <Image /> emits responsive styles for its layout, but the raw
+// CDN <img> does not, so we mirror the layout intent with a small style.
+const cdnLayoutStyle = (): string => {
+  const decls: string[] = [];
+  switch (layout) {
+    case 'fixed':
+      if (w) decls.push(`width:${w}px`);
+      if (h) decls.push(`height:${h}px`);
+      break;
+    case 'full-width':
+      decls.push('width:100%');
+      if (aspectRatio) decls.push(`aspect-ratio:${aspectRatio}`);
+      break;
+    case 'cover':
+      decls.push('width:100%', 'height:100%', 'object-fit:cover');
+      break;
+    case 'none':
+      break;
+    case 'constrained':
+    default:
+      decls.push('width:100%');
+      if (w) decls.push(`max-width:${w}px`);
+      if (aspectRatio) decls.push(`aspect-ratio:${aspectRatio}`);
+      break;
+  }
+  return decls.join(';');
+};
+const cdnStyle = isCdnUrl ? [cdnLayoutStyle(), rest.style].filter(Boolean).join(';') || undefined : undefined;
+
+// --- CDN-side srcset -------------------------------------------------------
+const buildCdnUrl = (variantWidth?: number, variantHeight?: number): string | undefined =>
+  transformUrl({
+    url: resolved as string,
+    width: variantWidth,
+    height: variantHeight,
+    fallback: 'astro',
+  })?.toString();
+
+/**
+ * Densify the user-provided srcset breakpoints so the browser can match the
+ * actual display size more closely. Free for CDN URLs (variants are computed
+ * provider-side, no local CPU cost).
+ */
+const CDN_BREAKPOINTS = [320, 400, 500, 640, 720, 828, 960, 1080, 1200, 1440, 1600, 1920, 2048];
+const expandWidths = (raw?: number[]): number[] | undefined => {
+  if (!Array.isArray(raw) || raw.length === 0) return raw;
+  const min = Math.min(...raw);
+  const max = Math.max(...raw);
+  const extras = CDN_BREAKPOINTS.filter((bp) => bp > min && bp < max);
+  return [...new Set([...raw, ...extras])].sort((a, b) => a - b);
+};
+
+const heightFromWidth = (variantWidth: number): number | undefined =>
+  aspectRatio ? Math.round(variantWidth / aspectRatio) : undefined;
+
+const cdnSrc = isCdnUrl ? buildCdnUrl(w, h) : undefined;
+const cdnWidths = isCdnUrl ? expandWidths(widths) : undefined;
+const cdnSrcSet =
+  isCdnUrl && cdnWidths?.length
+    ? cdnWidths.map((bw) => `${buildCdnUrl(bw, heightFromWidth(bw))} ${bw}w`).join(', ')
+    : undefined;
+---
+
+{
+  isCdnUrl ? (
+    <img
+      src={cdnSrc}
+      srcset={cdnSrcSet}
+      width={w}
+      height={h}
+      alt={alt}
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+      {...rest}
+      style={cdnStyle}
+    />
+  ) : (
+    /* The native <Image /> typing is overly strict for our forwarding wrapper;
+       we cast through `unknown` once so each call site keeps clean types. */
+    resolved && (
+      <AstroImage
+        {...({
+          ...rest,
+          src: resolved,
+          width: w,
+          height: h,
+          alt,
+          widths,
+          format,
+          layout: nativeLayout,
+          style: localStyle,
+        } as unknown as Parameters<typeof AstroImage>[0])}
+      />
+    )
+  )
+}

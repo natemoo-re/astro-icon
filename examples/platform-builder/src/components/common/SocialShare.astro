@@ -1,0 +1,105 @@
+---
+import { Icon } from 'astro-icon/components';
+
+export interface Props {
+  text: string;
+  url: string | URL;
+  class?: string;
+}
+
+const { text, url, class: className = 'inline-block' } = Astro.props;
+---
+
+<aw-social-share class={className}>
+  <span class="align-super font-bold text-slate-500 dark:text-slate-400">Share:</span>
+  <button
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    title="Twitter Share"
+    data-aw-social-share="twitter"
+    data-aw-url={url}
+    data-aw-text={text}
+    ><Icon
+      name="tabler:brand-x"
+      class="w-6 h-6 text-gray-400 dark:text-slate-500 hover:text-black dark:hover:text-slate-300"
+    />
+  </button>
+  <button class="ml-2 rtl:ml-0 rtl:mr-2" title="Facebook Share" data-aw-social-share="facebook" data-aw-url={url}
+    ><Icon
+      name="tabler:brand-facebook"
+      class="w-6 h-6 text-gray-400 dark:text-slate-500 hover:text-black dark:hover:text-slate-300"
+    />
+  </button>
+  <button
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    title="Linkedin Share"
+    data-aw-social-share="linkedin"
+    data-aw-url={url}
+    data-aw-text={text}
+    ><Icon
+      name="tabler:brand-linkedin"
+      class="w-6 h-6 text-gray-400 dark:text-slate-500 hover:text-black dark:hover:text-slate-300"
+    />
+  </button>
+  <button
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    title="Whatsapp Share"
+    data-aw-social-share="whatsapp"
+    data-aw-url={url}
+    data-aw-text={text}
+    ><Icon
+      name="tabler:brand-whatsapp"
+      class="w-6 h-6 text-gray-400 dark:text-slate-500 hover:text-black dark:hover:text-slate-300"
+    />
+  </button>
+  <button
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    title="Email Share"
+    data-aw-social-share="mail"
+    data-aw-url={url}
+    data-aw-text={text}
+    ><Icon
+      name="tabler:mail"
+      class="w-6 h-6 text-gray-400 dark:text-slate-500 hover:text-black dark:hover:text-slate-300"
+    />
+  </button>
+</aw-social-share>
+
+<script>
+  const SHARE_URLS: Record<string, (url: string, text: string) => string> = {
+    facebook: (url) => `https://www.facebook.com/sharer.php?u=${url}`,
+    twitter: (url, text) => `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+    linkedin: (url, text) => `https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${text}`,
+    whatsapp: (_url, text) => `https://wa.me/?text=${text}%20${_url}`,
+    mail: (url, text) => `mailto:?subject=%22${text}%22&body=${text}%20${url}`,
+  };
+
+  class AwSocialShare extends HTMLElement {
+    connectedCallback() {
+      this.querySelectorAll<HTMLElement>('[data-aw-social-share]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const network = btn.getAttribute('data-aw-social-share') ?? '';
+          const url = encodeURIComponent(btn.getAttribute('data-aw-url') ?? '');
+          const text = encodeURIComponent(btn.getAttribute('data-aw-text') ?? '');
+          const build = SHARE_URLS[network];
+          if (!build) return;
+
+          const link = document.createElement('a');
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.href = build(url, text);
+          link.click();
+        });
+      });
+    }
+  }
+
+  if (!customElements.get('aw-social-share')) {
+    customElements.define('aw-social-share', AwSocialShare);
+  }
+</script>
+
+<style>
+  aw-social-share {
+    display: inline-block;
+  }
+</style>

@@ -1,0 +1,15 @@
+---
+// Prerendered even though the app's default output is "server" - a sign-in
+// screen has nothing user-specific to render per request. The icon
+// collections resolve identically either way.
+export const prerender = true;
+
+import LayoutStacked from '../../app/LayoutStacked.astro';
+import FormSignIn from '../../modules/FormSignIn.astro';
+---
+
+<LayoutStacked>
+	<div class="min-h-screen align-middle flex pb-[12vh]">
+		<FormSignIn />
+	</div>
+</LayoutStacked>

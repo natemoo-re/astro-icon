@@ -1,0 +1,55 @@
+---
+import type { IconName } from 'astro-icon';
+import { Icon } from 'astro-icon/components';
+
+import { UI } from 'astrowind:config';
+
+export interface Props {
+  label?: string;
+  class?: string;
+  iconClass?: string;
+  iconName?: string;
+}
+
+const {
+  label = 'Toggle between Dark and Light mode',
+  class:
+    className = 'text-muted dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5 inline-flex items-center',
+  iconClass = 'w-6 h-6',
+  iconName = 'tabler:sun',
+} = Astro.props;
+---
+
+{
+  !(UI.theme && UI.theme.endsWith(':only')) && (
+    <aw-theme-toggle>
+      <button type="button" class={className} aria-label={label} data-aw-toggle-color-scheme>
+        <Icon name={iconName as IconName} class={iconClass} />
+      </button>
+    </aw-theme-toggle>
+  )
+}
+
+<style>
+  aw-theme-toggle {
+    display: contents;
+  }
+</style>
+
+<script>
+  class AwThemeToggle extends HTMLElement {
+    connectedCallback() {
+      this.querySelector('[data-aw-toggle-color-scheme]')?.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.theme = isDark ? 'dark' : 'light';
+        // Let the reveal-on-scroll controller drop its stagger delay so the
+        // theme change doesn't flicker mid-animation (see REF #643).
+        document.dispatchEvent(new CustomEvent('aw:theme-change'));
+      });
+    }
+  }
+
+  if (!customElements.get('aw-theme-toggle')) {
+    customElements.define('aw-theme-toggle', AwThemeToggle);
+  }
+</script>

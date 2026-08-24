@@ -1,0 +1,36 @@
+{
+  "name": "example-app-builder",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^7.6.0",
+    "apexcharts": "^3.37.2",
+    "flowbite": "^2.1.1",
+    "flowbite-typography": "^1.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/node": "^11.1.2",
+    "@astrojs/react": "^4.2.0",
+    "@iconify-json/heroicons": "^1.2.2",
+    "@iconify-json/heroicons-outline": "^1.2.1",
+    "@iconify-json/heroicons-solid": "^1.2.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "astro": "^7.2.2",
+    "astro-icon": "workspace:*",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwind-scrollbar": "^3.0.0",
+    "tailwindcss": "^3.4.17"
+  }
+}

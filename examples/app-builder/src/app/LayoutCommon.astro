@@ -1,0 +1,59 @@
+---
+import { url } from '../lib/data.js';
+
+import { SITE_TITLE } from './constants.js';
+
+import '../styles/base.css';
+
+const { class: clazz } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{SITE_TITLE}</title>
+
+		<meta name="generator" content={Astro.generator} />
+		<link rel="icon" type="image/svg+xml" href={url('favicon.svg')} />
+
+		<meta
+			name="author"
+			content="Julian Cataldo, Zoltán Szőgyényi, Robert Tanislav"
+		/>
+		<meta name="copyright" content="MIT" />
+
+		<script is:inline>
+			if (
+				localStorage.getItem('color-theme') === 'dark' ||
+				(!('color-theme' in localStorage) &&
+					window.matchMedia('(prefers-color-scheme: dark)').matches)
+			) {
+				document.documentElement.classList.add('dark');
+			} else {
+				document.documentElement.classList.remove('dark');
+			}
+		</script>
+	</head>
+	<body
+		class:list={[
+			//
+			clazz,
+			'bg-gray-50 dark:bg-gray-800',
+			'scrollbar scrollbar-w-3 scrollbar-thumb-rounded-[0.25rem]',
+			'scrollbar-track-slate-200  scrollbar-thumb-gray-400',
+			'dark:scrollbar-track-gray-900 dark:scrollbar-thumb-gray-700',
+		]}
+	>
+		<slot />
+	</body>
+</html>
+
+<script>
+	import 'flowbite';
+</script>
+
+<style is:global>
+	@import url('https://fonts.cdnfonts.com/css/inter');
+</style>
