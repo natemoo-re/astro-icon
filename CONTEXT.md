@@ -7,7 +7,7 @@ Terms specific to this codebase, for anyone (human or agent) navigating it.
 `packages/core/src/` is split into two directories that mirror this codebase's two bounded contexts:
 
 - **`src/content/`** - turning a backend (a local directory, an Iconify pack, a custom `IconSource`) into Astro content-collection data. Everything about [sources](#icon-source), [packs](#pack), [catalogs](#catalog), and [loaders](#loader-vs-source) lives here.
-- **`src/render/`** - turning an `IconEntry` already sitting in the content store into markup on a page. `<Icon>`/`<LiveIcon>`'s supporting code (a11y/render props, name parsing, entry lookup) lives here.
+- **`src/render/`** - turning an `IconEntry` already sitting in the content store into markup on a page. `<Icon>`/`<LiveIcon>`'s supporting code (a11y/render props, name parsing, entry lookup) lives here; the `.astro` components themselves, including the shared `<IconBase>` both delegate to, sit together in `packages/core/components/`.
 
 They meet at exactly one point: an `IconEntry`. `src/internal/` holds the one piece genuinely shared by both - `AstroIconError` (see [Resolve vs Build vs Load vs Look up](#resolve-vs-build-vs-load-vs-look-up) for why `renderTimeError`, despite living next to it before, is `render/`-only). `src/index.ts` (the package's `"."` entry), `src/optimize.ts` (transforms an already-built SVG string; independent of both contexts), and `typings/` stay outside both, since they're the whole-package public surface, not a context-specific concern.
 
@@ -54,7 +54,7 @@ One run of a [Loader](#loader-vs-source)'s `load()` - a content-layer refresh fo
 
 ## Decorative icon / Labeled icon
 
-The accessibility state every `<Icon>`/`<LiveIcon>` computes (`packages/core/src/render/props.ts`): decorative by default (`aria-hidden`), labeled if given a `title`, `desc`, or explicit `aria-*` prop. A real, consistently-applied domain distinction, described identically in both components' doc comments, though not currently named as such anywhere in code identifiers.
+The accessibility state every `<Icon>`/`<LiveIcon>` computes (`packages/core/src/render/props.ts`): decorative by default (`aria-hidden`), labeled if given a `title`, `desc`, or explicit `aria-*` prop. A real, consistently-applied domain distinction, documented on `SharedIconProps` - the one interface `<Icon>`, `<LiveIcon>`, and `<IconBase>` all extend - though deliberately not split into two types, since which state an icon is in is decided at runtime by `iconA11yProps`, not structurally.
 
 ## Resolve vs Build vs Load vs Look up
 
