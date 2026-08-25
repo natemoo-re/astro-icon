@@ -2,7 +2,7 @@
 
 A minimal, pre-configured project for reproducing `astro-icon` issues.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/.github/repro?title=astro-icon%20repro)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/repro?title=astro-icon%20repro)
 
 ## What's included
 

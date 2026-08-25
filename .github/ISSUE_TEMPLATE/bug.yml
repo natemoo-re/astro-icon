@@ -9,7 +9,7 @@ body:
       value: |
         Thank you for taking the time to file a bug report! Please fill out this form as completely as possible.
 
-        💡 The fastest way to get your issue fixed is a minimal reproduction. [Open our pre-configured playground](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/.github/repro?title=astro-icon%20repro) to build one in your browser.
+        💡 The fastest way to get your issue fixed is a minimal reproduction. [Open our pre-configured playground](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/repro?title=astro-icon%20repro) to build one in your browser.
   - type: checkboxes
     id: checklist
     attributes:
@@ -87,7 +87,7 @@ body:
     id: bug-reproduction
     attributes:
       label: Link to Minimal Reproducible Example
-      description: '[Open our pre-configured playground](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/.github/repro?title=astro-icon%20repro), edit it until it reproduces your issue, then save and paste the URL here. A link to a minimal GitHub repository also works. **A minimal reproduction is required** — issues without one may be closed.'
+      description: '[Open our pre-configured playground](https://stackblitz.com/fork/github/natemoo-re/astro-icon/tree/main/repro?title=astro-icon%20repro), edit it until it reproduces your issue, then save and paste the URL here. A link to a minimal GitHub repository also works. **A minimal reproduction is required** — issues without one may be closed.'
       placeholder: "https://stackblitz.com/edit/..."
     validations:
       required: true
