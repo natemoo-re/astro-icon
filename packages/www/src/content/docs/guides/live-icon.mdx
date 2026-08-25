@@ -88,6 +88,42 @@ Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props inste
 
 `<LiveIcon>` accepts the same `title`, `desc`, `size`, `width`, and `height` props as `<Icon>`, with the same decorative-by-default behavior described in [“The `<Icon>` Component”](/guides/components/#accessibility-decorative-vs-labeled).
 
+## Resolving many icons at once
+
+A search page renders a whole result set, not one icon. Looping `<LiveIcon>` over each result works, but it's naive: every result is an independent lookup with no visibility into its siblings, so an `N`-result page makes `N` separate resolutions.
+
+`getLiveCollection(collection, { ids })` fixes that at the one point it actually can be fixed: before any individual icon has been requested, where every result name is already known. It resolves the whole batch in one call (one HTTP request for a source like `iconifyApi`, no matter how many ids), and hands back the resolved entries directly:
+
+```astro
+---
+export const prerender = false;
+
+import { getLiveCollection } from "astro:content";
+import { LiveIcon } from "astro-icon/components";
+
+const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+const names = query ? await searchIconNames(query) : [];
+const { entries } = await getLiveCollection("ph", { ids: names });
+---
+
+{entries.map((entry) => <LiveIcon collection="ph" entry={entry} />)}
+```
+
+Passing `entry` instead of `icon` renders that result directly, rather than relying on `<LiveIcon>`'s own per-entry cache happening to already hold it from the batched call above. A name in `names` with no matching entry (a bad id, a source error) is missing from `entries` entirely, and drops out of the loop with it. To render something in its place, check for it explicitly:
+
+```astro
+{
+  names.map((name) => {
+    const entry = entries.find((e) => e.id === name);
+    return entry ? (
+      <LiveIcon collection="ph" entry={entry} />
+    ) : (
+      <PlaceholderIcon />
+    );
+  })
+}
+```
+
 ## Failure behavior
 
 If an icon fails to resolve, `<LiveIcon>` logs a warning and renders its `fallback` slot, or nothing if you didn't give it one, instead of throwing and failing the whole page. A single bad request-time lookup, a typo or an unreachable API, shouldn't take the rest of the page down with it. A miss is expected request data, not a bug, so you decide what it looks like:
