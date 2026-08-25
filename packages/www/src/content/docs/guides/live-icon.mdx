@@ -109,18 +109,17 @@ const { entries } = await getLiveCollection("ph", { ids: names });
 {entries.map((entry) => <LiveIcon collection="ph" entry={entry} />)}
 ```
 
-Passing `entry` instead of `icon` renders that result directly, rather than relying on `<LiveIcon>`'s own per-entry cache happening to already hold it from the batched call above. A name in `names` with no matching entry (a bad id, a source error) is missing from `entries` entirely, and drops out of the loop with it. To render something in its place, check for it explicitly:
+Passing `entry` instead of `icon` renders that result directly, rather than relying on `<LiveIcon>`'s own per-entry cache happening to already hold it from the batched call above. A name in `names` with no matching entry (a bad id, a source error) is missing from `entries` entirely, and drops out of the loop with it.
+
+To keep every requested name in place, even the ones that failed to resolve, loop over `names` instead of `entries` and pass `icon` rather than `entry`. `<LiveIcon>` still resolves from cache, since the batched call above already warmed it, and its own `fallback` slot covers the gap instead of a manual lookup:
 
 ```astro
 {
-  names.map((name) => {
-    const entry = entries.find((e) => e.id === name);
-    return entry ? (
-      <LiveIcon collection="ph" entry={entry} />
-    ) : (
-      <PlaceholderIcon />
-    );
-  })
+  names.map((name) => (
+    <LiveIcon collection="ph" icon={name}>
+      <PlaceholderIcon slot="fallback" />
+    </LiveIcon>
+  ))
 }
 ```
 
