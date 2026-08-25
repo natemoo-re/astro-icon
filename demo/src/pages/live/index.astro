@@ -1,8 +1,10 @@
 ---
 export const prerender = false;
 
-import { getLiveEntry } from "astro:content";
+import { getLiveCollection, getLiveEntry } from "astro:content";
+import type { LiveDataEntry } from "astro";
 import { Icon, LiveIcon } from "astro-icon/components";
+import type { IconEntry } from "astro-icon";
 import Base from "../../layouts/base.astro";
 
 const SOURCES = [
@@ -31,9 +33,33 @@ const collection = (SOURCES.find((s) => s.id === params.get("collection"))
 const icon = params.get("icon")?.trim() || "home";
 
 // Resolved here as well as by <LiveIcon> so the bench can report *why* an icon didn't render.
-// <LiveIcon> itself logs a warning and renders nothing on a miss, by design.
+// <LiveIcon> itself logs a warning and renders its "fallback" slot on a miss, by design.
 const { entry, error } = await getLiveEntry(collection, icon);
 const active = SOURCES.find((s) => s.id === collection)!;
+
+const batchQuery =
+  params.get("batch")?.trim() || "home, heart, not-a-real-icon";
+const batchNames = batchQuery
+  .split(",")
+  .map((n) => n.trim())
+  .filter(Boolean);
+
+// Counts every request this route makes to api.iconify.design, so the batching payoff below is
+// measured, not asserted - the same trick examples/platform-builder/src/pages/search.astro uses.
+let batchRequestCount = 0;
+const realFetch = globalThis.fetch;
+globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
+  if (String(args[0]).includes("api.iconify.design")) batchRequestCount++;
+  return realFetch(...args);
+}) as typeof fetch;
+
+const batchStart = performance.now();
+const batchResult = await getLiveCollection("ph", { ids: batchNames });
+// Cast for the same reason the single-lookup bench above casts `entry.data`: Astro's generated
+// live-collection types don't narrow `entries`'s element type here.
+const batchEntries = (batchResult.entries ?? []) as LiveDataEntry<IconEntry>[];
+const batchMs = Math.round(performance.now() - batchStart);
+globalThis.fetch = realFetch;
 ---
 
 <Base title="Live icons" sub="<LiveIcon> · per request">
@@ -73,15 +99,94 @@ const active = SOURCES.find((s) => s.id === collection)!;
       <span class="hint">try a bogus name to see the miss path</span>
     </form>
     <div class="stage-center">
-      <LiveIcon collection={collection} icon={icon} size={64} />
-      {!entry && <span class="hint">nothing rendered</span>}
+      <LiveIcon collection={collection} icon={icon} size={64}>
+        <span
+          class="fallback-badge"
+          slot="fallback"
+          style="width:64px;height:64px;font-size:26px"
+        >
+          ?
+        </span>
+      </LiveIcon>
+      {!entry && <span class="hint">rendered its fallback slot below</span>}
     </div>
     <pre
       class="inspector">{
       entry
         ? `✓ ${collection}:${icon}\n  viewBox="${(entry.data as any).viewBox}" ${(entry.data as any).width}×${(entry.data as any).height}\n  body ${(entry.data as any).body.length} bytes`
-        : `✗ ${collection}:${icon}\n  ${error ? error.message : "no entry returned"}\n  <LiveIcon> logged a warning and rendered nothing.`
+        : `✗ ${collection}:${icon}\n  ${error ? error.message : "no entry returned"}\n  <LiveIcon> logged a warning and rendered its "fallback" slot instead.`
     }</pre>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Batch-resolve many at once</span>
+      <span class="bench__note"
+        >getLiveCollection(collection, {"{ ids }"}) - one request for every name
+        below</span
+      >
+    </div>
+    <form class="bench__controls" method="get">
+      <label class="knob" style="flex:1">
+        names, comma-separated
+        <input
+          type="text"
+          name="batch"
+          value={batchQuery}
+          placeholder="home, heart, alien"
+          style="flex:1"
+        />
+      </label>
+      <button class="button" type="submit">
+        <Icon name="arrows/right" size={14} aria-hidden="true" />
+        resolve
+      </button>
+      <span class="stat"
+        ><strong>{batchRequestCount}</strong> request{
+          batchRequestCount === 1 ? "" : "s"
+        } to api.iconify.design in {batchMs}ms for {batchNames.length} name{
+          batchNames.length === 1 ? "" : "s"
+        }</span
+      >
+    </form>
+    <div class="bench__stage">
+      <p class="hint">
+        <code>entry</code> addressing - only names that actually resolved, from the
+        batch call's own return value
+      </p>
+      <div class="icon-grid">
+        {
+          batchEntries.map((entry) => (
+            <div class="icon-cell">
+              <LiveIcon collection="ph" entry={entry} size={28} />
+              <code>{entry.id}</code>
+            </div>
+          ))
+        }
+      </div>
+      <p class="hint" style="margin-top:1rem">
+        <code>icon</code> addressing - every requested name, resolved from the cache
+        the call above warmed; a miss renders the <code>fallback</code> slot
+      </p>
+      <div class="icon-grid">
+        {
+          batchNames.map((name) => (
+            <div class="icon-cell">
+              <LiveIcon collection="ph" icon={name} size={28}>
+                <span
+                  class="fallback-badge"
+                  slot="fallback"
+                  style="width:28px;height:28px;font-size:13px"
+                >
+                  ?
+                </span>
+              </LiveIcon>
+              <code>{name}</code>
+            </div>
+          ))
+        }
+      </div>
+    </div>
   </div>
 
   <div class="bench">
