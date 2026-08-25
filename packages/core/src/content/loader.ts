@@ -78,6 +78,17 @@ function syncIcons(
     // worse than a build that says so.
     const dev = !!watcher;
 
+    /**
+     * The dev-warn/build-fail decision above, made once instead of re-derived at each of its
+     * three call sites: `message`/`hint` are each site's own text, verbatim (dev output already
+     * asserted against by existing tests, so this doesn't change what's said - only where the
+     * `if (!dev)` lives).
+     */
+    function hardFailure(message: string, hint: string): void {
+      if (!dev) throw new AstroIconError(message, hint);
+      logger.warn(message);
+    }
+
     // Turns one `report()`ed file-level change into a surgical store update - re-resolving just
     // that name for an "add"/"change", or deleting it for an "unlink" - instead of a full resync.
     // Never throws, even in a build: this runs from inside a watcher event handler (dev-only to
@@ -132,26 +143,18 @@ function syncIcons(
       names = source.listIcons ? await source.listIcons() : [];
     } catch (ex) {
       const detail = ex instanceof Error ? ex.message : String(ex);
-      const message = `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`;
-      if (!dev) {
-        throw new AstroIconError(
-          message,
-          `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the collection is empty.`,
-        );
-      }
-      logger.warn(message);
+      hardFailure(
+        `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`,
+        `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the collection is empty.`,
+      );
     }
     const listDuration = performance.now() - listStart;
 
     if (names.length === 0) {
-      const message = `"${source.name}" has no icons to load for the "${collection}" collection.`;
-      if (!dev) {
-        throw new AstroIconError(
-          message,
-          `Check that "${source.name}" is configured correctly and that its icon list (or \`allowed: [...]\` option) isn't empty.`,
-        );
-      }
-      logger.warn(message);
+      hardFailure(
+        `"${source.name}" has no icons to load for the "${collection}" collection.`,
+        `Check that "${source.name}" is configured correctly and that its icon list (or \`allowed: [...]\` option) isn't empty.`,
+      );
     }
 
     // Skip resolving if every source's version + the requested icon set matches the last sync
@@ -175,13 +178,10 @@ function syncIcons(
     const buildStart = performance.now();
     const built = await buildIcons(source, names, (name, ex) => {
       const detail = ex instanceof Error ? ex.message : String(ex);
-      if (!dev) {
-        throw new AstroIconError(
-          `"${source.name}" failed to build "${name}": ${detail}`,
-          `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the icon is missing from the collection.`,
-        );
-      }
-      logger.warn(`"${source.name}" failed to build "${name}": ${detail}`);
+      hardFailure(
+        `"${source.name}" failed to build "${name}": ${detail}`,
+        `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the icon is missing from the collection.`,
+      );
     });
     const buildDuration = performance.now() - buildStart;
 
