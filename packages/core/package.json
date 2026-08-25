@@ -1,6 +1,6 @@
 {
   "name": "astro-icon",
-  "version": "2.0.0",
+  "version": "1.2.0",
   "description": "Icon components and content-layer icon collections for Astro - local SVGs and Iconify icon sets, with typed, autocompleted icon names.",
   "type": "module",
   "types": "./dist/index.d.ts",
