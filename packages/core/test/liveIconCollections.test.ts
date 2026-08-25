@@ -28,14 +28,14 @@ function fakeSource(name: string): IconSource {
 describe("liveIconCollections", () => {
   it("produces one defineLiveCollection()-shaped entry per key", async () => {
     const collections = liveIconCollections({
-      spinners: fakeSource("iconify-local:svg-spinners"),
-      brands: [fakeSource("iconify-local:simple-icons"), fakeSource("local")],
+      spinners: fakeSource("iconify:svg-spinners"),
+      brands: [fakeSource("iconify:simple-icons"), fakeSource("local")],
     });
 
     expect(Object.keys(collections)).toEqual(["spinners", "brands"]);
     expect(collections.spinners.type).toBe("live");
     expect(collections.spinners.loader.name).toBe(
-      "astro-icon/loaders/live/iconify-local:svg-spinners",
+      "astro-icon/collections/iconify:svg-spinners",
     );
 
     const result = await collections.spinners.loader.loadEntry({
@@ -48,7 +48,7 @@ describe("liveIconCollections", () => {
   it("uses each object key as the loader's collection key for typegen", async () => {
     mockedRecordCollection.mockClear();
 
-    liveIconCollections({ spinners: fakeSource("iconify-local:svg-spinners") });
+    liveIconCollections({ spinners: fakeSource("iconify:svg-spinners") });
     await Promise.resolve();
 
     expect(mockedRecordCollection).toHaveBeenCalledWith(

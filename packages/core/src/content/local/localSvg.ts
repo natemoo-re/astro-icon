@@ -14,7 +14,7 @@ import type {
   TransformFn,
 } from "../../../typings/types";
 
-export interface LocalSourceOptions {
+export interface LocalSvgOptions {
   /**
    * Restricts this source to a fixed list of icon names, the same
    * deliberate allowlist semantics as {@link IconifySourceOptions.allowed}.
@@ -23,7 +23,7 @@ export interface LocalSourceOptions {
   allowed?: string[];
   /**
    * Transform applied to each icon's raw file contents before it's parsed and stored - the one
-   * place `optimize` still lives, since `localSource` is the one built-in source that starts
+   * place `optimize` still lives, since `localSvg` is the one built-in source that starts
    * from a raw SVG string in the first place.
    */
   optimize?: OptimizeFn;
@@ -53,7 +53,7 @@ function resolveDirPath(dir: URL | string, root?: URL): string {
  * the suggested default for the `icons` collection:
  *
  * ```ts
- * icons: defineCollection({ loader: createIconLoader(localSource()) }),
+ * icons: defineCollection({ loader: createIconLoader(localSvg()) }),
  * ```
  *
  * Each file's path relative to `dir` becomes its icon name: `<dir>/logos/deno.svg` is
@@ -62,18 +62,18 @@ function resolveDirPath(dir: URL | string, root?: URL): string {
  * A plain relative string (the common case, including the default) resolves against the project
  * root once `createIconLoader`/`createLiveIconLoader` gives this source one via `resolveRoot()` -
  * see that method's doc comment on `IconSource`. Pass a `URL` instead (e.g.
- * `localSource(new URL("../icons/", import.meta.url))`) to anchor a directory that ships inside
+ * `localSvg(new URL("../icons/", import.meta.url))`) to anchor a directory that ships inside
  * your own package, resolved relative to your module rather than the consumer's project root.
  *
  * Implements `getVersion()` (a stat-based fingerprint of the directory) and `watch()` (dev-mode
  * file watching), so `createIconLoader` skips an unchanged sync and live-reloads a changed one -
- * including when several `localSource()`s are composed together via
+ * including when several `localSvg()`s are composed together via
  * `mergeSources`/`createIconLoader([...])`. See the footgun documented on `IconSource.watch`
  * about composing sources with overlapping icon names.
  */
-export function localSource(
+export function localSvg(
   dir: URL | string = "src/icons",
-  options: LocalSourceOptions = {},
+  options: LocalSvgOptions = {},
 ): IconSource {
   let dirPath = resolveDirPath(dir);
   const {
@@ -113,7 +113,7 @@ export function localSource(
     if (warnedMissingDir || existsSync(dirPath)) return;
     warnedMissingDir = true;
     logger.warn(
-      `The local icon directory "${dirPath}" does not exist. Create it, or point \`localSource\` at a different directory.`,
+      `The local icon directory "${dirPath}" does not exist. Create it, or point \`localSvg\` at a different directory.`,
     );
   }
 

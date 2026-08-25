@@ -1,4 +1,4 @@
-import { iconifyApiSource, liveIconCollections } from "astro-icon/loaders/live";
+import { iconifyApi, liveIconCollections } from "astro-icon/collections";
 import { brandKitSource } from "./lib/brandKitSource";
 
 // Live collections resolve per request. Reach for one when the icon names
@@ -14,7 +14,7 @@ export const collections = {
   // individually from api.iconify.design. A build-time collection can't express
   // this - it would have to enumerate every candidate up front.
   ...liveIconCollections({
-    ph: iconifyApiSource("ph"),
+    ph: iconifyApi("ph"),
 
     // A custom IconSource.
     brand: brandKitSource({ name: "brand" }),

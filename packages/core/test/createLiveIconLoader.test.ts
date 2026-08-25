@@ -116,7 +116,7 @@ describe("createLiveIconLoader / loadEntry", () => {
       { collection: "icons" },
     );
 
-    expect(loader.name).toBe("astro-icon/loaders/live/iconify:mdi");
+    expect(loader.name).toBe("astro-icon/collections/iconify:mdi");
   });
 
   it("sanitizes a custom source's entry even though it never calls entryFromSVG/entryFromIconifyData", async () => {
@@ -424,7 +424,7 @@ describe("createLiveIconLoader typegen", () => {
     const listIcons = vi.fn(async () => ["home", "search"]);
     createLiveIconLoader(
       {
-        name: "iconify-local:mdi",
+        name: "iconify:mdi",
         getIcons: fixedGetIcons(),
         listIcons,
       },
@@ -439,7 +439,7 @@ describe("createLiveIconLoader typegen", () => {
       "mdi",
       [],
     );
-    // Still called for its side effect: sources like `iconifyLocalSource` use listIcons() to record their own pack catalog.
+    // Still called for its side effect: sources like `iconify` use listIcons() to record their own pack catalog.
     expect(listIcons).toHaveBeenCalledOnce();
   });
 

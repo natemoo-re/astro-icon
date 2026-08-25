@@ -20,7 +20,7 @@ export type CompositeSource = IconSource;
  * time one member fails to resolve a name and execution falls through to the next member for
  * that name, and a warning for each member that fails `checkPreconditions()` without making the
  * whole composite unusable. Defaults to `consoleLogger`, like
- * `iconifyLocalSource`/`iconifyApiSource`, since `mergeSources` is normally called while building
+ * `iconify`/`iconifyApi`, since `mergeSources` is normally called while building
  * `content.config.ts`'s collections - before Astro hands a loader its own
  * `AstroIntegrationLogger`.
  */
@@ -36,7 +36,7 @@ export function mergeSources(
   return {
     name,
     // Tries each member in turn, but per *batch*, not per name: the first member gets the whole
-    // `names` list in one `getIcons` call (so a batching member - `iconifyApiSource` - still gets
+    // `names` list in one `getIcons` call (so a batching member - `iconifyApi` - still gets
     // to fetch everything it can in one request), and only the names it didn't resolve carry over
     // to the next member's call. First-match-wins is preserved per name; batching is preserved
     // per member.
@@ -108,7 +108,7 @@ export function mergeSources(
     // always has one consistent thing to call for a multi-source collection; a member with no
     // `watch` of its own is simply never asked to register anything.
     //
-    // Composing two watchable sources (e.g. two `localSource()` directories) watches both - see
+    // Composing two watchable sources (e.g. two `localSvg()` directories) watches both - see
     // the name-collision footgun documented on `IconSource.watch`.
     watch(watcher: IconSourceWatcher, report) {
       for (const member of sources) {

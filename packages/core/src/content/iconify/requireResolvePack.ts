@@ -5,14 +5,14 @@ import type { IconifyJSON } from "@iconify/types";
 
 /**
  * Resolves a locally installed `@iconify-json/<pack>`'s `<subpath>` (e.g. `icons.json`, or
- * `package.json` for `getPackVersion` in `../iconify/localSource.ts`) via `createRequire(...).resolve(...)`,
+ * `package.json` for `getPackVersion` in `../iconify/localSvg.ts`) via `createRequire(...).resolve(...)`,
  * real Node CJS resolution rather than a filesystem walk. Under Yarn Berry's PnP linker,
  * `require.resolve` goes through the `.pnp.cjs` hook and finds the package; a plain ESM dynamic
  * `import()` of the same subpath does not - verified against a real `@iconify-json/*`-shaped
  * `exports` map, where PnP's ESM loader fails to resolve a conditional subpath export even
  * though the CJS `require.resolve` for the identical subpath succeeds.
  *
- * `cwd` should be the project root - `iconifyLocalSource` anchors it via `resolveRoot`, falling
+ * `cwd` should be the project root - `iconify` anchors it via `resolveRoot`, falling
  * back to `process.cwd()` only until that fires (see `IconSource.resolveRoot`'s doc comment for
  * why the two can differ, e.g. `astro build --root <dir>` invoked from elsewhere).
  */

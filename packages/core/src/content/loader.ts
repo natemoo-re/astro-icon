@@ -236,32 +236,32 @@ function syncIcons(
  * several sources into one collection:
  *
  * ```ts
- * import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+ * import { createIconLoader, iconify, localSvg } from "astro-icon/collections";
  *
  * export const collections = {
  *   icons: defineCollection({
- *     loader: createIconLoader([iconifyLocalSource("mdi"), localSource("src/icons")]),
+ *     loader: createIconLoader([iconify("mdi"), localSvg("src/icons")]),
  *   }),
  * };
  * ```
  *
  * Each icon is resolved by trying sources in order and using the first one
  * that has it. The collection always contains exactly what `listIcons()`
- * reports; restrict that on a per-source basis (see `iconifyLocalSource`'s
+ * reports; restrict that on a per-source basis (see `iconify`'s
  * `allowed` option), since this loader does no filtering of its own.
  *
  * For a local-preferred, API-fallback Iconify source, compose
- * `iconifyLocalSource` and `iconifyApiSource` with `mergeSources` yourself:
+ * `iconify` and `iconifyApi` with `mergeSources` yourself:
  *
  * ```ts
- * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+ * import { createIconLoader, iconifyApi, iconify, mergeSources } from "astro-icon/collections";
  *
  * export const collections = {
  *   mdi: defineCollection({
  *     loader: createIconLoader(
  *       mergeSources([
- *         iconifyLocalSource("mdi", { allowed: ["home"] }),
- *         iconifyApiSource("mdi", { allowed: ["home"] }),
+ *         iconify("mdi", { allowed: ["home"] }),
+ *         iconifyApi("mdi", { allowed: ["home"] }),
  *       ]),
  *     ),
  *   }),
@@ -278,7 +278,7 @@ export function createIconLoader(
   // vs. build) rather than configured.
 
   return {
-    name: "astro-icon/loaders",
+    name: "astro-icon/collections",
     load: syncIcons(source),
     schema: iconEntrySchema,
   };

@@ -1,4 +1,6 @@
+import type { HTMLAttributes } from "astro/types";
 import type { IconEntry } from "../../typings/types";
+import type { IconName, LiveCollectionName } from "../../typings/names";
 
 export interface IconA11yProps {
   role?: "img";
@@ -63,6 +65,34 @@ export interface SharedIconProps {
   width?: number | string | null;
   /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
   height?: number | string | null;
+}
+
+/**
+ * `<Icon>`'s full props. Exported (from `astro-icon/components` and the root `astro-icon`) so a
+ * wrapper component can extend or pick from it without re-declaring the icon surface:
+ *
+ * ```astro
+ * ---
+ * import type { IconProps } from "astro-icon/components";
+ * interface Props extends IconProps { variant?: "solid" | "outline" }
+ * ---
+ * ```
+ */
+export interface IconProps extends HTMLAttributes<"svg">, SharedIconProps {
+  /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
+  name: IconName;
+}
+
+/** `<LiveIcon>`'s full props - the live counterpart to {@link IconProps}. */
+export interface LiveIconProps extends HTMLAttributes<"svg">, SharedIconProps {
+  /** The live collection to resolve `icon` from; live collections have no default, unlike `<Icon>`. */
+  collection: LiveCollectionName;
+  /**
+   * The icon's name within `collection`. Always a plain `string`: live
+   * collections resolve per-request, so the exact value is often only known
+   * at runtime (e.g. a user-driven search) and can't be checked at sync time.
+   */
+  icon: string;
 }
 
 export interface IconA11yResult {

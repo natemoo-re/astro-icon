@@ -1,7 +1,7 @@
 import { defineCollection } from "astro:content";
 import { z } from "astro/zod";
 import { glob } from "astro/loaders";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, iconify } from "astro-icon/collections";
 
 const metadataDefinition = () =>
   z
@@ -83,28 +83,24 @@ export const collections = {
   // treats the full pack as an open catalog for whatever its data names, so
   // every sync loads and types all 5,000+ icons, and a name assembled at
   // runtime needs an `as IconName` cast.
-  tabler: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("tabler")),
-  }),
+  tabler: defineIconCollection(iconify("tabler")),
 
   // The nine flat-color-icons stay a curated `allowed` list ([UC3]): the set
   // is small enough to write down, so the collection (and its types) are
   // exactly these names, and a typo in page data is a build error.
-  "flat-color-icons": defineCollection({
-    loader: createIconLoader(
-      iconifyLocalSource("flat-color-icons", {
-        allowed: [
-          "template",
-          "gallery",
-          "approval",
-          "document",
-          "advertising",
-          "currency-exchange",
-          "voice-presentation",
-          "business-contact",
-          "database",
-        ],
-      }),
-    ),
-  }),
+  "flat-color-icons": defineIconCollection(
+    iconify("flat-color-icons", {
+      allowed: [
+        "template",
+        "gallery",
+        "approval",
+        "document",
+        "advertising",
+        "currency-exchange",
+        "voice-presentation",
+        "business-contact",
+        "database",
+      ],
+    }),
+  ),
 };

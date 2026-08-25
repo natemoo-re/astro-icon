@@ -57,7 +57,7 @@ function mergePackChunks(chunks: IconifyJSON[]): IconifyJSON {
 /**
  * Builds an independent `PackLoader`: its own pack cache and its own `IconifyApiPolicy`
  * (concurrency/rate-limit/retry), scoped to this instance rather than shared ambiently across
- * the whole process. `iconifyLocalSource`/`iconifyApiSource` share one instance of this (below),
+ * the whole process. `iconify`/`iconifyApi` share one instance of this (below),
  * built once - deliberately, so a local install or an API pack fetched once is reused across
  * every collection built from it in the same process, not re-read/re-fetched per source. Tests
  * exercising `loadLocalPack`/`loadPackFromAPI` directly construct their own instance instead, for
@@ -137,7 +137,7 @@ export function createPackLoader(): PackLoader {
      * PnP too. See https://github.com/natemoo-re/astro-icon/issues/263.
      *
      * `cwd` defaults to `process.cwd()` for a caller with no better root to give (matches this
-     * function's long-standing behavior); `iconifyLocalSource` passes its `resolveRoot`-anchored
+     * function's long-standing behavior); `iconify` passes its `resolveRoot`-anchored
      * root once one is available. Included in the cache key so two different roots for the same
      * pack name - a rare case, but possible across composed sources in one process - don't
      * collide.
@@ -172,7 +172,7 @@ export function createPackLoader(): PackLoader {
       if (!icons.length) {
         throw new AstroIconError(
           `"${pack}" was requested from the Iconify API with no icons named.`,
-          `The Iconify API can only resolve icons you name explicitly. Pass an \`allowed: [...]\` option, or use \`iconifyLocalSource\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
+          `The Iconify API can only resolve icons you name explicitly. Pass an \`allowed: [...]\` option, or use \`iconify\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
         );
       }
 
@@ -188,7 +188,7 @@ export function createPackLoader(): PackLoader {
       if (!remote) {
         throw new AstroIconError(
           `Could not load the "${pack}" icon set from the Iconify API.`,
-          `Verify the pack and icon names are correct, or install "@iconify-json/${pack}" locally and use \`iconifyLocalSource\` instead.`,
+          `Verify the pack and icon names are correct, or install "@iconify-json/${pack}" locally and use \`iconify\` instead.`,
         );
       }
       logger.debug(

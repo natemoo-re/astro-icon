@@ -70,11 +70,11 @@ export interface LiveIconLoaderOptions {
  * ```ts
  * // src/live.config.ts
  * import { defineLiveCollection } from "astro:content";
- * import { createLiveIconLoader, iconifyLocalSource } from "astro-icon/loaders/live";
+ * import { createLiveIconLoader, iconify } from "astro-icon/collections";
  *
  * export const collections = {
  *   mdi: defineLiveCollection({
- *     loader: createLiveIconLoader(iconifyLocalSource("mdi", { allowed: ["home"] }), {
+ *     loader: createLiveIconLoader(iconify("mdi", { allowed: ["home"] }), {
  *       collection: "mdi",
  *     }),
  *   }),
@@ -107,7 +107,7 @@ export function createLiveIconLoader(
   // `LiveCollectionName` only needs the collection key to exist: a live collection's specific icons resolve per
   // request and are never validated against a catalog (see names.d.ts), so this records an empty list rather than
   // resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
-  // sources like `iconifyLocalSource` use it to record their own full pack catalog for typing the `allowed: [...]` option.
+  // sources like `iconify` use it to record their own full pack catalog for typing the `allowed: [...]` option.
   const rootDir = new URL(`file://${process.cwd()}/`);
   // Best-effort only: `process.cwd()` isn't necessarily the project root (see
   // `IconSource.resolveRoot`'s doc comment), but it's the only thing a live collection has.
@@ -141,7 +141,7 @@ export function createLiveIconLoader(
   }
 
   return {
-    name: `astro-icon/loaders/live/${source.name}`,
+    name: `astro-icon/collections/${source.name}`,
     loadEntry: async ({ filter, collection: actual }) => {
       verifyCollectionKey(actual);
       try {
@@ -160,7 +160,7 @@ export function createLiveIconLoader(
       const ids = context?.filter?.ids;
 
       // The batched, specific-subset path: every id in `filter.ids` in one `buildIcons` call -
-      // which, for a source with a real batching backend (`iconifyApiSource`), is one HTTP
+      // which, for a source with a real batching backend (`iconifyApi`), is one HTTP
       // request no matter how many ids that is. Doesn't need `listIcons()` at all: unlike the
       // whole-collection path below, the caller already knows exactly which names it wants.
       if (ids) {
@@ -180,7 +180,7 @@ export function createLiveIconLoader(
         return {
           error: new AstroIconError(
             `"${source.name}" doesn't support loading an entire live icon collection.`,
-            `Request icons individually via \`getLiveEntry(collection, name)\`, pass \`{ ids: [...] }\` to \`getLiveCollection(collection, filter)\` for a specific subset, or use \`iconifyLocalSource\`/\`localSource\` (which both support \`listIcons()\`) instead of \`getLiveCollection(collection)\` with no filter at all.`,
+            `Request icons individually via \`getLiveEntry(collection, name)\`, pass \`{ ids: [...] }\` to \`getLiveCollection(collection, filter)\` for a specific subset, or use \`iconify\`/\`localSvg\` (which both support \`listIcons()\`) instead of \`getLiveCollection(collection)\` with no filter at all.`,
           ),
         };
       }

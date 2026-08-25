@@ -60,7 +60,7 @@ function recordPackCatalog(pack: string, data: IconifyJSON, cwd: string): void {
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }
 
-export function iconifyLocalSource<
+export function iconify<
   Pack extends string,
   const Icons extends readonly IconifyIconName<Pack>[] =
     readonly IconifyIconName<Pack>[],
@@ -72,7 +72,7 @@ export function iconifyLocalSource<
  * An {@link IconSource} backed by a locally installed `@iconify-json/<pack>`
  * package only - never the public Iconify API. Throws if the pack isn't
  * installed; there's no fallback built in, by design (see
- * {@link iconifyApiSource} and `mergeSources` for composing one yourself).
+ * {@link iconifyApi} and `mergeSources` for composing one yourself).
  *
  * The `allowed: [...]` option is typed and autocompleted against the pack's
  * own catalog, once astro-icon has recorded it from a previous sync
@@ -80,14 +80,14 @@ export function iconifyLocalSource<
  * `string`. A duplicate name in that array is deduped and logged as a
  * warning at runtime, not rejected at the type level.
  */
-export function iconifyLocalSource(
+export function iconify(
   pack: string,
   options: IconifySourceOptions = {},
 ): IconSource {
   const { allowed: allowedList, transform } = options;
   const allowed = dedupeAllowed(
     pack,
-    "iconifyLocalSource",
+    "iconify",
     allowedList,
     consoleLogger,
   );
@@ -121,7 +121,7 @@ export function iconifyLocalSource(
   }
 
   return {
-    name: `iconify-local:${pack}`,
+    name: `iconify:${pack}`,
     resolveRoot(root: URL) {
       const resolved = stripTrailingSlash(fileURLToPath(root));
       if (resolved === cwd) return;
@@ -138,7 +138,7 @@ export function iconifyLocalSource(
       if (!data) {
         throw new AstroIconError(
           `"${pack}" isn't installed locally.`,
-          `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApiSource\` (see "astro-icon/loaders") to resolve it from the public Iconify API instead. If you only need a few icons, restrict this source with an explicit \`allowed: [...]\` list instead of installing the whole pack.`,
+          `Install it with \`npm install @iconify-json/${pack}\`, or use \`iconifyApi\` (see "astro-icon/collections") to resolve it from the public Iconify API instead. If you only need a few icons, restrict this source with an explicit \`allowed: [...]\` list instead of installing the whole pack.`,
         );
       }
     },

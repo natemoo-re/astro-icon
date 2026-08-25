@@ -15,7 +15,7 @@ export interface BuiltIcon {
  *
  * A single `string` is just a batch of one: `source.getIcons([name])` either way, one call
  * regardless of how many names are asked for - the same call a source with a real batching
- * backend (`iconifyApiSource`) turns into a single request for the whole list.
+ * backend (`iconifyApi`) turns into a single request for the whole list.
  */
 export async function buildIcons(
   source: IconSource,

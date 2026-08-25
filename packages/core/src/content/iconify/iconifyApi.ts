@@ -11,7 +11,7 @@ import type { IconSource } from "../source.js";
 import type { IconifyApiSourceOptions } from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
 
-export function iconifyApiSource<
+export function iconifyApi<
   Pack extends string,
   const Icons extends readonly IconifyIconName<Pack>[] =
     readonly IconifyIconName<Pack>[],
@@ -33,15 +33,15 @@ export function iconifyApiSource<
  * on your own infrastructure.
  *
  * Meant either standalone (e.g. deliberately avoiding an install) or
- * composed with `iconifyLocalSource` via `mergeSources` for a
+ * composed with `iconify` via `mergeSources` for a
  * local-preferred, API-fallback source:
  *
  * ```ts
- * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
+ * import { createIconLoader, iconifyApi, iconify, mergeSources } from "astro-icon/collections";
  *
  * const mdi = mergeSources([
- *   iconifyLocalSource("mdi", { allowed: ["home"] }),
- *   iconifyApiSource("mdi", { allowed: ["home"] }),
+ *   iconify("mdi", { allowed: ["home"] }),
+ *   iconifyApi("mdi", { allowed: ["home"] }),
  * ]);
  *
  * export const collections = {
@@ -49,13 +49,13 @@ export function iconifyApiSource<
  * };
  * ```
  */
-export function iconifyApiSource(
+export function iconifyApi(
   pack: string,
   options: IconifyApiSourceOptions = {},
 ): IconSource {
   const { allowed: allowedList, transform, host } = options;
   const logger = consoleLogger;
-  const allowed = dedupeAllowed(pack, "iconifyApiSource", allowedList, logger);
+  const allowed = dedupeAllowed(pack, "iconifyApi", allowedList, logger);
   // Counts the `allowed: [...]` option's own length, not `allowed.size` - duplicates included,
   // since that's what "N icon(s) allowed" has always reported.
   const rejection = allowlistRejection(
@@ -89,8 +89,8 @@ export function iconifyApiSource(
       // `allowed` is a Set, so this also dedupes the option.
       if (allowed) return [...allowed];
       throw new AstroIconError(
-        `"${pack}" has no \`allowed: [...]\` list, so \`iconifyApiSource\` has no fixed set of icon names to report.`,
-        `Add an explicit \`allowed: [...]\` list, or use \`iconifyLocalSource\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
+        `"${pack}" has no \`allowed: [...]\` list, so \`iconifyApi\` has no fixed set of icon names to report.`,
+        `Add an explicit \`allowed: [...]\` list, or use \`iconify\` (needs "@iconify-json/${pack}" installed) for the whole pack.`,
       );
     },
   };

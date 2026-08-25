@@ -1,11 +1,9 @@
 ---
-import type { HTMLAttributes } from "astro/types";
 import { renderTimeError } from "../src/render/error.js";
 import IconBase from "./IconBase.astro";
-import type { SharedIconProps } from "../src/render/props.js";
+import type { IconProps } from "../src/render/props.js";
 import { parseIconName } from "../src/render/parseIconName.js";
 import { isCollectionEmpty, resolveIconEntry } from "../src/render/lookupEntry.js";
-import type { IconName } from "../typings/names";
 
 /**
  * Renders one icon from a content collection as an inline `<svg>`, resolved
@@ -20,10 +18,7 @@ import type { IconName } from "../typings/names";
  *
  * Use `<LiveIcon>` instead when you need to resolve an icon per request.
  */
-interface Props extends HTMLAttributes<"svg">, SharedIconProps {
-  /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
-  name: IconName;
-}
+interface Props extends IconProps {}
 
 const { name = "", ...props } = Astro.props;
 

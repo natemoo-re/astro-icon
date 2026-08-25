@@ -1,12 +1,7 @@
-import { defineCollection } from "astro:content";
-import {
-  createIconLoader,
-  iconifyLocalSource,
-  localSource,
-} from "astro-icon/loaders";
-import type { IconSource } from "astro-icon/loaders";
+import { defineIconCollection, iconify, localSvg } from "astro-icon/collections";
+import type { IconSource } from "astro-icon/collections";
 
-// A hand-written, non-iconify source - proves `createIconLoader` isn't
+// A hand-written, non-iconify source - proves `defineIconCollection` isn't
 // limited to combining iconify packs.
 const customSource: IconSource = {
   name: "custom",
@@ -34,26 +29,18 @@ export const collections = {
   // Bare `<Icon name="..." />` resolves against a collection literally
   // named "icons" - this is pure convention, not something astro-icon
   // enforces.
-  icons: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("svg-spinners")),
-  }),
-  spinners: defineCollection({
-    loader: createIconLoader(
-      iconifyLocalSource("svg-spinners", { allowed: ["3-dots-fade"] }),
-    ),
-  }),
+  icons: defineIconCollection(iconify("svg-spinners")),
+  spinners: defineIconCollection(
+    iconify("svg-spinners", { allowed: ["3-dots-fade"] }),
+  ),
   // Combines an icon from the svg-spinners pack (explicitly limited) with
   // an icon from a completely custom source, into one collection.
-  combined: defineCollection({
-    loader: createIconLoader([
-      iconifyLocalSource("svg-spinners", { allowed: ["180-ring"] }),
-      customSource,
-    ]),
-  }),
+  combined: defineIconCollection([
+    iconify("svg-spinners", { allowed: ["180-ring"] }),
+    customSource,
+  ]),
   // A directory of raw .svg files (as opposed to an Iconify pack) - proves
   // license/attribution comments in a local icon's own markup survive the
   // full build pipeline (issue #177).
-  local: defineCollection({
-    loader: createIconLoader(localSource(new URL("./icons", import.meta.url))),
-  }),
+  local: defineIconCollection(localSvg(new URL("./icons", import.meta.url))),
 };

@@ -11,7 +11,7 @@ const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const fixtureRoot = join(packageRoot, "test/fixtures/basic");
 const astroBin = join(packageRoot, "node_modules/.bin/astro");
 
-describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro build", () => {
+describe("createIconLoader(iconify()) + <Icon> against a real astro build", () => {
   let html = "";
   let iconsTypes = "";
   let spinnersTypes = "";
@@ -94,7 +94,7 @@ describe("createIconLoader(iconifyLocalSource()) + <Icon> against a real astro b
   });
 
   it("auto-scans usage to decide what's *loaded*, without limiting what's *typed*", () => {
-    // The "icons" collection (`createIconLoader(iconifyLocalSource("svg-spinners"))`, no `icons` option)
+    // The "icons" collection (`createIconLoader(iconify("svg-spinners"))`, no `icons` option)
     // only has one name ever referenced on the page - but svg-spinners is
     // installed locally, so the generated types should still offer the
     // whole pack for autocomplete, not just the one icon actually used.

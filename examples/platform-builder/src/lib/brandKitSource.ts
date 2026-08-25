@@ -1,4 +1,4 @@
-import { entryFromSVG, type IconSource } from "astro-icon/loaders";
+import { entryFromSVG, type IconSource } from "astro-icon/source";
 import type { IconEntry } from "astro-icon";
 
 // Stands in for the internal API a platform would really call here - a design-tool

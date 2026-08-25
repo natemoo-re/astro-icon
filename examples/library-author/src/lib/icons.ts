@@ -1,5 +1,4 @@
-import { defineCollection } from "astro:content";
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 
 // Everything in this file is what a real published package (e.g. an
 // `acme-ui` npm package) would ship from its own `src/icons.ts`. It never
@@ -8,12 +7,10 @@ import { createIconLoader, localSource } from "astro-icon/loaders";
 export const acmeUiIcons = {
   // Namespaced so this can't collide with a collection key the consumer
   // picks for their own icons (see src/content.config.ts).
-  "acme-ui-icons": defineCollection({
-    loader: createIconLoader(
-      // `localSource(new URL(...))` resolves relative to *this file*, not
-      // the consuming project's root - a plain relative string would
-      // (wrongly) resolve against whichever app imported this module.
-      localSource(new URL("./icons/", import.meta.url)),
-    ),
-  }),
+  "acme-ui-icons": defineIconCollection(
+    // `localSvg(new URL(...))` resolves relative to *this file*, not
+    // the consuming project's root - a plain relative string would
+    // (wrongly) resolve against whichever app imported this module.
+    localSvg(new URL("./icons/", import.meta.url)),
+  ),
 };

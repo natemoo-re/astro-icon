@@ -2,7 +2,7 @@
 // UC5: icon names nobody can know at build time. These names depend on what a
 // visitor just typed, so no build-time collection could contain them without
 // enumerating the whole pack up front. The `ph` *live* collection (see
-// src/live.config.ts) uses `iconifyApiSource` with no allowlist, resolved per
+// src/live.config.ts) uses `iconifyApi` with no allowlist, resolved per
 // request.
 //
 // Naively, that's one request per result: a search page renders N results,
@@ -10,7 +10,7 @@
 // siblings. `getLiveCollection(collection, { ids })` fixes that at the one
 // point it actually can be fixed - here, before any individual icon has been
 // fetched, where every result name is already known. It resolves the whole
-// batch in one request (for a source like `iconifyApiSource` that supports
+// batch in one request (for a source like `iconifyApi` that supports
 // batching - see `IconSource.getIcons`) and warms `<LiveIcon>`'s cache for
 // every id it resolves, so the render loop below still gets full
 // sanitization/accessibility/id-rewriting from `<LiveIcon>` itself - nothing

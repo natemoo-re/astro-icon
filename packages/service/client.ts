@@ -1,5 +1,5 @@
-import { entryFromSVG } from "astro-icon/loaders";
-import type { IconSource } from "astro-icon/loaders";
+import { entryFromSVG } from "astro-icon/source";
+import type { IconSource } from "astro-icon/source";
 
 export interface ServiceSourceOptions {
   /** Base URL of a running `packages/service` instance. Defaults to `ASTRO_ICON_SERVICE_URL`, or `http://localhost:3001`. */

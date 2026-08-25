@@ -15,7 +15,7 @@ export type IconChangeEvent =
 
 /**
  * The interface for plugging a custom icon backend into astro-icon.
- * `iconifyLocalSource`/`iconifyApiSource` (Iconify packs) and `localSource` (a directory of `.svg`
+ * `iconify`/`iconifyApi` (Iconify packs) and `localSvg` (a directory of `.svg`
  * files) are astro-icon's own implementations; write your own to fetch icons
  * from a design tool, a database, or an internal API.
  *
@@ -24,7 +24,7 @@ export type IconChangeEvent =
  */
 export interface IconSource {
   /**
-   * Identifies this source in error and log messages, e.g. `iconify-local:mdi`.
+   * Identifies this source in error and log messages, e.g. `iconify:mdi`.
    * A diagnostic label only - nothing keys off it; a live collection's typegen
    * key comes from `createLiveIconLoader`'s own `collection` option.
    */
@@ -44,8 +44,8 @@ export interface IconSource {
    * all), rather than manually stamping the same `Error` onto every key.
    *
    * Implement this as a real batch wherever the backing resource supports
-   * one (`iconifyApiSource` requests every name in `names` in a single
-   * `?icons=a,b,c` call); a source with nothing to batch (`localSource`,
+   * one (`iconifyApi` requests every name in `names` in a single
+   * `?icons=a,b,c` call); a source with nothing to batch (`localSvg`,
    * already-in-memory Iconify packs) can simply resolve each name from
    * `names` independently - the caller neither knows nor cares which.
    */
@@ -73,7 +73,7 @@ export interface IconSource {
    * (re-running `getIcons` for an "add"/"change", deleting the entry for an "unlink") instead of a
    * full resync.
    *
-   * Composing sources that both implement `watch` (e.g. two `localSource()` directories via
+   * Composing sources that both implement `watch` (e.g. two `localSvg()` directories via
    * `mergeSources`/`createIconLoader([...])`) watches all of them - but if two composed sources
    * define the *same* icon name, only the earlier source's file is ever visible in the store,
    * matching `getIcons`'s own first-match-wins order. Editing the shadowed source's file still
@@ -92,12 +92,12 @@ export interface IconSource {
    * `process.cwd()`-based one, since `LiveLoader`'s own context exposes no project root.
    *
    * Exists because a source is normally built eagerly, in `content.config.ts`, before Astro's
-   * `config.root` is available at all - `localSource("src/icons")` implements this so the plain,
+   * `config.root` is available at all - `localSvg("src/icons")` implements this so the plain,
    * unanchored string it was given resolves against the project root once the loader can tell it
    * one, instead of silently resolving against `process.cwd()` at each file read (which is only
    * sometimes the project root - `astro build --root <dir>` invoked from elsewhere is a common
    * case where it isn't). A source already anchored to something specific (e.g.
-   * `localSource(new URL("../icons/", import.meta.url))`) has no reason to implement this.
+   * `localSvg(new URL("../icons/", import.meta.url))`) has no reason to implement this.
    */
   resolveRoot?(root: URL): void;
   /**
@@ -116,7 +116,7 @@ export interface IconSource {
    * when no member is usable at all does the composite's `checkPreconditions()` throw.
    *
    * Omit it if there's nothing meaningful to check before an icon is actually requested (most
-   * sources - `iconifyApiSource`, `localSource`).
+   * sources - `iconifyApi`, `localSvg`).
    */
   checkPreconditions?(): Promise<void>;
 }

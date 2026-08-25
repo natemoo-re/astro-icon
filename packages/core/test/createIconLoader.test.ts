@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createIconLoader } from "../src/content/loader.js";
 import { mergeSources } from "../src/content/compositeSource.js";
-import { localSource } from "../src/content/local/source.js";
+import { localSvg } from "../src/content/local/localSvg.js";
 import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
@@ -273,8 +273,8 @@ describe("createIconLoader / multiple sources", () => {
       fakeSource({ name: "mdi" }),
       fakeSource({ name: "ic" }),
     ]);
-    expect(single.name).toBe("astro-icon/loaders");
-    expect(multi.name).toBe("astro-icon/loaders");
+    expect(single.name).toBe("astro-icon/collections");
+    expect(multi.name).toBe("astro-icon/collections");
   });
 });
 
@@ -432,10 +432,10 @@ describe("createIconLoader / watching multiple composed local sources", () => {
     await rm(dirB, { recursive: true, force: true });
   });
 
-  it("watches every composed localSource()'s own directory", async () => {
+  it("watches every composed localSvg()'s own directory", async () => {
     await writeFile(join(dirA, "a-only.svg"), SQUARE_SVG);
     await writeFile(join(dirB, "b-only.svg"), SQUARE_SVG);
-    const source = mergeSources([localSource(dirA), localSource(dirB)]);
+    const source = mergeSources([localSvg(dirA), localSvg(dirB)]);
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
 
@@ -446,7 +446,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
   });
 
   it("adding a file to either composed directory surfaces it in the store", async () => {
-    const source = mergeSources([localSource(dirA), localSource(dirB)]);
+    const source = mergeSources([localSvg(dirA), localSvg(dirB)]);
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
     await sync(source)(context);
@@ -468,7 +468,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
   it("shadows a later source's same-named icon, even after that file changes", async () => {
     await writeFile(join(dirA, "home.svg"), SQUARE_SVG);
     await writeFile(join(dirB, "home.svg"), SQUARE_SVG);
-    const source = mergeSources([localSource(dirA), localSource(dirB)]);
+    const source = mergeSources([localSvg(dirA), localSvg(dirB)]);
     const watcher = fakeWatcher();
     const context = fakeContext(watcher);
     await sync(source)(context);
@@ -490,7 +490,7 @@ describe("createIconLoader / watching multiple composed local sources", () => {
   });
 });
 
-describe("createIconLoader / localSource re-sync caching", () => {
+describe("createIconLoader / localSvg re-sync caching", () => {
   let dir: string;
 
   beforeEach(async () => {
@@ -501,18 +501,18 @@ describe("createIconLoader / localSource re-sync caching", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  // `localSource()` caches per-file by content hash internally (see localSource.test.ts), and
+  // `localSvg()` caches per-file by content hash internally (see localSvg.test.ts), and
   // that cache lives as long as the source instance does - which, for a real `createIconLoader`,
   // is the lifetime of the dev-server process, not just one `load()` call. So a full resync
   // triggered by the directory's overall version changing (one file edited) still only
   // re-optimizes the file that actually changed, as long as it's the same source instance being
-  // synced again - unlike calling `localSource()` fresh each time (see the old `localIcons()`
+  // synced again - unlike calling `localSvg()` fresh each time (see the old `localIcons()`
   // wrapper this replaced), which had no cache to reuse.
   it("only re-optimizes the icon whose file actually changed, across two full resyncs of the same source instance", async () => {
     await writeFile(join(dir, "home.svg"), SQUARE_SVG);
     await writeFile(join(dir, "menu.svg"), SQUARE_SVG);
     const optimize = vi.fn((svg: string) => svg);
-    const source = localSource(dir, { optimize });
+    const source = localSvg(dir, { optimize });
     const load = sync(source);
     const context = fakeContext();
 

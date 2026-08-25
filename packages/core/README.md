@@ -39,26 +39,25 @@ This gives `<Icon name="...">` autocomplete for every icon in your collections, 
 
 ## Quick start
 
-Every collection is `createIconLoader` plus one or more `IconSource`s: `iconifyLocalSource` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localSource` for a directory of your own `.svg` files:
+Every collection is `defineIconCollection` plus one or more `IconSource`s: `iconify` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localSvg` for a directory of your own `.svg` files:
 
 ```ts
 // src/content.config.ts
-import { defineCollection } from "astro:content";
 import {
-  createIconLoader,
-  iconifyLocalSource,
-  localSource,
-} from "astro-icon/loaders";
+  defineIconCollection,
+  iconify,
+  localSvg,
+} from "astro-icon/collections";
 
 export const collections = {
   // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi")),
-  }),
+  mdi: defineIconCollection(iconify("mdi")),
   // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+  icons: defineIconCollection(localSvg()),
 };
 ```
+
+Need your own Zod schema on a collection? Drop down a layer and use Astro's `defineCollection` with `createIconLoader` (also exported from `astro-icon/collections`): `defineCollection({ loader: createIconLoader(sources), schema })` - `defineIconCollection(sources)` is exactly that call, minus the schema and the nesting.
 
 Then render an icon with the `<Icon>` component:
 
@@ -140,16 +139,15 @@ An icon's `fill` or `stroke` only responds to CSS `color` if the source SVG uses
 <svg viewBox="0 0 24 24"><path fill="currentColor" d="..." /></svg>
 ```
 
-`localSource()` never rewrites a file's colors for you - only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships. What it does do: the first time each icon is actually read (initial sync, or a later `add`/`change` while watching in dev), if it looks like a single-color glyph (no `currentColor` anywhere, and no more than one distinct explicit `fill`/`stroke`) that would benefit, it logs a warning naming it - so the fix is one build away from being found instead of a support issue away. Multi-color icons (two or more distinct explicit colors, read as a deliberate graphic) are never flagged.
+`localSvg()` never rewrites a file's colors for you - only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships. What it does do: the first time each icon is actually read (initial sync, or a later `add`/`change` while watching in dev), if it looks like a single-color glyph (no `currentColor` anywhere, and no more than one distinct explicit `fill`/`stroke`) that would benefit, it logs a warning naming it - so the fix is one build away from being found instead of a support issue away. Multi-color icons (two or more distinct explicit colors, read as a deliberate graphic) are never flagged.
 
 Fix it by editing the `.svg` file directly, or convert every icon in a collection at once with `svgo()`'s `convertColors` override:
 
 ```ts
 import { svgo, defaultOverrides } from "astro-icon/optimize";
 
-icons: defineCollection({
-  loader: createIconLoader(
-    localSource("src/icons", {
+icons: defineIconCollection(
+    localSvg("src/icons", {
       optimize: svgo({
         plugins: [
           {
@@ -158,24 +156,21 @@ icons: defineCollection({
           },
         ],
       }),
-    }),
-  ),
-}),
+    })),
 ```
 
 If `[data-icon] { color: ... }` isn't working, your source SVG almost certainly hardcodes a `fill`/`stroke` instead of using `currentColor` - check the build output for the warning above, or open the raw `.svg` file.
 
 ## Local icons
 
-`localSource()` (from `astro-icon/loaders`, fed into `createIconLoader`) is an `IconSource` backed by a directory of local `.svg` files, `src/icons/` by default. `createIconLoader` watches it in dev: add, edit, or remove a file, and the collection updates without a server restart.
+`localSvg()` (from `astro-icon/collections`) is an `IconSource` backed by a directory of local `.svg` files, `src/icons/` by default. Icon collections watch it in dev: add, edit, or remove a file, and the collection updates without a server restart.
 
 ```ts
 // src/content.config.ts
-import { defineCollection } from "astro:content";
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 
 export const collections = {
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+  icons: defineIconCollection(localSvg()),
 };
 ```
 
@@ -184,16 +179,14 @@ A file's path relative to the directory, without its extension, becomes its icon
 Pass a different directory as the first argument:
 
 ```ts
-icons: defineCollection({
-  loader: createIconLoader(localSource("src/assets/icons")),
-}),
+icons: defineIconCollection(localSvg("src/assets/icons")),
 ```
 
-A relative string like that resolves against your project's root, however `content.config.ts` was invoked - `localSource` figures that out from the loader itself, so you don't need to compute a path yourself. (The one exception is bundling icons _inside_ a package for consumers to import - see [Shipping icons from a library](#shipping-icons-from-a-library) for why that case takes a `URL` instead.)
+A relative string like that resolves against your project's root, however `content.config.ts` was invoked - `localSvg` figures that out from the loader itself, so you don't need to compute a path yourself. (The one exception is bundling icons _inside_ a package for consumers to import - see [Shipping icons from a library](#shipping-icons-from-a-library) for why that case takes a `URL` instead.)
 
 Each sync logs how many icons it loaded and how long it took (e.g. `Loaded 42 icon(s) for the "icons" collection in 18ms`), so a slow build step is easy to attribute to icon loading versus everything else.
 
-`localSource()` is a passthrough of the file you wrote: whatever's left on the root `<svg>` tag itself - `fill`, `stroke`, `color`, `class`, `style`, anything else - becomes a default attribute on the _rendered_ `<svg>`, not dropped. This matters for the common "stroke icon" pattern (Heroicons and friends), which sets `fill="none" stroke="currentColor"` once on the root and relies on every child inheriting it:
+`localSvg()` is a passthrough of the file you wrote: whatever's left on the root `<svg>` tag itself - `fill`, `stroke`, `color`, `class`, `style`, anything else - becomes a default attribute on the _rendered_ `<svg>`, not dropped. This matters for the common "stroke icon" pattern (Heroicons and friends), which sets `fill="none" stroke="currentColor"` once on the root and relies on every child inheriting it:
 
 ```svg
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -220,24 +213,21 @@ An icon's own inline `<title>`/`<desc>` are handled differently from other conte
 
 ### Combining several local directories
 
-`localSource()` only reads one directory, but it's a plain `IconSource` like any other - combine several by passing `createIconLoader` an array, the same way you'd combine any other sources. Say your own `src/icons/` plus a directory of icons vendored from another package:
+`localSvg()` only reads one directory, but it's a plain `IconSource` like any other - combine several by passing `defineIconCollection` an array, the same way you'd combine any other sources. Say your own `src/icons/` plus a directory of icons vendored from another package:
 
 ```ts
 // src/content.config.ts
-import { defineCollection } from "astro:content";
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 
 export const collections = {
-  icons: defineCollection({
-    loader: createIconLoader([
-      localSource("src/icons"),
-      localSource("src/vendor-icons"),
-    ]),
-  }),
+  icons: defineIconCollection([
+    localSvg("src/icons"),
+    localSvg("src/vendor-icons"),
+  ]),
 };
 ```
 
-This still watches every composed directory in dev, add/edit/remove included - `localSource()` implements the same dev-watching `createIconLoader` uses for any watchable source, not just local ones.
+This still watches every composed directory in dev, add/edit/remove included - `localSvg()` implements the same dev-watching every icon collection uses for any watchable source, not just local ones.
 
 **Keep icon names disjoint across composed local directories.** Like `mergeSources`, watching resolves a name to whichever source listed it first; editing a file in a later directory that shares a name with an earlier one still triggers a resync, it just re-resolves to the same, unchanged winner - so the edit will silently appear to do nothing. If two directories can genuinely overlap, give the later one an `allowed: [...]` allowlist that excludes the shared names, or merge the directories instead.
 
@@ -271,37 +261,35 @@ optimize: svgo({
 });
 ```
 
-`optimize` also receives the icon's `collection` (always `"local"` for `localSource`) and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
+`optimize` also receives the icon's `collection` (always `"local"` for `localSvg`) and `name`, which is useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts
 import { svgo, defaultOverrides } from "astro-icon/optimize";
 
 export const collections = {
-  icons: defineCollection({
-    loader: createIconLoader(
-      localSource("src/icons", {
-        optimize: (svg, { collection, name }) =>
-          svgo({
-            plugins: [
-              {
-                name: "prefixIds",
-                params: { prefix: `${collection}-${name}` },
-              },
-              {
-                name: "preset-default",
-                params: { overrides: defaultOverrides },
-              },
-            ],
-          })(svg, { collection, name }),
-      }),
-    ),
-  }),
+  icons: defineIconCollection(
+    localSvg("src/icons", {
+      optimize: (svg, { collection, name }) =>
+        svgo({
+          plugins: [
+            {
+              name: "prefixIds",
+              params: { prefix: `${collection}-${name}` },
+            },
+            {
+              name: "preset-default",
+              params: { overrides: defaultOverrides },
+            },
+          ],
+        })(svg, { collection, name }),
+    }),
+  ),
 };
 ```
 
 ## Iconify icons
 
-`iconifyLocalSource` resolves icons from any [Iconify icon set](https://icon-sets.iconify.design/) installed locally as `@iconify-json/<pack>`. Pass it to `createIconLoader` to use it as a collection:
+`iconify` resolves icons from any [Iconify icon set](https://icon-sets.iconify.design/) installed locally as `@iconify-json/<pack>`. Pass it to `defineIconCollection` to use it as a collection:
 
 ```sh
 npm install -D @iconify-json/mdi
@@ -309,60 +297,50 @@ npm install -D @iconify-json/mdi
 
 ```ts
 // src/content.config.ts
-import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, iconify } from "astro-icon/collections";
 
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi")),
-  }),
+  mdi: defineIconCollection(iconify("mdi")),
 };
 ```
 
-`iconifyLocalSource` never falls back to the network - it throws if the pack isn't installed. For a pack you'd rather not install (or a `<LiveIcon>` collection, where you can't know every icon name ahead of time), reach for `iconifyApiSource` instead, which resolves each requested icon individually from the public Iconify API:
+`iconify` never falls back to the network - it throws if the pack isn't installed. For a pack you'd rather not install (or a `<LiveIcon>` collection, where you can't know every icon name ahead of time), reach for `iconifyApi` instead, which resolves each requested icon individually from the public Iconify API:
 
 ```ts
-import { createIconLoader, iconifyApiSource } from "astro-icon/loaders";
+import { defineIconCollection, iconifyApi } from "astro-icon/collections";
 
 export const collections = {
   // The API only resolves icons you name explicitly, never the whole pack,
   // and it adds a network request per icon during your build.
-  mdi: defineCollection({
-    loader: createIconLoader(
-      iconifyApiSource("mdi", { allowed: ["account", "home", "heart"] }),
-    ),
-  }),
+  mdi: defineIconCollection(
+    iconifyApi("mdi", { allowed: ["account", "home", "heart"] }),
+  ),
 };
 ```
 
-`iconifyApiSource` talks to the public `api.iconify.design` by default. If you [self-host an Iconify API instance](https://iconify.design/docs/api/hosting.html) (for privacy, or to keep icon traffic on your own infrastructure), point the source at it with `host`:
+`iconifyApi` talks to the public `api.iconify.design` by default. If you [self-host an Iconify API instance](https://iconify.design/docs/api/hosting.html) (for privacy, or to keep icon traffic on your own infrastructure), point the source at it with `host`:
 
 ```ts
-iconifyApiSource("mdi", {
+iconifyApi("mdi", {
   allowed: ["account", "home"],
   host: "https://icons.example.com",
 });
 ```
 
-Want "prefer a local install, fall back to the API"? Compose both with `mergeSources` - each icon is resolved by trying sources in order, first match wins:
+Want "prefer a local install, fall back to the API"? Pass both as an array - each icon is resolved by trying sources in order, first match wins:
 
 ```ts
 import {
-  createIconLoader,
-  iconifyApiSource,
-  iconifyLocalSource,
-  mergeSources,
-} from "astro-icon/loaders";
+  defineIconCollection,
+  iconifyApi,
+  iconify,
+} from "astro-icon/collections";
 
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(
-      mergeSources([
-        iconifyLocalSource("mdi", { allowed: ["account", "home", "heart"] }),
-        iconifyApiSource("mdi", { allowed: ["account", "home", "heart"] }),
-      ]),
-    ),
-  }),
+  mdi: defineIconCollection([
+    iconify("mdi", { allowed: ["account", "home", "heart"] }),
+    iconifyApi("mdi", { allowed: ["account", "home", "heart"] }),
+  ]),
 };
 ```
 
@@ -370,37 +348,33 @@ Pass options as the second argument to either source:
 
 ```ts
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(
-      iconifyLocalSource("mdi", {
-        // Restrict the collection (and its generated types) to exactly these icons,
-        // typed and autocompleted against "mdi"'s catalog once a sync has recorded it.
-        allowed: ["account", "home", "heart"],
-        // Transform each icon's already-built IconEntry before astro-icon stores it.
-        transform: (entry) => ({
-          ...entry,
-          body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
-        }),
+  mdi: defineIconCollection(
+    iconify("mdi", {
+      // Restrict the collection (and its generated types) to exactly these icons,
+      // typed and autocompleted against "mdi"'s catalog once a sync has recorded it.
+      allowed: ["account", "home", "heart"],
+      // Transform each icon's already-built IconEntry before astro-icon stores it.
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
       }),
-    ),
-  }),
+    }),
+  ),
 };
 ```
 
-`optimize` (below) is `localSource`'s alone - an Iconify source builds its `IconEntry` straight out of structured Iconify icon data, so there's never a raw SVG string in play for it to transform. `transform`, on the other hand, is the one hook every source kind shares: it runs last, on the already-built `IconEntry`, after any source-specific policy (`optimize` included). Use it to recolor, add a field every icon in a collection should have, or normalize fields your `<Icon>` usage relies on. See [Local icons](#local-icons) for more on `optimize` and `svgo()`.
+`optimize` (below) is `localSvg`'s alone - an Iconify source builds its `IconEntry` straight out of structured Iconify icon data, so there's never a raw SVG string in play for it to transform. `transform`, on the other hand, is the one hook every source kind shares: it runs last, on the already-built `IconEntry`, after any source-specific policy (`optimize` included). Use it to recolor, add a field every icon in a collection should have, or normalize fields your `<Icon>` usage relies on. See [Local icons](#local-icons) for more on `optimize` and `svgo()`.
 
-Combine several packs into one collection by passing `createIconLoader` an array of sources:
+Combine several packs into one collection by passing `defineIconCollection` an array of sources:
 
 ```ts
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, iconify } from "astro-icon/collections";
 
 export const collections = {
-  social: defineCollection({
-    loader: createIconLoader([
-      iconifyLocalSource("mdi", { allowed: ["github"] }),
-      iconifyLocalSource("simple-icons", { allowed: ["discord"] }),
-    ]),
-  }),
+  social: defineIconCollection([
+    iconify("mdi", { allowed: ["github"] }),
+    iconify("simple-icons", { allowed: ["discord"] }),
+  ]),
 };
 ```
 
@@ -431,23 +405,20 @@ Define one in `src/live.config.ts` with `liveIconCollections`: each key becomes 
 
 ```ts
 // src/live.config.ts
-import {
-  iconifyLocalSource,
-  liveIconCollections,
-} from "astro-icon/loaders/live";
+import { iconify, liveIconCollections } from "astro-icon/collections";
 
 export const collections = liveIconCollections({
-  mdi: iconifyLocalSource("mdi"),
+  mdi: iconify("mdi"),
 });
 ```
 
-For a pack you'd rather not install, `iconifyApiSource` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
+For a pack you'd rather not install, `iconifyApi` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
 
 ```ts
-import { iconifyApiSource, liveIconCollections } from "astro-icon/loaders/live";
+import { iconifyApi, liveIconCollections } from "astro-icon/collections";
 
 export const collections = liveIconCollections({
-  ph: iconifyApiSource("ph"),
+  ph: iconifyApi("ph"),
 });
 ```
 
@@ -455,7 +426,7 @@ Live icon collections mix freely with other live collections - spread them into 
 
 ```ts
 export const collections = {
-  ...liveIconCollections({ mdi: iconifyLocalSource("mdi") }),
+  ...liveIconCollections({ mdi: iconify("mdi") }),
   products: defineLiveCollection({ loader: myProductsLoader }),
 };
 ```
@@ -464,14 +435,11 @@ To register with Astro's `defineLiveCollection()` yourself, use `createLiveIconL
 
 ```ts
 import { defineLiveCollection } from "astro:content";
-import {
-  createLiveIconLoader,
-  iconifyLocalSource,
-} from "astro-icon/loaders/live";
+import { createLiveIconLoader, iconify } from "astro-icon/collections";
 
 export const collections = {
   mdi: defineLiveCollection({
-    loader: createLiveIconLoader(iconifyLocalSource("mdi"), {
+    loader: createLiveIconLoader(iconify("mdi"), {
       collection: "mdi",
     }),
   }),
@@ -492,14 +460,13 @@ Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props inste
 
 ## Bringing your own icon source
 
-Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `createIconLoader` (build time) or `createLiveIconLoader` (per request):
+Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `defineIconCollection` (build time) or `liveIconCollections` (per request). Everything you need lives in `astro-icon/source` - the authoring kit entry:
 
 ```ts
-import { entryFromSVG } from "astro-icon/loaders";
-import { liveIconCollections } from "astro-icon/loaders/live";
-import type { IconSource } from "astro-icon/loaders/live";
+import { defineIconSource, entryFromSVG } from "astro-icon/source";
+import { liveIconCollections } from "astro-icon/collections";
 
-const mySource: IconSource = {
+const mySource = defineIconSource({
   name: "my-source",
   async getIcons(names) {
     const result = new Map();
@@ -521,54 +488,52 @@ const mySource: IconSource = {
     const res = await fetch("https://icons.example.com/list.json");
     return res.json();
   },
-};
+});
 
 export const collections = liveIconCollections({ custom: mySource });
 ```
 
-`getIcons(names)` always resolves the *whole* requested batch at once, into a `Map` covering every name asked for - one entry per name, either its `IconEntry` or an `Error` for that one name alone (a source with a real batch endpoint pays for one request no matter how many names it's asked for in one call; a source with nothing to batch, like this one, just resolves each name independently). `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete.
+`defineIconSource` is an identity function, the same convention as Astro's own `defineConfig`: it types every method against the `IconSource` contract without you annotating the variable.
 
-`entryFromSVG` turns a raw `<svg>...</svg>` string into `{ entry, facts }`: `entry` is the `IconEntry` astro-icon stores (fields describe the rendered root `<svg>`; `body` is its children), and `facts` reports what had to be inferred - `facts.viewBox` (`"present"` | `"missing"` - the entry always carries whatever viewBox was resolved, so a warning can just quote it) and `facts.monochromeWithoutCurrentColor` - for you to turn into your own warning, the same way `localSource()` does internally. It throws only when the input has no `<svg>` element at all. For structured Iconify icon data specifically (not a raw SVG string), use `entryFromIconifyData` instead - see `iconifyLocalSource`'s/`iconifyApiSource`'s own source for an example.
+`getIcons(names)` always resolves the _whole_ requested batch at once, into a `Map` covering every name asked for - one entry per name, either its `IconEntry` or an `Error` for that one name alone (a source with a real batch endpoint pays for one request no matter how many names it's asked for in one call; a source with nothing to batch, like this one, just resolves each name independently). `listIcons` is required for a build collection and optional for a live one, where it enables `getLiveCollection()` and full autocomplete.
 
-Implement `watch(watcher, report)` to opt a build-time source into dev watching, the same mechanism `localSource()` uses for a directory of files: register whatever paths the source depends on with `watcher`, and call `report({ type: "add" | "change" | "unlink", name })` whenever one of them changes - `createIconLoader` turns that into a surgical store update, re-resolving just that name instead of the whole collection. `createLiveIconLoader` never calls `watch` - a live collection resolves per request, so there's nothing to keep in sync.
+`entryFromSVG` turns a raw `<svg>...</svg>` string into `{ entry, facts }`: `entry` is the `IconEntry` astro-icon stores (fields describe the rendered root `<svg>`; `body` is its children), and `facts` reports what had to be inferred - `facts.viewBox` (`"present"` | `"missing"` - the entry always carries whatever viewBox was resolved, so a warning can just quote it) and `facts.monochromeWithoutCurrentColor` - for you to turn into your own warning, the same way `localSvg()` does internally. It throws only when the input has no `<svg>` element at all. For structured Iconify icon data specifically (not a raw SVG string), use `entryFromIconifyData` instead - see `iconify`'s/`iconifyApi`'s own source for an example.
+
+Implement `watch(watcher, report)` to opt a build-time source into dev watching, the same mechanism `localSvg()` uses for a directory of files: register whatever paths the source depends on with `watcher`, and call `report({ type: "add" | "change" | "unlink", name })` whenever one of them changes - the collection turns that into a surgical store update, re-resolving just that name instead of the whole collection. A live collection never calls `watch` - it resolves per request, so there's nothing to keep in sync.
 
 ## Shipping icons from a library
 
-A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineCollection({ loader })` is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
+A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineIconCollection(...)`'s result is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
 
 ```ts
 // my-lib/src/icons.ts
-import { defineCollection } from "astro:content";
 import {
-  createIconLoader,
-  iconifyLocalSource,
-  localSource,
-} from "astro-icon/loaders";
+  defineIconCollection,
+  iconify,
+  localSvg,
+} from "astro-icon/collections";
 
 export const myLibIcons = {
   // Namespace the key so it can't collide with a collection the consumer
   // defines themselves, e.g. their own "icons" for src/icons/.
-  "my-lib-icons": defineCollection({
-    loader: createIconLoader([
-      // Bundle .svg files that ship inside the library's own package...
-      localSource(new URL("../icons/", import.meta.url)),
-      // ...and/or re-export a curated slice of an Iconify pack.
-      iconifyLocalSource("mdi", { allowed: ["home", "account"] }),
-    ]),
-  }),
+  "my-lib-icons": defineIconCollection([
+    // Bundle .svg files that ship inside the library's own package...
+    localSvg(new URL("../icons/", import.meta.url)),
+    // ...and/or re-export a curated slice of an Iconify pack.
+    iconify("mdi", { allowed: ["home", "account"] }),
+  ]),
 };
 ```
 
 ```ts
 // consumer's src/content.config.ts
-import { defineCollection } from "astro:content";
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 import { myLibIcons } from "my-lib/icons";
 
 export const collections = {
   ...myLibIcons,
   // The consumer's own icons, defined the normal way.
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+  icons: defineIconCollection(localSvg()),
 };
 ```
 
@@ -576,7 +541,7 @@ The consumer now renders both without adding a loader themselves: `<Icon name="m
 
 Two things worth knowing when you're the library author:
 
-- **Anchor bundled `.svg` files with a `URL`, not a plain string.** `localSource("../icons/")` resolves against the _consuming_ project's root, which is correct for a directory the consumer owns but wrong for one that ships inside your package - it would look for `../icons/` relative to whichever project imports you. `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file instead, no matter who imports it.
+- **Anchor bundled `.svg` files with a `URL`, not a plain string.** `localSvg("../icons/")` resolves against the _consuming_ project's root, which is correct for a directory the consumer owns but wrong for one that ships inside your package - it would look for `../icons/` relative to whichever project imports you. `localSvg(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file instead, no matter who imports it.
 - **Pick a collection key that won't collide.** Two collections can't share a key when their objects are spread together; prefix yours with your package name (`"my-lib-icons"`) rather than something generic like `"icons"`.
 
 The same pattern works for a live collection: export an object of `defineLiveCollection({ loader: createLiveIconLoader(...) })` entries for a consumer to spread into their `src/live.config.ts`.
@@ -590,9 +555,9 @@ Astro's [`<slot>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Ele
 astro-icon v2 replaces the `icon()` Astro integration with content collection loaders. If you're on v1:
 
 - Remove `icon()` from `integrations` in `astro.config.mjs`.
-- Replace `config.include` with the `allowed` option on `iconifyLocalSource()`/`iconifyApiSource()` (see [Iconify icons](#iconify-icons)).
-- Replace `config.iconDir` with `createIconLoader(localSource("your/dir"))`.
-- Replace `config.svgoOptions` with the `optimize` option on `localSource()` (see [Local icons](#local-icons)) - astro-icon no longer runs any optimization by default. `svgo()` from `astro-icon/optimize` covers the common case; for full control, `npm install svgo` and write your own `optimize` function.
+- Replace `config.include` with the `allowed` option on `iconify()`/`iconifyApi()` (see [Iconify icons](#iconify-icons)).
+- Replace `config.iconDir` with `defineIconCollection(localSvg("your/dir"))`.
+- Replace `config.svgoOptions` with the `optimize` option on `localSvg()` (see [Local icons](#local-icons)) - astro-icon no longer runs any optimization by default. `svgo()` from `astro-icon/optimize` covers the common case; for full control, `npm install svgo` and write your own `optimize` function.
 - Define your collections in `src/content.config.ts` as shown in [Quick start](#quick-start), and add the `env.d.ts` reference from [Installation](#installation).
 
 If you're upgrading from v0 to v1, see the [v1 upgrade guide](https://www.astroicon.dev/guides/upgrade/v1/) first.

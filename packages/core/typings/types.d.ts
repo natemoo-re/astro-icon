@@ -3,7 +3,7 @@
  * `entry.data` gives you from `getEntry()` or `getLiveEntry()`.
  *
  * You won't normally construct this yourself: a loader (`iconify`,
- * `localSource`, or a custom {@link IconSource}) builds it for you from raw
+ * `localSvg`, or a custom {@link IconSource}) builds it for you from raw
  * SVG. Reach for it directly if you write a custom loader or `optimize`
  * function and need the target shape.
  */
@@ -16,7 +16,7 @@ export interface IconEntry {
   height: number;
   /**
    * Default `title` prop for `<Icon>`/`<LiveIcon>`, honored only when the caller doesn't pass
-   * their own. `localSource()` populates this from the icon's own inline `<title>`, if it had one.
+   * their own. `localSvg()` populates this from the icon's own inline `<title>`, if it had one.
    */
   title?: string;
   /** Default `desc` prop, same override relationship as {@link title}. */
@@ -29,7 +29,7 @@ export interface IconEntry {
  * stores it. Common uses: running it through SVGO, stripping hardcoded
  * `fill`/`stroke` colors so CSS can control them, or adding `aria-hidden`.
  *
- * Pass one via the `optimize` option on {@link localSource}. Iconify sources
+ * Pass one via the `optimize` option on {@link localSvg}. Iconify sources
  * never have a raw SVG string to hand it (they build an `IconEntry` straight
  * out of structured Iconify icon data) - reach for {@link TransformFn}
  * there instead.
@@ -42,7 +42,7 @@ export type OptimizeFn = (
 /**
  * A hook to transform an icon's already-built `IconEntry` - the last step
  * every source applies before returning it, after any source-specific
- * policy (like {@link localSource}'s `optimize`) has already run. The one
+ * policy (like {@link localSvg}'s `optimize`) has already run. The one
  * transform hook every {@link IconSource} kind shares, since unlike
  * `OptimizeFn` it doesn't assume there's a raw SVG string in play.
  *
@@ -55,7 +55,7 @@ export type TransformFn = (
   ctx: { collection: string; name: string },
 ) => IconEntry | Promise<IconEntry>;
 
-/** Options shared by {@link iconifyLocalSource} and {@link iconifyApiSource} for configuring an Iconify pack. */
+/** Options shared by {@link iconify} and {@link iconifyApi} for configuring an Iconify pack. */
 export interface IconifySourceOptions {
   /**
    * Restricts this source to a fixed list of icon names. Both what's loaded
@@ -71,7 +71,7 @@ export interface IconifySourceOptions {
   transform?: TransformFn;
 }
 
-/** {@link iconifyApiSource}'s options: everything {@link IconifySourceOptions} has, plus where the API lives. */
+/** {@link iconifyApi}'s options: everything {@link IconifySourceOptions} has, plus where the API lives. */
 export interface IconifyApiSourceOptions extends IconifySourceOptions {
   /**
    * The Iconify API instance to resolve icons from, for self-hosted deployments

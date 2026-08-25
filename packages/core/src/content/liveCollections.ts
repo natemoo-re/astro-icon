@@ -18,11 +18,11 @@ export interface LiveIconCollectionConfig {
  *
  * ```ts
  * // src/live.config.ts
- * import { iconifyLocalSource, liveIconCollections } from "astro-icon/loaders/live";
+ * import { iconify, liveIconCollections } from "astro-icon/collections";
  *
  * export const collections = {
  *   ...liveIconCollections({
- *     spinners: iconifyLocalSource("svg-spinners"),
+ *     spinners: iconify("svg-spinners"),
  *   }),
  *   // non-icon live collections use Astro's own defineLiveCollection() as usual
  * };
