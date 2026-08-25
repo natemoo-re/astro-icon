@@ -3,7 +3,11 @@ title: SVGO & optimize()
 description: Transform an icon's raw SVG before Astro Icon stores it.
 ---
 
-Astro Icon doesn't run any optimization on its own — every source's `optimize` option is a plain function you provide: `(svg, { collection, name }) => string | Promise<string>`. `astro-icon/optimize` ships an `svgo()` helper for the common case of running [SVGO](https://github.com/svg/svgo) over it.
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Astro Icon doesn't run any optimization on its own — `localSvg()`'s `optimize` option is a plain function you provide: `(svg, { collection, name }) => string | Promise<string>`. `astro-icon/optimize` ships an `svgo()` helper for the common case of running [SVGO](https://github.com/svg/svgo) over it.
+
+`optimize` is `localSvg()`'s alone — an Iconify source builds its `IconEntry` straight out of structured Iconify icon data, so there's never a raw SVG string in play for it to transform. Reach for `transform` on `iconify`/`iconifyApi` instead to adjust an already-built `IconEntry`; see [“Iconify Icons”](/guides/iconify-icons/#options).
 
 ## Installing SVGO
 
@@ -47,17 +51,14 @@ yarn add svgo
 
 ## Using `svgo()`
 
-Pass it as the `optimize` option to any source:
+Pass it as the `optimize` option to `localSvg()`:
 
 ```ts title="src/content.config.ts"
-import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 import { svgo } from "astro-icon/optimize";
 
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi", { optimize: svgo() })),
-  }),
+  icons: defineIconCollection(localSvg("src/icons", { optimize: svgo() })),
 };
 ```
 
@@ -128,30 +129,27 @@ optimize: svgo({
 `optimize` also receives the icon's `collection` and `name`, useful for icons with internal `id` references (`<mask id="a">`, `url(#a)`, etc.). Rendering the same icon more than once duplicates those ids in the DOM, one copy per `<Icon>` use, which can make `id`-referencing features like masks and gradients resolve inconsistently. Prefix each icon's ids with its name to keep them unique:
 
 ```ts title="src/content.config.ts"
-import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 import { svgo, defaultOverrides } from "astro-icon/optimize";
 
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(
-      iconifyLocalSource("mdi", {
-        optimize: (svg, { collection, name }) =>
-          svgo({
-            plugins: [
-              {
-                name: "prefixIds",
-                params: { prefix: `${collection}-${name}` },
-              },
-              {
-                name: "preset-default",
-                params: { overrides: defaultOverrides },
-              },
-            ],
-          })(svg, { collection, name }),
-      }),
-    ),
-  }),
+  icons: defineIconCollection(
+    localSvg("src/icons", {
+      optimize: (svg, { collection, name }) =>
+        svgo({
+          plugins: [
+            {
+              name: "prefixIds",
+              params: { prefix: `${collection}-${name}` },
+            },
+            {
+              name: "preset-default",
+              params: { overrides: defaultOverrides },
+            },
+          ],
+        })(svg, { collection, name }),
+    }),
+  ),
 };
 ```
 

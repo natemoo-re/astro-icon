@@ -1,10 +1,11 @@
 ---
 title: Upgrade to Astro Icon v1
+description: Migrate from astro-icon v0 to v1's Astro integration and locally installed Iconify packs.
 prev: false
 next: false
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 This guide will help you migrate from older versions of `astro-icon` to `astro-icon` v1.
 
@@ -32,6 +33,13 @@ npm install astro-icon@latest
 
 ```sh ins="latest"
 pnpm add astro-icon@latest
+```
+
+</TabItem>
+<TabItem label="bun">
+
+```sh ins="latest"
+bun add astro-icon@latest
 ```
 
 </TabItem>
@@ -78,7 +86,6 @@ Determine the icon sets (previously referred to as a "pack") used in your projec
 
 For example, if using the `mdi:account` and `carbon:basketball` icons, the `mdi` and `carbon` icons must be installed in your project.
 
-
 <Tabs syncKey="pkg">
 <TabItem label="npm">
 
@@ -91,6 +98,13 @@ npm install @iconify-json/mdi @iconify-json/carbon
 
 ```sh mark="mdi" mark="carbon"
 pnpm add @iconify-json/mdi @iconify-json/carbon
+```
+
+</TabItem>
+<TabItem label="bun">
+
+```sh mark="mdi" mark="carbon"
+bun add @iconify-json/mdi @iconify-json/carbon
 ```
 
 </TabItem>
@@ -115,7 +129,7 @@ In v1, components are exported from the `astro-icon/components` path.
 Update your import statements to reference `astro-icon/components`.
 
 ```js ins="/components"
-import { Icon } from 'astro-icon/components'
+import { Icon } from "astro-icon/components";
 ```
 
 ### Changed: styling attribute
@@ -201,7 +215,7 @@ In v1, the `optimize` prop has been removed. SVGO optimizations are automaticall
 Remove any usage of the `optimize` prop. Configure SVGO optimization by passing `svgoOptions` to the `icon()` integration instead.
 
 ```astro del="optimize"
- <Icon name="mdi:account" optimize />
+<Icon name="mdi:account" optimize />
 ```
 
 ```js title="astro.config.mjs" {7-15}

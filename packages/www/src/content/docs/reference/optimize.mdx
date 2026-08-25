@@ -1,0 +1,73 @@
+---
+title: Optimize Reference
+description: svgo() and defaultOverrides, from astro-icon/optimize.
+sidebar:
+  order: 5
+---
+
+Both are exported from `astro-icon/optimize`. `svgo` is an `OptimizeFn` (see the [Sources Reference](/reference/sources/#optimizefn)) for [`localSvg()`](/reference/sources/#localsvgdir-options)'s `optimize` option — it's the only source that takes one, since it's the only source that starts from a raw SVG string. See [SVGO & optimize()](/guides/optimize/) for the full guide.
+
+## `svgo(options?)`
+
+Runs an icon's SVG through [SVGO](https://svgo.dev/). `svgo` itself is an optional peer dependency — install it yourself; this helper only imports it lazily the first time it's actually called.
+
+```ts
+function svgo(options?: SvgoOptions): OptimizeFn;
+```
+
+With no arguments, runs SVGO's `preset-default` with `defaultOverrides` layered on top: mechanical cleanup only (whitespace, numeric precision, structurally-empty nodes), nothing that changes an icon's color or DOM shape.
+
+```ts title="src/content.config.ts"
+import { defineIconCollection, localSvg } from "astro-icon/collections";
+import { svgo } from "astro-icon/optimize";
+
+export const collections = {
+  icons: defineIconCollection(localSvg("src/icons", { optimize: svgo() })),
+};
+```
+
+`options` is passed through as SVGO's own config, on top of that default — a `plugins` option replaces the default list entirely rather than merging with it:
+
+```ts
+svgo({ plugins: ["preset-default"] }); // SVGO's own untouched default
+```
+
+To keep most of astro-icon's defaults and adjust one plugin, build on `defaultOverrides` yourself instead of retyping the whole list:
+
+```ts
+import { svgo, defaultOverrides } from "astro-icon/optimize";
+
+svgo({
+  plugins: [
+    {
+      name: "preset-default",
+      params: {
+        overrides: { ...defaultOverrides, convertColors: { currentColor: true } },
+      },
+    },
+  ],
+});
+```
+
+### `SvgoOptions`
+
+SVGO's own config shape, kept loose here rather than imported from `svgo` directly — this module loads without `svgo` installed, and only requires it once `svgo()` is actually called.
+
+```ts
+interface SvgoOptions {
+  multipass?: boolean;
+  floatPrecision?: number;
+  plugins?: unknown[];
+  [key: string]: SvgoOptionValue | SvgoOptions["plugins"];
+}
+```
+
+## `defaultOverrides`
+
+The `overrides` `svgo()` applies on top of SVGO's `preset-default`, turning off every plugin that can change how an icon *looks* or *what elements exist* — as opposed to purely mechanical cleanup that can't be "wrong" for a legitimate icon. Off by default: `removeComments`, `removeMetadata` (may carry a required license notice), `convertColors`, `removeUselessStrokeAndFill` (astro-icon never rewrites an icon's color automatically), `cleanupIds`, `removeDesc` (may be referenced outside astro-icon), and every plugin that removes content by heuristic or restructures shape/paint.
+
+```ts
+const defaultOverrides: Record<string, boolean>;
+```
+
+Exported so you can extend it instead of retyping the whole list to override just one plugin — see the `convertColors` example above.

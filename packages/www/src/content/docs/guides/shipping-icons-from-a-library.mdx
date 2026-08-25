@@ -4,35 +4,35 @@ description: Export a ready-made collection for consumers to spread into their o
 next: false
 ---
 
-A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineCollection({ loader })` is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
+A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineIconCollection(...)`'s result is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
 
 ```ts title="my-lib/src/icons.ts"
-import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+import {
+  defineIconCollection,
+  iconify,
+  localSvg,
+} from "astro-icon/collections";
 
 export const myLibIcons = {
   // Namespace the key so it can't collide with a collection the consumer
   // defines themselves, e.g. their own "icons" for src/icons/.
-  "my-lib-icons": defineCollection({
-    loader: createIconLoader([
-      // Bundle .svg files that ship inside the library's own package...
-      localSource(new URL("../icons/", import.meta.url)),
-      // ...and/or re-export a curated slice of an Iconify pack.
-      iconifyLocalSource("mdi", { icons: ["home", "account"] }),
-    ]),
-  }),
+  "my-lib-icons": defineIconCollection([
+    // Bundle .svg files that ship inside the library's own package...
+    localSvg(new URL("../icons/", import.meta.url)),
+    // ...and/or re-export a curated slice of an Iconify pack.
+    iconify("mdi", { allowed: ["home", "account"] }),
+  ]),
 };
 ```
 
 ```ts title="consumer's src/content.config.ts"
-import { defineCollection } from "astro:content";
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 import { myLibIcons } from "my-lib/icons";
 
 export const collections = {
   ...myLibIcons,
   // The consumer's own icons, defined the normal way.
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+  icons: defineIconCollection(localSvg()),
 };
 ```
 
@@ -40,7 +40,7 @@ The consumer now renders both without adding a loader themselves: `<Icon name="m
 
 ## Two things worth knowing as a library author
 
-- **Pass `localSource` a `URL`, not a plain string, for bundled `.svg` files.** A plain relative string resolves against the *consuming* project's root (`config.root`), which is correct for a directory the consumer owns but wrong for one that ships inside your package. A `URL` resolves directly, so `localSource(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file, no matter who imports it.
+- **Anchor bundled `.svg` files with a `URL`, not a plain string.** `localSvg("../icons/")` resolves against the *consuming* project's root, which is correct for a directory the consumer owns but wrong for one that ships inside your package — it would look for `../icons/` relative to whichever project imports you. `localSvg(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file instead, no matter who imports it.
 - **Pick a collection key that won't collide.** Two collections can't share a key when their objects are spread together; prefix yours with your package name (`"my-lib-icons"`) rather than something generic like `"icons"`.
 
-The same pattern works for a live collection: export an object of `defineLiveCollection({ loader: createLiveIconLoader(...) })` entries for a consumer to spread into their own `src/live.config.ts`.
+The same pattern works for a live collection: export the result of `defineLiveIconCollections({ "my-lib-live": source })` for a consumer to spread into their own `src/live.config.ts`.

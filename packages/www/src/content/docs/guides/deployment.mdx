@@ -7,9 +7,9 @@ Astro Icon supports every deployment method that Astro supports. Refer to the of
 
 ## No special configuration needed
 
-Unlike v1, there's no project-wide "everything installed gets bundled unless you configure `include`" step to worry about. Each collection you define in `src/content.config.ts` only contains exactly what its source resolves — an `iconifyLocalSource`/`iconifyApiSource` restricted with `icons: [...]` (see [“Iconify Icons”](/guides/iconify-icons/)) never loads or bundles the rest of the pack, whether your project is [pre-rendered or on-demand rendered](https://docs.astro.build/en/guides/routing/#on-demand-rendered-routes).
+Unlike v1, there's no project-wide "everything installed gets bundled unless you configure `include`" step to worry about. Each collection you define in `src/content.config.ts` only contains exactly what its source resolves — an `iconify`/`iconifyApi` source restricted with `allowed: [...]` (see [“Iconify Icons”](/guides/iconify-icons/)) never loads or bundles the rest of the pack, whether your project is [pre-rendered or on-demand rendered](https://docs.astro.build/en/guides/routing/#on-demand-rendered-routes).
 
-If you omit `icons` from `iconifyLocalSource`, the whole installed pack is loaded into that collection — scope it to the icons you actually use if pack size matters for your build or server bundle.
+If you omit `allowed` from `iconify`, the whole installed pack is loaded into that collection — scope it to the icons you actually use if pack size matters for your build or server bundle.
 
 ## `<LiveIcon>` and on-demand rendering
 

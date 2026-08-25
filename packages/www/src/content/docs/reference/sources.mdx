@@ -2,56 +2,56 @@
 title: Sources Reference
 description: The built-in icon sources — local directories, Iconify packs, and composition.
 sidebar:
-  order: 2
+  order: 3
 ---
 
-A **source** is what actually produces icons. It's astro-icon's own contract, [`IconSource`](/reference/icon-source/) — Astro never sees it directly. Sources are passed to a [loader](/reference/loaders/), which adapts them into something Astro understands.
+A **source** is what actually produces icons. It's astro-icon's own contract, [`IconSource`](/reference/source/) — Astro never sees it directly. Sources are passed to a [collection](/reference/collections/) (most commonly via `defineIconCollection`/`defineLiveIconCollections`), which adapts them into something Astro understands.
 
 The relationship is **N sources → 1 loader → 1 collection**: several sources can be composed into a single collection.
 
-All of the following are exported from both `astro-icon/loaders` and `astro-icon/loaders/live`.
+`iconify`, `iconifyApi`, and `localSvg` are exported from `astro-icon/collections`. `mergeSources` is exported from `astro-icon/source`.
 
-## `localSource(dir, options?)`
+## `localSvg(dir?, options?)`
 
-An `IconSource` backed by a directory of local `.svg` files.
-
-```ts
-function localSource(dir: URL | string, options?: LocalSourceOptions): IconSource;
-```
-
-Reach for it directly, passed to [`createIconLoader`](/reference/loaders/#createiconloadersources-options), when you need to compose a local directory with other sources, or when the directory ships inside a library package:
+An `IconSource` backed by a directory of local `.svg` files, `src/icons` by default.
 
 ```ts
-import { createIconLoader, localSource } from "astro-icon/loaders";
-
-createIconLoader(localSource(new URL("../icons/", import.meta.url)));
+function localSvg(dir?: URL | string, options?: LocalSvgOptions): IconSource;
 ```
 
-A `URL` resolves directly, independent of the consuming project's root — which is what makes it correct for [library-shipped icons](/guides/shipping-icons-from-a-library/). A plain `string` path is only resolved against `config.root` once `createIconLoader`/`createLiveIconLoader` calls `resolveRoot()` on it.
+Reach for it directly, passed to [`defineIconCollection`](/reference/collections/#defineiconcollectionsources), when you need to compose a local directory with other sources, or when the directory ships inside a library package:
+
+```ts
+import { defineIconCollection, localSvg } from "astro-icon/collections";
+
+defineIconCollection(localSvg(new URL("../icons/", import.meta.url)));
+```
+
+A `URL` resolves directly, independent of the consuming project's root — which is what makes it correct for [library-shipped icons](/guides/shipping-icons-from-a-library/). A plain `string` path (the common case, including the default) resolves against the project root once the loader gives this source one via `resolveRoot()`.
 
 Each file's path relative to `dir`, minus the extension, becomes its icon name: `<dir>/logos/deno.svg` is `"logos/deno"`.
 
-### `LocalSourceOptions`
+### `LocalSvgOptions`
 
 ```ts
-interface LocalSourceOptions {
+interface LocalSvgOptions {
   /** Restricts this source to a fixed list of icon names. Omit to allow every `.svg` file found. */
-  icons?: string[];
-  /** Transform applied to each icon's raw SVG before it's parsed and stored. */
+  allowed?: string[];
+  /** Transform applied to each icon's raw file contents before it's parsed and stored. */
   optimize?: OptimizeFn;
-  /** Turns a missing or unreadable icon file into a build error instead of a warning. @default false */
-  strict?: boolean;
+  /** Transform applied to each icon's built `IconEntry`, after `optimize`, last, before it's returned. */
+  transform?: TransformFn;
   /** Where warnings are reported; defaults to `console.warn`. */
   logger?: Pick<AstroIntegrationLogger, "warn">;
 }
 ```
 
-## `iconifyLocalSource(pack, options?)`
+## `iconify(pack, options?)`
 
 An `IconSource` backed by a locally installed `@iconify-json/<pack>` package **only**. Throws if the pack isn't installed — there is no network fallback by design.
 
 ```ts
-function iconifyLocalSource(pack: string, options?: IconifySourceOptions): IconSource;
+function iconify(pack: string, options?: IconifySourceOptions): IconSource;
 ```
 
 ```sh
@@ -59,23 +59,25 @@ npm install -D @iconify-json/mdi
 ```
 
 ```ts
-createIconLoader(iconifyLocalSource("mdi", { icons: ["home", "account"] }));
+import { defineIconCollection, iconify } from "astro-icon/collections";
+
+defineIconCollection(iconify("mdi", { allowed: ["home", "account"] }));
 ```
 
-The `icons` option is typed and autocompleted against the pack's own catalog, once astro-icon has recorded it from a previous sync. A duplicate name in that array is deduped and logged as a warning, not rejected at the type level.
+The `allowed` option is typed and autocompleted against the pack's own catalog, once astro-icon has recorded it from a previous sync. A duplicate name in that array is deduped and logged as a warning, not rejected at the type level.
 
-## `iconifyApiSource(pack, options?)`
+## `iconifyApi(pack, options?)`
 
-An `IconSource` backed by the public Iconify API **only**. Resolves any icon name in the pack, one at a time, regardless of `icons`.
+An `IconSource` backed by the public Iconify API **only**. Resolves any icon name in the pack, one at a time.
 
 ```ts
-function iconifyApiSource(pack: string, options?: IconifySourceOptions): IconSource;
+function iconifyApi(pack: string, options?: IconifyApiSourceOptions): IconSource;
 ```
 
 Useful for a pack you'd rather not install, and the natural fit for a live collection where names aren't known ahead of time.
 
 :::caution
-Without an explicit `icons: [...]` allowlist, `listIcons()` **throws** rather than pretending to enumerate the pack — the API can only resolve icons you name, never "everything in the pack." That makes a bare `iconifyApiSource("mdi")` unusable for a build collection (which loads exactly `listIcons()`), but perfectly valid for a live one.
+Without an explicit `allowed: [...]` allowlist, `listIcons()` **throws** rather than pretending to enumerate the pack — the API can only resolve icons you name, never "everything in the pack." That makes a bare `iconifyApi("mdi")` unusable for a build collection (which loads exactly `listIcons()`), but perfectly valid for a live one.
 :::
 
 ### `IconifySourceOptions`
@@ -84,47 +86,77 @@ Shared by both Iconify sources:
 
 ```ts
 interface IconifySourceOptions {
-  /** Restricts this source to a fixed list of icon names, typed against the pack's catalog once recorded. */
-  icons?: string[];
-  /** Transform applied to each icon's raw SVG before it's parsed and stored. */
-  optimize?: OptimizeFn;
-  /** Turns a recoverable warning into a build error instead. @default false */
-  strict?: boolean;
+  /**
+   * Restricts this source to a fixed list of icon names, typed and autocompleted
+   * against the pack's own catalog once recorded. Omitting it on `iconify` allows
+   * the whole installed pack; `iconifyApi` can only resolve icons you name.
+   */
+  allowed?: string[];
+  /** Transform applied to each icon's already-built `IconEntry`, last, before it's returned. */
+  transform?: TransformFn;
 }
 ```
 
-`icons` is an allowlist for pinning a design system's approved icons — and, for `iconifyApiSource`, the thing that makes the source enumerable at all. Omitting it on `iconifyLocalSource` allows the whole installed pack.
+`optimize` isn't available here — an Iconify source builds its `IconEntry` straight out of structured Iconify icon data, so there's never a raw SVG string in play for it to transform. That's `localSvg()`'s alone; use `transform` instead.
+
+### `IconifyApiSourceOptions`
+
+Everything `IconifySourceOptions` has, plus where the API lives:
+
+```ts
+interface IconifyApiSourceOptions extends IconifySourceOptions {
+  /**
+   * The Iconify API instance to resolve icons from, for self-hosted deployments.
+   * Defaults to the public `https://api.iconify.design`.
+   */
+  host?: string;
+}
+```
 
 ## `mergeSources(sources)`
 
-Normalizes one or more `IconSource`s into a single `CompositeSource`, trying each in order per icon (first match wins).
+Normalizes one or more `IconSource`s into a single `CompositeSource`, trying each in order per icon (first match wins). Exported from `astro-icon/source`.
 
 ```ts
 type CompositeSource = IconSource;
 function mergeSources(sources: IconSource | IconSource[]): CompositeSource;
 ```
 
-The loaders call this for you when you pass an array, so reach for it directly when you want the merged source as a reusable value — for example, a local-preferred/API-fallback Iconify source shared by a build and a live collection:
+`defineIconCollection`/`createIconLoader`/`defineLiveIconCollections`/`createLiveIconLoader` call this for you when you pass an array, so reach for it directly when you want the merged source as a reusable value — for example, a local-preferred/API-fallback Iconify source shared by a build and a live collection:
 
 ```ts
+import { mergeSources } from "astro-icon/source";
+import { iconify, iconifyApi } from "astro-icon/collections";
+
 const mdi = mergeSources([
-  iconifyLocalSource("mdi", { icons: ["home"] }),
-  iconifyApiSource("mdi", { icons: ["home"] }),
+  iconify("mdi", { allowed: ["home"] }),
+  iconifyApi("mdi", { allowed: ["home"] }),
 ]);
 ```
 
 On the result:
 
-- **`getIcon`** tries each member in order; it only fails if every member fails, and the error lists what each one reported.
+- **`getIcons`** tries each member in order; it only fails a name if every member fails it, and the error lists what each one reported.
 - **`listIcons`** returns the union of every member's list.
 - **`getVersion`** only reports a value if *every* member does — so one member without a version signal disables the whole collection's up-to-date check.
 
 ## `OptimizeFn`
 
-The shape of every source's `optimize` option:
+The shape of `localSvg()`'s `optimize` option:
 
 ```ts
 type OptimizeFn = (svg: string, ctx: { collection: string; name: string }) => string | Promise<string>;
 ```
 
-astro-icon runs no optimization unless you pass one. See [SVGO & optimize()](/guides/optimize/) for the `svgo()` helper built on top of this.
+astro-icon runs no optimization unless you pass one. See the [Optimize Reference](/reference/optimize/) for the `svgo()` helper built on top of this, or [SVGO & optimize()](/guides/optimize/) for the full guide.
+
+## `TransformFn`
+
+The shape of every source's `transform` option — the one hook every source kind shares, run last on the already-built `IconEntry`:
+
+```ts
+type TransformFn = (
+  entry: IconEntry,
+  ctx: { collection: string; name: string },
+) => IconEntry | Promise<IconEntry>;
+```

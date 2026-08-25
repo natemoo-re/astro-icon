@@ -30,7 +30,7 @@ Most Iconify icon sets use `currentColor` already — their maintainers normaliz
 
 ### How Astro Icon warns you
 
-`localSource()` never rewrites a file's colors for you: only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships.
+`localSvg()` never rewrites a file's colors for you: only you can tell a deliberately-colored logo apart from a UI glyph that just hasn't been converted, and guessing wrong silently changes what ships.
 
 What it does instead is warn. After each sync, if any icon looks like a single-color glyph that would benefit — no `currentColor` anywhere, and no more than one distinct explicit `fill`/`stroke` — it logs how many. Multi-color icons (two or more distinct explicit colors, read as a deliberate graphic) are never flagged.
 
@@ -39,30 +39,27 @@ What it does instead is warn. After each sync, if any icon looks like a single-c
 Edit the `.svg` file to use `currentColor`, or convert a whole collection at once with `svgo()`'s `convertColors` override:
 
 ```ts title="src/content.config.ts"
-import { defineCollection } from "astro:content";
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 import { svgo, defaultOverrides } from "astro-icon/optimize";
 
 export const collections = {
-  icons: defineCollection({
-    loader: createIconLoader(
-      localSource("src/icons", {
-        optimize: svgo({
-          plugins: [
-            {
-              name: "preset-default",
-              params: {
-                overrides: {
-                  ...defaultOverrides,
-                  convertColors: { currentColor: true },
-                },
+  icons: defineIconCollection(
+    localSvg("src/icons", {
+      optimize: svgo({
+        plugins: [
+          {
+            name: "preset-default",
+            params: {
+              overrides: {
+                ...defaultOverrides,
+                convertColors: { currentColor: true },
               },
             },
-          ],
-        }),
+          },
+        ],
       }),
-    ),
-  }),
+    }),
+  ),
 };
 ```
 
@@ -78,22 +75,26 @@ It breaks down for sets (Tabler is a common example) that redundantly redeclare 
 <Icon name="tabler:rss" stroke-width={3} />
 ```
 
-The fix belongs in the icon set's `optimize` step, not on every `<Icon>` usage: strip the redundant attribute from the inner markup so it's only set once, at the root, and can inherit normally. This applies to any presentation attribute redeclared this way — `stroke`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`, `fill`, and so on — for any icon source.
+The fix belongs in the icon set's own transform step, not on every `<Icon>` usage: strip the redundant attribute from the inner markup so it's only set once, at the root, and can inherit normally. This applies to any presentation attribute redeclared this way — `stroke`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`, `fill`, and so on — for any icon source.
 
-```ts title="src/content.config.ts" "optimize"
-import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+For an Iconify source, reach for `transform` (an Iconify source has no raw SVG string for `optimize` to run over — see [“Iconify Icons”](/guides/iconify-icons/#options)) and edit the already-built entry's `body`:
+
+```ts title="src/content.config.ts" "transform"
+import { defineIconCollection, iconify } from "astro-icon/collections";
 
 export const collections = {
-  tabler: defineCollection({
-    loader: createIconLoader(
-      iconifyLocalSource("tabler", {
-        optimize: (svg) => svg.replace(/\sstroke-width="2"(?=[\s/>])/g, ""),
+  tabler: defineIconCollection(
+    iconify("tabler", {
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.replace(/\sstroke-width="2"(?=[\s/>])/g, ""),
       }),
-    ),
-  }),
+    }),
+  ),
 };
 ```
+
+For a local `.svg` file, `localSvg()`'s `optimize` option runs over the raw SVG string instead — see [“SVGO & optimize()”](/guides/optimize/).
 
 ## Autocomplete isn't showing my icons
 

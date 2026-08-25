@@ -32,13 +32,10 @@ import Features from "../../components/Features.astro";
 Point a collection at an icon set once, in `src/content.config.ts`:
 
 ```ts title="src/content.config.ts"
-import { defineCollection } from "astro:content";
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, iconify } from "astro-icon/collections";
 
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi")),
-  }),
+  mdi: defineIconCollection(iconify("mdi")),
 };
 ```
 
@@ -64,12 +61,10 @@ import { Icon } from "astro-icon/components";
 Install any of [Iconify's](https://icon-sets.iconify.design/) 200,000+ icons and reference them by name.
 
 ```ts title="src/content.config.ts"
-import { createIconLoader, iconifyLocalSource } from "astro-icon/loaders";
+import { defineIconCollection, iconify } from "astro-icon/collections";
 
 export const collections = {
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi")),
-  }),
+  mdi: defineIconCollection(iconify("mdi")),
 };
 ```
 
@@ -79,10 +74,10 @@ export const collections = {
 Drop `.svg` files into `src/icons/` and they're picked up automatically, with hot reload in dev.
 
 ```ts title="src/content.config.ts"
-import { createIconLoader, localSource } from "astro-icon/loaders";
+import { defineIconCollection, localSvg } from "astro-icon/collections";
 
 export const collections = {
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+  icons: defineIconCollection(localSvg()),
 };
 ```
 
@@ -92,15 +87,17 @@ export const collections = {
 Fetch icons from a design tool, a database, or an internal API by implementing `IconSource`.
 
 ```ts title="src/content.config.ts"
-const mySource: IconSource = {
+import { defineIconSource } from "astro-icon/source";
+
+const mySource = defineIconSource({
   name: "my-source",
-  async getIcon(name) {
-    /* ...return an IconEntry */
+  async getIcons(names) {
+    /* ...return a Map<string, IconEntry | Error> */
   },
   async listIcons() {
     /* ...return every name */
   },
-};
+});
 ```
 
 </TabItem>
@@ -130,7 +127,7 @@ const mySource: IconSource = {
   />
   <LinkCard
     title="Reference"
-    description="Every loader, source, and component option in one place."
-    href="/reference/loaders/"
+    description="Every collection, source, and component option in one place."
+    href="/reference/collections/"
   />
 </CardGrid>

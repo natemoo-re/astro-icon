@@ -1,0 +1,108 @@
+---
+title: Source Reference
+description: The IconSource contract and the astro-icon/source authoring kit, for writing your own icon backend.
+sidebar:
+  order: 4
+---
+
+## `IconSource`
+
+The interface every icon backend implements — astro-icon's own `iconify`/`iconifyApi`/`localSvg` included. Imported as a type from `astro-icon/source` (or `astro-icon/collections`).
+
+```ts
+interface IconSource {
+  name: string;
+  getIcons(names: string[]): Promise<Map<string, IconEntry | Error>>;
+  listIcons?(): Promise<string[]>;
+  getVersion?(): Promise<string | undefined>;
+  watch?(watcher: IconSourceWatcher, report: (event: IconChangeEvent) => void): void;
+  resolveRoot?(root: URL): void;
+  checkPreconditions?(): Promise<void>;
+}
+```
+
+| Member | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Identifies this source in error and log messages, e.g. `iconify:mdi`. A diagnostic label only — nothing keys off it; a live collection's typegen key comes from `createLiveIconLoader`'s own `collection` option. |
+| `getIcons(names)` | Yes | Builds many icons by name in one call — the only way an `IconSource` fetches, whether a caller wants one icon or a thousand. Returns a map covering every name in `names`: a resolved `IconEntry` for one that built, or an `Error` for one that didn't, so one bad name can't take the rest of the batch down with it. Implement this as a real batch wherever the backing resource supports one; a source with nothing to batch can simply resolve each name independently. |
+| `listIcons()` | Build collections only | Lists every icon name this source can build. Required for `defineIconCollection`/`createIconLoader`, which load exactly this list. Optional for a live collection, where it additionally enables `getLiveCollection()` and full autocomplete instead of a plain `string` type. |
+| `getVersion()` | No | A cheap freshness signal (e.g. an installed pack's npm version). If every source in a collection reports one and it matches the last sync, the loader skips re-building. Omit if there's no reliable way to tell "nothing changed" short of building. |
+| `watch(watcher, report)` | No | Opts this source into dev-mode watching, the same mechanism `localSvg()` uses. Register whatever paths this source depends on with `watcher`, and call `report({ type, name })` whenever one of them changes. Only called for a build-time source with a real file watcher — never for a live collection. |
+| `resolveRoot(root)` | No | Anchors this source to the project root, if it needs one. Called once, before any other method, whenever the loader has a root to give it. |
+| `checkPreconditions()` | No | Checks whether this source is actually usable at all (a missing local install, an unreachable API), so a broken source fails clearly and immediately instead of surfacing later as a `listIcons`/`getIcons` failure. |
+
+See [“Bringing Your Own Source”](/guides/bring-your-own-source/) for a full example.
+
+## `defineIconSource(source)`
+
+An identity function, the same convention as Astro's own `defineConfig`: types every method against the `IconSource` contract without you annotating the variable. Imported from `astro-icon/source`.
+
+```ts
+function defineIconSource(source: IconSource): IconSource;
+```
+
+## `entryFromSVG(svg)`
+
+Turns a raw `<svg>...</svg>` string into a render-ready `IconEntry`, plus what had to be inferred while building it. Imported from `astro-icon/source`.
+
+```ts
+function entryFromSVG(svg: string): EntryFromSVGResult;
+
+interface EntryFromSVGResult {
+  entry: IconEntry;
+  facts: EntryFacts;
+}
+
+interface EntryFacts {
+  /** Whether the source SVG had its own `viewBox`, or one had to be derived. */
+  viewBox: "present" | "missing";
+  /** Whether the icon looks like a single-color glyph that doesn't use `currentColor`. */
+  monochromeWithoutCurrentColor: boolean;
+}
+```
+
+Throws only when the input has no `<svg>` element at all. Use `facts` to reproduce astro-icon's own sync-time warnings (missing viewBox, monochrome-without-`currentColor`) from inside your own source.
+
+## `entryFromIconifyData`
+
+The equivalent of `entryFromSVG` for structured Iconify icon data rather than a raw SVG string — reach for it when your source already has Iconify-shaped icon data in hand, the way `iconify`/`iconifyApi` do internally. Imported from `astro-icon/source`.
+
+## `mergeSources(sources)`
+
+Pre-composes one or more `IconSource`s into a single first-match-wins `IconSource`. Imported from `astro-icon/source`.
+
+```ts
+function mergeSources(sources: IconSource | IconSource[]): CompositeSource;
+```
+
+Every collection-building call (`defineIconCollection`, `createIconLoader`, `defineLiveIconCollections`, `createLiveIconLoader`) already accepts an array of sources and composes them the same way internally, so a `content.config.ts`/`live.config.ts` rarely needs this directly. Reach for it when you want the merged source as a reusable value instead — for example, a local-preferred/API-fallback Iconify source shared by a build and a live collection. See [“Iconify Icons”](/guides/iconify-icons/#local-preferred-api-fallback) for that example.
+
+## `IconEntry`
+
+The shape every icon collection stores in Astro's content layer, and what `entry.data` gives you from `getEntry()`/`getLiveEntry()`. You won't normally construct this yourself — `entryFromSVG`/`entryFromIconifyData` builds it for you.
+
+```ts
+interface IconEntry {
+  /** The inner SVG markup, everything between the outer `<svg>` tags. */
+  body: string;
+  /** The icon's `viewBox` attribute, taken from the source SVG or derived from its width and height. */
+  viewBox: string;
+  width: number;
+  height: number;
+}
+```
+
+## `AstroIconError`
+
+The error class every built-in source throws for a recoverable, descriptive failure — a missing icon, an uninstalled pack, an `allowed` allowlist miss. Alongside a `message` it carries a `hint` describing the fix, which loaders surface in build warnings and `<LiveIcon>` logs.
+
+```ts
+import { AstroIconError } from "astro-icon/source";
+
+throw new AstroIconError(
+  `Icon "${name}" not found in the design system API.`,
+  `Check the name at https://icons.example.com, or that your API token has access.`,
+);
+```
+
+Re-exported from both `astro-icon/source` and `astro-icon/collections`. Throwing it from your own `getIcons` gets your source the same error presentation the built-in ones have — a plain `Error` works too, it just won't carry a hint.

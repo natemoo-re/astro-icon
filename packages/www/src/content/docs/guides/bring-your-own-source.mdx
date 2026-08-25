@@ -3,68 +3,65 @@ title: Bringing Your Own Source
 description: Write a custom IconSource to fetch icons from anywhere.
 ---
 
-Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `createIconLoader` (build time) or `createLiveIconLoader` (per request):
+Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `defineIconCollection` (build time) or `defineLiveIconCollections` (per request). Everything you need lives in `astro-icon/source` — the authoring kit entry:
 
 ```ts title="src/live.config.ts"
-import { defineLiveCollection } from "astro:content";
-import { parseIconSVG } from "astro-icon/loaders";
-import { createLiveIconLoader } from "astro-icon/loaders/live";
-import type { IconSource } from "astro-icon/loaders/live";
+import { defineIconSource, entryFromSVG } from "astro-icon/source";
+import { defineLiveIconCollections } from "astro-icon/collections";
 
-const mySource: IconSource = {
+const mySource = defineIconSource({
   name: "my-source",
-  async getIcon(name) {
-    const res = await fetch(`https://icons.example.com/${name}.svg`);
-    if (!res.ok) throw new Error(`Icon "${name}" not found`);
-    return parseIconSVG(await res.text(), {
-      collection: "my-source",
-      name,
-      logger: { warn: console.warn },
-    });
+  async getIcons(names) {
+    const result = new Map();
+    await Promise.all(
+      names.map(async (name) => {
+        try {
+          const res = await fetch(`https://icons.example.com/${name}.svg`);
+          if (!res.ok) throw new Error(`Icon "${name}" not found`);
+          const { entry } = entryFromSVG(await res.text());
+          result.set(name, entry);
+        } catch (ex) {
+          result.set(name, ex instanceof Error ? ex : new Error(String(ex)));
+        }
+      }),
+    );
+    return result;
   },
   async listIcons() {
     const res = await fetch("https://icons.example.com/list.json");
     return res.json();
   },
-};
+});
 
-export const collections = {
-  custom: defineLiveCollection({ loader: createLiveIconLoader(mySource) }),
-};
+export const collections = defineLiveIconCollections({ custom: mySource });
 ```
+
+`defineIconSource` is an identity function, the same convention as Astro's own `defineConfig`: it types every method against the `IconSource` contract without you annotating the variable.
 
 ## The `IconSource` interface
 
 ```ts
 interface IconSource {
   name: string;
-  getIcon(name: string): Promise<IconEntry>;
+  getIcons(names: string[]): Promise<Map<string, IconEntry | Error>>;
   listIcons?(): Promise<string[]>;
   getVersion?(): Promise<string | undefined>;
 }
 ```
 
 - **`name`** identifies the source in error messages and, for a live collection, generated types.
-- **`getIcon`** resolves one icon by name; throw (or reject) with a descriptive error if it can't be found or built. A loader turns that into a warning plus a skipped icon for a build collection, or `{ error }` for a live one.
-- **`listIcons`** lists every icon name this source can build. Required for a build collection — `createIconLoader` loads exactly this list. Optional for a live one, where it additionally enables `getLiveCollection()` and full autocomplete instead of a plain `string` type.
-- **`getVersion`** reports a cheap freshness signal, such as an installed pack's npm version. If every source in a collection reports one and it matches the last sync, `createIconLoader` skips re-building anything. Omit it if there's no reliable way to tell "nothing changed" short of building.
+- **`getIcons(names)`** always resolves the _whole_ requested batch at once, into a `Map` covering every name asked for — one entry per name, either its `IconEntry` or an `Error` for that one name alone. A source with a real batch endpoint pays for one request no matter how many names it's asked for in one call; a source with nothing to batch, like the example above, just resolves each name independently.
+- **`listIcons`** lists every icon name this source can build. Required for a build collection — `defineIconCollection` loads exactly this list. Optional for a live one, where it additionally enables `getLiveCollection()` and full autocomplete instead of a plain `string` type.
+- **`getVersion`** reports a cheap freshness signal, such as an installed pack's npm version. If every source in a collection reports one and it matches the last sync, the loader skips re-building anything. Omit it if there's no reliable way to tell "nothing changed" short of building.
 
-## `parseIconSVG`
+## `entryFromSVG`
 
-Turns a raw `<svg>...</svg>` string into the `IconEntry` shape astro-icon stores, deriving a `viewBox` if one is missing:
+Turns a raw `<svg>...</svg>` string into `{ entry, facts }`: `entry` is the `IconEntry` Astro Icon stores (fields describe the rendered root `<svg>`; `body` is its children), and `facts` reports what had to be inferred — `facts.viewBox` (`"present"` | `"missing"`) and `facts.monochromeWithoutCurrentColor` — for you to turn into your own warning, the same way `localSvg()` does internally. It throws only when the input has no `<svg>` element at all.
 
-```ts
-function parseIconSVG(
-  svg: string,
-  options: {
-    collection: string;
-    name: string;
-    optimize?: OptimizeFn;
-    strict?: boolean;
-    logger: Pick<AstroIntegrationLogger, "warn">;
-    fallbackSize?: { width: number; height: number };
-  },
-): Promise<IconEntry>;
-```
+For structured Iconify icon data specifically (not a raw SVG string), use `entryFromIconifyData` instead — see `iconify`'s/`iconifyApi`'s own source for an example.
 
-Use it inside your own `getIcon` once you have a raw SVG string, as in the example above. See the full [`IconSource` reference](/reference/icon-source/) for every option.
+## Dev-mode watching
+
+Implement `watch(watcher, report)` to opt a build-time source into dev watching, the same mechanism `localSvg()` uses for a directory of files: register whatever paths the source depends on with `watcher`, and call `report({ type: "add" | "change" | "unlink", name })` whenever one of them changes — the collection turns that into a surgical store update, re-resolving just that name instead of the whole collection. A live collection never calls `watch` — it resolves per request, so there's nothing to keep in sync.
+
+See the full [`IconSource` reference](/reference/source/) for every option, including `resolveRoot` and `checkPreconditions`.

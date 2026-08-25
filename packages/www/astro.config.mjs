@@ -52,18 +52,12 @@ export default defineConfig({
               link: "/guides/bring-your-own-source/",
               badge: { text: "New", variant: "success" },
             },
-            {
-              label: "Shipping Icons from a Library",
-              link: "/guides/shipping-icons-from-a-library/",
-              badge: { text: "New", variant: "success" },
-            },
           ],
         },
         {
           label: "Components",
           items: [
             { label: "The <Icon> Component", link: "/guides/components/" },
-            { label: "Styling Icons", link: "/guides/styling/" },
             {
               label: "Live Icons with <LiveIcon>",
               link: "/guides/live-icon/",
@@ -82,6 +76,12 @@ export default defineConfig({
         {
           label: "Guides",
           items: [
+            { label: "Styling Icons", link: "/guides/styling/" },
+            {
+              label: "Shipping Icons from a Library",
+              link: "/guides/shipping-icons-from-a-library/",
+              badge: { text: "New", variant: "success" },
+            },
             { label: "Deployment", link: "/guides/deployment/" },
             { label: "Troubleshooting", link: "/guides/troubleshooting/" },
           ],

@@ -62,11 +62,10 @@ See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if
 2.  Define an icon collection in `src/content.config.ts`, the same way you'd define any other [content collection](https://docs.astro.build/en/guides/content-collections/):
 
     ```ts title="src/content.config.ts"
-    import { defineCollection } from "astro:content";
-    import { createIconLoader, localSource } from "astro-icon/loaders";
+    import { defineIconCollection, localSvg } from "astro-icon/collections";
 
     export const collections = {
-      icons: defineCollection({ loader: createIconLoader(localSource()) }),
+      icons: defineIconCollection(localSvg()),
     };
     ```
 
@@ -92,7 +91,7 @@ See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if
 
 Add this line to `src/env.d.ts` so `<Icon name="...">` autocompletes against every icon in your collections, and gives you a type error for a name that doesn't exist:
 
-```ts title="src/env.d.ts" ins="/// <reference path="../.astro/astro-icon.d.ts" />"
+```ts title="src/env.d.ts" ins="/// <reference path=\"../.astro/astro-icon.d.ts\" />"
 /// <reference path="../.astro/astro-icon.d.ts" />
 ```
 
@@ -100,23 +99,20 @@ This file is generated the first time you run `astro sync`, `astro dev`, or `ast
 
 ## Quick start
 
-Define a collection in `src/content.config.ts`. Use `createIconLoader` with `iconifyLocalSource` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localSource` for a directory of your own `.svg` files:
+Every collection is `defineIconCollection` plus one or more `IconSource`s: `iconify` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localSvg` for a directory of your own `.svg` files:
 
 ```ts title="src/content.config.ts"
-import { defineCollection } from "astro:content";
 import {
-  createIconLoader,
-  iconifyLocalSource,
-  localSource,
-} from "astro-icon/loaders";
+  defineIconCollection,
+  iconify,
+  localSvg,
+} from "astro-icon/collections";
 
 export const collections = {
   // Renders any icon from Material Design Icons: <Icon name="mdi:home" />
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi")),
-  }),
+  mdi: defineIconCollection(iconify("mdi")),
   // Renders a local file at src/icons/logo.svg: <Icon name="logo" />
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
+  icons: defineIconCollection(localSvg()),
 };
 ```
 
@@ -136,7 +132,7 @@ import { Icon } from "astro-icon/components";
 
 ### Next steps
 
-- **Add local icons:** Learn how `localSource()` picks up `.svg` files in [“Local Icons”](/guides/local-icons/).
+- **Add local icons:** Learn how `localSvg()` picks up `.svg` files in [“Local Icons”](/guides/local-icons/).
 - **Add an icon set:** Browse [Iconify Icon Sets](https://icon-sets.iconify.design/) and wire one up in [“Iconify Icons”](/guides/iconify-icons/).
 - **Components:** Understand `<Icon>`'s full prop surface in [“The `<Icon>` Component”](/guides/components/).
 - **Deploy:** Before you publish your project, refer to the [“Deployment”](/guides/deployment/) guide.
@@ -180,7 +176,7 @@ See the [Astro Icon changelog](https://github.com/natemoo-re/astro-icon/blob/mai
 
 ## Troubleshooting Astro Icon
 
-Use the [Local Icons](/guides/local-icons/) and [Iconify Icons](/guides/iconify-icons/) guides and the [Reference](/reference/loaders/) pages to ensure Astro Icon is configured correctly.
+Use the [Local Icons](/guides/local-icons/) and [Iconify Icons](/guides/iconify-icons/) guides and the [Reference](/reference/collections/) pages to ensure Astro Icon is configured correctly.
 See the guides in the sidebar for help with additional topics.
 
 If your answer cannot be found in these docs, please visit the [full Astro Docs](https://docs.astro.build) for complete Astro documentation.
