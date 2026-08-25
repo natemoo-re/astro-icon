@@ -1,0 +1,170 @@
+---
+title: Iconify Icons
+description: Resolve icons from any Iconify icon set, locally installed or from the public API.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+import { Icon } from "astro-icon/components";
+import Showcase from "../../../components/Showcase.astro";
+
+[Iconify](https://iconify.design/) distributes thousands of open source icon sets in a normalized format. Astro Icon ships two sources for them: `iconify`, backed by a locally installed pack, and `iconifyApi`, backed by the public Iconify API.
+
+This site loads Material Design Icons and renders from it:
+
+<Showcase
+  code={`<Icon name="mdi:rocket" size={32} />
+<Icon name="mdi:palette" size={32} />
+<Icon name="mdi:star" size={32} />
+<Icon name="mdi:heart" size={32} />`}
+>
+  <Icon name="mdi:rocket" size={32} />
+  <Icon name="mdi:palette" size={32} />
+  <Icon name="mdi:star" size={32} />
+  <Icon name="mdi:heart" size={32} />
+</Showcase>
+
+### Find an icon set
+
+Visit the official [Iconify Icon Sets](https://icon-sets.iconify.design/) explorer or the popular [Icônes](https://icones.js.org/) app to browse the available icon sets.
+
+## `iconify`
+
+Resolves icons from any Iconify icon set installed locally as `@iconify-json/<pack>`. Pass it to `defineIconCollection` to use it as a collection:
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install -D @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm add -D @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="bun">
+
+```sh
+bun add -D @iconify-json/mdi
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add -D @iconify-json/mdi
+```
+
+</TabItem>
+</Tabs>
+
+```ts title="src/content.config.ts"
+import { defineIconCollection, iconify } from "astro-icon/collections";
+
+export const collections = {
+  mdi: defineIconCollection(iconify("mdi")),
+};
+```
+
+```astro
+---
+import { Icon } from "astro-icon/components";
+---
+
+<!-- Embed the `account` icon from `@iconify-json/mdi` -->
+<Icon name="mdi:account" />
+```
+
+`iconify` never falls back to the network — it throws if the pack isn't installed.
+
+## `iconifyApi`
+
+For a pack you'd rather not install (or a `<LiveIcon>` collection, where you can't know every icon name ahead of time), `iconifyApi` resolves each requested icon individually from the public Iconify API:
+
+```ts title="src/content.config.ts"
+import { defineIconCollection, iconifyApi } from "astro-icon/collections";
+
+export const collections = {
+  // The API only resolves icons you name explicitly, never the whole pack.
+  // The whole `allowed` list is fetched in one batched request during your build.
+  mdi: defineIconCollection(
+    iconifyApi("mdi", { allowed: ["account", "home", "heart"] }),
+  ),
+};
+```
+
+`iconifyApi` talks to the public `api.iconify.design` by default. If you [self-host an Iconify API instance](https://iconify.design/docs/api/hosting.html), point the source at it with `host`:
+
+```ts title="src/content.config.ts"
+iconifyApi("mdi", {
+  allowed: ["account", "home"],
+  host: "https://icons.example.com",
+});
+```
+
+## Local-preferred, API-fallback
+
+Want "prefer a local install, fall back to the API"? Pass both as an array to `defineIconCollection` — each icon is resolved by trying sources in order, first match wins:
+
+```ts title="src/content.config.ts"
+import {
+  defineIconCollection,
+  iconify,
+  iconifyApi,
+} from "astro-icon/collections";
+
+export const collections = {
+  mdi: defineIconCollection([
+    iconify("mdi", { allowed: ["account", "home", "heart"] }),
+    iconifyApi("mdi", { allowed: ["account", "home", "heart"] }),
+  ]),
+};
+```
+
+## Options
+
+Both sources accept the same options as their second argument (see the full [Sources reference](/reference/sources/)):
+
+- **`allowed`** — restricts the collection (and its generated types) to exactly these icons, typed and autocompleted against the pack's own catalog once a sync has recorded it.
+- **`transform`** — transforms each icon's already-built `IconEntry` before Astro Icon stores it, the last step after any source-specific policy.
+
+```ts title="src/content.config.ts"
+export const collections = {
+  mdi: defineIconCollection(
+    iconify("mdi", {
+      allowed: ["account", "home", "heart"],
+      transform: (entry) => ({
+        ...entry,
+        body: entry.body.replaceAll('stroke-width="2"', 'stroke-width="1.5"'),
+      }),
+    }),
+  ),
+};
+```
+
+`optimize` (see [“SVGO & optimize()”](/guides/optimize/)) is `localSvg()`'s alone — an Iconify source builds its `IconEntry` straight out of structured Iconify icon data, so there's never a raw SVG string in play for it to transform.
+
+## Combining multiple packs into one collection
+
+Pass `defineIconCollection` an array of sources to combine several packs into one collection:
+
+```ts title="src/content.config.ts"
+import { defineIconCollection, iconify } from "astro-icon/collections";
+
+export const collections = {
+  social: defineIconCollection([
+    iconify("mdi", { allowed: ["github"] }),
+    iconify("simple-icons", { allowed: ["discord"] }),
+  ]),
+};
+```
+
+Like `localSvg()`, each collection's sync logs its icon count and duration (e.g. `Loaded 3 icon(s) for the "social" collection in 210ms`). Run with `--verbose` (or set Astro's `logLevel` to `"debug"`) for a finer-grained breakdown of listing versus building, and whether a pack resolved locally or from the API.
+
+:::caution
+Unlike v1's `include` integration option, there's no bundle-wide "include everything, then filter" step to worry about: each source's own `allowed: [...]` option already scopes exactly what's loaded. See [“Deployment”](/guides/deployment/).
+:::

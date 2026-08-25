@@ -1,0 +1,88 @@
+---
+title: Live Icons with <LiveIcon>
+description: Resolve icons per request instead of at build time.
+---
+
+Use `<LiveIcon>` instead of `<Icon>` when you can't know your icon names ahead of time, such as a user-driven icon search. It resolves against a live collection at request time rather than at build time.
+
+Live content collections are stable as of Astro 6, with nothing to enable. On Astro 5, turn on the `experimental.liveContentCollections` flag in `astro.config.mjs` first:
+
+```ts title="astro.config.mjs"
+// Astro 5 only
+export default defineConfig({
+  experimental: { liveContentCollections: true },
+});
+```
+
+## Define a live collection
+
+Live collections are defined in their own `src/live.config.ts` file, separate from `src/content.config.ts`. Use `defineLiveIconCollections`, which writes each key exactly once — it becomes both the collection's name and its generated `LiveCollectionName` type:
+
+```ts title="src/live.config.ts"
+import { iconify, defineLiveIconCollections } from "astro-icon/collections";
+
+export const collections = defineLiveIconCollections({
+  mdi: iconify("mdi"),
+});
+```
+
+For a pack you'd rather not install, `iconifyApi` (with no `allowed` option) resolves any requested icon names from the public Iconify API on demand — exactly what a live collection needs, since its icon names aren't known ahead of time:
+
+```ts title="src/live.config.ts"
+import { iconifyApi, defineLiveIconCollections } from "astro-icon/collections";
+
+export const collections = defineLiveIconCollections({
+  ph: iconifyApi("ph"),
+});
+```
+
+Live icon collections mix freely with other live collections — spread them into the same `collections` object:
+
+```ts title="src/live.config.ts"
+export const collections = {
+  ...defineLiveIconCollections({ mdi: iconify("mdi") }),
+  products: defineLiveCollection({ loader: myProductsLoader }),
+};
+```
+
+### Registering with `defineLiveCollection()` yourself
+
+To register with Astro's `defineLiveCollection()` yourself, use `createLiveIconLoader` (the live equivalent of `createIconLoader`) and tell it its collection key — Astro only reveals the real key at request time, so the loader needs it up front to generate types (it warns on the first request if the two don't match):
+
+```ts title="src/live.config.ts"
+import { defineLiveCollection } from "astro:content";
+import { createLiveIconLoader, iconify } from "astro-icon/collections";
+
+export const collections = {
+  mdi: defineLiveCollection({
+    loader: createLiveIconLoader(iconify("mdi"), {
+      collection: "mdi",
+    }),
+  }),
+};
+```
+
+## Render a live icon
+
+```astro
+---
+import { LiveIcon } from "astro-icon/components";
+---
+
+<LiveIcon collection="mdi" icon="account" />
+```
+
+Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props instead of one `name`:
+
+- **`collection`** autocompletes against every live collection you define. Live collections have no bare-name default the way `<Icon>` has an `icons` collection default — always pass it.
+- **`icon`** stays a plain `string`, since a live collection's icon names resolve per request and aren't known at sync time.
+
+`<LiveIcon>` accepts the same `title`, `desc`, `size`, `width`, and `height` props as `<Icon>`, with the same decorative-by-default behavior described in [“The `<Icon>` Component”](/guides/components/#accessibility-decorative-vs-labeled).
+
+## Failure behavior
+
+If an icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing, rather than throwing and failing the whole page — a single bad request-time lookup (a typo, an unreachable API) shouldn't take the rest of the page down with it.
+
+## A source doesn't have to be Iconify
+
+`<LiveIcon>` works against any `IconSource`, not just Iconify — see [“Bringing Your Own Source”](/guides/bring-your-own-source/) to back a live collection with your own API, design tool, or database.

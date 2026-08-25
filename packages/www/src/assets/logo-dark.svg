@@ -1,10 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#a78bfa">
   <circle cx="7" cy="7" r="3.2" />
   <rect x="13.8" y="3.8" width="6.4" height="6.4" rx="1.6" />
   <path d="M7 13.8 10.2 20.2H3.8Z" />
   <path d="M17 13.6q.6 2.8 3.4 3.4-2.8.6-3.4 3.4-.6-2.8-3.4-3.4 2.8-.6 3.4-3.4Z" />
-  <style>
-    :root { fill: #7c3aed }
-    @media (prefers-color-scheme: dark) { :root { fill: #a78bfa } }
-  </style>
 </svg>

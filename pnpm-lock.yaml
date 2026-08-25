@@ -311,9 +311,15 @@ importers:
       "@astrojs/starlight":
         specifier: ^0.41.7
         version: 0.41.7(astro@7.2.2)(typescript@6.0.3)
+      "@iconify-json/mdi":
+        specifier: ^1.2.3
+        version: 1.2.3
       astro:
         specifier: ^7.2.2
         version: 7.2.2(@astrojs/markdown-remark@7.2.2)(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)
+      astro-icon:
+        specifier: workspace:*
+        version: link:../core
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@22.20.1)
@@ -4924,7 +4930,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.28.8
-      caniuse-lite: 1.0.30001809
+      caniuse-lite: 1.0.30001810
       fraction.js: 5.3.4
       picocolors: 1.1.1
       postcss: 8.5.26
@@ -5004,8 +5010,8 @@ packages:
     hasBin: true
     dependencies:
       baseline-browser-mapping: 2.11.19
-      caniuse-lite: 1.0.30001809
-      electron-to-chromium: 1.5.413
+      caniuse-lite: 1.0.30001810
+      electron-to-chromium: 1.5.414
       node-releases: 2.0.53
       update-browserslist-db: 1.3.1(browserslist@4.28.8)
     dev: true
@@ -5041,10 +5047,10 @@ packages:
     engines: { node: ">= 6" }
     dev: true
 
-  /caniuse-lite@1.0.30001809:
+  /caniuse-lite@1.0.30001810:
     resolution:
       {
-        integrity: sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ==,
+        integrity: sha512-TITQPUkaz+aVk5GL6NhOdwk1aEaNTSDPsGFWrTuhKGtjTF70jL/Oht2W4c6rXUe5fu7Ie19VIahAXHIIiWWNeg==,
       }
     dev: true
 
@@ -5505,10 +5511,10 @@ packages:
       }
     dev: true
 
-  /electron-to-chromium@1.5.413:
+  /electron-to-chromium@1.5.414:
     resolution:
       {
-        integrity: sha512-F1XPKvt7HVfly5WND90ec16nFsdr4g5x/cVUP3EqjeyXynupabGDqpMa84wwvuYGDnldXLBz6DLXyZXWO9TPvw==,
+        integrity: sha512-aYlviXiaXBbzvKgyALpcMmqa3Np3sDr0XnZbEG62n2UpZFbEcjQ4EEMOLGzVPhwVnwTz0lvKY+GcARbunuHekw==,
       }
     dev: true
 
