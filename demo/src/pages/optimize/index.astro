@@ -1,0 +1,154 @@
+---
+export const prerender = true;
+
+import { Code } from "astro:components";
+import { Icon } from "astro-icon/components";
+import type { IconName } from "astro-icon";
+import { svgo } from "astro-icon/optimize";
+import Base from "../../layouts/base.astro";
+
+// One tag per line with depth indentation, purely for display: the byte counts above are
+// measured against the real single-line output, not this.
+function prettySVG(svg: string): string {
+  const tokens = svg.replace(/></g, ">\n<").split("\n");
+  let depth = 0;
+  return tokens
+    .map((token) => {
+      if (token.startsWith("</")) depth = Math.max(0, depth - 1);
+      const line = "  ".repeat(depth) + token;
+      if (
+        token.startsWith("<") &&
+        !token.startsWith("</") &&
+        !token.endsWith("/>") &&
+        !token.includes("</")
+      ) {
+        depth++;
+      }
+      return line;
+    })
+    .join("\n");
+}
+
+// Assembled as an HTML string because Prettier's Astro parser can't handle adjacent
+// expressions inside a <pre>.
+const warnLines = [
+  `[astro-icon] "lock" in "src/icons" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
+  `[astro-icon] "logo" in "src/icons" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
+];
+const warnDetail = `  lock.svg hardcodes fill="#22c55e"; logo.svg paints with a gradient - both flagged on purpose.`;
+const consoleHtml = `${warnLines
+  .map((line) => `<span class="tok-warn">${line}</span>`)
+  .join("\n")}\n<span class="tok-dim">${warnDetail}</span>`;
+
+const fixSnippet = `optimize: svgo({
+  plugins: [
+    {
+      name: "preset-default",
+      params: {
+        overrides: { ...defaultOverrides, convertColors: { currentColor: true } },
+      },
+    },
+  ],
+});`;
+
+// Vite inlines each icon's source at build time, so the numbers below are measured against the
+// real files rather than quoted - and there's no filesystem read left in the built output.
+const sources = import.meta.glob<string>("../../icons/**/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const optimize = svgo();
+
+const results = await Promise.all(
+  Object.entries(sources)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(async ([path, raw]) => {
+      // Keep any subdirectory in the name (icons/arrows/left.svg → "arrows/left"), matching
+      // how localSvg() names nested files.
+      const name = path.replace(/^.*?\/icons\//, "").slice(0, -".svg".length);
+      const out = await optimize(raw, { collection: "icons", name });
+      return { name, before: raw.length, after: out.length, out };
+    }),
+);
+
+const before = results.reduce((n, r) => n + r.before, 0);
+const after = results.reduce((n, r) => n + r.after, 0);
+const saved = Math.round(((before - after) / before) * 100);
+const sample = results.find((r) => r.name === "lock")!;
+---
+
+<Base title="Optimize" sub="astro-icon/optimize">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">svgo() across src/icons/</span>
+      <span class="stat">
+        <strong>{before.toLocaleString()}</strong> → <strong
+          >{after.toLocaleString()}</strong
+        > bytes (<strong>{saved}%</strong> smaller)
+      </span>
+    </div>
+    <ul class="rows">
+      {
+        results.map((r) => (
+          <li>
+            <span class="icons">
+              <Icon name={r.name as IconName} size={20} />
+            </span>
+            <span class="name">{r.name}</span>
+            <span class="src">
+              {r.before} → {r.after} bytes
+            </span>
+            <span class="count">
+              −
+              {Math.max(0, Math.round(((r.before - r.after) / r.before) * 100))}
+              %
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Optimized output</span>
+      <span class="bench__note"
+        >lock.svg after the default svgo() pass — re-indented for reading, the
+        byte counts use the real one-line output</span
+      >
+    </div>
+    <Code code={prettySVG(sample.out)} lang="xml" theme="github-dark-default" />
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">The currentColor warning</span>
+      <span class="bench__note">Logged every sync; never mutates the icon</span>
+    </div>
+    <div class="bench__stage">
+      <div class="grid-2">
+        <div class="icon-cell">
+          <Icon name="lock" size={44} />
+          <code>icons:lock — flagged, ignores color</code>
+        </div>
+        <div class="icon-cell">
+          <Icon name="lockFixed:lock" size={44} />
+          <code>lockFixed:lock — converted, follows color</code>
+        </div>
+      </div>
+    </div>
+    <div class="bench__body">
+      <pre
+        class="console"><code><Fragment set:html={consoleHtml} /></code></pre>
+      <p class="hint" style="margin:.6rem 0 .4rem">The fix, per collection:</p>
+      <Code code={fixSnippet} lang="ts" theme="github-dark-default" />
+      <p class="hint" style="margin-top:.6rem">
+        The default <code>svgo()</code> deliberately leaves color and DOM shape alone
+        &mdash; add an icon with a hardcoded fill to <code>src/icons/</code> and the
+        warning count above should go up.
+      </p>
+    </div>
+  </div>
+</Base>

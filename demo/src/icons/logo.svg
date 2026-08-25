@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="logo-fill" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8b5cf6" />
+      <stop offset="1" stop-color="#ec4899" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M12 2l2.6 6.9 7.4 1.1-5 4.9 1.2 6.8L12 17.8 5.8 21 7 14.2 2 9.3l7.4-1.1L12 2z"
+    fill="url(#logo-fill)"
+  />
+</svg>

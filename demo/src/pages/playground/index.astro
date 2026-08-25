@@ -1,0 +1,430 @@
+---
+export const prerender = true;
+
+import Base from "../../layouts/base.astro";
+
+// The examples are picked so every knob visibly does something: a hardcoded stroke color for
+// convertColors, sloppy decimals for floatPrecision, comments/metadata for the
+// astro-icon-default vs. SVGO-default comparison, and a missing viewBox for the derive path
+// (entryFromSVG() always recovers one - see the viewBox warning below, not a build failure).
+const examples = [
+  {
+    id: "stroke",
+    label: "stroke icon",
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.000" stroke-linecap="round">
+  <!-- hardcoded stroke: try the "+ convertColors" optimize mode -->
+  <circle cx="12.000" cy="12.000" r="9.0001" />
+  <path d="M8.5 12.5l2.5 2.5 4.5-5.5" />
+</svg>`,
+  },
+  {
+    id: "messy",
+    label: "messy export",
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" fill="currentColor">
+  <!-- Exported by SomeDesignTool 11.4.2 -->
+  <metadata>generator: SomeDesignTool</metadata>
+  <g>
+    <g>
+      <path d="M12.000000 2.000000 L14.590000 8.900000 L21.990000 10.000000 L17.000000 14.900000 L18.180000 21.000000 L12.000000 17.770000 L5.820000 21.000000 L7.000000 14.140000 L2.000000 9.270000 L8.910000 8.260000 Z" />
+    </g>
+  </g>
+</svg>`,
+  },
+  {
+    id: "no-viewbox",
+    label: "no viewBox",
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor">
+  <circle cx="16" cy="16" r="12" />
+</svg>`,
+  },
+];
+---
+
+<Base title="Playground" sub="paste an svg · real pipeline">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Paste, type, or import an SVG</span>
+      <span class="bench__note"
+        >Runs the real <code>svgo()</code> → <code>entryFromSVG()</code> pipeline
+        server-side on every change</span
+      >
+    </div>
+    <div class="bench__controls">
+      {
+        examples.map((example) => (
+          <button class="chip" type="button" data-example={example.id}>
+            {example.label}
+          </button>
+        ))
+      }
+      <label class="button" style="cursor:pointer">
+        import file
+        <input
+          type="file"
+          accept=".svg,image/svg+xml"
+          data-file
+          style="display:none"
+        />
+      </label>
+    </div>
+    <textarea
+      class="editor"
+      data-source
+      spellcheck="false"
+      aria-label="SVG source"></textarea>
+    {
+      examples.map((example) => (
+        <template data-example-src={example.id} set:text={example.svg} />
+      ))
+    }
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Pipeline knobs</span>
+      <span class="stat" data-stats></span>
+    </div>
+    <div class="bench__controls">
+      <label class="knob">
+        optimize
+        <select data-mode>
+          <option value="off">off — parse the source as-is</option>
+          <option value="default" selected>svgo() — astro-icon default</option>
+          <option value="current-color"
+            >svgo() + convertColors currentColor</option
+          >
+          <option value="svgo-preset">SVGO's own preset-default</option>
+        </select>
+      </label>
+      <label class="knob">
+        floatPrecision
+        <input type="range" min="0" max="5" value="3" data-precision />
+        <output data-precision-out>3</output>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" data-multipass />
+        multipass
+      </label>
+    </div>
+    <pre class="console" data-log hidden></pre>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Result</span>
+      <span class="bench__note" data-entry-summary></span>
+    </div>
+    <div class="bench__controls">
+      <label class="knob">
+        preview size
+        <input type="range" min="16" max="160" value="64" data-preview-size />
+        <output data-preview-size-out>64px</output>
+      </label>
+      <label class="knob">
+        color
+        <input type="color" value="#6d28d9" data-preview-color />
+      </label>
+      <span class="hint"
+        >color only shows if the icon uses <code>currentColor</code></span
+      >
+    </div>
+    <div class="stage-center" data-preview></div>
+    <pre class="inspector" data-output></pre>
+    <p class="hint" style="padding: 0.6rem 0.9rem">
+      One step isn't shown: at sync time, collection loaders additionally strip
+      active content (scripts, event handlers, dangerous URIs) from every icon
+      body, whatever its source.
+    </p>
+  </div>
+</Base>
+
+<script>
+  interface ParseResponse {
+    entry?: Record<string, unknown> & {
+      body: string;
+      viewBox: string;
+      width: number;
+      height: number;
+      title?: string;
+      desc?: string;
+    };
+    optimized?: string;
+    before?: number;
+    after?: number;
+    warnings?: string[];
+    error?: { message: string; hint?: string };
+  }
+
+  const DEBOUNCE_MS = 300;
+
+  const source = document.querySelector<HTMLTextAreaElement>("[data-source]")!;
+  const fileInput = document.querySelector<HTMLInputElement>("[data-file]")!;
+  const mode = document.querySelector<HTMLSelectElement>("[data-mode]")!;
+  const precision =
+    document.querySelector<HTMLInputElement>("[data-precision]")!;
+  const precisionOut = document.querySelector<HTMLOutputElement>(
+    "[data-precision-out]",
+  )!;
+  const multipass =
+    document.querySelector<HTMLInputElement>("[data-multipass]")!;
+  const stats = document.querySelector<HTMLElement>("[data-stats]")!;
+  const log = document.querySelector<HTMLPreElement>("[data-log]")!;
+  const entrySummary = document.querySelector<HTMLElement>(
+    "[data-entry-summary]",
+  )!;
+  const preview = document.querySelector<HTMLElement>("[data-preview]")!;
+  const previewSize = document.querySelector<HTMLInputElement>(
+    "[data-preview-size]",
+  )!;
+  const previewSizeOut = document.querySelector<HTMLOutputElement>(
+    "[data-preview-size-out]",
+  )!;
+  const previewColor = document.querySelector<HTMLInputElement>(
+    "[data-preview-color]",
+  )!;
+  const output = document.querySelector<HTMLPreElement>("[data-output]")!;
+
+  const examples = new Map<string, string>();
+  document
+    .querySelectorAll<HTMLTemplateElement>("[data-example-src]")
+    .forEach((tpl) => {
+      examples.set(
+        tpl.dataset.exampleSrc!,
+        (tpl.content.textContent ?? "").trim(),
+      );
+    });
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-example]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        source.value = examples.get(btn.dataset.example!) ?? "";
+        void run();
+      });
+    });
+  source.value = examples.get("stroke") ?? "";
+
+  // Same display-only formatting as the props inspector: indentation, self-closed empty
+  // elements, and tag/attr/value spans over fully-escaped source.
+  function format(html: string): string {
+    const tokens = html
+      .replace(/></g, ">\n<")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const merged: string[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]!;
+      const open = token.match(/^<([a-zA-Z][\w-]*)([^>]*[^/>])?>$/);
+      if (open && tokens[i + 1] === `</${open[1]}>`) {
+        merged.push(`<${open[1]}${(open[2] ?? "").trimEnd()} />`);
+        i++;
+        continue;
+      }
+      merged.push(token);
+    }
+
+    let depth = 0;
+    return merged
+      .map((token) => {
+        if (token.startsWith("</")) depth = Math.max(0, depth - 1);
+        const line = "  ".repeat(depth) + token;
+        const opensElement =
+          token.startsWith("<") &&
+          !token.startsWith("</") &&
+          !token.endsWith("/>") &&
+          !token.includes("</");
+        if (opensElement) depth++;
+        return line;
+      })
+      .join("\n");
+  }
+
+  function highlight(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(
+        /([a-zA-Z_:][\w:.-]*)=("[^"]*")/g,
+        '<span class="hl-attr">$1</span>=<span class="hl-str">$2</span>',
+      )
+      .replace(
+        /(&lt;\/?)([a-zA-Z][\w-]*)/g,
+        '$1<span class="hl-tag">$2</span>',
+      );
+  }
+
+  function escapeHTML(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function renderPreview(entry: ParseResponse["entry"]) {
+    preview.replaceChildren();
+    if (!entry) return;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", entry.viewBox);
+    svg.innerHTML = entry.body;
+    applyPreviewKnobs(svg);
+    preview.append(svg);
+  }
+
+  function applyPreviewKnobs(svg?: SVGSVGElement | null) {
+    const target = svg ?? preview.querySelector("svg");
+    if (!target) return;
+    target.setAttribute("width", previewSize.value);
+    target.setAttribute("height", previewSize.value);
+    target.style.color = previewColor.value;
+    previewSizeOut.value = `${previewSize.value}px`;
+  }
+
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let controller: AbortController | undefined;
+
+  async function run() {
+    controller?.abort();
+    const svg = source.value;
+    if (!svg.trim()) {
+      stats.textContent = "";
+      log.hidden = true;
+      entrySummary.textContent = "";
+      preview.replaceChildren();
+      output.textContent = "";
+      return;
+    }
+
+    controller = new AbortController();
+    let response: Response;
+    try {
+      response = await fetch("/api/parse-svg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          svg,
+          optimize: mode.value,
+          floatPrecision: Number(precision.value),
+          multipass: multipass.checked,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      stats.textContent = "request failed";
+      return;
+    }
+
+    const data = (await response.json()) as ParseResponse;
+
+    const lines: string[] = [];
+    for (const warning of data.warnings ?? []) {
+      lines.push(`<span class="tok-warn">[WARN] ${escapeHTML(warning)}</span>`);
+    }
+    if (data.error) {
+      lines.push(
+        `<span class="tok-bad">[ERROR] ${escapeHTML(data.error.message)}</span>`,
+      );
+      if (data.error.hint) {
+        lines.push(
+          `<span class="tok-dim">${escapeHTML(data.error.hint)}</span>`,
+        );
+      }
+    }
+    log.innerHTML = lines.join("\n");
+    log.hidden = lines.length === 0;
+
+    if (data.error || !data.entry) {
+      stats.textContent = "";
+      entrySummary.textContent = "";
+      preview.replaceChildren();
+      output.textContent = "";
+      return;
+    }
+
+    const { before = 0, after = 0 } = data;
+    const delta =
+      before > 0 ? Math.round(((before - after) / before) * 100) : 0;
+    stats.textContent =
+      mode.value === "off"
+        ? `${before.toLocaleString()} bytes (optimize off)`
+        : `${before.toLocaleString()} → ${after.toLocaleString()} bytes (−${Math.max(0, delta)}%)`;
+
+    const entry = data.entry;
+    entrySummary.textContent = [
+      `viewBox="${entry.viewBox}"`,
+      `${entry.width}×${entry.height}`,
+      entry.title ? `title "${entry.title}"` : undefined,
+      entry.desc ? `desc "${entry.desc}"` : undefined,
+      `body ${entry.body.length} chars`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    renderPreview(entry);
+    output.innerHTML = highlight(format(data.optimized ?? ""));
+  }
+
+  source.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => void run(), DEBOUNCE_MS);
+  });
+  [mode, multipass].forEach((el) =>
+    el.addEventListener("change", () => void run()),
+  );
+  precision.addEventListener("input", () => {
+    precisionOut.value = precision.value;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => void run(), DEBOUNCE_MS);
+  });
+  previewSize.addEventListener("input", () => applyPreviewKnobs());
+  previewColor.addEventListener("input", () => applyPreviewKnobs());
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    source.value = await file.text();
+    fileInput.value = "";
+    void run();
+  });
+
+  void run();
+</script>
+
+<style>
+  .editor {
+    display: block;
+    width: 100%;
+    min-height: 11rem;
+    resize: vertical;
+    border: none;
+    padding: 0.8rem 0.9rem;
+    background: var(--bg-panel);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    box-sizing: border-box;
+  }
+
+  .editor:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  .console {
+    border-radius: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .inspector :global(.hl-tag) {
+    color: #7bd88f;
+  }
+  .inspector :global(.hl-attr) {
+    color: #9cc7f7;
+  }
+  .inspector :global(.hl-str) {
+    color: #f0c96b;
+  }
+</style>
