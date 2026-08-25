@@ -3,7 +3,7 @@ import { createLiveIconLoader } from "./liveLoader.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
-/** The `defineLiveCollection()`-shaped config {@link liveIconCollections} produces per key. */
+/** The `defineLiveCollection()`-shaped config {@link defineLiveIconCollections} produces per key. */
 export interface LiveIconCollectionConfig {
   type: "live";
   loader: LiveLoader<IconEntry, { id: string }, { ids: string[] }>;
@@ -18,10 +18,10 @@ export interface LiveIconCollectionConfig {
  *
  * ```ts
  * // src/live.config.ts
- * import { iconify, liveIconCollections } from "astro-icon/collections";
+ * import { iconify, defineLiveIconCollections } from "astro-icon/collections";
  *
  * export const collections = {
- *   ...liveIconCollections({
+ *   ...defineLiveIconCollections({
  *     spinners: iconify("svg-spinners"),
  *   }),
  *   // non-icon live collections use Astro's own defineLiveCollection() as usual
@@ -34,7 +34,7 @@ export interface LiveIconCollectionConfig {
  * up front (a search result set, saved user picks), not just individually
  * dynamic.
  */
-export function liveIconCollections<
+export function defineLiveIconCollections<
   T extends Record<string, IconSource | IconSource[]>,
 >(sources: T): Record<keyof T, LiveIconCollectionConfig> {
   const collections = {} as Record<keyof T, LiveIconCollectionConfig>;

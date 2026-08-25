@@ -27,7 +27,7 @@ export type { LocalSvgOptions } from "./content/local/localSvg.js";
 export type { IconLoaderOptions } from "./content/loader.js";
 export type { LiveIconLoaderOptions } from "./content/liveLoader.js";
 export type { IconCollectionConfig } from "./content/defineIconCollection.js";
-export type { LiveIconCollectionConfig } from "./content/liveCollections.js";
+export type { LiveIconCollectionConfig } from "./content/defineLiveIconCollections.js";
 export type {
   EntryFacts,
   EntryFromSVGResult,

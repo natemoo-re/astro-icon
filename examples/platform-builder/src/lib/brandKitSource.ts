@@ -14,7 +14,7 @@ const BRAND_KIT: Record<string, string> = {
 };
 
 export interface BrandKitSourceOptions {
-  /** A diagnostic label for this source, shown in error/log messages - doesn't have to match the collection key it's registered under in `live.config.ts` (see `liveIconCollections()`, which supplies that key from its own object keys). */
+  /** A diagnostic label for this source, shown in error/log messages - doesn't have to match the collection key it's registered under in `live.config.ts` (see `defineLiveIconCollections()`, which supplies that key from its own object keys). */
   name: string;
 }
 

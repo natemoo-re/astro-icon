@@ -401,13 +401,13 @@ export default defineConfig({
 });
 ```
 
-Define one in `src/live.config.ts` with `liveIconCollections`: each key becomes both the collection's name and its generated `LiveCollectionName` type, written exactly once:
+Define one in `src/live.config.ts` with `defineLiveIconCollections`: each key becomes both the collection's name and its generated `LiveCollectionName` type, written exactly once:
 
 ```ts
 // src/live.config.ts
-import { iconify, liveIconCollections } from "astro-icon/collections";
+import { iconify, defineLiveIconCollections } from "astro-icon/collections";
 
-export const collections = liveIconCollections({
+export const collections = defineLiveIconCollections({
   mdi: iconify("mdi"),
 });
 ```
@@ -415,9 +415,9 @@ export const collections = liveIconCollections({
 For a pack you'd rather not install, `iconifyApi` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
 
 ```ts
-import { iconifyApi, liveIconCollections } from "astro-icon/collections";
+import { iconifyApi, defineLiveIconCollections } from "astro-icon/collections";
 
-export const collections = liveIconCollections({
+export const collections = defineLiveIconCollections({
   ph: iconifyApi("ph"),
 });
 ```
@@ -426,7 +426,7 @@ Live icon collections mix freely with other live collections - spread them into 
 
 ```ts
 export const collections = {
-  ...liveIconCollections({ mdi: iconify("mdi") }),
+  ...defineLiveIconCollections({ mdi: iconify("mdi") }),
   products: defineLiveCollection({ loader: myProductsLoader }),
 };
 ```
@@ -460,11 +460,11 @@ Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props inste
 
 ## Bringing your own icon source
 
-Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `defineIconCollection` (build time) or `liveIconCollections` (per request). Everything you need lives in `astro-icon/source` - the authoring kit entry:
+Write your own `IconSource` to fetch icons from a design tool, a database, or an internal API, then pass it to `defineIconCollection` (build time) or `defineLiveIconCollections` (per request). Everything you need lives in `astro-icon/source` - the authoring kit entry:
 
 ```ts
 import { defineIconSource, entryFromSVG } from "astro-icon/source";
-import { liveIconCollections } from "astro-icon/collections";
+import { defineLiveIconCollections } from "astro-icon/collections";
 
 const mySource = defineIconSource({
   name: "my-source",
@@ -490,7 +490,7 @@ const mySource = defineIconSource({
   },
 });
 
-export const collections = liveIconCollections({ custom: mySource });
+export const collections = defineLiveIconCollections({ custom: mySource });
 ```
 
 `defineIconSource` is an identity function, the same convention as Astro's own `defineConfig`: it types every method against the `IconSource` contract without you annotating the variable.

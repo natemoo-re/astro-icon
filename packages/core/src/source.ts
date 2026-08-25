@@ -1,6 +1,6 @@
 /**
  * The custom-source authoring kit: everything needed to implement an {@link IconSource} of your
- * own and feed it to `astro-icon/collections`' `defineIconCollection`/`liveIconCollections`.
+ * own and feed it to `astro-icon/collections`' `defineIconCollection`/`defineLiveIconCollections`.
  *
  * `defineIconSource` types the source; `entryFromSVG` (raw SVG text) and `entryFromIconifyData`
  * (structured Iconify data) build canonical entries; `mergeSources` pre-composes several sources

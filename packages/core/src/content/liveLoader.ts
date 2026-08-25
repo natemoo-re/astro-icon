@@ -49,7 +49,7 @@ function cachingSource(source: IconSource): IconSource {
 export interface LiveIconLoaderOptions {
   /**
    * The key this loader is registered under in `live.config.ts`'s `collections` object, used
-   * as the generated `LiveCollectionName` type. Prefer `liveIconCollections()`, which supplies
+   * as the generated `LiveCollectionName` type. Prefer `defineLiveIconCollections()`, which supplies
    * it from its own object keys so the two can't drift; declare it here only when calling
    * Astro's `defineLiveCollection()` yourself. Astro only reveals the real key at request time,
    * so a mismatch is warned about (and typegen corrected) on the collection's first request.
@@ -63,7 +63,7 @@ export interface LiveIconLoaderOptions {
  * instead of at build time. Use this when you can't know your icon names
  * ahead of time, such as a user-driven icon search.
  *
- * Prefer `liveIconCollections()`, which calls this and never repeats the
+ * Prefer `defineLiveIconCollections()`, which calls this and never repeats the
  * collection key; use this directly when you need Astro's raw registration
  * form:
  *
@@ -135,7 +135,7 @@ export function createLiveIconLoader(
     checkedCollectionKey = true;
     if (actual === collection) return;
     consoleLogger.warn(
-      `This live icon loader is registered as the "${actual}" collection, but was created with \`collection: "${collection}"\` - generated LiveCollectionName types used the wrong key. Update the \`collection\` option (or build this collection with \`liveIconCollections()\`) so they match.`,
+      `This live icon loader is registered as the "${actual}" collection, but was created with \`collection: "${collection}"\` - generated LiveCollectionName types used the wrong key. Update the \`collection\` option (or build this collection with \`defineLiveIconCollections()\`) so they match.`,
     );
     recordCollection(rootDir, "live", actual, []).catch(() => {});
   }

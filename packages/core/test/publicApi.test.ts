@@ -22,9 +22,9 @@ describe("public API surface", () => {
       "createIconLoader",
       "createLiveIconLoader",
       "defineIconCollection",
+      "defineLiveIconCollections",
       "iconify",
       "iconifyApi",
-      "liveIconCollections",
       "localSvg",
     ]);
   });

@@ -1,11 +1,11 @@
 import {
   iconifyApi,
   iconify,
-  liveIconCollections,
+  defineLiveIconCollections,
 } from "astro-icon/collections";
 import { serviceSource } from "service/client";
 
-export const collections = liveIconCollections({
+export const collections = defineLiveIconCollections({
   // "mdi" is installed locally (see package.json), so this resolves from disk.
   mdi: iconify("mdi"),
 

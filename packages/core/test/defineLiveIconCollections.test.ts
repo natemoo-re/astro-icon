@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { liveIconCollections } from "../src/content/liveCollections.js";
+import { defineLiveIconCollections } from "../src/content/defineLiveIconCollections.js";
 import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconEntry } from "../../typings/types";
 import type { IconSource } from "../src/content/source.js";
@@ -25,9 +25,9 @@ function fakeSource(name: string): IconSource {
   };
 }
 
-describe("liveIconCollections", () => {
+describe("defineLiveIconCollections", () => {
   it("produces one defineLiveCollection()-shaped entry per key", async () => {
-    const collections = liveIconCollections({
+    const collections = defineLiveIconCollections({
       spinners: fakeSource("iconify:svg-spinners"),
       brands: [fakeSource("iconify:simple-icons"), fakeSource("local")],
     });
@@ -48,7 +48,7 @@ describe("liveIconCollections", () => {
   it("uses each object key as the loader's collection key for typegen", async () => {
     mockedRecordCollection.mockClear();
 
-    liveIconCollections({ spinners: fakeSource("iconify:svg-spinners") });
+    defineLiveIconCollections({ spinners: fakeSource("iconify:svg-spinners") });
     await Promise.resolve();
 
     expect(mockedRecordCollection).toHaveBeenCalledWith(
