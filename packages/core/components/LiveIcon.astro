@@ -12,8 +12,17 @@ import { prepareLiveIcon } from "../src/render/prepareIcon.js";
  * `defineLiveIconCollections()`); live content
  * collections are stable as of Astro 6, no experimental flag needed.
  * If the icon fails to resolve,
- * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
- * one bad icon doesn't take down the page.
+ * `<LiveIcon>` logs a warning and renders its `fallback` slot (nothing, if
+ * none was given) rather than throwing, so one bad icon doesn't take down
+ * the page - a miss here is expected request data (a typo, an unreachable
+ * API), not a bug, so the caller decides what it looks like instead of
+ * `<LiveIcon>` guessing:
+ *
+ * ```astro
+ * <LiveIcon collection="ph" icon={query}>
+ *   <PlaceholderIcon slot="fallback" />
+ * </LiveIcon>
+ * ```
  *
  * Decorative by default (`aria-hidden`, invisible to assistive tech), since
  * most icons sit next to visible text or inside an already-labeled control.
@@ -34,8 +43,12 @@ type Props = LiveIconProps;
 const { collection, icon, entry: givenEntry, ...props } = Astro.props;
 
 const prepared = await prepareLiveIcon(collection, icon, givenEntry);
-if (!prepared) return;
-const { entry, marker } = prepared;
 ---
 
-<IconBase entry={entry} dataIcon={marker} {...props} />
+{
+  prepared ? (
+    <IconBase entry={prepared.entry} dataIcon={prepared.marker} {...props} />
+  ) : (
+    <slot name="fallback" />
+  )
+}
