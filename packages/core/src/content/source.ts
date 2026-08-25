@@ -90,14 +90,15 @@ export interface IconSource {
    * Anchors this source to the project root, if it needs one. Called once, before any other
    * method, whenever the loader using this source actually has a root to give it -
    * `createIconLoader` always does (`config.root`); `createLiveIconLoader` only has a best-effort
-   * `process.cwd()`-based one, since `LiveLoader`'s own context exposes no project root.
+   * one (`guessProjectRoot()`, see `src/content/projectRoot.ts`), since `LiveLoader`'s own
+   * context exposes no project root.
    *
    * Exists because a source is normally built eagerly, in `content.config.ts`, before Astro's
    * `config.root` is available at all - `localSvg("src/icons")` implements this so the plain,
    * unanchored string it was given resolves against the project root once the loader can tell it
-   * one, instead of silently resolving against `process.cwd()` at each file read (which is only
-   * sometimes the project root - `astro build --root <dir>` invoked from elsewhere is a common
-   * case where it isn't). A source already anchored to something specific (e.g.
+   * one, instead of silently resolving against a best-effort guess at each file read (which is
+   * only sometimes the project root - `astro build --root <dir>` invoked from elsewhere is a
+   * common case where it isn't). A source already anchored to something specific (e.g.
    * `localSvg(new URL("../icons/", import.meta.url))`) has no reason to implement this.
    */
   resolveRoot?(root: URL): void;

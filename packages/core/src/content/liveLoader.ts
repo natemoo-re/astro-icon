@@ -6,6 +6,7 @@ import { consoleLogger } from "./logger.js";
 import { mergeSources } from "./compositeSource.js";
 import { recordCollection as defaultRecordCollection } from "./typegen/index.js";
 import type { TypegenRecorder } from "./typegen/index.js";
+import { guessProjectRoot } from "./projectRoot.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
@@ -112,9 +113,7 @@ export function createLiveIconLoader(
   // request and are never validated against a catalog (see names.d.ts), so this records an empty list rather than
   // resolving the source's full catalog just to discard it. `listIcons()` is still called for its side effect:
   // sources like `iconify` use it to record their own full pack catalog for typing the `allowed: [...]` option.
-  const rootDir = new URL(`file://${process.cwd()}/`);
-  // Best-effort only: `process.cwd()` isn't necessarily the project root (see
-  // `IconSource.resolveRoot`'s doc comment), but it's the only thing a live collection has.
+  const rootDir = guessProjectRoot();
   source.resolveRoot?.(rootDir);
   // Same "fail loudly, up front" intent as `createIconLoader`'s own `checkPreconditions()` call,
   // just downgraded to a warning: a `LiveLoader` has no "build

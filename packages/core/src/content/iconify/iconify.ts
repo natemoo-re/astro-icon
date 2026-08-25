@@ -12,6 +12,7 @@ import {
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
 import { recordCatalog } from "../typegen/index.js";
+import { guessProjectRoot } from "../projectRoot.js";
 import type { IconSource } from "../source.js";
 import type { IconifySourceOptions } from "../../../typings/types";
 import type { IconifyIconName } from "../../../typings/names";
@@ -96,13 +97,13 @@ export function iconify(
     "the whole pack",
   );
 
-  // The pack load starts here, at construction, against a `process.cwd()` guess - not lazily
-  // inside getIcons/listIcons/checkPreconditions - so a missing pack fails as soon as the source
-  // exists instead of only once the first icon is requested. `resolveRoot` (below) is the only
-  // thing that can move `cwd` afterward: it restarts the load only when the loader's real project
-  // root actually differs from the guess (e.g. `astro build --root <dir>` invoked from
-  // elsewhere), so the common already-matching case pays nothing extra.
-  let cwd = process.cwd();
+  // The pack load starts here, at construction, against a best-effort guess (see
+  // `guessProjectRoot`) - not lazily inside getIcons/listIcons/checkPreconditions - so a missing
+  // pack fails as soon as the source exists instead of only once the first icon is requested.
+  // `resolveRoot` (below) is the only thing that can move `cwd` afterward: it restarts the load
+  // only when the loader's real project root actually differs from the guess, so the common
+  // already-matching case pays nothing extra.
+  let cwd = stripTrailingSlash(fileURLToPath(guessProjectRoot()));
   let packPromise = loadLocalPack(pack, cwd);
   packPromise.catch(() => {});
 
