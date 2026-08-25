@@ -183,7 +183,7 @@ export function createLiveIconLoader(
         return {
           error: new AstroIconError(
             `"${source.name}" doesn't support loading an entire live icon collection.`,
-            `Request icons individually via \`getLiveEntry(collection, name)\`, pass \`{ ids: [...] }\` to \`getLiveCollection(collection, filter)\` for a specific subset, or use \`iconify\`/\`localSvg\` (which both support \`listIcons()\`) instead of \`getLiveCollection(collection)\` with no filter at all.`,
+            `Request icons individually via \`getLiveEntry(collection, name)\`, pass \`{ ids: [...] }\` to \`getLiveCollection(collection, filter)\` for a specific subset, or use \`iconify\`/\`localIcons\` (which both support \`listIcons()\`) instead of \`getLiveCollection(collection)\` with no filter at all.`,
           ),
         };
       }

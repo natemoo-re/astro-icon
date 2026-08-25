@@ -518,6 +518,20 @@ select {
   margin: 0;
 }
 
+/* <LiveIcon>'s `fallback` slot content - a stand-in for whatever a real app
+   would render on a miss (a question-mark icon, a skeleton, nothing). */
+.fallback-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  line-height: 1;
+}
+
 .empty {
   padding: 1.5rem 1rem;
   text-align: center;

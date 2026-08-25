@@ -1,4 +1,5 @@
 import { getLiveEntry } from "astro:content";
+import type { LiveDataEntry } from "astro";
 import { AstroIconError } from "../internal/error.js";
 import { renderTimeError } from "./error.js";
 import {
@@ -56,25 +57,45 @@ export async function prepareIcon(name: string): Promise<PreparedIcon> {
 }
 
 /**
- * Resolves a `<LiveIcon collection="..." icon="...">` prop pair into a render-ready entry, or
- * `undefined` when it should render nothing - `<LiveIcon>`'s "warn and skip" philosophy on a
- * miss, as opposed to `<Icon>`'s throw, owned here instead of in the `.astro` shell so it's
- * reachable from a unit test without a real Astro build.
+ * Resolves a `<LiveIcon collection="..." icon="...">` (or `entry={...}`) prop set into a
+ * render-ready entry, or `undefined` when it should render nothing - `<LiveIcon>`'s "warn and
+ * skip" philosophy on a miss, as opposed to `<Icon>`'s throw, owned here instead of in the
+ * `.astro` shell so it's reachable from a unit test without a real Astro build.
+ *
+ * `entry` (already resolved via `getLiveCollection(collection, { ids })`) skips the
+ * `getLiveEntry` call entirely - the explicit counterpart to relying on `<LiveIcon>`'s own cache
+ * hitting after a batched fetch warmed it. Exactly one of `icon`/`entry` is expected; passing
+ * both is a call-site bug (which one wins would be a guess), so it throws rather than picking.
  */
 export async function prepareLiveIcon(
   collection: string,
-  icon: string,
+  icon: string | undefined,
+  entry: LiveDataEntry<IconEntry> | undefined,
 ): Promise<PreparedIcon | undefined> {
-  if (!collection || !icon) {
+  if (icon && entry) {
     throw renderTimeError(
-      `Invalid "collection" or "icon" provided!`,
-      `<LiveIcon> requires both a "collection" and an "icon" prop; got collection="${collection}", icon="${icon}".`,
+      `Both "icon" and "entry" provided!`,
+      `<LiveIcon collection="${collection}"> got both an "icon" name ("${icon}") and an already-resolved "entry" - pass exactly one. Use "icon" to have <LiveIcon> resolve the name itself, or "entry" for one already fetched via getLiveCollection().`,
     );
   }
 
-  const { entry, error } = await getLiveEntry(collection, icon);
+  if (!collection || (!icon && !entry)) {
+    throw renderTimeError(
+      `Invalid "collection", "icon", or "entry" provided!`,
+      `<LiveIcon> requires a "collection" plus exactly one of "icon" or "entry"; got collection="${collection}", icon="${icon}", entry="${entry ? entry.id : entry}".`,
+    );
+  }
 
-  if (error || !entry) {
+  if (entry) {
+    return {
+      entry: entry.data,
+      marker: formatIconMarker({ collection, name: entry.id, hasPrefix: true }),
+    };
+  }
+
+  const { entry: resolved, error } = await getLiveEntry(collection, icon!);
+
+  if (error || !resolved) {
     const hint = error instanceof AstroIconError ? error.hint : undefined;
     console.warn(
       `<LiveIcon> failed to load "${collection}:${icon}"${error ? `: ${error.message}` : ""}${hint ? `\nHint: ${hint}` : ""}`,
@@ -83,7 +104,7 @@ export async function prepareLiveIcon(
   }
 
   return {
-    entry: entry.data as IconEntry,
-    marker: formatIconMarker({ collection, name: icon, hasPrefix: true }),
+    entry: resolved.data as IconEntry,
+    marker: formatIconMarker({ collection, name: icon!, hasPrefix: true }),
   };
 }

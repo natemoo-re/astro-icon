@@ -1,9 +1,18 @@
 ---
 title: Live Icons with <LiveIcon>
-description: Resolve icons per request instead of at build time.
+description: Resolve icon names that can't be enumerated at build time.
 ---
 
-Use `<LiveIcon>` instead of `<Icon>` when you can't know your icon names ahead of time, such as a user-driven icon search. It resolves against a live collection at request time rather than at build time.
+`<Icon>` renders names your build already knows, even ones computed from data or picked by a user from an installed pack. Reach for `<LiveIcon>` only when the collection itself can't be listed at build time: names from a public API, a CMS, or another system outside your control. It resolves against a live collection at request time instead of build time.
+
+|                    | `<Icon>`                                                | `<LiveIcon>`                                     |
+| ------------------ | ------------------------------------------------------- | ------------------------------------------------ |
+| Who picks the name | Your code, even for a computed or user-picked value     | The request: search input, a CMS, another system |
+| Addressing         | One `name` prop, autocompletes against every collection | Separate `collection` and `icon` props           |
+| A bad name means   | A bug: throws with a hint                               | Expected data: warns and renders a fallback      |
+| Render cost        | A content-store lookup, no I/O                          | Fetched on first request, cached after           |
+
+Two cases look alike but aren't. A user picking any icon from an installed pack still belongs to `<Icon>`: the whole pack can live in the build, so a name chosen at runtime still resolves to an entry that's already there. A user searching against an API with no installed catalog is different: there's nothing to enumerate at build time, so `<LiveIcon>` is the only option.
 
 Live content collections are stable as of Astro 6, with nothing to enable. On Astro 5, turn on the `experimental.liveContentCollections` flag in `astro.config.mjs` first:
 
@@ -79,9 +88,50 @@ Unlike `<Icon>`, `<LiveIcon>` takes separate `collection` and `icon` props inste
 
 `<LiveIcon>` accepts the same `title`, `desc`, `size`, `width`, and `height` props as `<Icon>`, with the same decorative-by-default behavior described in [“The `<Icon>` Component”](/guides/components/#accessibility-decorative-vs-labeled).
 
+## Resolving many icons at once
+
+A search page renders a whole result set, not one icon. Looping `<LiveIcon>` over each result works, but it's naive: every result is an independent lookup with no visibility into its siblings, so an `N`-result page makes `N` separate resolutions.
+
+`getLiveCollection(collection, { ids })` fixes that at the one point it actually can be fixed: before any individual icon has been requested, where every result name is already known. It resolves the whole batch in one call (one HTTP request for a source like `iconifyApi`, no matter how many ids), and hands back the resolved entries directly:
+
+```astro
+---
+export const prerender = false;
+
+import { getLiveCollection } from "astro:content";
+import { LiveIcon } from "astro-icon/components";
+
+const query = Astro.url.searchParams.get("q")?.trim() ?? "";
+const names = query ? await searchIconNames(query) : [];
+const { entries } = await getLiveCollection("ph", { ids: names });
+---
+
+{entries.map((entry) => <LiveIcon collection="ph" entry={entry} />)}
+```
+
+Passing `entry` instead of `icon` renders that result directly, rather than relying on `<LiveIcon>`'s own per-entry cache happening to already hold it from the batched call above. A name in `names` with no matching entry (a bad id, a source error) is missing from `entries` entirely, and drops out of the loop with it.
+
+To keep every requested name in place, even the ones that failed to resolve, loop over `names` instead of `entries` and pass `icon` rather than `entry`. `<LiveIcon>` still resolves from cache, since the batched call above already warmed it, and its own `fallback` slot covers the gap instead of a manual lookup:
+
+```astro
+{
+  names.map((name) => (
+    <LiveIcon collection="ph" icon={name}>
+      <PlaceholderIcon slot="fallback" />
+    </LiveIcon>
+  ))
+}
+```
+
 ## Failure behavior
 
-If an icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing, rather than throwing and failing the whole page — a single bad request-time lookup (a typo, an unreachable API) shouldn't take the rest of the page down with it.
+If an icon fails to resolve, `<LiveIcon>` logs a warning and renders its `fallback` slot, or nothing if you didn't give it one, instead of throwing and failing the whole page. A single bad request-time lookup, a typo or an unreachable API, shouldn't take the rest of the page down with it. A miss is expected request data, not a bug, so you decide what it looks like:
+
+```astro
+<LiveIcon collection="ph" icon={query}>
+  <PlaceholderIcon slot="fallback" />
+</LiveIcon>
+```
 
 ## A source doesn't have to be Iconify
 

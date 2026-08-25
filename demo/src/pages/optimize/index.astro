@@ -66,7 +66,7 @@ const results = await Promise.all(
     .sort(([a], [b]) => a.localeCompare(b))
     .map(async ([path, raw]) => {
       // Keep any subdirectory in the name (icons/arrows/left.svg → "arrows/left"), matching
-      // how localSvg() names nested files.
+      // how localIcons() names nested files.
       const name = path.replace(/^.*?\/icons\//, "").slice(0, -".svg".length);
       const out = await optimize(raw, { collection: "icons", name });
       return { name, before: raw.length, after: out.length, out };

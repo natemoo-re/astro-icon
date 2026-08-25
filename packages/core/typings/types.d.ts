@@ -3,7 +3,7 @@
  * `entry.data` gives you from `getEntry()` or `getLiveEntry()`.
  *
  * You won't normally construct this yourself: a source (`iconify`,
- * `localSvg`, or a custom {@link IconSource}) builds it for you. Reach for
+ * `localIcons`, or a custom {@link IconSource}) builds it for you. Reach for
  * it directly if you write a custom source or `transform` function and
  * need the target shape: fields describe the rendered root `<svg>` element,
  * and `body` is its children.
@@ -17,7 +17,7 @@ export interface IconEntry {
   height: number;
   /**
    * Default `title` prop for `<Icon>`/`<LiveIcon>`, honored only when the caller doesn't pass
-   * their own. `localSvg()` populates this from the icon's own inline `<title>`, if it had one.
+   * their own. `localIcons()` populates this from the icon's own inline `<title>`, if it had one.
    */
   title?: string;
   /** Default `desc` prop, same override relationship as {@link title}. */
@@ -30,7 +30,7 @@ export interface IconEntry {
  * stores it. Common uses: running it through SVGO, stripping hardcoded
  * `fill`/`stroke` colors so CSS can control them, or adding `aria-hidden`.
  *
- * Pass one via the `optimize` option on {@link localSvg}. Iconify sources
+ * Pass one via the `optimize` option on {@link localIcons}. Iconify sources
  * never have a raw SVG string to hand it (they build an `IconEntry` straight
  * out of structured Iconify icon data) - reach for {@link TransformFn}
  * there instead.
@@ -43,7 +43,7 @@ export type OptimizeFn = (
 /**
  * A hook to transform an icon's already-built `IconEntry` - the last step
  * every source applies before returning it, after any source-specific
- * policy (like {@link localSvg}'s `optimize`) has already run. The one
+ * policy (like {@link localIcons}'s `optimize`) has already run. The one
  * transform hook every {@link IconSource} kind shares, since unlike
  * `OptimizeFn` it doesn't assume there's a raw SVG string in play.
  *

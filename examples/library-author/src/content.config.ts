@@ -1,7 +1,7 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
-import { defineIconCollection, localSvg } from "astro-icon/collections";
+import { defineIconCollection, localIcons } from "astro-icon/collections";
 import { acmeUiIcons } from "./lib/icons";
 
 const blog = defineCollection({
@@ -22,9 +22,9 @@ const blog = defineCollection({
 export const collections = {
   blog,
 
-  // This site's own social icons - a plain `localSvg()` collection, no
+  // This site's own social icons - a plain `localIcons()` collection, no
   // different from site-builder's. [UC1]
-  icons: defineIconCollection(localSvg()),
+  icons: defineIconCollection(localIcons()),
 
   // This is the only line that "installs" the library: a spread, the same
   // way any other astro-icon consumer would add `acme-ui/icons` from

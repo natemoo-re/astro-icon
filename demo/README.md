@@ -25,7 +25,7 @@ recolors at once. Anything that _doesn't_ react isn't using `currentColor`.
 
 ## Deliberately broken
 
-`src/icons/lock.svg` is authored with a hardcoded `fill` and no `currentColor`, so `localSvg()`
+`src/icons/lock.svg` is authored with a hardcoded `fill` and no `currentColor`, so `localIcons()`
 warns about it on every sync. It's the control case for `/optimize/` — don't "fix" it.
 `src/icons/logo.svg` trips the same warning because its gradient fill isn't `currentColor` —
 that's the point of a brand mark, so leave it too.

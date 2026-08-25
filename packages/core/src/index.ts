@@ -23,7 +23,7 @@ export type {
   IconChangeEvent,
 } from "./content/source.js";
 export type { CompositeSource } from "./content/compositeSource.js";
-export type { LocalSvgOptions } from "./content/local/localSvg.js";
+export type { LocalIconsOptions } from "./content/local/localIcons.js";
 export type { IconLoaderOptions } from "./content/loader.js";
 export type { LiveIconLoaderOptions } from "./content/liveLoader.js";
 export type { IconCollectionConfig } from "./content/defineIconCollection.js";

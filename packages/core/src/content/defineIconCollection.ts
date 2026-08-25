@@ -14,11 +14,11 @@ export interface IconCollectionConfig {
  *
  * ```ts
  * // src/content.config.ts
- * import { defineIconCollection, iconify, localSvg } from "astro-icon/collections";
+ * import { defineIconCollection, iconify, localIcons } from "astro-icon/collections";
  *
  * export const collections = {
  *   mdi: defineIconCollection(iconify("mdi")),
- *   icons: defineIconCollection(localSvg()),
+ *   icons: defineIconCollection(localIcons()),
  * };
  * ```
  *
@@ -26,7 +26,7 @@ export interface IconCollectionConfig {
  * contract as `createIconLoader([...])`:
  *
  * ```ts
- * ui: defineIconCollection([localSvg("src/brand-icons"), iconify("heroicons")]),
+ * ui: defineIconCollection([localIcons("src/brand-icons"), iconify("heroicons")]),
  * ```
  *
  * To supply your own Zod schema, drop down a layer and use Astro's `defineCollection` with

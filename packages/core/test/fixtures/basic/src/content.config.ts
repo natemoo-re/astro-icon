@@ -1,7 +1,7 @@
 import {
   defineIconCollection,
   iconify,
-  localSvg,
+  localIcons,
 } from "astro-icon/collections";
 import type { IconSource } from "astro-icon/collections";
 
@@ -46,5 +46,5 @@ export const collections = {
   // A directory of raw .svg files (as opposed to an Iconify pack) - proves
   // license/attribution comments in a local icon's own markup survive the
   // full build pipeline (issue #177).
-  local: defineIconCollection(localSvg(new URL("./icons", import.meta.url))),
+  local: defineIconCollection(localIcons(new URL("./icons", import.meta.url))),
 };

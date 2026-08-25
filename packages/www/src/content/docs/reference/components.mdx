@@ -37,24 +37,29 @@ See [“The `<Icon>` Component”](/guides/components/) for the decorative/label
 
 ## `<LiveIcon>`
 
-Renders one icon from a live collection, resolved per request.
+Renders one icon from a live collection, resolved per request. Takes exactly one of `icon` or `entry`.
 
 ```ts
-interface Props extends HTMLAttributes<"svg"> {
+type Props = HTMLAttributes<"svg"> & {
   collection: LiveCollectionName;
-  icon: string;
   title?: string | { id?: string; value: string };
   desc?: string | { id?: string; value: string };
   size?: number | string;
   width?: number | string | null;
   height?: number | string | null;
-}
+} & (
+    | { icon: string; entry?: never }
+    | { icon?: never; entry: LiveDataEntry<IconEntry> }
+  );
 ```
 
-| Prop                                       | Type                 | Description                                                                                                  |
-| ------------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `collection`                               | `LiveCollectionName` | The live collection to resolve `icon` from. No bare-name default, unlike `<Icon>`'s `icons` collection.      |
-| `icon`                                     | `string`             | The icon's name within `collection`. Always a plain string — resolved per request, not checked at sync time. |
-| `title`, `desc`, `size`, `width`, `height` | _(same as `<Icon>`)_ |                                                                                                              |
+| Prop                                       | Type                       | Description                                                                                                                     |
+| ------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `collection`                               | `LiveCollectionName`       | The live collection to resolve `icon`/`entry` from. No bare-name default, unlike `<Icon>`'s `icons` collection.                 |
+| `icon`                                     | `string`                   | The icon's name within `collection`. Always a plain string, resolved per request, not checked at sync time.                     |
+| `entry`                                    | `LiveDataEntry<IconEntry>` | An entry already resolved via `getLiveCollection(collection, { ids })`. Renders it directly instead of resolving `icon` itself. |
+| `title`, `desc`, `size`, `width`, `height` | _(same as `<Icon>`)_       |                                                                                                                                 |
 
-If the icon fails to resolve, `<LiveIcon>` logs a warning and renders nothing rather than throwing. See [“Live Icons with `<LiveIcon>`”](/guides/live-icon/).
+Passing both `icon` and `entry` throws, since which one should win would be a guess.
+
+If the icon fails to resolve, `<LiveIcon>` logs a warning and renders its `fallback` slot, or nothing if none was given, rather than throwing. See [“Live Icons with `<LiveIcon>`”](/guides/live-icon/).

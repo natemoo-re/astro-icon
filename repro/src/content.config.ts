@@ -1,10 +1,10 @@
 import {
   defineIconCollection,
   iconify,
-  localSvg,
+  localIcons,
 } from "astro-icon/collections";
 
 export const collections = {
-  icons: defineIconCollection(localSvg()),
+  icons: defineIconCollection(localIcons()),
   mdi: defineIconCollection(iconify("mdi")),
 };

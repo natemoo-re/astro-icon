@@ -25,7 +25,7 @@ describe("public API surface", () => {
       "defineLiveIconCollections",
       "iconify",
       "iconifyApi",
-      "localSvg",
+      "localIcons",
     ]);
   });
 

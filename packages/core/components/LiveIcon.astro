@@ -5,15 +5,28 @@ import { prepareLiveIcon } from "../src/render/prepareIcon.js";
 
 /**
  * Renders one icon from a live collection as an inline `<svg>`, resolved at
- * request time instead of build time. Use it when you can't know your icon
- * names ahead of time, such as a user-driven icon search.
+ * request time instead of build time. Reach for it only when the
+ * collection itself can't be enumerated at build: names from an open-ended
+ * API, a CMS, or anything else outside this build's control. A name that's
+ * merely dynamic - computed from data, or picked by a user from an
+ * installed pack - still belongs to `<Icon>`, since the build can hold the
+ * whole set it might resolve from.
  *
  * Requires a live collection registered in `live.config.ts` (see
  * `defineLiveIconCollections()`); live content
  * collections are stable as of Astro 6, no experimental flag needed.
  * If the icon fails to resolve,
- * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
- * one bad icon doesn't take down the page.
+ * `<LiveIcon>` logs a warning and renders its `fallback` slot (nothing, if
+ * none was given) rather than throwing, so one bad icon doesn't take down
+ * the page - a miss here is expected request data (a typo, an unreachable
+ * API), not a bug, so the caller decides what it looks like instead of
+ * `<LiveIcon>` guessing:
+ *
+ * ```astro
+ * <LiveIcon collection="ph" icon={query}>
+ *   <PlaceholderIcon slot="fallback" />
+ * </LiveIcon>
+ * ```
  *
  * Decorative by default (`aria-hidden`, invisible to assistive tech), since
  * most icons sit next to visible text or inside an already-labeled control.
@@ -23,14 +36,23 @@ import { prepareLiveIcon } from "../src/render/prepareIcon.js";
  *
  * Use `<Icon>` instead when your icon names are known at build time; it's
  * cheaper since it resolves once, not on every request.
+ *
+ * Pass `entry` instead of `icon` for one already resolved via
+ * `getLiveCollection(collection, { ids })` - the explicit form of the
+ * batched-render pattern, instead of relying on `<LiveIcon>`'s own cache
+ * happening to have been warmed by that earlier call.
  */
-interface Props extends LiveIconProps {}
+type Props = LiveIconProps;
 
-const { collection, icon, ...props } = Astro.props;
+const { collection, icon, entry: givenEntry, ...props } = Astro.props;
 
-const prepared = await prepareLiveIcon(collection, icon);
-if (!prepared) return;
-const { entry, marker } = prepared;
+const prepared = await prepareLiveIcon(collection, icon, givenEntry);
 ---
 
-<IconBase entry={entry} dataIcon={marker} {...props} />
+{
+  prepared ? (
+    <IconBase entry={prepared.entry} dataIcon={prepared.marker} {...props} />
+  ) : (
+    <slot name="fallback" />
+  )
+}

@@ -113,7 +113,7 @@ export function mergeSources(
     // always has one consistent thing to call for a multi-source collection; a member with no
     // `watch` of its own is simply never asked to register anything.
     //
-    // Composing two watchable sources (e.g. two `localSvg()` directories) watches both - see
+    // Composing two watchable sources (e.g. two `localIcons()` directories) watches both - see
     // the name-collision footgun documented on `IconSource.watch`.
     watch(watcher: IconSourceWatcher, report) {
       for (const member of sources) {

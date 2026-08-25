@@ -139,7 +139,7 @@ const CURRENT_COLOR_RE = /currentcolor/i;
 /**
  * A cheap, deliberately conservative signal for "this icon probably won't respond to
  * `color: ...` in CSS" - not a decision to act on, only to report via `EntryFacts` (see
- * `localSvg()`, the one caller that turns it into a warning). Walks the tree (root `<svg>`
+ * `localIcons()`, the one caller that turns it into a warning). Walks the tree (root `<svg>`
  * included) rather than the serialized body: true when `currentColor` appears nowhere (any
  * attribute value, or text such as an inline `<style>` block), and every explicit `fill`/`stroke`
  * found (if any) agrees on a single color - the same shape a monochrome UI glyph has. An icon
@@ -203,7 +203,7 @@ function serializeChildren(children: Node[]): string {
  * 5. serialize what's left as `body`.
  *
  * Takes no policy parameters (no `optimize`, no `strict`, no logger): callers apply their own
- * policy to the returned `facts` (see `localSvg()`), keeping this function itself a pure,
+ * policy to the returned `facts` (see `localIcons()`), keeping this function itself a pure,
  * two-way mapping between SVG text and an `IconEntry`.
  */
 export function entryFromSVG(svg: string): EntryFromSVGResult {

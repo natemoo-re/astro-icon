@@ -1,7 +1,7 @@
 import {
   defineIconCollection,
   iconify,
-  localSvg,
+  localIcons,
 } from "astro-icon/collections";
 
 // The design-system icon set for a real dashboard: three Heroicons packs
@@ -13,7 +13,7 @@ import {
 // where non-icon artwork belongs.
 export const collections = {
   // The brand mark, from a local .svg - the only icon this app owns outright.
-  brand: defineIconCollection(localSvg()),
+  brand: defineIconCollection(localIcons()),
 
   // Heroicons v1, solid + outline - the bulk of the template's icons.
   "heroicons-solid": defineIconCollection(

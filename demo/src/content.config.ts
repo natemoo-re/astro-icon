@@ -2,17 +2,17 @@ import {
   defineIconCollection,
   iconify,
   iconifyApi,
-  localSvg,
+  localIcons,
 } from "astro-icon/collections";
 import { defaultOverrides, svgo } from "astro-icon/optimize";
 
 // Each collection here exercises one source composition, so /collections/ can show them
 // side by side. Names describe what's being tested, not which pack backs it.
 export const collections = {
-  // localSvg(): every .svg in src/icons/, watched in dev, run through SVGO.
+  // localIcons(): every .svg in src/icons/, watched in dev, run through SVGO.
   // "lock.svg" is deliberately authored without `currentColor` so this collection trips
-  // localSvg()'s "won't respond to CSS color" warning on every sync - see /optimize/.
-  icons: defineIconCollection(localSvg("src/icons", { optimize: svgo() })),
+  // localIcons()'s "won't respond to CSS color" warning on every sync - see /optimize/.
+  icons: defineIconCollection(localIcons("src/icons", { optimize: svgo() })),
 
   // iconify() with no `allowed` allowlist: the whole installed pack (~14k icons).
   // Named "pack", not "mdi", because live.config.ts already has a live collection named "mdi"
@@ -52,16 +52,16 @@ export const collections = {
     iconifyApi("mdi", { allowed: ["home-outline", "cog-outline"] }),
   ]),
 
-  // localSvg() composed with a pack: local .svg files and Iconify icons in one collection.
+  // localIcons() composed with a pack: local .svg files and Iconify icons in one collection.
   mixed: defineIconCollection([
-    localSvg("src/icons", { allowed: ["star"] }),
+    localIcons("src/icons", { allowed: ["star"] }),
     iconify("ri", { allowed: ["star-fill"] }),
   ]),
 
   // The same lock.svg as `icons`, but with `convertColors: { currentColor: true }` layered onto
   // the default overrides - the fix the currentColor warning points at. Compare on /optimize/.
   lockFixed: defineIconCollection(
-    localSvg("src/icons", {
+    localIcons("src/icons", {
       allowed: ["lock"],
       optimize: svgo({
         plugins: [
