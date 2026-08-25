@@ -5,6 +5,14 @@ vi.mock("@iconify/utils/lib/loader/fs", () => ({
   loadCollectionFromFS: vi.fn(),
 }));
 
+// `iconify()` has no context/options seam to inject a typegen recorder through (unlike the
+// loaders) - it's called directly in `content.config.ts`, before any loader exists. Mocking the
+// module here is the seam, so this suite doesn't write real files under `.astro/`.
+vi.mock("../src/content/typegen/index.js", () => ({
+  recordCollection: vi.fn(async () => {}),
+  recordCatalog: vi.fn(async () => {}),
+}));
+
 const pack: IconifyJSON = {
   prefix: "mdi",
   icons: {

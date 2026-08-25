@@ -4,7 +4,8 @@ import { AstroIconError } from "../internal/error.js";
 import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
 import { mergeSources } from "./compositeSource.js";
-import { recordCollection } from "./typegen/index.js";
+import { recordCollection as defaultRecordCollection } from "./typegen/index.js";
+import type { TypegenRecorder } from "./typegen/index.js";
 import type {
   IconChangeEvent,
   IconSource,
@@ -51,6 +52,8 @@ export interface IconLoaderSyncContext {
   collection: LoaderContext["collection"];
   config: Pick<LoaderContext["config"], "root">;
   watcher?: IconSourceWatcher;
+  /** Substitutes the typegen recorder used for this sync; primarily for tests that want an in-memory recorder instead of mocking the whole typegen module. Defaults to the shared process-wide instance. */
+  typegen?: Pick<TypegenRecorder, "recordCollection">;
 }
 
 export interface IconLoaderOptions {}
@@ -73,6 +76,8 @@ function syncIcons(
       collection,
       watcher,
     } = context;
+    const recordCollection =
+      context.typegen?.recordCollection ?? defaultRecordCollection;
 
     // A watcher on the context means this sync is running under `astro dev`: a hard failure there
     // (a source that can't be used at all, an icon that fails to build) warns and continues,

@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createLiveIconLoader } from "../src/content/liveLoader.js";
+import {
+  createLiveIconLoader as realCreateLiveIconLoader,
+  type LiveIconLoaderOptions,
+} from "../src/content/liveLoader.js";
 import { sanitizeSVGBody } from "../src/content/sanitizeSVG.js";
-import { recordCollection } from "../src/content/typegen/index.js";
+import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
-
-vi.mock("../src/content/typegen/index.js", () => ({
-  recordCollection: vi.fn(async () => {}),
-  recordCatalog: vi.fn(async () => {}),
-}));
 
 // Pass-through spy, only for counting calls - real sanitization still runs.
 vi.mock("../src/content/sanitizeSVG.js", async (importOriginal) => {
@@ -16,8 +14,21 @@ vi.mock("../src/content/sanitizeSVG.js", async (importOriginal) => {
   return { sanitizeSVGBody: vi.fn(actual.sanitizeSVGBody) };
 });
 
-const mockedRecordCollection = vi.mocked(recordCollection);
 const mockedSanitize = vi.mocked(sanitizeSVGBody);
+
+// Substituted through `LiveIconLoaderOptions.typegen` on every call below, instead of mocking
+// the whole typegen module - keeps this suite from writing real files under `.astro/`.
+const mockedRecordCollection = vi.fn(async () => {});
+
+function createLiveIconLoader(
+  sources: IconSource | IconSource[],
+  options: LiveIconLoaderOptions,
+) {
+  return realCreateLiveIconLoader(sources, {
+    ...options,
+    typegen: { recordCollection: mockedRecordCollection },
+  });
+}
 
 const entry: IconEntry = {
   body: "<path/>",

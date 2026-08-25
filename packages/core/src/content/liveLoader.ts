@@ -4,7 +4,8 @@ import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
 import { consoleLogger } from "./logger.js";
 import { mergeSources } from "./compositeSource.js";
-import { recordCollection } from "./typegen/index.js";
+import { recordCollection as defaultRecordCollection } from "./typegen/index.js";
+import type { TypegenRecorder } from "./typegen/index.js";
 import type { IconSource } from "./source.js";
 import type { IconEntry } from "../../typings/types";
 
@@ -55,6 +56,8 @@ export interface LiveIconLoaderOptions {
    * so a mismatch is warned about (and typegen corrected) on the collection's first request.
    */
   collection: string;
+  /** Substitutes the typegen recorder used at construction; primarily for tests that want an in-memory recorder instead of mocking the whole typegen module. Defaults to the shared process-wide instance. */
+  typegen?: Pick<TypegenRecorder, "recordCollection">;
 }
 
 /**
@@ -99,7 +102,8 @@ export function createLiveIconLoader(
   // Cached at the source seam (not per load function) so `loadEntry` and `loadCollection`
   // share one cache, and everything downstream handles a plain `IconSource`.
   const source = cachingSource(mergeSources(sources));
-  const { collection } = options;
+  const { collection, typegen } = options;
+  const recordCollection = typegen?.recordCollection ?? defaultRecordCollection;
 
   // Best-effort typegen at construction time, since `LiveLoader`'s context exposes no project
   // root, and reveals the real collection key only per request - hence the declared `collection`

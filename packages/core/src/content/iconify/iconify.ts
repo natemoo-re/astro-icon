@@ -42,9 +42,6 @@ function localPackIconNames(data: IconifyJSON): string[] {
   return Object.keys(data.icons).concat(Object.keys(data.aliases ?? {}));
 }
 
-// Packs already recorded for typegen in this process, so a busy collection doesn't re-run the write chain per icon.
-const recordedPacks = new Set<string>();
-
 /**
  * Best-effort typegen: records a locally loaded pack's full, unfiltered
  * catalog so `allowed: [...]` can be typed and autocompleted against it on a
@@ -52,10 +49,10 @@ const recordedPacks = new Set<string>();
  * load done for real work (never fetched just for this), so it never
  * touches the pack on its own. Fetching it here would break the documented
  * "an `allowed` allowlist alone never requires a local install" contract.
+ * Dedupe per root+pack (so a busy collection doesn't re-run the write chain per icon) is the
+ * recorder's own concern now, not this source's.
  */
 function recordPackCatalog(pack: string, data: IconifyJSON, cwd: string): void {
-  if (recordedPacks.has(pack)) return;
-  recordedPacks.add(pack);
   const rootDir = new URL(`file://${cwd}/`);
   recordCatalog(rootDir, pack, localPackIconNames(data)).catch(() => {});
 }

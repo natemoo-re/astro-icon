@@ -1,6 +1,7 @@
 import type { LiveLoader } from "astro/loaders";
 import { createLiveIconLoader } from "./liveLoader.js";
 import type { IconSource } from "./source.js";
+import type { TypegenRecorder } from "./typegen/index.js";
 import type { IconEntry } from "../../typings/types";
 
 /** The `defineLiveCollection()`-shaped config {@link defineLiveIconCollections} produces per key. */
@@ -36,7 +37,12 @@ export interface LiveIconCollectionConfig {
  */
 export function defineLiveIconCollections<
   T extends Record<string, IconSource | IconSource[]>,
->(sources: T): Record<keyof T, LiveIconCollectionConfig> {
+>(
+  sources: T,
+  // Not part of the documented public surface - forwarded to `createLiveIconLoader` so tests can
+  // substitute an in-memory typegen recorder instead of mocking the whole typegen module.
+  options?: { typegen?: Pick<TypegenRecorder, "recordCollection"> },
+): Record<keyof T, LiveIconCollectionConfig> {
   const collections = {} as Record<keyof T, LiveIconCollectionConfig>;
   for (const key of Object.keys(sources) as (keyof T & string)[]) {
     // The same shape Astro's `defineLiveCollection()` returns, built directly: that helper
@@ -44,7 +50,10 @@ export function defineLiveIconCollections<
     // which this module's frame can be once bundled into a server chunk.
     collections[key] = {
       type: "live",
-      loader: createLiveIconLoader(sources[key], { collection: key }),
+      loader: createLiveIconLoader(sources[key], {
+        collection: key,
+        typegen: options?.typegen,
+      }),
     };
   }
   return collections;

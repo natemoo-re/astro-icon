@@ -1,15 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import { defineLiveIconCollections } from "../src/content/defineLiveIconCollections.js";
-import { recordCollection } from "../src/content/typegen/index.js";
+import { defineLiveIconCollections as realDefineLiveIconCollections } from "../src/content/defineLiveIconCollections.js";
 import type { IconEntry } from "../../typings/types";
 import type { IconSource } from "../src/content/source.js";
 
-vi.mock("../src/content/typegen/index.js", () => ({
-  recordCollection: vi.fn(async () => {}),
-  recordCatalog: vi.fn(async () => {}),
-}));
+// Substituted through the (undocumented, test-only) second `options` argument, instead of
+// mocking the whole typegen module - keeps this suite from writing real files under `.astro/`.
+const mockedRecordCollection = vi.fn(async () => {});
 
-const mockedRecordCollection = vi.mocked(recordCollection);
+function defineLiveIconCollections<
+  T extends Record<string, IconSource | IconSource[]>,
+>(sources: T) {
+  return realDefineLiveIconCollections(sources, {
+    typegen: { recordCollection: mockedRecordCollection },
+  });
+}
 
 const entry: IconEntry = {
   body: "<path/>",

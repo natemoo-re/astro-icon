@@ -6,16 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createIconLoader } from "../src/content/loader.js";
 import { mergeSources } from "../src/content/compositeSource.js";
 import { localSvg } from "../src/content/local/localSvg.js";
-import { recordCollection } from "../src/content/typegen/index.js";
 import type { IconSource } from "../src/content/source.js";
 import type { IconEntry } from "../../typings/types";
 
-vi.mock("../src/content/typegen/index.js", () => ({
-  recordCollection: vi.fn(async () => {}),
-  recordCatalog: vi.fn(async () => {}),
-}));
-
-const mockedRecordCollection = vi.mocked(recordCollection);
+// Substituted through `IconLoaderSyncContext.typegen` (see fakeContext below), instead of
+// mocking the whole typegen module - keeps this suite from writing real files under `.astro/`.
+const mockedRecordCollection = vi.fn(async () => {});
 
 /** Exercises the loader's own `.load()`, the same entry point Astro calls - just via the public `createIconLoader()` rather than Astro's full `LoaderContext`. */
 function sync(source: IconSource | IconSource[]) {
@@ -63,6 +59,7 @@ function fakeContext(watcher?: ReturnType<typeof fakeWatcher>) {
     parseData: vi.fn(async ({ data }: { data: IconEntry }) => data),
     collection: "icons",
     watcher,
+    typegen: { recordCollection: mockedRecordCollection },
   };
 }
 
