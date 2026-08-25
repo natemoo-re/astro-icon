@@ -1,0 +1,558 @@
+---
+export const prerender = true;
+
+import { Icon } from "astro-icon/components";
+import Base from "../../layouts/base.astro";
+
+// Every icon on this page renders with `width={null} height={null}` and is sized in `em` from
+// CSS, so it tracks the font-size of whatever component it sits in - the pattern real UIs want,
+// exercised here with a knob instead of quoted from docs.
+---
+
+<Base title="Patterns" sub="icons inside real components">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Buttons: color and size are inherited</span>
+      <span class="bench__note"
+        >Icons are decorative by default; each button's text or aria-label
+        carries the meaning</span
+      >
+    </div>
+    <div class="bench__controls">
+      <label class="knob">
+        ui font-size
+        <input type="range" min="12" max="22" value="14" data-ui-size />
+        <output data-ui-size-out>14px</output>
+      </label>
+      <span class="hint"
+        >icons are <code>width={"{null}"}</code> + CSS <code>1.1em</code>, so
+        they scale with the text</span
+      >
+    </div>
+    <div class="bench__stage ui" data-ui>
+      <div class="row">
+        <button class="btn btn--primary">
+          <Icon name="check" width={null} height={null} />
+          Save changes
+        </button>
+        <button class="btn">
+          <Icon name="link" width={null} height={null} />
+          Copy link
+        </button>
+        <button class="btn btn--danger">
+          <Icon name="trash" width={null} height={null} />
+          Delete
+        </button>
+        <button class="btn btn--icon" aria-label="Notifications">
+          <Icon name="bell" width={null} height={null} />
+          <span class="dot" aria-hidden="true"></span>
+        </button>
+        <button class="btn btn--primary" disabled>
+          <Icon name="check" width={null} height={null} />
+          Disabled
+        </button>
+        <button class="btn" disabled aria-busy="true">
+          <Icon name="spinner" width={null} height={null} />
+          Deploying…
+        </button>
+      </div>
+      <p class="hint">
+        No icon here has its own color or size: <code>currentColor</code> picks up
+        each button's text color — including the disabled state — and
+        <code>em</code> sizing follows the font.
+      </p>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Editor toolbar: icon-only controls</span>
+      <span class="bench__note"
+        >aria-label + aria-pressed on the button, icon stays aria-hidden</span
+      >
+    </div>
+    <div class="bench__stage ui">
+      <div class="toolbar" role="toolbar" aria-label="Text formatting">
+        <button
+          class="tool"
+          aria-label="Bold"
+          aria-pressed="false"
+          data-style="bold"
+        >
+          <Icon name="bold" width={null} height={null} />
+        </button>
+        <button
+          class="tool"
+          aria-label="Italic"
+          aria-pressed="false"
+          data-style="italic"
+        >
+          <Icon name="italic" width={null} height={null} />
+        </button>
+        <button
+          class="tool"
+          aria-label="Underline"
+          aria-pressed="false"
+          data-style="underline"
+        >
+          <Icon name="underline" width={null} height={null} />
+        </button>
+        <span class="toolbar__sep" role="separator"></span>
+        <button
+          class="tool"
+          aria-label="Align left"
+          aria-pressed="true"
+          data-align="left"
+        >
+          <Icon name="align-left" width={null} height={null} />
+        </button>
+        <button
+          class="tool"
+          aria-label="Align center"
+          aria-pressed="false"
+          data-align="center"
+        >
+          <Icon name="align-center" width={null} height={null} />
+        </button>
+        <button
+          class="tool"
+          aria-label="Align right"
+          aria-pressed="false"
+          data-align="right"
+        >
+          <Icon name="align-right" width={null} height={null} />
+        </button>
+      </div>
+      <p class="sample" data-sample>
+        The toolbar buttons really work: each is an icon-only control whose
+        accessible name lives on the button, not the icon.
+      </p>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Form affordances</span>
+      <span class="bench__note"
+        >Leading icons inside fields, and an entry-default tooltip</span
+      >
+    </div>
+    <div class="bench__stage ui">
+      <div class="row">
+        <label class="field">
+          <Icon name="search" width={null} height={null} />
+          <input
+            type="search"
+            placeholder="Search…"
+            data-search
+            aria-label="Search"
+          />
+          <button
+            class="field__clear"
+            aria-label="Clear search"
+            data-clear
+            hidden
+          >
+            <Icon name="close" width={null} height={null} />
+          </button>
+        </label>
+        <span class="verified">
+          casey@example.com
+          <Icon name="badge" width={null} height={null} />
+        </span>
+      </div>
+      <p class="hint">
+        The clear button appears once you type. The shield next to the address
+        renders <code>badge.svg</code> with no props at all — its
+        <code>&lt;title&gt;Verified&lt;/title&gt;</code> comes from the file and doubles
+        as the hover tooltip.
+      </p>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Inline with text</span>
+      <span class="bench__note"
+        >1em icons ride the baseline with a small vertical-align nudge</span
+      >
+    </div>
+    <div class="bench__stage ui">
+      <p class="prose">
+        Icons can flow inside running text: a <Icon
+          name="logo"
+          width={null}
+          height={null}
+        /> gradient mark mid-sentence, a starred
+        <Icon name="star" width={null} height={null} /> item, or a link like
+        <a href="/collections/"
+          >browse the collections <Icon
+            name="arrows/right"
+            width={null}
+            height={null}
+          /></a
+        > with a trailing arrow that inherits the link color — grow the font-size
+        knob above and everything scales together.
+      </p>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Status: alerts and chips</span>
+      <span class="bench__note"
+        >One icon color rule per container — the svgs are untouched</span
+      >
+    </div>
+    <div class="bench__stage ui">
+      <div class="stack">
+        <div class="alert alert--info" role="status">
+          <Icon name="bell" width={null} height={null} />
+          <span
+            ><strong>Heads up.</strong> Live icon search needs
+            <code>pnpm --filter service dev</code> running.</span
+          >
+        </div>
+        <div class="alert alert--success" role="status">
+          <Icon name="check" width={null} height={null} />
+          <span><strong>Synced.</strong> All 8 collections loaded.</span>
+        </div>
+        <div class="alert alert--danger" role="alert">
+          <Icon name="close" width={null} height={null} />
+          <span
+            ><strong>Build failed.</strong> "baseline-alarm" isn't in the allowed
+            icon list.</span
+          >
+        </div>
+        <div class="row">
+          <span class="pill"
+            ><Icon name="star" width={null} height={null} /> Starred</span
+          >
+          <span class="pill pill--ok"
+            ><Icon name="check" width={null} height={null} /> Passing</span
+          >
+          <span class="pill"
+            ><Icon name="globe" width={null} height={null} /> Public</span
+          >
+          <span class="pill"
+            ><Icon name="layers" width={null} height={null} /> 3 environments</span
+          >
+          <span class="pill"
+            ><Icon name="arrows/left" width={null} height={null} /> Prev</span
+          >
+          <span class="pill"
+            >Next <Icon name="arrows/right" width={null} height={null} /></span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const uiSize = document.querySelector<HTMLInputElement>("[data-ui-size]")!;
+  const uiOut =
+    document.querySelector<HTMLOutputElement>("[data-ui-size-out]")!;
+
+  function applyUiSize() {
+    document
+      .querySelectorAll<HTMLElement>(".ui")
+      .forEach((el) => el.style.setProperty("--ui-font", `${uiSize.value}px`));
+    uiOut.value = `${uiSize.value}px`;
+  }
+  uiSize.addEventListener("input", applyUiSize);
+  applyUiSize();
+
+  const sample = document.querySelector<HTMLElement>("[data-sample]")!;
+
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-style]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const pressed = btn.getAttribute("aria-pressed") === "true";
+        btn.setAttribute("aria-pressed", String(!pressed));
+        sample.classList.toggle(`is-${btn.dataset.style}`, !pressed);
+      });
+    });
+
+  const alignButtons =
+    document.querySelectorAll<HTMLButtonElement>("[data-align]");
+  alignButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      alignButtons.forEach((b) =>
+        b.setAttribute("aria-pressed", String(b === btn)),
+      );
+      sample.style.textAlign = btn.dataset.align!;
+    });
+  });
+
+  const search = document.querySelector<HTMLInputElement>("[data-search]")!;
+  const clear = document.querySelector<HTMLButtonElement>("[data-clear]")!;
+  search.addEventListener("input", () => {
+    clear.hidden = search.value.length === 0;
+  });
+  clear.addEventListener("click", () => {
+    search.value = "";
+    clear.hidden = true;
+    search.focus();
+  });
+</script>
+
+<style>
+  .ui {
+    font-size: var(--ui-font, 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  /* The one sizing rule the whole page leans on: icons rendered with width={null} have no
+     size attributes, so em units here are what sizes them. */
+  .ui :global(svg[data-icon]) {
+    width: 1.1em;
+    height: 1.1em;
+    flex-shrink: 0;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    flex-wrap: wrap;
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+  }
+
+  /* Buttons */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.45em 0.9em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    cursor: pointer;
+    font-size: 1em;
+    position: relative;
+  }
+
+  .btn--primary {
+    background: var(--icon-color);
+    border-color: var(--icon-color);
+    color: #fff;
+  }
+
+  .btn--danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+  }
+
+  .btn--icon {
+    padding: 0.45em;
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .dot {
+    position: absolute;
+    top: 0.25em;
+    right: 0.25em;
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 999px;
+    background: var(--danger);
+  }
+
+  /* Toolbar */
+
+  .toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15em;
+    padding: 0.25em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    align-self: flex-start;
+  }
+
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4em;
+    border: none;
+    border-radius: calc(var(--radius) - 0.15rem);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1em;
+  }
+
+  .tool:hover {
+    background: var(--bg-inset);
+    color: var(--text);
+  }
+
+  .tool[aria-pressed="true"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .toolbar__sep {
+    width: 1px;
+    height: 1.4em;
+    background: var(--border);
+    margin: 0 0.3em;
+  }
+
+  .sample {
+    margin: 0;
+    padding: 0.8em 1em;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    max-width: 36em;
+  }
+
+  .sample.is-bold {
+    font-weight: 700;
+  }
+  .sample.is-italic {
+    font-style: italic;
+  }
+  .sample.is-underline {
+    text-decoration: underline;
+  }
+
+  /* Fields */
+
+  .field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-panel);
+    color: var(--text-muted);
+    min-width: 16em;
+  }
+
+  .field:focus-within {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .field input {
+    border: none;
+    outline: none;
+    background: none;
+    flex: 1;
+    min-width: 0;
+    font-size: 1em;
+  }
+
+  .field__clear {
+    display: inline-flex;
+    border: none;
+    background: none;
+    padding: 0.1em;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+
+  .field__clear:hover {
+    color: var(--text);
+  }
+
+  .verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+  }
+
+  .verified :global(svg) {
+    color: var(--icon-color);
+  }
+
+  /* Alerts & pills */
+
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+    padding: 0.65em 0.85em;
+    border: 1px solid;
+    border-radius: var(--radius);
+    max-width: 36em;
+  }
+
+  .alert :global(svg) {
+    margin-top: 0.15em;
+  }
+
+  .alert--info {
+    color: light-dark(#0369a1, #7dd3fc);
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  .alert--success {
+    color: light-dark(#0f766e, #5eead4);
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  .alert--danger {
+    color: light-dark(#b42318, #f28b7f);
+    border-color: color-mix(in srgb, currentColor 35%, transparent);
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  .alert span {
+    color: var(--text);
+  }
+
+  .alert strong {
+    color: inherit;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.2em 0.7em;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-raised);
+    font-size: 0.92em;
+  }
+
+  .pill--ok {
+    color: light-dark(#0f766e, #5eead4);
+  }
+
+  /* Inline prose */
+
+  .prose {
+    margin: 0;
+    max-width: 40em;
+  }
+
+  .prose :global(svg[data-icon]) {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+  }
+</style>

@@ -1,0 +1,293 @@
+---
+export const prerender = true;
+
+import { Icon } from "astro-icon/components";
+import Base from "../../layouts/base.astro";
+
+// Every case below is a real <Icon> rendered at build time. The inspector shows that element's
+// actual markup straight out of the DOM - nothing is reconstructed in JS, so what you read is
+// exactly what astro-icon emitted.
+const cases: { id: string; label: string; note?: string }[] = [
+  {
+    id: "default",
+    label: "no props",
+    note: "Decorative default: aria-hidden, focusable=false, sized from the source SVG.",
+  },
+  { id: "size", label: "size={32}" },
+  { id: "wh", label: "width/height" },
+  { id: "null", label: "width={null}" },
+  { id: "title", label: "title" },
+  { id: "title-desc", label: "title + desc" },
+  { id: "title-id", label: "title={{id,value}}" },
+  {
+    id: "desc",
+    label: "desc only",
+    note: "A description without a name still opts out of decorative: role=img plus a generated aria-describedby.",
+  },
+  { id: "aria-label", label: "aria-label" },
+  {
+    id: "aria-description",
+    label: "aria-description",
+    note: "WAI-ARIA 1.3 inline description - the aria-describedby analog of aria-label, no <desc> element needed.",
+  },
+  { id: "aria-hidden", label: "aria-hidden={false}" },
+  {
+    id: "entry-title",
+    label: "svg <title> default",
+    note: "badge.svg carries its own <title>/<desc>; localSvg() stores them as entry defaults, and a caller prop overrides them.",
+  },
+  {
+    id: "conflict",
+    label: "title + aria-label ⚠",
+    note: "Conflicting labels: title is dropped (aria-label wins) and dev mode logs a console warning - check the terminal running `pnpm dev`.",
+  },
+  { id: "passthrough", label: "class + data-*" },
+];
+---
+
+<Base title="Props & a11y" sub="<Icon> output">
+  <div class="bench">
+    <div class="bench__head">
+      <span class="bench__title">Rendered output per prop combination</span>
+      <span class="bench__note"
+        >Decorative by default; title/desc/aria opt into a labeled graphic</span
+      >
+    </div>
+    <div class="split">
+      <div class="cases" role="tablist" aria-label="Prop cases">
+        {
+          cases.map((c, i) => (
+            <button
+              class="case-btn"
+              type="button"
+              role="tab"
+              data-case-btn={c.id}
+              aria-selected={i === 0 ? "true" : "false"}
+            >
+              {c.label}
+            </button>
+          ))
+        }
+      </div>
+      <div class="split__main">
+        <div class="stage-center">
+          <div data-case="default"><Icon name="send" /></div>
+          <div data-case="size" hidden><Icon name="send" size={32} /></div>
+          <div data-case="wh" hidden>
+            <Icon name="send" width={64} height={32} />
+          </div>
+          <div data-case="null" hidden class="css-sized">
+            <Icon name="send" width={null} height={null} />
+          </div>
+          <div data-case="title" hidden>
+            <Icon name="send" size={32} title="Send message" />
+          </div>
+          <div data-case="title-desc" hidden>
+            <Icon
+              name="send"
+              size={32}
+              title="Send message"
+              desc="Delivers to the current channel"
+            />
+          </div>
+          <div data-case="title-id" hidden>
+            <button class="chip" aria-labelledby="send-title">
+              <Icon
+                name="send"
+                size={20}
+                title={{ id: "send-title", value: "Send message" }}
+              />
+              button reuses the icon's title id
+            </button>
+          </div>
+          <div data-case="desc" hidden>
+            <Icon
+              name="send"
+              size={32}
+              desc="Delivers to the current channel"
+            />
+          </div>
+          <div data-case="aria-label" hidden>
+            <Icon name="send" size={32} aria-label="Send message" />
+          </div>
+          <div data-case="aria-description" hidden>
+            <Icon
+              name="send"
+              size={32}
+              aria-label="Send message"
+              aria-description="Delivers to the current channel"
+            />
+          </div>
+          <div data-case="aria-hidden" hidden>
+            <Icon name="send" size={32} aria-hidden={false} />
+          </div>
+          <div data-case="entry-title" hidden class="pair">
+            <span class="pair__item">
+              <Icon name="badge" size={32} />
+              <code>no props — title/desc from badge.svg itself</code>
+            </span>
+            <span class="pair__item">
+              <Icon name="badge" size={32} title="Overridden title" />
+              <code>caller's title wins over the file's</code>
+            </span>
+          </div>
+          <div data-case="conflict" hidden>
+            <Icon
+              name="send"
+              size={32}
+              title="Send message"
+              aria-label="Send message"
+            />
+          </div>
+          <div data-case="passthrough" hidden>
+            <Icon
+              name="send"
+              size={32}
+              class="custom-class"
+              data-testid="send"
+            />
+          </div>
+        </div>
+        {
+          cases
+            .filter((c) => c.note)
+            .map((c) => (
+              <p class="case-note hint" data-case-note={c.id} hidden>
+                {c.note}
+              </p>
+            ))
+        }
+        <pre class="inspector" data-inspector></pre>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const buttons =
+    document.querySelectorAll<HTMLButtonElement>("[data-case-btn]");
+  const panels = document.querySelectorAll<HTMLElement>("[data-case]");
+  const inspector = document.querySelector<HTMLElement>("[data-inspector]")!;
+
+  // Line breaks between tags plus depth indentation - no attribute reordering, so the inspector
+  // stays faithful to what's actually in the DOM. The one cosmetic liberty: an element with
+  // nothing between its open and close tags is shown self-closed.
+  function format(html: string): string {
+    const tokens = html
+      .replace(/></g, ">\n<")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const merged: string[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]!;
+      const open = token.match(/^<([a-zA-Z][\w-]*)([^>]*[^/>])?>$/);
+      if (open && tokens[i + 1] === `</${open[1]}>`) {
+        merged.push(`<${open[1]}${(open[2] ?? "").trimEnd()} />`);
+        i++;
+        continue;
+      }
+      merged.push(token);
+    }
+
+    let depth = 0;
+    return merged
+      .map((token) => {
+        if (token.startsWith("</")) depth = Math.max(0, depth - 1);
+        const line = "  ".repeat(depth) + token;
+        const opensElement =
+          token.startsWith("<") &&
+          !token.startsWith("</") &&
+          !token.endsWith("/>") &&
+          !token.includes("</");
+        if (opensElement) depth++;
+        return line;
+      })
+      .join("\n");
+  }
+
+  // Small enough to stay honest: tag names, attribute names, and quoted values, nothing more.
+  // Attributes are wrapped first, then tag names anchored on the escaped "&lt;" - in this order
+  // neither pass can match the span markup the other injected.
+  function highlight(source: string): string {
+    return source
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(
+        /([a-zA-Z_:][\w:.-]*)=("[^"]*")/g,
+        '<span class="hl-attr">$1</span>=<span class="hl-str">$2</span>',
+      )
+      .replace(
+        /(&lt;\/?)([a-zA-Z][\w-]*)/g,
+        '$1<span class="hl-tag">$2</span>',
+      );
+  }
+
+  const notes = document.querySelectorAll<HTMLElement>("[data-case-note]");
+
+  function select(id: string) {
+    buttons.forEach((b) =>
+      b.setAttribute("aria-selected", String(b.dataset.caseBtn === id)),
+    );
+    let active: HTMLElement | undefined;
+    panels.forEach((p) => {
+      const match = p.dataset.case === id;
+      p.hidden = !match;
+      if (match) active = p;
+    });
+    notes.forEach((n) => {
+      n.hidden = n.dataset.caseNote !== id;
+    });
+    inspector.innerHTML = active ? highlight(format(active.innerHTML)) : "";
+  }
+
+  buttons.forEach((btn) =>
+    btn.addEventListener("click", () => select(btn.dataset.caseBtn!)),
+  );
+  select("default");
+</script>
+
+<style>
+  .css-sized :global(svg) {
+    width: 3rem;
+    height: 3rem;
+  }
+  .custom-class {
+    opacity: 0.55;
+  }
+  .case-note {
+    padding: 0 1rem 0.8rem;
+    text-align: center;
+  }
+  .pair[hidden] {
+    display: none;
+  }
+  .pair {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pair__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pair__item code {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    background: none;
+  }
+  .inspector :global(.hl-tag) {
+    color: #7bd88f;
+  }
+  .inspector :global(.hl-attr) {
+    color: #9cc7f7;
+  }
+  .inspector :global(.hl-str) {
+    color: #f0c96b;
+  }
+</style>

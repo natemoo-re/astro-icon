@@ -1,12 +1,43 @@
+---
+import "../styles/global.css";
+import ColorControl from "../components/ColorControl.astro";
+import Nav from "../components/Nav.astro";
+
+interface Props {
+  title: string;
+  sub?: string;
+}
+
+const { title, sub } = Astro.props;
+---
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
-    <title>Astro Icon</title>
+    <title>{title} · astro-icon bench</title>
+    <script is:inline>
+      // Applied before first paint so the saved color doesn't flash from the default.
+      const saved = localStorage.getItem("astro-icon-demo:color");
+      if (saved)
+        document.documentElement.style.setProperty("--icon-color", saved);
+    </script>
   </head>
 
   <body>
-    <slot />
+    <div class="app">
+      <Nav />
+      <div class="app__main">
+        <header class="app__topbar">
+          <h1>{title}</h1>
+          {sub && <span class="sub">{sub}</span>}
+          <div style="margin-inline-start:auto"><ColorControl /></div>
+        </header>
+        <div class="app__body">
+          <slot />
+        </div>
+      </div>
+    </div>
   </body>
 </html>
