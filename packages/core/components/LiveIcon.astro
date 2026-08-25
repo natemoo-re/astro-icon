@@ -1,12 +1,7 @@
 ---
-import { getLiveEntry } from "astro:content";
-
-import { AstroIconError } from "../src/internal/error.js";
-import { renderTimeError } from "../src/render/error.js";
 import IconBase from "./IconBase.astro";
 import type { LiveIconProps } from "../src/render/props.js";
-
-import type { IconEntry } from "../typings/types";
+import { prepareLiveIcon } from "../src/render/prepareIcon.js";
 
 /**
  * Renders one icon from a live collection as an inline `<svg>`, resolved at
@@ -33,24 +28,9 @@ interface Props extends LiveIconProps {}
 
 const { collection, icon, ...props } = Astro.props;
 
-if (!collection || !icon) {
-  throw renderTimeError(
-    `Invalid "collection" or "icon" provided!`,
-    `<LiveIcon> requires both a "collection" and an "icon" prop; got collection="${collection}", icon="${icon}".`,
-  );
-}
-
-const { entry, error } = await getLiveEntry(collection, icon);
-
-if (error || !entry) {
-  const hint = error instanceof AstroIconError ? error.hint : undefined;
-  console.warn(
-    `<LiveIcon> failed to load "${collection}:${icon}"${error ? `: ${error.message}` : ""}${hint ? `\nHint: ${hint}` : ""}`,
-  );
-  return;
-}
-
-const data = entry.data as IconEntry;
+const prepared = await prepareLiveIcon(collection, icon);
+if (!prepared) return;
+const { entry, marker } = prepared;
 ---
 
-<IconBase entry={data} dataIcon={`${collection}:${icon}`} {...props} />
+<IconBase entry={entry} dataIcon={marker} {...props} />

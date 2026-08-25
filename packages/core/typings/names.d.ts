@@ -22,6 +22,8 @@ type AstroIconPrefixed = {
 // instead of erroring, collapsing all of `IconName` to `any`.
 type KeyOrNever<T, K extends PropertyKey> = K extends keyof T ? T[K] : never;
 
+// "icons" here is `src/render/parseIconName.ts`'s `DEFAULT_COLLECTION`, duplicated because an
+// ambient .d.ts can't import a runtime value - keep the two in sync by hand.
 type AstroIconBare = KeyOrNever<AstroIcon.Collections, "icons"> & string;
 
 /**
