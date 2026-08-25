@@ -14,7 +14,11 @@ import { prepareIcon } from "../src/render/prepareIcon.js";
  * `aria-label`/`aria-labelledby`/`aria-description`/`aria-describedby`)
  * opts an icon out of that default into a labeled, standalone graphic.
  *
- * Use `<LiveIcon>` instead when you need to resolve an icon per request.
+ * Handles any icon name the build can enumerate ahead of time, even one
+ * computed from data or picked by a user from an installed pack. Use
+ * `<LiveIcon>` instead only when the collection itself can't be enumerated
+ * at build time: an API with no fixed catalog, or a name from a system
+ * outside this build entirely.
  */
 interface Props extends IconProps {}
 
