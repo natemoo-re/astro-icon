@@ -18,8 +18,11 @@ describe("createIconLoader(iconify()) + <Icon> against a real astro build", () =
   let index = "";
 
   beforeAll(async () => {
+    // `cwd` matches `--root`: the fixture's `live.config.ts` runs construction-time typegen
+    // rooted at a `process.cwd()` guess (see `guessProjectRoot`), so a mismatched cwd would
+    // write the fixture's declaration files into this package's own `.astro/` instead.
     await run(astroBin, ["build", "--root", fixtureRoot], {
-      cwd: packageRoot,
+      cwd: fixtureRoot,
     });
     html = await readFile(join(fixtureRoot, "dist/index.html"), "utf-8");
     index = await readFile(
