@@ -1,4 +1,11 @@
-import { DOCUMENT_NODE, ELEMENT_NODE, TEXT_NODE, parse, renderSync, walkSync } from "ultrahtml";
+import {
+  DOCUMENT_NODE,
+  ELEMENT_NODE,
+  TEXT_NODE,
+  parse,
+  renderSync,
+  walkSync,
+} from "ultrahtml";
 import type { DocumentNode, ElementNode, Node } from "ultrahtml";
 import { AstroIconError } from "../../internal/error.js";
 import { rootAttrOwner } from "../../internal/entryContract.js";
@@ -232,11 +239,7 @@ export function entryFromSVG(svg: string): EntryFromSVGResult {
     viewBox = rawViewBox!;
     ({ width, height } = presentDimensions);
   } else {
-    ({
-      viewBox,
-      width,
-      height,
-    } = deriveViewBoxFromSize(svgEl.attributes) ?? {
+    ({ viewBox, width, height } = deriveViewBoxFromSize(svgEl.attributes) ?? {
       viewBox: "0 0 24 24",
       width: 24,
       height: 24,

@@ -1,4 +1,8 @@
-import { defineIconCollection, iconify, localSvg } from "astro-icon/collections";
+import {
+  defineIconCollection,
+  iconify,
+  localSvg,
+} from "astro-icon/collections";
 import type { IconSource } from "astro-icon/collections";
 
 // A hand-written, non-iconify source - proves `defineIconCollection` isn't

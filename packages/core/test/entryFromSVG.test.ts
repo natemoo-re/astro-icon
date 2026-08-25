@@ -3,9 +3,7 @@ import { entryFromSVG } from "../src/content/ingest/entryFromSVG.js";
 
 describe("entryFromSVG / no <svg> element", () => {
   it("throws when the markup has no <svg> element at all", () => {
-    expect(() => entryFromSVG("<path d='M0 0h24v24H0z'/>")).toThrow(
-      /<svg>/i,
-    );
+    expect(() => entryFromSVG("<path d='M0 0h24v24H0z'/>")).toThrow(/<svg>/i);
   });
 
   it("throws for an empty string", () => {
@@ -13,9 +11,7 @@ describe("entryFromSVG / no <svg> element", () => {
   });
 
   it("doesn't throw for a well-formed self-closing <svg> element", () => {
-    expect(() =>
-      entryFromSVG("<svg viewBox='0 0 24 24'/>"),
-    ).not.toThrow();
+    expect(() => entryFromSVG("<svg viewBox='0 0 24 24'/>")).not.toThrow();
   });
 });
 
@@ -25,7 +21,11 @@ describe("entryFromSVG / viewBox facts", () => {
       `<svg viewBox="0 0 32 32"><path d="M0 0"/></svg>`,
     );
     expect(facts.viewBox).toBe("present");
-    expect(entry).toMatchObject({ viewBox: "0 0 32 32", width: 32, height: 32 });
+    expect(entry).toMatchObject({
+      viewBox: "0 0 32 32",
+      width: 32,
+      height: 32,
+    });
   });
 
   it("reports 'missing' and recovers one from unit-less width/height when the viewBox is absent", () => {
@@ -33,7 +33,11 @@ describe("entryFromSVG / viewBox facts", () => {
       `<svg width="20" height="20"><path d="M0 0"/></svg>`,
     );
     expect(facts.viewBox).toBe("missing");
-    expect(entry).toMatchObject({ viewBox: "0 0 20 20", width: 20, height: 20 });
+    expect(entry).toMatchObject({
+      viewBox: "0 0 20 20",
+      width: 20,
+      height: 20,
+    });
   });
 
   it("reports 'missing' when the viewBox has too few tokens", () => {
@@ -55,13 +59,21 @@ describe("entryFromSVG / viewBox facts", () => {
       `<svg width="1em" height="1em"><path d="M0 0"/></svg>`,
     );
     expect(facts.viewBox).toBe("missing");
-    expect(entry).toMatchObject({ viewBox: "0 0 24 24", width: 24, height: 24 });
+    expect(entry).toMatchObject({
+      viewBox: "0 0 24 24",
+      width: 24,
+      height: 24,
+    });
   });
 
   it("falls back to 0 0 24 24 with neither viewBox nor width/height", () => {
     const { entry, facts } = entryFromSVG(`<svg><path d="M0 0"/></svg>`);
     expect(facts.viewBox).toBe("missing");
-    expect(entry).toMatchObject({ viewBox: "0 0 24 24", width: 24, height: 24 });
+    expect(entry).toMatchObject({
+      viewBox: "0 0 24 24",
+      width: 24,
+      height: 24,
+    });
   });
 });
 
@@ -159,7 +171,9 @@ describe("entryFromSVG / title and desc", () => {
   });
 
   it("leaves title/desc unset when absent", () => {
-    const { entry } = entryFromSVG(`<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>`);
+    const { entry } = entryFromSVG(
+      `<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>`,
+    );
     expect("title" in entry).toBe(false);
     expect("desc" in entry).toBe(false);
   });

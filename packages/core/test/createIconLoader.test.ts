@@ -68,7 +68,9 @@ function fakeSource(overrides: Partial<IconSource> = {}): IconSource {
   return {
     name: "test",
     getIcons: vi.fn(async (names: string[]) => {
-      return new Map<string, IconEntry>(names.map((name) => [name, entryFor(name)]));
+      return new Map<string, IconEntry>(
+        names.map((name) => [name, entryFor(name)]),
+      );
     }),
     listIcons: vi.fn(async () => []),
     ...overrides,
@@ -213,9 +215,7 @@ describe("createIconLoader", () => {
       },
     });
 
-    await expect(sync(source)(fakeContext())).rejects.toThrow(
-      "not installed",
-    );
+    await expect(sync(source)(fakeContext())).rejects.toThrow("not installed");
     expect(listIcons).not.toHaveBeenCalled();
   });
 });

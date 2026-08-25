@@ -7,13 +7,26 @@ import {
 
 describe("rootAttrOwner", () => {
   it("routes viewBox/width/height/xmlns/version to structure", () => {
-    for (const name of ["viewBox", "width", "height", "xmlns", "xmlns:xlink", "version"]) {
+    for (const name of [
+      "viewBox",
+      "width",
+      "height",
+      "xmlns",
+      "xmlns:xlink",
+      "version",
+    ]) {
       expect(rootAttrOwner(name)).toBe("structure");
     }
   });
 
   it("routes role/focusable/tabindex/aria-* to component", () => {
-    for (const name of ["role", "focusable", "tabindex", "aria-hidden", "aria-label"]) {
+    for (const name of [
+      "role",
+      "focusable",
+      "tabindex",
+      "aria-hidden",
+      "aria-label",
+    ]) {
       expect(rootAttrOwner(name)).toBe("component");
     }
   });
@@ -70,7 +83,12 @@ describe("splitEntryAttrs", () => {
 });
 
 describe("iconEntrySchema", () => {
-  const valid = { body: "<path/>", viewBox: "0 0 24 24", width: 24, height: 24 };
+  const valid = {
+    body: "<path/>",
+    viewBox: "0 0 24 24",
+    width: 24,
+    height: 24,
+  };
 
   it("accepts the minimal shape", () => {
     expect(iconEntrySchema.safeParse(valid).success).toBe(true);
@@ -91,15 +109,14 @@ describe("iconEntrySchema", () => {
   });
 
   it("rejects a wrong-typed required field", () => {
-    expect(
-      iconEntrySchema.safeParse({ ...valid, width: "24" }).success,
-    ).toBe(false);
+    expect(iconEntrySchema.safeParse({ ...valid, width: "24" }).success).toBe(
+      false,
+    );
   });
 
   it("rejects an extra field of the wrong type through the catchall", () => {
     expect(
-      iconEntrySchema.safeParse({ ...valid, extra: { nested: true } })
-        .success,
+      iconEntrySchema.safeParse({ ...valid, extra: { nested: true } }).success,
     ).toBe(false);
   });
 });

@@ -83,12 +83,7 @@ export function iconify(
   options: IconifySourceOptions = {},
 ): IconSource {
   const { allowed: allowedList, transform } = options;
-  const allowed = dedupeAllowed(
-    pack,
-    "iconify",
-    allowedList,
-    consoleLogger,
-  );
+  const allowed = dedupeAllowed(pack, "iconify", allowedList, consoleLogger);
   const rejection = allowlistRejection(pack, allowedList, "the whole pack");
 
   // The pack load starts here, at construction, against a best-effort guess (see
@@ -141,7 +136,13 @@ export function iconify(
       const { result, toFetch } = partitionAllowed(names, allowed, rejection);
       if (toFetch.length > 0) {
         // The whole pack is in memory either way, so there's nothing to narrow the load to.
-        await addPackEntries(result, await loadedPack(), toFetch, pack, transform);
+        await addPackEntries(
+          result,
+          await loadedPack(),
+          toFetch,
+          pack,
+          transform,
+        );
       }
       return result;
     },

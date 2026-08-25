@@ -2,7 +2,10 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createTypegenRecorder, recordCollection } from "../src/content/typegen/index.js";
+import {
+  createTypegenRecorder,
+  recordCollection,
+} from "../src/content/typegen/index.js";
 import { consoleLogger } from "../src/content/logger.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => {
@@ -107,7 +110,9 @@ describe("recordCollection", () => {
 describe("createTypegenRecorder", () => {
   it("doesn't let one rejected write block a later, unrelated write", async () => {
     const recorder = createTypegenRecorder();
-    mockedWriteFile.mockRejectedValueOnce(new Error("EACCES: read-only .astro/"));
+    mockedWriteFile.mockRejectedValueOnce(
+      new Error("EACCES: read-only .astro/"),
+    );
 
     await recorder.recordCollection(root, "build", "mdi", ["search"]);
     await recorder.recordCollection(root, "build", "ri", ["home"]);

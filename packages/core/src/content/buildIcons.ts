@@ -46,7 +46,10 @@ export async function buildIcons(
       onError(name, result);
       continue;
     }
-    built.push({ name, data: { ...result, body: sanitizeSVGBody(result.body) } });
+    built.push({
+      name,
+      data: { ...result, body: sanitizeSVGBody(result.body) },
+    });
   }
   return built;
 }

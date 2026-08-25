@@ -1,7 +1,11 @@
 import { getLiveEntry } from "astro:content";
 import { AstroIconError } from "../internal/error.js";
 import { renderTimeError } from "./error.js";
-import { DEFAULT_COLLECTION, parseIconName, type ParsedName } from "./parseIconName.js";
+import {
+  DEFAULT_COLLECTION,
+  parseIconName,
+  type ParsedName,
+} from "./parseIconName.js";
 import { isCollectionEmpty, resolveIconEntry } from "./lookupEntry.js";
 import type { IconEntry } from "../../typings/types";
 

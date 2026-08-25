@@ -194,7 +194,9 @@ describe("iconify / icons allowlist", () => {
     const result = await source.getIcons(["menu"]);
 
     expect(result.get("menu")).toBeInstanceOf(Error);
-    expect((result.get("menu") as Error).message).toMatch(/isn't in the allowed/i);
+    expect((result.get("menu") as Error).message).toMatch(
+      /isn't in the allowed/i,
+    );
   });
 
   it("resolves an allowed name normally", async () => {
@@ -228,10 +230,9 @@ describe("iconify / checkPreconditions", () => {
     // A pack name that doesn't exist anywhere on disk (unlike "mdi", genuinely installed for
     // other tests in this suite) so the require.resolve fallback (#263) can't find it either -
     // otherwise this would pass for the wrong reason even without the fix under test.
-    const source = iconify(
-      "definitely-not-a-real-iconify-pack-xyz",
-      { allowed: ["search"] },
-    );
+    const source = iconify("definitely-not-a-real-iconify-pack-xyz", {
+      allowed: ["search"],
+    });
 
     await expect(source.checkPreconditions?.()).rejects.toThrow(
       /isn't installed/i,

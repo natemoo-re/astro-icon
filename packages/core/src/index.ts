@@ -32,4 +32,8 @@ export type {
   EntryFacts,
   EntryFromSVGResult,
 } from "./content/ingest/entryFromSVG.js";
-export type { IconProps, LiveIconProps, SharedIconProps } from "./render/props.js";
+export type {
+  IconProps,
+  LiveIconProps,
+  SharedIconProps,
+} from "./render/props.js";

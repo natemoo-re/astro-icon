@@ -159,7 +159,8 @@ export function localSvg(
       );
     }
 
-    if (transform) entry = await transform(entry, { collection: COLLECTION, name });
+    if (transform)
+      entry = await transform(entry, { collection: COLLECTION, name });
 
     cache.set(name, { hash, entry });
     return entry;

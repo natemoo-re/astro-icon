@@ -75,7 +75,9 @@ describe("entryFromIconifyData", () => {
       const entry = entryFromIconifyData(pack, name);
       expect(entry).toMatchObject({
         body: expect.any(String),
-        viewBox: expect.stringMatching(/^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/),
+        viewBox: expect.stringMatching(
+          /^-?\d+(\.\d+)? -?\d+(\.\d+)? \d+(\.\d+)? \d+(\.\d+)?$/,
+        ),
         width: expect.any(Number),
         height: expect.any(Number),
       });

@@ -7,9 +7,8 @@ vi.mock("astro:content", () => ({
   getCollection: (...args: unknown[]) => getCollection(...args),
 }));
 
-const { resolveIconEntry, isCollectionEmpty } = await import(
-  "../src/render/lookupEntry.js"
-);
+const { resolveIconEntry, isCollectionEmpty } =
+  await import("../src/render/lookupEntry.js");
 
 afterEach(() => {
   getEntry.mockReset();

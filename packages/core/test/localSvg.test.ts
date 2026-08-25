@@ -189,7 +189,10 @@ describe("localSvg / getIcons", () => {
 
 describe("localSvg / viewBox derivation warning", () => {
   it("warns, naming the file's directory, when a viewBox has to be derived", async () => {
-    await write("logo.svg", `<svg width="32" height="32"><rect width="32" height="32"/></svg>`);
+    await write(
+      "logo.svg",
+      `<svg width="32" height="32"><rect width="32" height="32"/></svg>`,
+    );
     const warn = vi.fn();
     const source = localSvg(dir, { logger: { warn } });
 

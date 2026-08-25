@@ -9,9 +9,8 @@ vi.mock("astro:content", () => ({
   getLiveEntry: (...args: unknown[]) => getLiveEntry(...args),
 }));
 
-const { prepareIcon, prepareLiveIcon } = await import(
-  "../src/render/prepareIcon.js"
-);
+const { prepareIcon, prepareLiveIcon } =
+  await import("../src/render/prepareIcon.js");
 
 afterEach(() => {
   getEntry.mockReset();
@@ -19,7 +18,12 @@ afterEach(() => {
   getLiveEntry.mockReset();
 });
 
-const entryData = { body: "<path/>", viewBox: "0 0 24 24", width: 24, height: 24 };
+const entryData = {
+  body: "<path/>",
+  viewBox: "0 0 24 24",
+  width: 24,
+  height: 24,
+};
 
 /**
  * Fakes `getCollection`'s real filtering behavior (see `lookupEntry.test.ts`) - `resolveIconEntry`

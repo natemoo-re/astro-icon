@@ -25,7 +25,9 @@ const entry: IconEntry = {
 function fakeSource(name: string): IconSource {
   return {
     name,
-    getIcons: vi.fn(async (names: string[]) => new Map(names.map((n) => [n, entry]))),
+    getIcons: vi.fn(
+      async (names: string[]) => new Map(names.map((n) => [n, entry])),
+    ),
   };
 }
 

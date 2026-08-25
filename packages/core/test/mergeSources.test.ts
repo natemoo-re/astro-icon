@@ -82,7 +82,9 @@ describe("mergeSources / multiple sources / getIcons", () => {
     const result = await merged.getIcons(["missing"]);
 
     expect(result.get("missing")).toBeInstanceOf(Error);
-    expect((result.get("missing") as Error).message).toMatch(/mdi\+ic.*missing/s);
+    expect((result.get("missing") as Error).message).toMatch(
+      /mdi\+ic.*missing/s,
+    );
   });
 
   it("resolves what it can and reports an Error for the rest, in one call", async () => {

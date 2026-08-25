@@ -88,7 +88,9 @@ describe("buildIcons", () => {
     const source = {
       name: "test",
       async getIcons(names: string[]) {
-        return new Map(names.filter((n) => n !== "missing").map((n) => [n, entryFor(n)]));
+        return new Map(
+          names.filter((n) => n !== "missing").map((n) => [n, entryFor(n)]),
+        );
       },
     };
     const onError = vi.fn();

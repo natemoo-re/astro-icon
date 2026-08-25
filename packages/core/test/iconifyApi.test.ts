@@ -148,7 +148,9 @@ describe("iconifyApi / icons allowlist is required", () => {
     const result = await source.getIcons(["menu"]);
 
     expect(result.get("menu")).toBeInstanceOf(Error);
-    expect((result.get("menu") as Error).message).toMatch(/isn't in the allowed/i);
+    expect((result.get("menu") as Error).message).toMatch(
+      /isn't in the allowed/i,
+    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

@@ -94,7 +94,9 @@ export function createTypegenRecorder(): TypegenRecorder {
     collection: string,
     names: string[],
   ): Promise<void> {
-    const attempt = chain.then(() => writeTypes(rootDir, kind, collection, names));
+    const attempt = chain.then(() =>
+      writeTypes(rootDir, kind, collection, names),
+    );
     // Rebased off `attempt` but with its rejection swallowed here, so one failed write (e.g. a
     // read-only `.astro/`) doesn't leave every later write attributed to a different collection
     // permanently rejected too.
