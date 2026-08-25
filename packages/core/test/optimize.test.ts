@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultOverrides, svgo } from "../src/optimize.js";
 
 const ctx = { collection: "test", name: "icon" };
@@ -107,5 +107,31 @@ describe("svgo() / options replace the default wholesale", () => {
     );
     expect(out).toContain('fill="currentColor"');
     expect(out).toContain("kept");
+  });
+});
+
+describe("svgo() / missing dependency", () => {
+  afterEach(() => {
+    vi.doUnmock("svgo");
+    vi.resetModules();
+  });
+
+  it("throws a descriptive AstroIconError instead of a bare module-resolution error", async () => {
+    // `svgo` is a devDependency here, so it's always resolvable in this test env - the only way
+    // to reach `loadSvgo`'s catch branch is to make the dynamic `import("svgo")` itself fail.
+    // `vi.doMock` (not hoisted `vi.mock`) plus `vi.resetModules()` gets a fresh `optimize.js`
+    // instance too, so its module-level `svgoModule` cache can't already hold a real import from
+    // an earlier test in this file.
+    vi.doMock("svgo", () => {
+      throw new Error("Cannot find module 'svgo'");
+    });
+    vi.resetModules();
+    const { svgo: freshSvgo } = await import("../src/optimize.js");
+
+    const optimize = freshSvgo();
+
+    await expect(
+      optimize('<svg xmlns="http://www.w3.org/2000/svg"></svg>', ctx),
+    ).rejects.toThrow(/"svgo" isn't installed/);
   });
 });

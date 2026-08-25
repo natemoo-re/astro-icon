@@ -81,9 +81,12 @@ export async function addPackEntries(
 /** The per-name error for a `getIcons` request outside the source's `allowed: [...]` list; `hint` finishes the "remove the option to allow ..." sentence (local and API sources can allow different things). */
 export function allowlistRejection(
   pack: string,
-  allowedCount: number,
+  allowedNames: readonly string[] | undefined,
   hint: string,
 ): (name: string) => Error {
+  // Counts the `allowed: [...]` option's own length, not a deduped Set's size - duplicates
+  // included, since that's what "N icon(s) allowed" has always reported.
+  const allowedCount = allowedNames?.length ?? 0;
   return (name) =>
     new AstroIconError(
       `"${name}" isn't in the allowed icon list for "${pack}" (${allowedCount} icon(s) allowed).`,

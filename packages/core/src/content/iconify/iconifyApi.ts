@@ -54,13 +54,7 @@ export function iconifyApi(
   const { allowed: allowedList, transform, host } = options;
   const logger = consoleLogger;
   const allowed = dedupeAllowed(pack, "iconifyApi", allowedList, logger);
-  // Counts the `allowed: [...]` option's own length, not `allowed.size` - duplicates included,
-  // since that's what "N icon(s) allowed" has always reported.
-  const rejection = allowlistRejection(
-    pack,
-    allowedList?.length ?? 0,
-    "any icon name",
-  );
+  const rejection = allowlistRejection(pack, allowedList, "any icon name");
 
   return {
     name: `iconify-api:${pack}`,

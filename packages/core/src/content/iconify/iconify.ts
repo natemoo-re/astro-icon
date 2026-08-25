@@ -89,13 +89,7 @@ export function iconify(
     allowedList,
     consoleLogger,
   );
-  // Counts the `allowed: [...]` option's own length, not `allowed.size` - duplicates included,
-  // since that's what "N icon(s) allowed" has always reported.
-  const rejection = allowlistRejection(
-    pack,
-    allowedList?.length ?? 0,
-    "the whole pack",
-  );
+  const rejection = allowlistRejection(pack, allowedList, "the whole pack");
 
   // The pack load starts here, at construction, against a best-effort guess (see
   // `guessProjectRoot`) - not lazily inside getIcons/listIcons/checkPreconditions - so a missing
