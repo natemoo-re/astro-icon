@@ -19,7 +19,7 @@ const factsSnippet = `// entryFromSVG() itself never warns or throws for a recov
 // just reports what it saw, as "facts", and leaves warn-vs-ignore to the caller:
 const { entry, facts } = entryFromSVG(svg);
 
-// localSvg() is that caller: it turns facts into warnings, on every sync.
+// localIcons() is that caller: it turns facts into warnings, on every sync.
 if (facts.viewBox === "missing") logger.warn(/* ... */);
 if (facts.monochromeWithoutCurrentColor) logger.warn(/* ... */);`;
 
@@ -50,7 +50,7 @@ const rows: {
 }[] = [
   {
     name: "icons",
-    src: 'defineIconCollection(localSvg("src/icons", { optimize: svgo() }))',
+    src: 'defineIconCollection(localIcons("src/icons", { optimize: svgo() }))',
     samples: ["bell", "arrows/left", "arrows/right"],
     note: "nested files keep their path as the name: icons/arrows/left.svg → arrows/left",
   },
@@ -86,12 +86,12 @@ const rows: {
   },
   {
     name: "mixed",
-    src: 'defineIconCollection([ localSvg("src/icons", { allowed: [...] }), iconify("ri") ])',
+    src: 'defineIconCollection([ localIcons("src/icons", { allowed: [...] }), iconify("ri") ])',
     samples: ["mixed:star", "mixed:star-fill"],
   },
   {
     name: "lockFixed",
-    src: 'localSvg("src/icons", { allowed: ["lock"], optimize: svgo({ convertColors }) })',
+    src: 'localIcons("src/icons", { allowed: ["lock"], optimize: svgo({ convertColors }) })',
     samples: ["lockFixed:lock"],
   },
 ];

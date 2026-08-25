@@ -2,9 +2,9 @@ import { readdirSync } from "node:fs";
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
-import { defineIconCollection, localSvg } from "astro-icon/collections";
+import { defineIconCollection, localIcons } from "astro-icon/collections";
 
-// The same names `localSvg()` resolves for `icons` below, read directly so
+// The same names `localIcons()` resolves for `icons` below, read directly so
 // the `work` schema can check each project's `icon:` frontmatter field
 // against them - a typo becomes a build error where the frontmatter is
 // written, not a blank icon discovered at runtime. See UC3 in PERSONA.md.
@@ -15,7 +15,7 @@ const iconNames = readdirSync(new URL("./icons/", import.meta.url))
 export const collections = {
   // Load every `.svg` file in the default `src/icons/` directory. No options
   // to tune - `<Icon name="..." />` resolves bare names against this collection.
-  icons: defineIconCollection(localSvg()),
+  icons: defineIconCollection(localIcons()),
   work: defineCollection({
     // Load Markdown files in the src/content/work directory.
     loader: glob({ base: "./src/content/work", pattern: "**/*.md" }),

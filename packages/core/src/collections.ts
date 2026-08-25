@@ -2,7 +2,7 @@
  * Everything that goes in a config file - `content.config.ts` or `live.config.ts`.
  *
  * `defineIconCollection`/`defineLiveIconCollections` build the collections; `iconify`/`iconifyApi`/
- * `localSvg` are the bundled sources that feed them; `createIconLoader`/`createLiveIconLoader`
+ * `localIcons` are the bundled sources that feed them; `createIconLoader`/`createLiveIconLoader`
  * are the drop-down-a-layer escape hatches for `defineCollection({ loader, schema })`/
  * `defineLiveCollection()`. Authoring a *custom* source lives in `astro-icon/source` instead.
  */
@@ -16,8 +16,8 @@ export { createLiveIconLoader } from "./content/liveLoader.js";
 export type { LiveIconLoaderOptions } from "./content/liveLoader.js";
 export { iconify } from "./content/iconify/iconify.js";
 export { iconifyApi } from "./content/iconify/iconifyApi.js";
-export { localSvg } from "./content/local/localSvg.js";
-export type { LocalSvgOptions } from "./content/local/localSvg.js";
+export { localIcons } from "./content/local/localIcons.js";
+export type { LocalIconsOptions } from "./content/local/localIcons.js";
 export { AstroIconError } from "./internal/error.js";
 export type { IconSource } from "./content/source.js";
 export type {

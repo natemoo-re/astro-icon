@@ -6,12 +6,12 @@ import { defaultOverrides, svgo } from "astro-icon/optimize";
 export const prerender = false;
 
 // Backs /playground/. Runs the pasted SVG through the real pipeline - the same svgo() and
-// entryFromSVG() a localSvg()-backed collection uses - so what the playground reports is what
+// entryFromSVG() a localIcons()-backed collection uses - so what the playground reports is what
 // the library actually does, not a reimplementation. (Collection loaders additionally strip
 // active content at sync time; that step isn't public API, so the playground only notes it.)
 //
 // entryFromSVG() itself takes no policy (no logger, no strict): it returns `facts` and leaves
-// warn-vs-ignore up to the caller, the same "facts, not policy" split localSvg() applies - see
+// warn-vs-ignore up to the caller, the same "facts, not policy" split localIcons() applies - see
 // its own `facts.viewBox`/`facts.monochromeWithoutCurrentColor` handling for the wording this
 // mirrors.
 
@@ -98,7 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
       : svg;
     const { entry, facts } = entryFromSVG(optimized);
 
-    // The same two warnings localSvg() logs on a real sync, worded to match.
+    // The same two warnings localIcons() logs on a real sync, worded to match.
     if (facts.viewBox === "missing") {
       warnings.push(
         `"pasted" has no usable viewBox, falling back to "${entry.viewBox}". Check the source SVG (or the optimize mode above) to avoid this.`,

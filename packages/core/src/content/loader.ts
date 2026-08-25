@@ -233,11 +233,11 @@ function syncIcons(
  *
  * ```ts
  * import { defineCollection } from "astro:content";
- * import { createIconLoader, iconify, localSvg } from "astro-icon/collections";
+ * import { createIconLoader, iconify, localIcons } from "astro-icon/collections";
  *
  * export const collections = {
  *   icons: defineCollection({
- *     loader: createIconLoader([iconify("mdi"), localSvg("src/icons")]),
+ *     loader: createIconLoader([iconify("mdi"), localIcons("src/icons")]),
  *     schema: mySchema,
  *   }),
  * };
