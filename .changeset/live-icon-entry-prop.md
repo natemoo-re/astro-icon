@@ -8,6 +8,7 @@
 ---
 const { entries } = await getLiveCollection("ph", { ids: results });
 ---
+
 {entries.map((entry) => <LiveIcon collection="ph" entry={entry} />)}
 ```
 

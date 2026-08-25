@@ -121,15 +121,15 @@ describe("prepareIcon", () => {
 
 describe("prepareLiveIcon", () => {
   it("throws when collection is missing", async () => {
-    await expect(
-      prepareLiveIcon("", "search", undefined),
-    ).rejects.toThrow(/Invalid "collection", "icon", or "entry" provided/);
+    await expect(prepareLiveIcon("", "search", undefined)).rejects.toThrow(
+      /Invalid "collection", "icon", or "entry" provided/,
+    );
   });
 
   it("throws when neither icon nor entry is provided", async () => {
-    await expect(
-      prepareLiveIcon("mdi", undefined, undefined),
-    ).rejects.toThrow(/Invalid "collection", "icon", or "entry" provided/);
+    await expect(prepareLiveIcon("mdi", undefined, undefined)).rejects.toThrow(
+      /Invalid "collection", "icon", or "entry" provided/,
+    );
     await expect(prepareLiveIcon("mdi", "", undefined)).rejects.toThrow(
       /Invalid "collection", "icon", or "entry" provided/,
     );
