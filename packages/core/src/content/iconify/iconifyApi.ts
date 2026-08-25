@@ -33,19 +33,17 @@ export function iconifyApi<
  * on your own infrastructure.
  *
  * Meant either standalone (e.g. deliberately avoiding an install) or
- * composed with `iconify` via `mergeSources` for a
- * local-preferred, API-fallback source:
+ * composed after `iconify` in a source array for a local-preferred,
+ * API-fallback collection:
  *
  * ```ts
- * import { createIconLoader, iconifyApi, iconify, mergeSources } from "astro-icon/collections";
- *
- * const mdi = mergeSources([
- *   iconify("mdi", { allowed: ["home"] }),
- *   iconifyApi("mdi", { allowed: ["home"] }),
- * ]);
+ * import { defineIconCollection, iconifyApi, iconify } from "astro-icon/collections";
  *
  * export const collections = {
- *   mdi: defineCollection({ loader: createIconLoader(mdi) }),
+ *   mdi: defineIconCollection([
+ *     iconify("mdi", { allowed: ["home"] }),
+ *     iconifyApi("mdi", { allowed: ["home"] }),
+ *   ]),
  * };
  * ```
  */

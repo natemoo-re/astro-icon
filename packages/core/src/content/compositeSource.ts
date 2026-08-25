@@ -16,6 +16,11 @@ export type CompositeSource = IconSource;
  * Normalizes one-or-more `IconSource`s into a single `CompositeSource`, trying each in order per
  * icon (first match wins).
  *
+ * Config files never need this - every collection-building call (`defineIconCollection`,
+ * `defineLiveIconCollections`' values, the loader factories) accepts an array directly. Reach
+ * for it to pre-compose an array into one `IconSource` *object*, e.g. a library exporting a
+ * single composed source for consumers to slot into their own arrays.
+ *
  * `logger` has no bearing on `getIcons`'s own success/failure - it receives a debug line each
  * time one member fails to resolve a name and execution falls through to the next member for
  * that name, and a warning for each member that fails `checkPreconditions()` without making the

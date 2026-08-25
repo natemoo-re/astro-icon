@@ -2,7 +2,7 @@
 
 Render SVG icons in [Astro](https://astro.build) as inline `<svg>` elements, with full TypeScript autocomplete for every icon name.
 
-astro-icon reads icons through Astro's [content layer](https://docs.astro.build/en/guides/content-collections/): a build-time collection for icons you know ahead of time, or a live collection for icons you resolve per request. It ships loaders for local `.svg` files and [Iconify](https://iconify.design) icon sets, and you can write your own loader for any other source.
+astro-icon reads icons through Astro's [content layer](https://docs.astro.build/en/guides/content-collections/): a build-time collection for icons you know ahead of time, or a live collection for icons you resolve per request. It ships sources for local `.svg` files and [Iconify](https://iconify.design) icon sets, and you can write your own source for anything else.
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -90,7 +90,16 @@ interface Props extends HTMLAttributes<"svg"> {
 - `size` sets both `width` and `height` at once, and takes priority over either if you set both. Set `width` and `height` individually to render a non-square icon.
 - By default, `<Icon>` renders with `width`/`height` set from the icon's intrinsic size. Pass `width={null}`/`height={null}` to omit the attribute entirely, e.g. to size the icon from CSS instead.
 
-`<Icon>` also accepts any global HTML and `aria-*` attribute, and forwards it to the rendered `<svg>`.
+`<Icon>` also accepts any global HTML and `aria-*` attribute, and forwards it to the rendered `<svg>`. The full props type is exported as `IconProps` (and `LiveIconProps` for `<LiveIcon>`) from `astro-icon/components`, so a wrapper component can extend it instead of re-declaring this surface:
+
+```astro
+---
+import type { IconProps } from "astro-icon/components";
+interface Props extends IconProps {
+  variant?: "solid" | "outline";
+}
+---
+```
 
 By default, `<Icon>` renders as decorative: `aria-hidden="true"`, invisible to assistive tech. That's the common case, since most icons sit next to visible text or inside an already-labeled control. Set `title`, `desc`, or your own `aria-label`, `aria-labelledby`, `aria-description`, or `aria-describedby` to render it instead as a labeled, standalone graphic:
 
@@ -229,7 +238,7 @@ export const collections = {
 
 This still watches every composed directory in dev, add/edit/remove included - `localSvg()` implements the same dev-watching every icon collection uses for any watchable source, not just local ones.
 
-**Keep icon names disjoint across composed local directories.** Like `mergeSources`, watching resolves a name to whichever source listed it first; editing a file in a later directory that shares a name with an earlier one still triggers a resync, it just re-resolves to the same, unchanged winner - so the edit will silently appear to do nothing. If two directories can genuinely overlap, give the later one an `allowed: [...]` allowlist that excludes the shared names, or merge the directories instead.
+**Keep icon names disjoint across composed local directories.** Watching follows the same first-match-wins order as icon resolution: a name resolves to whichever source listed it first; editing a file in a later directory that shares a name with an earlier one still triggers a resync, it just re-resolves to the same, unchanged winner - so the edit will silently appear to do nothing. If two directories can genuinely overlap, give the later one an `allowed: [...]` allowlist that excludes the shared names, or merge the directories instead.
 
 ### `optimize` and `svgo()`
 
@@ -310,8 +319,8 @@ export const collections = {
 import { defineIconCollection, iconifyApi } from "astro-icon/collections";
 
 export const collections = {
-  // The API only resolves icons you name explicitly, never the whole pack,
-  // and it adds a network request per icon during your build.
+  // The API only resolves icons you name explicitly, never the whole pack.
+  // The whole `allowed` list is fetched in one batched request during your build.
   mdi: defineIconCollection(
     iconifyApi("mdi", { allowed: ["account", "home", "heart"] }),
   ),
@@ -388,16 +397,12 @@ A hard failure - a source that can't be used at all (a pack not installed, an un
 
 Use `<LiveIcon>` instead of `<Icon>` when you can't know your icon names ahead of time, such as a user-driven icon search. It resolves against a live collection at request time rather than at build time.
 
-Live collections require Astro's `experimental.liveContentCollections` flag:
+Live content collections are stable as of Astro 6, with nothing to enable. On Astro 5, turn on the `experimental.liveContentCollections` flag in `astro.config.mjs` first:
 
 ```ts
-// astro.config.mjs
-import { defineConfig } from "astro/config";
-
+// astro.config.mjs - Astro 5 only
 export default defineConfig({
-  experimental: {
-    liveContentCollections: true,
-  },
+  experimental: { liveContentCollections: true },
 });
 ```
 
@@ -412,7 +417,7 @@ export const collections = defineLiveIconCollections({
 });
 ```
 
-For a pack you'd rather not install, `iconifyApi` (with no `allowed` option) resolves any icon name from the public Iconify API one at a time - exactly what a live collection needs, since its icon names aren't known ahead of time:
+For a pack you'd rather not install, `iconifyApi` (with no `allowed` option) resolves any requested icon names from the public Iconify API on demand - exactly what a live collection needs, since its icon names aren't known ahead of time. Each request is batched: one `getLiveCollection(collection, { ids: [...] })` call is one API request no matter how many ids it asks for.
 
 ```ts
 import { iconifyApi, defineLiveIconCollections } from "astro-icon/collections";
@@ -544,7 +549,7 @@ Two things worth knowing when you're the library author:
 - **Anchor bundled `.svg` files with a `URL`, not a plain string.** `localSvg("../icons/")` resolves against the _consuming_ project's root, which is correct for a directory the consumer owns but wrong for one that ships inside your package - it would look for `../icons/` relative to whichever project imports you. `localSvg(new URL("../icons/", import.meta.url))` always points at the icons next to your own source file instead, no matter who imports it.
 - **Pick a collection key that won't collide.** Two collections can't share a key when their objects are spread together; prefix yours with your package name (`"my-lib-icons"`) rather than something generic like `"icons"`.
 
-The same pattern works for a live collection: export an object of `defineLiveCollection({ loader: createLiveIconLoader(...) })` entries for a consumer to spread into their `src/live.config.ts`.
+The same pattern works for a live collection: export the result of `defineLiveIconCollections({ "my-lib-live": source })` for a consumer to spread into their `src/live.config.ts`.
 
 ## Using icons in framework components
 

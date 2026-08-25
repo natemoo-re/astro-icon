@@ -2,10 +2,11 @@
  * The shape every icon collection stores in Astro's content layer, and what
  * `entry.data` gives you from `getEntry()` or `getLiveEntry()`.
  *
- * You won't normally construct this yourself: a loader (`iconify`,
- * `localSvg`, or a custom {@link IconSource}) builds it for you from raw
- * SVG. Reach for it directly if you write a custom loader or `optimize`
- * function and need the target shape.
+ * You won't normally construct this yourself: a source (`iconify`,
+ * `localSvg`, or a custom {@link IconSource}) builds it for you. Reach for
+ * it directly if you write a custom source or `transform` function and
+ * need the target shape: fields describe the rendered root `<svg>` element,
+ * and `body` is its children.
  */
 export interface IconEntry {
   /** The inner SVG markup, everything between the outer `<svg>` tags. */

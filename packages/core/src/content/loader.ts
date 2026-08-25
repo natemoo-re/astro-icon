@@ -232,15 +232,18 @@ function syncIcons(
 
 /**
  * Builds a build-time content layer loader around one or more
- * {@link IconSource}s. Use this to back a custom source, or to combine
- * several sources into one collection:
+ * {@link IconSource}s - the layer under `defineIconCollection`, exposed for
+ * callers who need Astro's `defineCollection` directly (e.g. to attach
+ * their own `schema`):
  *
  * ```ts
+ * import { defineCollection } from "astro:content";
  * import { createIconLoader, iconify, localSvg } from "astro-icon/collections";
  *
  * export const collections = {
  *   icons: defineCollection({
  *     loader: createIconLoader([iconify("mdi"), localSvg("src/icons")]),
+ *     schema: mySchema,
  *   }),
  * };
  * ```
@@ -249,24 +252,6 @@ function syncIcons(
  * that has it. The collection always contains exactly what `listIcons()`
  * reports; restrict that on a per-source basis (see `iconify`'s
  * `allowed` option), since this loader does no filtering of its own.
- *
- * For a local-preferred, API-fallback Iconify source, compose
- * `iconify` and `iconifyApi` with `mergeSources` yourself:
- *
- * ```ts
- * import { createIconLoader, iconifyApi, iconify, mergeSources } from "astro-icon/collections";
- *
- * export const collections = {
- *   mdi: defineCollection({
- *     loader: createIconLoader(
- *       mergeSources([
- *         iconify("mdi", { allowed: ["home"] }),
- *         iconifyApi("mdi", { allowed: ["home"] }),
- *       ]),
- *     ),
- *   }),
- * };
- * ```
  */
 export function createIconLoader(
   sources: IconSource | IconSource[],

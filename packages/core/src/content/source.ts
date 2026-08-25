@@ -19,8 +19,9 @@ export type IconChangeEvent =
  * files) are astro-icon's own implementations; write your own to fetch icons
  * from a design tool, a database, or an internal API.
  *
- * Pass one to {@link createIconLoader} for a build-time collection, or to
- * {@link createLiveIconLoader} for one resolved per request.
+ * Pass one to `defineIconCollection` for a build-time collection, or to
+ * `defineLiveIconCollections` for one resolved per request (or to their
+ * loader-layer equivalents, {@link createIconLoader}/{@link createLiveIconLoader}).
  */
 export interface IconSource {
   /**
