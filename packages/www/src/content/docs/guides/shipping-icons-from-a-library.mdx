@@ -4,7 +4,7 @@ description: Export a ready-made collection for consumers to spread into their o
 next: false
 ---
 
-A collection is just the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineIconCollection(...)`'s result is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
+A collection is the object you pass to `export const collections = { ... }` in `src/content.config.ts`, and `defineIconCollection(...)`'s result is a plain, serializable value, not something tied to the project that created it. That means a library (a component library, a Starlight theme, an internal design system package) can build its own collection(s) and export them for consumers to add to their own `content.config.ts` with a spread, instead of asking every consumer to hand-write loader config:
 
 ```ts title="my-lib/src/icons.ts"
 import {

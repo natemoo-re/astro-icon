@@ -10,7 +10,7 @@ import { Tabs, TabItem, Steps, FileTree } from "@astrojs/starlight/components";
 import { Icon } from "astro-icon/components";
 import Showcase from "../../components/Showcase.astro";
 
-Astro Icon is a straightforward icon system for the [Astro](https://astro.build) framework.
+Astro Icon renders SVG icons as inline `<svg>` elements at build time, for the [Astro](https://astro.build) framework.
 This guide assumes that you have an existing Astro project.
 
 See [the Astro installation guide](https://docs.astro.build/en/install/auto/) if you are starting a brand new project.
@@ -103,7 +103,7 @@ Add this line to `src/env.d.ts` so `<Icon name="...">` autocompletes against eve
 
 This file is generated the first time you run `astro sync`, `astro dev`, or `astro build`, so autocomplete won't show your icons until you've run one of those at least once.
 
-## Quick start
+## At a glance
 
 Every collection is `defineIconCollection` plus one or more `IconSource`s: `iconify` for an [Iconify icon set](https://icon-sets.iconify.design/), or `localSvg` for a directory of your own `.svg` files:
 

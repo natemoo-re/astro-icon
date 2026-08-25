@@ -102,7 +102,7 @@ It's generated the first time you run `astro sync`, `astro dev`, or `astro build
 
 v1 automatically collapsed repeated `<Icon>` uses into a shared `<symbol>`/`<use>` sprite, with no configuration. v2 drops this: every `<Icon>` always renders a plain, standalone `<svg>`, no matter how many times it repeats. Measured on a real page, the sprite approach cut raw HTML but usually made the gzipped/brotli'd response bigger — repeated identical icon bodies are exactly what those compressors are already good at — while still costing real things unconditionally, like CSS being unable to reach into a `<use>`'s referenced content.
 
-If a specific page really does repeat one icon enough to matter, build a sheet for it yourself — `getEntry("icons", "home")` gives you the `viewBox` and `body` to put in a `<symbol>`.
+If a specific page repeats one icon enough to matter, build a sheet for it yourself — `getEntry("icons", "home")` gives you the `viewBox` and `body` to put in a `<symbol>`.
 
 ## What didn't change
 

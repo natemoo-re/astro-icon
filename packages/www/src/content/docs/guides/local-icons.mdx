@@ -78,7 +78,7 @@ export const collections = {
 
 ## Sync logging
 
-Each sync logs how many icons it loaded and how long it took (e.g. `Loaded 42 icon(s) for the "icons" collection in 18ms`), so a slow build step is easy to attribute to icon loading versus everything else.
+Each sync logs how many icons it loaded and how long it took (e.g. `Loaded 42 icon(s) for the "icons" collection in 18ms`), so you can tell whether a slow build step comes from icon loading or something else.
 
 ## Optimizing local icons
 
@@ -111,4 +111,4 @@ See the [Sources Reference](/reference/sources/#transformfn) for `TransformFn`'s
 
 ## Colors and `currentColor`
 
-`localSvg()` never rewrites a file's colors for you. If an icon looks like a single-color glyph with no `currentColor` anywhere, a sync-time warning names it so the fix is easy to find. See [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-css-color) for the full explanation and the `svgo()` recipe to fix it.
+`localSvg()` never rewrites a file's colors for you. If an icon looks like a single-color glyph with no `currentColor` anywhere, a sync-time warning names it. See [Troubleshooting](/guides/troubleshooting/#an-icon-ignores-css-color) for the full explanation and the `svgo()` recipe to fix it.
