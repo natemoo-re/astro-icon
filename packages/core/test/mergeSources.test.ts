@@ -15,10 +15,14 @@ function fakeSource(
 ): IconSource {
   const source: IconSource = {
     name,
-    getIcon: vi.fn(async (iconName: string) => {
-      const entry = icons[iconName];
-      if (!entry) throw new Error(`"${name}" has no icon named "${iconName}"`);
-      return entry;
+    getIcons: vi.fn(async (names: string[]) => {
+      return new Map<string, IconEntry | Error>(
+        names.map((iconName) => [
+          iconName,
+          icons[iconName] ??
+            new Error(`"${name}" has no icon named "${iconName}"`),
+        ]),
+      );
     }),
   };
   if (listIcons) source.listIcons = listIcons;
@@ -37,14 +41,16 @@ describe("mergeSources / single source", () => {
   });
 });
 
-describe("mergeSources / multiple sources / getIcon", () => {
-  it("resolves an icon from whichever source has it", async () => {
+describe("mergeSources / multiple sources / getIcons", () => {
+  it("resolves each icon from whichever source has it", async () => {
     const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
     const ic = fakeSource("ic", { star: entryFor("ic-star") });
     const merged = mergeSources([mdi, ic]);
 
-    await expect(merged.getIcon("home")).resolves.toEqual(entryFor("mdi-home"));
-    await expect(merged.getIcon("star")).resolves.toEqual(entryFor("ic-star"));
+    const result = await merged.getIcons(["home", "star"]);
+
+    expect(result.get("home")).toEqual(entryFor("mdi-home"));
+    expect(result.get("star")).toEqual(entryFor("ic-star"));
   });
 
   it("prefers the first source's icon on a name collision", async () => {
@@ -52,37 +58,57 @@ describe("mergeSources / multiple sources / getIcon", () => {
     const second = fakeSource("second", { home: entryFor("second-home") });
     const merged = mergeSources([first, second]);
 
-    await expect(merged.getIcon("home")).resolves.toEqual(
-      entryFor("first-home"),
-    );
-    expect(second.getIcon).not.toHaveBeenCalled();
+    const result = await merged.getIcons(["home"]);
+
+    expect(result.get("home")).toEqual(entryFor("first-home"));
+    expect(second.getIcons).not.toHaveBeenCalled();
   });
 
-  it("falls through to a later source when an earlier one doesn't have it", async () => {
+  it("only asks a later source about names the earlier one(s) didn't resolve", async () => {
     const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
     const ic = fakeSource("ic", { star: entryFor("ic-star") });
     const merged = mergeSources([mdi, ic]);
 
-    await expect(merged.getIcon("star")).resolves.toEqual(entryFor("ic-star"));
+    const result = await merged.getIcons(["home", "star"]);
+
+    expect(result.get("star")).toEqual(entryFor("ic-star"));
+    // "home" already resolved from mdi - ic is only asked about "star".
+    expect(ic.getIcons).toHaveBeenCalledWith(["star"]);
   });
 
-  it("throws a descriptive error when no source has the icon", async () => {
+  it("puts a descriptive Error in the map when no source has the icon", async () => {
     const merged = mergeSources([fakeSource("mdi", {}), fakeSource("ic", {})]);
-    await expect(merged.getIcon("missing")).rejects.toThrow(
+
+    const result = await merged.getIcons(["missing"]);
+
+    expect(result.get("missing")).toBeInstanceOf(Error);
+    expect((result.get("missing") as Error).message).toMatch(
       /mdi\+ic.*missing/s,
     );
+  });
+
+  it("resolves what it can and reports an Error for the rest, in one call", async () => {
+    const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
+    const ic = fakeSource("ic", {});
+    const merged = mergeSources([mdi, ic]);
+
+    const result = await merged.getIcons(["home", "missing"]);
+
+    expect(result.get("home")).toEqual(entryFor("mdi-home"));
+    expect(result.get("missing")).toBeInstanceOf(Error);
   });
 });
 
 describe("mergeSources / multiple sources / per-source fallback logging", () => {
-  it("debug-logs a per-source failure when falling back to the next source, on an eventual success", async () => {
+  it("debug-logs a per-name failure when falling back to the next source, on an eventual success", async () => {
     const mdi = fakeSource("mdi", {});
     const ic = fakeSource("ic", { star: entryFor("ic-star") });
     const debug = vi.fn();
-    const merged = mergeSources([mdi, ic], { debug });
+    const merged = mergeSources([mdi, ic], { debug, warn: vi.fn() });
 
-    await expect(merged.getIcon("star")).resolves.toEqual(entryFor("ic-star"));
+    const result = await merged.getIcons(["star"]);
 
+    expect(result.get("star")).toEqual(entryFor("ic-star"));
     expect(debug).toHaveBeenCalledOnce();
     expect(debug).toHaveBeenCalledWith(
       expect.stringMatching(
@@ -91,13 +117,13 @@ describe("mergeSources / multiple sources / per-source fallback logging", () => 
     );
   });
 
-  it("doesn't log the last source's failure - it's already in the thrown aggregate error", async () => {
+  it("doesn't log the last source's failure - it's already in the aggregate Error", async () => {
     const mdi = fakeSource("mdi", {});
     const ic = fakeSource("ic", {});
     const debug = vi.fn();
-    const merged = mergeSources([mdi, ic], { debug });
+    const merged = mergeSources([mdi, ic], { debug, warn: vi.fn() });
 
-    await expect(merged.getIcon("missing")).rejects.toThrow();
+    await merged.getIcons(["missing"]);
 
     expect(debug).toHaveBeenCalledOnce();
     expect(debug).toHaveBeenCalledWith(expect.stringContaining('"mdi" failed'));
@@ -107,67 +133,82 @@ describe("mergeSources / multiple sources / per-source fallback logging", () => 
     const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
     const ic = fakeSource("ic", {});
     const debug = vi.fn();
-    const merged = mergeSources([mdi, ic], { debug });
+    const merged = mergeSources([mdi, ic], { debug, warn: vi.fn() });
 
-    await merged.getIcon("home");
+    await merged.getIcons(["home"]);
 
     expect(debug).not.toHaveBeenCalled();
   });
 });
 
 describe("mergeSources / multiple sources / checkPreconditions", () => {
-  it("resolves as soon as one member's checkPreconditions() succeeds, without checking the rest", async () => {
+  it("checks every member, resolving when at least one is usable and warning about each failure", async () => {
     const broken: IconSource = {
       name: "broken",
-      getIcon: vi.fn(),
+      getIcons: vi.fn(),
       checkPreconditions: vi.fn(async () => {
         throw new Error("not installed");
       }),
     };
     const working: IconSource = {
       name: "working",
-      getIcon: vi.fn(),
+      getIcons: vi.fn(),
       checkPreconditions: vi.fn(async () => {}),
     };
-    const untried: IconSource = {
-      name: "untried",
-      getIcon: vi.fn(),
+    const alsoBroken: IconSource = {
+      name: "also-broken",
+      getIcons: vi.fn(),
       checkPreconditions: vi.fn(async () => {
-        throw new Error("should never run");
+        throw new Error("misconfigured");
       }),
     };
-    const merged = mergeSources([broken, working, untried]);
+    const warn = vi.fn();
+    const merged = mergeSources([broken, working, alsoBroken], {
+      debug: vi.fn(),
+      warn,
+    });
 
     await expect(merged.checkPreconditions?.()).resolves.toBeUndefined();
-    expect(untried.checkPreconditions).not.toHaveBeenCalled();
+    expect(alsoBroken.checkPreconditions).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("broken: not installed"),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("also-broken: misconfigured"),
+    );
   });
 
-  it("treats a member with no checkPreconditions() as trivially fine, without checking any member after it", async () => {
+  it("treats a member with no checkPreconditions() as usable, still checking the members after it", async () => {
     const noCheck = fakeSource("noCheck", {}, null);
-    const untried: IconSource = {
-      name: "untried",
-      getIcon: vi.fn(),
+    const broken: IconSource = {
+      name: "broken",
+      getIcons: vi.fn(),
       checkPreconditions: vi.fn(async () => {
-        throw new Error("should never run");
+        throw new Error("not installed");
       }),
     };
-    const merged = mergeSources([noCheck, untried]);
+    const warn = vi.fn();
+    const merged = mergeSources([noCheck, broken], { debug: vi.fn(), warn });
 
     await expect(merged.checkPreconditions?.()).resolves.toBeUndefined();
-    expect(untried.checkPreconditions).not.toHaveBeenCalled();
+    expect(broken.checkPreconditions).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("broken: not installed"),
+    );
   });
 
   it("throws an aggregate error only when every member's checkPreconditions() fails", async () => {
     const a: IconSource = {
       name: "a",
-      getIcon: vi.fn(),
+      getIcons: vi.fn(),
       checkPreconditions: vi.fn(async () => {
         throw new Error("a is broken");
       }),
     };
     const b: IconSource = {
       name: "b",
-      getIcon: vi.fn(),
+      getIcons: vi.fn(),
       checkPreconditions: vi.fn(async () => {
         throw new Error("b is broken");
       }),
@@ -188,8 +229,12 @@ describe("mergeSources / multiple sources / checkPreconditions", () => {
 
 describe("mergeSources / multiple sources / resolveRoot", () => {
   it("fans out to every member that implements it", () => {
-    const a: IconSource = { name: "a", getIcon: vi.fn(), resolveRoot: vi.fn() };
-    const b: IconSource = { name: "b", getIcon: vi.fn() };
+    const a: IconSource = {
+      name: "a",
+      getIcons: vi.fn(),
+      resolveRoot: vi.fn(),
+    };
+    const b: IconSource = { name: "b", getIcons: vi.fn() };
     const merged = mergeSources([a, b]);
     const root = new URL("file:///some/project/");
 
@@ -215,7 +260,7 @@ describe("mergeSources / multiple sources / listIcons", () => {
     const noList = fakeSource("mdi", { home: entryFor("a") }, null);
     const failing: IconSource = {
       name: "failing",
-      getIcon: vi.fn(async () => entryFor("x")),
+      getIcons: vi.fn(async () => new Map([["x", entryFor("x")]])),
       listIcons: async () => {
         throw new Error("nope");
       },
@@ -235,55 +280,29 @@ describe("mergeSources naming", () => {
   });
 });
 
-describe("mergeSources / per-source concurrency", () => {
-  /** Resolves after a macrotask tick, so overlapping calls actually overlap instead of resolving synchronously. */
-  function tick(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 0));
-  }
+describe("mergeSources / batching across members", () => {
+  it("gives the first member the whole names list in one call, not one call per name", async () => {
+    const mdi = fakeSource("mdi", {
+      home: entryFor("mdi-home"),
+      star: entryFor("mdi-star"),
+    });
+    const merged = mergeSources([mdi, fakeSource("fallback", {})]);
 
-  function trackingSource(
-    name: string,
-    concurrency?: number,
-  ): IconSource & { peak: number } {
-    const tracker = {
-      name,
-      concurrency,
-      peak: 0,
-      concurrent: 0,
-      async getIcon(iconName: string) {
-        tracker.concurrent++;
-        tracker.peak = Math.max(tracker.peak, tracker.concurrent);
-        await tick();
-        tracker.concurrent--;
-        return entryFor(`${name}-${iconName}`);
-      },
-    };
-    return tracker;
-  }
+    await merged.getIcons(["home", "star"]);
 
-  it("caps concurrent calls into a source at that source's own limit", async () => {
-    const capped = trackingSource("capped", 2);
-    // Two members forces the object-literal path rather than single-source pass-through, so the
-    // gate is actually exercised.
-    const composite = mergeSources([capped, fakeSource("fallback", {})]);
-
-    await Promise.all(
-      ["a", "b", "c", "d", "e", "f"].map((n) => composite.getIcon(n)),
-    );
-    expect(capped.peak).toBe(2);
+    expect(mdi.getIcons).toHaveBeenCalledOnce();
+    expect(mdi.getIcons).toHaveBeenCalledWith(["home", "star"]);
   });
 
-  it("doesn't throttle an uncapped source down to a capped sibling's limit", async () => {
-    const uncapped = trackingSource("uncapped");
-    const capped = trackingSource("capped", 1);
-    // "uncapped" is tried first for every name, so every call resolves there and never reaches
-    // "capped" - its own (absent) cap should govern, not the composite's other member.
-    const composite = mergeSources([uncapped, capped]);
+  it("narrows the batch to only the unresolved names on each subsequent member", async () => {
+    const mdi = fakeSource("mdi", { home: entryFor("mdi-home") });
+    const ic = fakeSource("ic", { star: entryFor("ic-star") });
+    const merged = mergeSources([mdi, ic]);
 
-    await Promise.all(
-      Array.from({ length: 6 }, (_, i) => composite.getIcon(`icon-${i}`)),
-    );
-    expect(uncapped.peak).toBe(6);
-    expect(capped.peak).toBe(0);
+    await merged.getIcons(["home", "star", "missing"]);
+
+    expect(mdi.getIcons).toHaveBeenCalledWith(["home", "star", "missing"]);
+    // Only "star" and "missing" carry over - "home" already resolved from mdi.
+    expect(ic.getIcons).toHaveBeenCalledWith(["star", "missing"]);
   });
 });

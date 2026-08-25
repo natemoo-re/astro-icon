@@ -1,13 +1,10 @@
-import { defineCollection } from "astro:content";
 import {
-  createIconLoader,
-  iconifyLocalSource,
-  localSource,
-} from "astro-icon/loaders";
+  defineIconCollection,
+  iconify,
+  localSvg,
+} from "astro-icon/collections";
 
 export const collections = {
-  icons: defineCollection({ loader: createIconLoader(localSource()) }),
-  mdi: defineCollection({
-    loader: createIconLoader(iconifyLocalSource("mdi")),
-  }),
+  icons: defineIconCollection(localSvg()),
+  mdi: defineIconCollection(iconify("mdi")),
 };

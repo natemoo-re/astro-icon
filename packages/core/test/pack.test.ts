@@ -19,6 +19,11 @@ const search: IconifyJSON = {
   icons: { search: { body: "<path/>", width: 24, height: 24 } },
 };
 
+// `cwd` is a required parameter now (see `guessProjectRoot` in `src/content/projectRoot.ts`) -
+// most tests below don't care what it resolves to, since `loadCollectionFromFS`/`requireResolvePack`
+// are mocked, so this is just a stable value to pass through.
+const TEST_CWD = "/test-project-root";
+
 function logger() {
   return { debug: vi.fn() };
 }
@@ -44,19 +49,19 @@ afterEach(() => {
 describe("loadLocalPack", () => {
   it("returns the locally loaded collection when available", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(search);
-    await expect(loadLocalPack("mdi")).resolves.toBe(search);
+    await expect(loadLocalPack("mdi", TEST_CWD)).resolves.toBe(search);
   });
 
   it("resolves undefined when the pack isn't installed", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
-    await expect(loadLocalPack("mdi")).resolves.toBeUndefined();
+    await expect(loadLocalPack("mdi", TEST_CWD)).resolves.toBeUndefined();
   });
 
   it("shares a locally resolved pack across separate calls", async () => {
     mockedLoadCollectionFromFS.mockResolvedValueOnce(search);
 
-    await loadLocalPack("mdi");
-    await loadLocalPack("mdi");
+    await loadLocalPack("mdi", TEST_CWD);
+    await loadLocalPack("mdi", TEST_CWD);
 
     expect(mockedLoadCollectionFromFS).toHaveBeenCalledOnce();
   });
@@ -70,17 +75,17 @@ describe("loadLocalPack", () => {
       mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
       mockedRequireResolveFallback.mockResolvedValueOnce(search);
 
-      await expect(loadLocalPack("mdi")).resolves.toBe(search);
+      await expect(loadLocalPack("mdi", TEST_CWD)).resolves.toBe(search);
       expect(mockedRequireResolveFallback).toHaveBeenCalledWith(
         "mdi",
-        process.cwd(),
+        TEST_CWD,
       );
     });
 
     it("doesn't fall back when loadCollectionFromFS already found the pack", async () => {
       mockedLoadCollectionFromFS.mockResolvedValueOnce(search);
 
-      await loadLocalPack("mdi");
+      await loadLocalPack("mdi", TEST_CWD);
 
       expect(mockedRequireResolveFallback).not.toHaveBeenCalled();
     });
@@ -89,7 +94,7 @@ describe("loadLocalPack", () => {
       mockedLoadCollectionFromFS.mockResolvedValueOnce(undefined);
       mockedRequireResolveFallback.mockResolvedValueOnce(undefined);
 
-      await expect(loadLocalPack("mdi")).resolves.toBeUndefined();
+      await expect(loadLocalPack("mdi", TEST_CWD)).resolves.toBeUndefined();
     });
 
     it("finds a real pack via require.resolve, the same way it works under Yarn PnP, when run from a nested package with no local node_modules", async () => {
@@ -112,16 +117,10 @@ describe("loadLocalPack", () => {
         "fixtures/monorepo-hoisting",
       );
       const consumerDir = path.join(fixtureRoot, "apps/consumer");
-      const originalCwd = process.cwd();
-      process.chdir(consumerDir);
 
-      try {
-        const result = await loadLocalPack("test-pack");
-        expect(result?.prefix).toBe("test-pack");
-        expect(result?.icons.foo).toBeDefined();
-      } finally {
-        process.chdir(originalCwd);
-      }
+      const result = await loadLocalPack("test-pack", consumerDir);
+      expect(result?.prefix).toBe("test-pack");
+      expect(result?.icons.foo).toBeDefined();
     });
   });
 });
@@ -139,6 +138,41 @@ describe("loadPackFromAPI", () => {
 
     expect(result).toEqual(search);
     expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("api.iconify.design/mdi.json?icons=search"),
+    );
+  });
+
+  it("fetches from a self-hosted API when `host` is given, tolerating a trailing slash", async () => {
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify(search), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await loadPackFromAPI("mdi", ["search"], {
+      logger: logger(),
+      host: "https://icons.example.com/",
+    });
+
+    expect(result).toEqual(search);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://icons.example.com/mdi.json?icons=search",
+    );
+  });
+
+  it("caches per host, so the same subset from two hosts is two fetches", async () => {
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify(search), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await loadPackFromAPI("mdi", ["search"], {
+      logger: logger(),
+      host: "https://icons.example.com",
+    });
+    await loadPackFromAPI("mdi", ["search"], { logger: logger() });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenLastCalledWith(
       expect.stringContaining("api.iconify.design/mdi.json?icons=search"),
     );
   });

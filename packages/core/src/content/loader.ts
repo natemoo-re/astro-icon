@@ -1,25 +1,16 @@
 import type { Loader, LoaderContext } from "astro/loaders";
-import { z } from "astro/zod";
 import { AstroIconError } from "../internal/error.js";
+import { iconEntrySchema } from "../internal/entryContract.js";
 import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
 import { mergeSources } from "./compositeSource.js";
-import { recordCollection } from "./typegen/index.js";
+import { recordCollection as defaultRecordCollection } from "./typegen/index.js";
+import type { TypegenRecorder } from "./typegen/index.js";
 import type {
   IconChangeEvent,
   IconSource,
   IconSourceWatcher,
 } from "./source.js";
-
-/** Default schema for an `IconEntry`, overridable via `defineCollection({ loader, schema })`. */
-const iconEntrySchema = z
-  .object({
-    body: z.string(),
-    viewBox: z.string(),
-    width: z.number(),
-    height: z.number(),
-  })
-  .catchall(z.union([z.string(), z.number()]));
 
 function metaKeyFor(collection: string): string {
   return `astro-icon:version:${collection}`;
@@ -51,16 +42,11 @@ export interface IconLoaderSyncContext {
   collection: LoaderContext["collection"];
   config: Pick<LoaderContext["config"], "root">;
   watcher?: IconSourceWatcher;
+  /** Substitutes the typegen recorder used for this sync; primarily for tests that want an in-memory recorder instead of mocking the whole typegen module. Defaults to the shared process-wide instance. */
+  typegen?: Pick<TypegenRecorder, "recordCollection">;
 }
 
-export interface IconLoaderOptions {
-  /**
-   * When true, turns warnings (a source couldn't provide a requested icon,
-   * or couldn't list its icons at all) into build errors.
-   * @default false
-   */
-  strict?: boolean;
-}
+export interface IconLoaderOptions {}
 
 /**
  * The sync logic behind `createIconLoader`, taking only {@link IconLoaderSyncContext} instead of
@@ -69,7 +55,6 @@ export interface IconLoaderOptions {
  */
 function syncIcons(
   source: IconSource,
-  strict: boolean,
 ): (context: IconLoaderSyncContext) => Promise<void> {
   return async function load(context: IconLoaderSyncContext): Promise<void> {
     const {
@@ -81,11 +66,33 @@ function syncIcons(
       collection,
       watcher,
     } = context;
+    const recordCollection =
+      context.typegen?.recordCollection ?? defaultRecordCollection;
+
+    // A watcher on the context means this sync is running under `astro dev`: a hard failure there
+    // (a source that can't be used at all, an icon that fails to build) warns and continues,
+    // since a broken icon shouldn't take down the whole dev server and `<Icon>` already surfaces
+    // a per-render overlay error for one that's actually missing at render time. Without a
+    // watcher (`astro build`/`astro sync`), the same failure fails the build instead - there's no
+    // later render pass to catch it, and a content collection that silently dropped icons is
+    // worse than a build that says so.
+    const dev = !!watcher;
+
+    /**
+     * The dev-warn/build-fail decision above, made once instead of re-derived at each of its
+     * three call sites: `message`/`hint` are each site's own text, verbatim (dev output already
+     * asserted against by existing tests, so this doesn't change what's said - only where the
+     * `if (!dev)` lives).
+     */
+    function hardFailure(message: string, hint: string): void {
+      if (!dev) throw new AstroIconError(message, hint);
+      logger.warn(message);
+    }
 
     // Turns one `report()`ed file-level change into a surgical store update - re-resolving just
     // that name for an "add"/"change", or deleting it for an "unlink" - instead of a full resync.
-    // Never throws, even under `strict`: this runs from inside a watcher event handler, where an
-    // unhandled rejection would be far worse than a logged warning.
+    // Never throws, even in a build: this runs from inside a watcher event handler (dev-only to
+    // begin with), where an unhandled rejection would be far worse than a logged warning.
     async function handleChange(event: IconChangeEvent): Promise<void> {
       try {
         if (event.type === "unlink") {
@@ -128,7 +135,7 @@ function syncIcons(
 
     // `checkPreconditions()` first - is this source usable at all, as a distinct concern from
     // what `listIcons()` reports (see `IconSource.checkPreconditions`'s doc comment). Either
-    // failing falls back to an empty list with a warning, or a build error under `strict`.
+    // failing falls back to an empty list with a warning in dev, or fails the build.
     const listStart = syncStart;
     let names: string[] = [];
     try {
@@ -136,26 +143,18 @@ function syncIcons(
       names = source.listIcons ? await source.listIcons() : [];
     } catch (ex) {
       const detail = ex instanceof Error ? ex.message : String(ex);
-      const message = `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`;
-      if (strict) {
-        throw new AstroIconError(
-          message,
-          `Fix the error above, or disable "strict" to skip this source with a warning instead.`,
-        );
-      }
-      logger.warn(message);
+      hardFailure(
+        `"${source.name}" isn't usable for the "${collection}" collection: ${detail}`,
+        `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the collection is empty.`,
+      );
     }
     const listDuration = performance.now() - listStart;
 
     if (names.length === 0) {
-      const message = `"${source.name}" has no icons to load for the "${collection}" collection.`;
-      if (strict) {
-        throw new AstroIconError(
-          message,
-          `Check that "${source.name}" is configured correctly and that its icon list (or \`allowed: [...]\` option) isn't empty.`,
-        );
-      }
-      logger.warn(message);
+      hardFailure(
+        `"${source.name}" has no icons to load for the "${collection}" collection.`,
+        `Check that "${source.name}" is configured correctly and that its icon list (or \`allowed: [...]\` option) isn't empty.`,
+      );
     }
 
     // Skip resolving if every source's version + the requested icon set matches the last sync
@@ -179,13 +178,10 @@ function syncIcons(
     const buildStart = performance.now();
     const built = await buildIcons(source, names, (name, ex) => {
       const detail = ex instanceof Error ? ex.message : String(ex);
-      if (strict) {
-        throw new AstroIconError(
-          `"${source.name}" failed to build "${name}": ${detail}`,
-          `Fix the error above, or disable "strict" to skip this icon with a warning instead.`,
-        );
-      }
-      logger.warn(`"${source.name}" failed to build "${name}": ${detail}`);
+      hardFailure(
+        `"${source.name}" failed to build "${name}": ${detail}`,
+        `Fix the error above. This is a build error rather than a warning because there's no dev server watching to recover from it once the icon is missing from the collection.`,
+      );
     });
     const buildDuration = performance.now() - buildStart;
 
@@ -206,7 +202,8 @@ function syncIcons(
     if (versionKey) meta.set(metaKey, versionKey);
     else meta.delete(metaKey);
 
-    // Typed from `built`, not `names`: a failed icon is skipped from the store in non-strict mode.
+    // Typed from `built`, not `names`: a failed icon is skipped from the store in dev, where a
+    // build failure above would have already stopped the sync entirely.
     await recordCollection(
       context.config.root,
       "build",
@@ -230,52 +227,39 @@ function syncIcons(
 
 /**
  * Builds a build-time content layer loader around one or more
- * {@link IconSource}s. Use this to back a custom source, or to combine
- * several sources into one collection:
+ * {@link IconSource}s - the layer under `defineIconCollection`, exposed for
+ * callers who need Astro's `defineCollection` directly (e.g. to attach
+ * their own `schema`):
  *
  * ```ts
- * import { createIconLoader, iconifyLocalSource, localSource } from "astro-icon/loaders";
+ * import { defineCollection } from "astro:content";
+ * import { createIconLoader, iconify, localSvg } from "astro-icon/collections";
  *
  * export const collections = {
  *   icons: defineCollection({
- *     loader: createIconLoader([iconifyLocalSource("mdi"), localSource("src/icons")]),
+ *     loader: createIconLoader([iconify("mdi"), localSvg("src/icons")]),
+ *     schema: mySchema,
  *   }),
  * };
  * ```
  *
  * Each icon is resolved by trying sources in order and using the first one
  * that has it. The collection always contains exactly what `listIcons()`
- * reports; restrict that on a per-source basis (see `iconifyLocalSource`'s
+ * reports; restrict that on a per-source basis (see `iconify`'s
  * `allowed` option), since this loader does no filtering of its own.
- *
- * For a local-preferred, API-fallback Iconify source, compose
- * `iconifyLocalSource` and `iconifyApiSource` with `mergeSources` yourself:
- *
- * ```ts
- * import { createIconLoader, iconifyApiSource, iconifyLocalSource, mergeSources } from "astro-icon/loaders";
- *
- * export const collections = {
- *   mdi: defineCollection({
- *     loader: createIconLoader(
- *       mergeSources([
- *         iconifyLocalSource("mdi", { allowed: ["home"] }),
- *         iconifyApiSource("mdi", { allowed: ["home"] }),
- *       ]),
- *     ),
- *   }),
- * };
- * ```
  */
 export function createIconLoader(
   sources: IconSource | IconSource[],
   options: IconLoaderOptions = {},
 ): Loader & { load: (context: IconLoaderSyncContext) => Promise<void> } {
   const source = mergeSources(sources);
-  const { strict = false } = options;
+  // `options` is unused today - reserved for future loader-level options now that `strict` is
+  // gone. Failure handling is derived from the sync context itself (`context.watcher`, i.e. dev
+  // vs. build) rather than configured.
 
   return {
-    name: "astro-icon/loaders",
-    load: syncIcons(source, strict),
+    name: "astro-icon/collections",
+    load: syncIcons(source),
     schema: iconEntrySchema,
   };
 }

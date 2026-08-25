@@ -57,3 +57,23 @@ async function lookupCaseInsensitive(
     return undefined;
   }
 }
+
+/**
+ * Whether `collection` resolved to zero icons entirely - a source that failed to load (a build
+ * warning logged, but `<Icon>` itself only sees "no entry"), not just this particular icon name
+ * being absent from an otherwise-populated collection. `<Icon>` calls this only once
+ * `resolveIconEntry` has already come up empty, to give a more specific hint - "check your
+ * source's own warnings" vs. "check this one icon name" - since the two miss reasons look
+ * identical from `getEntry`'s side alone.
+ */
+export async function isCollectionEmpty(collection: string): Promise<boolean> {
+  try {
+    const entries: unknown[] = await getCollection(collection);
+    return entries.length === 0;
+  } catch {
+    // An undefined collection (no such key in content.config.ts) isn't "empty" in the sense this
+    // is meant to catch - that's a different, already-clear problem `<Icon>`'s existing message
+    // covers ("did you define a collection named ...").
+    return false;
+  }
+}

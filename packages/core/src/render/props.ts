@@ -1,4 +1,7 @@
+import type { HTMLAttributes } from "astro/types";
+import { splitEntryAttrs } from "../internal/entryContract.js";
 import type { IconEntry } from "../../typings/types";
+import type { IconName, LiveCollectionName } from "../../typings/names";
 
 export interface IconA11yProps {
   role?: "img";
@@ -63,6 +66,34 @@ export interface SharedIconProps {
   width?: number | string | null;
   /** The icon's rendered height; defaults to the source SVG's own height. Pass `null` to omit the attribute entirely, e.g. to size the icon from CSS instead. */
   height?: number | string | null;
+}
+
+/**
+ * `<Icon>`'s full props. Exported (from `astro-icon/components` and the root `astro-icon`) so a
+ * wrapper component can extend or pick from it without re-declaring the icon surface:
+ *
+ * ```astro
+ * ---
+ * import type { IconProps } from "astro-icon/components";
+ * interface Props extends IconProps { variant?: "solid" | "outline" }
+ * ---
+ * ```
+ */
+export interface IconProps extends HTMLAttributes<"svg">, SharedIconProps {
+  /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
+  name: IconName;
+}
+
+/** `<LiveIcon>`'s full props - the live counterpart to {@link IconProps}. */
+export interface LiveIconProps extends HTMLAttributes<"svg">, SharedIconProps {
+  /** The live collection to resolve `icon` from; live collections have no default, unlike `<Icon>`. */
+  collection: LiveCollectionName;
+  /**
+   * The icon's name within `collection`. Always a plain `string`: live
+   * collections resolve per-request, so the exact value is often only known
+   * at runtime (e.g. a user-driven search) and can't be checked at sync time.
+   */
+  icon: string;
 }
 
 export interface IconA11yResult {
@@ -195,9 +226,10 @@ export interface RenderableIconProps<P> {
 /**
  * Builds the final `<svg>` props for a single icon occurrence. Shared by `<Icon>` and `<LiveIcon>`.
  *
- * Spreads the whole entry (minus `body`/`title`/`desc`, which aren't `<svg>` attributes) as
- * defaults, not just `width`/`height`/`viewBox`: a local icon's own root-tag attributes
- * (`fill`/`stroke`/`class`/... - see `parseLocalIconSVG`) land here too, so a caller's own prop for
+ * Spreads the whole entry (minus `body`/`title`/`desc`, which aren't `<svg>` attributes - see
+ * `splitEntryAttrs` in `src/internal/entryContract.ts` for the authoritative reserved/attribute
+ * line) as defaults, not just `width`/`height`/`viewBox`: a local icon's own root-tag attributes
+ * (`fill`/`stroke`/`class`/... - see `entryFromSVG`) land here too, so a caller's own prop for
  * the same attribute genuinely overrides it by landing on the same element, rather than losing to
  * an inner element's own value the way baking them into `body` would.
  */
@@ -209,7 +241,7 @@ export function renderableIconProps<
     viewBox?: unknown;
   },
 >(entry: IconEntry, props: P): RenderableIconProps<P> {
-  const { body: _body, title: _title, desc: _desc, ...entryAttrs } = entry;
+  const { attrs: entryAttrs } = splitEntryAttrs(entry);
   const { size, ...rest } = props;
   const sized = size ? { ...rest, width: size, height: size } : rest;
   return {

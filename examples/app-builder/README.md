@@ -9,7 +9,7 @@ This app is the official [Flowbite Astro Admin Dashboard](https://github.com/the
 **What to look at:**
 
 - `astro.config.mjs` - `output: "server"` with the `@astrojs/node` adapter. `/` (dashboard) and `/users` render fresh per request; `/authentication/sign-in` opts into `prerender`. The icon collections resolve identically either way.
-- `src/content.config.ts` - **[UC2](../PERSONA.md#use-cases-ranked)**: three Heroicons packs, each curated with an `allowed: [...]` list to exactly the icons the app renders (51 + 5 + 13), so sync and the generated types stay scoped to the real design system instead of thousands of icons. Plus a `brand` collection from `localSource()` for the logo.
+- `src/content.config.ts` - **[UC2](../PERSONA.md#use-cases-ranked)**: three Heroicons packs, each curated with an `allowed: [...]` list to exactly the icons the app renders (51 + 5 + 13), so sync and the generated types stay scoped to the real design system instead of thousands of icons. Plus a `brand` collection from `localSvg()` for the logo.
 - `src/icons/logo.svg` - the Flowbite mark, a full-color SVG with nine internal `<linearGradient>` defs. astro-icon's id-rewriting (`replaceIDs`) is what lets it render three times on one page without gradient-id collisions.
 - **What deliberately stayed inline** - country flags in the language picker, payment-network logos, social glyphs in the footer, and illustration artwork. Those aren't design-system icons, so they don't belong in an icon collection; the boundary is the point.
 - `src/pages/users.astro` - the CRUD table renders per request with freshly randomized (faker) data; every row repeats the same action icons as plain standalone `<svg>`s.

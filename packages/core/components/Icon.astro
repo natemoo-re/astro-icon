@@ -1,11 +1,7 @@
 ---
-import type { HTMLAttributes } from "astro/types";
-import { renderTimeError } from "../src/render/error.js";
 import IconBase from "./IconBase.astro";
-import type { SharedIconProps } from "../src/render/props.js";
-import { parseIconName } from "../src/render/parseIconName.js";
-import { resolveIconEntry } from "../src/render/lookupEntry.js";
-import type { IconName } from "../typings/names";
+import type { IconProps } from "../src/render/props.js";
+import { prepareIcon } from "../src/render/prepareIcon.js";
 
 /**
  * Renders one icon from a content collection as an inline `<svg>`, resolved
@@ -20,33 +16,11 @@ import type { IconName } from "../typings/names";
  *
  * Use `<LiveIcon>` instead when you need to resolve an icon per request.
  */
-interface Props extends HTMLAttributes<"svg">, SharedIconProps {
-  /** `"collection:icon"`, or a bare icon name if you have a collection named `icons`. */
-  name: IconName;
-}
+interface Props extends IconProps {}
 
 const { name = "", ...props } = Astro.props;
 
-const parsedName = parseIconName(name as string);
-const { collection, name: iconName, hasPrefix } = parsedName;
-
-if (!iconName) {
-  throw renderTimeError(
-    `Invalid "name" provided!`,
-    `The provided value of "${name}" is invalid.\n\nDid you mean to provide an icon name?`,
-  );
-}
-
-const entry = await resolveIconEntry(collection, iconName);
-
-if (!entry) {
-  throw renderTimeError(
-    `Unable to locate "${name}" icon!`,
-    hasPrefix
-      ? `The "${collection}" collection doesn't have an icon named "${iconName}".\n\nDid you define a collection named "${collection}" in "src/content.config.ts", and does it include this icon?`
-      : `No collection named "icons" produced an icon named "${iconName}".\n\nBare names resolve to a collection literally named "icons": define one in "src/content.config.ts", or use the "collection:name" form (e.g. "${iconName}" from a specific pack).`,
-  );
-}
+const { entry, marker } = await prepareIcon(name as string);
 ---
 
-<IconBase entry={entry.data} dataIcon={name} {...props} />
+<IconBase entry={entry} dataIcon={marker} {...props} />

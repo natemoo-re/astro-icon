@@ -6,28 +6,35 @@ import { fileURLToPath } from "node:url";
 import type { AstroIntegrationLogger } from "astro";
 import { AstroIconError } from "../../internal/error.js";
 import { consoleLogger } from "../logger.js";
-import { parseLocalIconSVG } from "./parseLocalIconSVG.js";
+import { entryFromSVG } from "../ingest/entryFromSVG.js";
 import type { IconSource } from "../source.js";
-import type { IconEntry, OptimizeFn } from "../../../typings/types";
+import type {
+  IconEntry,
+  OptimizeFn,
+  TransformFn,
+} from "../../../typings/types";
 
-export interface LocalSourceOptions {
+export interface LocalSvgOptions {
   /**
    * Restricts this source to a fixed list of icon names, the same
-   * deliberate allowlist semantics as {@link IconifySourceOptions.icons}.
+   * deliberate allowlist semantics as {@link IconifySourceOptions.allowed}.
    * Omit it to allow every `.svg` file found in the directory.
    */
-  icons?: string[];
-  /** Optional transform applied to each icon's raw SVG markup before it is parsed and stored. */
-  optimize?: OptimizeFn;
+  allowed?: string[];
   /**
-   * When true, turns a missing/unreadable icon file into a build error
-   * instead of a warning.
-   * @default false
+   * Transform applied to each icon's raw file contents before it's parsed and stored - the one
+   * place `optimize` still lives, since `localSvg` is the one built-in source that starts
+   * from a raw SVG string in the first place.
    */
-  strict?: boolean;
+  optimize?: OptimizeFn;
+  /** Transform applied to each icon's built `IconEntry`, after `optimize`, last, before it's returned. */
+  transform?: TransformFn;
   /** Where warnings are reported; defaults to `console.warn` if not passed a loader's own logger. */
   logger?: Pick<AstroIntegrationLogger, "warn">;
 }
+
+/** The collection name a local icon reports in warnings, errors, and `optimize`'s context. */
+const COLLECTION = "local";
 
 function hashContent(raw: string): string {
   return createHash("sha1").update(raw).digest("hex");
@@ -46,7 +53,7 @@ function resolveDirPath(dir: URL | string, root?: URL): string {
  * the suggested default for the `icons` collection:
  *
  * ```ts
- * icons: defineCollection({ loader: createIconLoader(localSource()) }),
+ * icons: defineCollection({ loader: createIconLoader(localSvg()) }),
  * ```
  *
  * Each file's path relative to `dir` becomes its icon name: `<dir>/logos/deno.svg` is
@@ -55,30 +62,35 @@ function resolveDirPath(dir: URL | string, root?: URL): string {
  * A plain relative string (the common case, including the default) resolves against the project
  * root once `createIconLoader`/`createLiveIconLoader` gives this source one via `resolveRoot()` -
  * see that method's doc comment on `IconSource`. Pass a `URL` instead (e.g.
- * `localSource(new URL("../icons/", import.meta.url))`) to anchor a directory that ships inside
+ * `localSvg(new URL("../icons/", import.meta.url))`) to anchor a directory that ships inside
  * your own package, resolved relative to your module rather than the consumer's project root.
  *
  * Implements `getVersion()` (a stat-based fingerprint of the directory) and `watch()` (dev-mode
  * file watching), so `createIconLoader` skips an unchanged sync and live-reloads a changed one -
- * including when several `localSource()`s are composed together via
+ * including when several `localSvg()`s are composed together via
  * `mergeSources`/`createIconLoader([...])`. See the footgun documented on `IconSource.watch`
  * about composing sources with overlapping icon names.
  */
-export function localSource(
+export function localSvg(
   dir: URL | string = "src/icons",
-  options: LocalSourceOptions = {},
+  options: LocalSvgOptions = {},
 ): IconSource {
   let dirPath = resolveDirPath(dir);
-  const { icons, optimize, strict = false, logger = consoleLogger } = options;
-  const allowed = icons && new Set(icons);
+  const {
+    allowed: allowedList,
+    optimize,
+    transform,
+    logger = consoleLogger,
+  } = options;
+  const allowed = allowedList && new Set(allowedList);
 
-  if (icons && allowed && allowed.size !== icons.length) {
+  if (allowedList && allowed && allowed.size !== allowedList.length) {
     const seen = new Set<string>();
-    const duplicates = icons.filter(
+    const duplicates = allowedList.filter(
       (name) => seen.size === seen.add(name).size,
     );
     logger.warn(
-      `The local source's \`icons: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
+      `The local source's \`allowed: [...]\` option repeats ${duplicates.length === 1 ? "a name" : "names"}: ${[...new Set(duplicates)].map((name) => `"${name}"`).join(", ")}. Duplicates are silently deduped; remove the repeat(s) to avoid confusion.`,
     );
   }
 
@@ -101,15 +113,15 @@ export function localSource(
     if (warnedMissingDir || existsSync(dirPath)) return;
     warnedMissingDir = true;
     logger.warn(
-      `The local icon directory "${dirPath}" does not exist. Create it, or point \`localSource\` at a different directory.`,
+      `The local icon directory "${dirPath}" does not exist. Create it, or point \`localSvg\` at a different directory.`,
     );
   }
 
   async function readIcon(name: string): Promise<IconEntry> {
     if (allowed && !allowed.has(name)) {
       throw new AstroIconError(
-        `"${name}" isn't in the allowed icon list for the local source at "${dirPath}" (${icons!.length} icon(s) allowed).`,
-        `Add "${name}" to the \`icons: [...]\` option for this source, or remove the option to allow every ".svg" file in the directory.`,
+        `"${name}" isn't in the allowed icon list for the local source at "${dirPath}" (${allowedList!.length} icon(s) allowed).`,
+        `Add "${name}" to the \`allowed: [...]\` option for this source, or remove the option to allow every ".svg" file in the directory.`,
       );
     }
     const filePath = join(dirPath, `${name}.svg`);
@@ -124,30 +136,39 @@ export function localSource(
     const cached = cache.get(name);
     if (cached && cached.hash === hash) return cached.entry;
 
-    const { entry, needsCurrentColor } = await parseLocalIconSVG(svg, {
-      name,
-      optimize,
-      strict,
-      logger,
-    });
-    cache.set(name, { hash, entry });
+    const optimizedSvg = optimize
+      ? await optimize(svg, { collection: COLLECTION, name })
+      : svg;
+
+    let { entry, facts } = entryFromSVG(optimizedSvg);
+
+    if (facts.viewBox === "missing") {
+      logger.warn(
+        `"${name}" in "${displayDirPath()}" has no usable viewBox, falling back to "${entry.viewBox}". Check the source file (or your "optimize" function, if set) to avoid this.`,
+      );
+    }
 
     // A one-time, best-effort nudge (never a mutation - see the "Styling icons" README section
     // for why astro-icon doesn't rewrite colors automatically) toward the `svgo()` currentColor
     // recipe, logged whenever a freshly-parsed icon looks like it won't respond to CSS `color`.
     // Runs per icon, on every fresh parse (cache misses only) rather than once per whole-directory
     // sync, so it also covers an icon added/edited later via `watch()`, not just the initial load.
-    if (needsCurrentColor) {
+    if (facts.monochromeWithoutCurrentColor) {
       logger.warn(
         `"${name}" in "${displayDirPath()}" doesn't use "currentColor", so CSS \`color\` won't affect it. See "Styling icons" in the README.`,
       );
     }
 
+    if (transform)
+      entry = await transform(entry, { collection: COLLECTION, name });
+
+    cache.set(name, { hash, entry });
     return entry;
   }
 
   async function listNames(): Promise<string[]> {
-    if (allowed) return [...icons!];
+    // A Set, so a duplicated `allowed: [...]` name is deduped here too, matching the warning above.
+    if (allowed) return [...allowed];
     warnIfDirMissing();
     return walkSvgFiles(dirPath);
   }
@@ -167,12 +188,28 @@ export function localSource(
 
   return {
     name: "local",
-    getIcon: readIcon,
+    // Nothing to batch at the request level (each name is its own file read), so this just fans
+    // `readIcon` out over every name in `names` at once - already cheap, and each file's own
+    // content-hash cache (above) means a repeat request for the same unchanged file doesn't even
+    // hit the filesystem twice.
+    async getIcons(names) {
+      const result = new Map<string, IconEntry | Error>();
+      await Promise.all(
+        names.map(async (name) => {
+          try {
+            result.set(name, await readIcon(name));
+          } catch (ex) {
+            result.set(name, ex instanceof Error ? ex : new Error(String(ex)));
+          }
+        }),
+      );
+      return result;
+    },
     async listIcons() {
       return listNames();
     },
     // Cheap (no file reads) fingerprint of the whole directory: `mtime` + `size` per file via
-    // `stat`, so `createIconLoader` can skip an entire resync - including every `getIcon` call -
+    // `stat`, so `createIconLoader` can skip an entire resync - including every `getIcons` call -
     // without reading (let alone re-optimizing) a single `.svg`.
     async getVersion() {
       const names = await listNames().catch(() => undefined);

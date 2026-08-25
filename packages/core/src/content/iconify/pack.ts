@@ -8,10 +8,19 @@ import { requireResolvePack } from "./requireResolvePack.js";
 
 export interface LoadPackFromAPIOptions {
   logger: Pick<AstroIntegrationLogger, "debug">;
+  /** The Iconify API instance to fetch from (a self-hosted deployment); defaults to the public `https://api.iconify.design`. */
+  host?: string;
+}
+
+const DEFAULT_API_HOST = "https://api.iconify.design";
+
+/** Normalizes a `host` option for use in URLs and cache keys: default applied, trailing slash dropped. */
+function normalizeHost(host: string | undefined): string {
+  return (host ?? DEFAULT_API_HOST).replace(/\/+$/, "");
 }
 
 export interface PackLoader {
-  loadLocalPack(pack: string, cwd?: string): Promise<IconifyJSON | undefined>;
+  loadLocalPack(pack: string, cwd: string): Promise<IconifyJSON | undefined>;
   loadPackFromAPI(
     pack: string,
     icons: string[],
@@ -48,7 +57,7 @@ function mergePackChunks(chunks: IconifyJSON[]): IconifyJSON {
 /**
  * Builds an independent `PackLoader`: its own pack cache and its own `IconifyApiPolicy`
  * (concurrency/rate-limit/retry), scoped to this instance rather than shared ambiently across
- * the whole process. `iconifyLocalSource`/`iconifyApiSource` share one instance of this (below),
+ * the whole process. `iconify`/`iconifyApi` share one instance of this (below),
  * built once - deliberately, so a local install or an API pack fetched once is reused across
  * every collection built from it in the same process, not re-read/re-fetched per source. Tests
  * exercising `loadLocalPack`/`loadPackFromAPI` directly construct their own instance instead, for
@@ -79,13 +88,12 @@ export function createPackLoader(): PackLoader {
   }
 
   async function fetchPackChunk(
+    host: string,
     pack: string,
     icons: string[],
   ): Promise<IconifyJSON | undefined> {
     const search = `?icons=${encodeURIComponent(icons.join(","))}`;
-    const res = await apiPolicy.fetch(
-      `https://api.iconify.design/${pack}.json${search}`,
-    );
+    const res = await apiPolicy.fetch(`${host}/${pack}.json${search}`);
     if (!res || !res.ok) return undefined;
     const data = await res.json().catch(() => undefined);
     if (data == null || !Object.prototype.hasOwnProperty.call(data, "icons"))
@@ -104,12 +112,13 @@ export function createPackLoader(): PackLoader {
    * existing all-or-nothing contract for a single request.
    */
   async function fetchPackFromAPI(
+    host: string,
     pack: string,
     icons: string[],
   ): Promise<IconifyJSON | undefined> {
     const groups = chunk(icons, MAX_ICONS_PER_REQUEST);
     const results = await Promise.all(
-      groups.map((group) => fetchPackChunk(pack, group)),
+      groups.map((group) => fetchPackChunk(host, pack, group)),
     );
     if (results.some((result) => !result)) return undefined;
     return mergePackChunks(results as IconifyJSON[]);
@@ -127,16 +136,14 @@ export function createPackLoader(): PackLoader {
      * walk at all). `require.resolve` does go through the real (CJS) loader, so it works under
      * PnP too. See https://github.com/natemoo-re/astro-icon/issues/263.
      *
-     * `cwd` defaults to `process.cwd()` for a caller with no better root to give (matches this
-     * function's long-standing behavior); `iconifyLocalSource` passes its `resolveRoot`-anchored
-     * root once one is available. Included in the cache key so two different roots for the same
-     * pack name - a rare case, but possible across composed sources in one process - don't
-     * collide.
+     * `cwd` is required: every real caller already has a root to give (a best-effort guess, at
+     * minimum - see `guessProjectRoot()` in `src/content/projectRoot.ts` - moved to a real one via
+     * `resolveRoot` once available), so defaulting silently to `process.cwd()` here would just be
+     * a second, undocumented place that guess could leak in from. Included in the cache key so two
+     * different roots for the same pack name - a rare case, but possible across composed sources
+     * in one process - don't collide.
      */
-    loadLocalPack(
-      pack: string,
-      cwd: string = process.cwd(),
-    ): Promise<IconifyJSON | undefined> {
+    loadLocalPack(pack: string, cwd: string): Promise<IconifyJSON | undefined> {
       return cachedPackLoad(`${cwd}::${pack}`, async () => {
         const viaFS = await loadCollectionFromFS(
           pack,
@@ -157,26 +164,29 @@ export function createPackLoader(): PackLoader {
     async loadPackFromAPI(
       pack: string,
       icons: string[],
-      { logger }: LoadPackFromAPIOptions,
+      { logger, host: rawHost }: LoadPackFromAPIOptions,
     ): Promise<IconifyJSON> {
+      const host = normalizeHost(rawHost);
       if (!icons.length) {
         throw new AstroIconError(
           `"${pack}" was requested from the Iconify API with no icons named.`,
-          `The Iconify API can only resolve icons you name explicitly. Pass an \`allowed: [...]\` option, or use \`iconifyLocalSource\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
+          `The Iconify API can only resolve icons you name explicitly. Pass an \`allowed: [...]\` option, or use \`iconify\` (which needs "@iconify-json/${pack}" installed) for the whole pack.`,
         );
       }
 
       const apiStart = performance.now();
       const sortedIcons = Array.from(new Set(icons)).sort();
+      // `host` is part of the key: the same pack/name subset from two different API instances
+      // (e.g. a self-hosted mirror and the public API composed in one process) isn't one response.
       const remote = await cachedPackLoad(
-        `${pack}:${sortedIcons.join(",")}`,
-        () => fetchPackFromAPI(pack, sortedIcons),
+        `${host}|${pack}:${sortedIcons.join(",")}`,
+        () => fetchPackFromAPI(host, pack, sortedIcons),
       );
       const apiDuration = formatDuration(performance.now() - apiStart);
       if (!remote) {
         throw new AstroIconError(
           `Could not load the "${pack}" icon set from the Iconify API.`,
-          `Verify the pack and icon names are correct, or install "@iconify-json/${pack}" locally and use \`iconifyLocalSource\` instead.`,
+          `Verify the pack and icon names are correct, or install "@iconify-json/${pack}" locally and use \`iconify\` instead.`,
         );
       }
       logger.debug(

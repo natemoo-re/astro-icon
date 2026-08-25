@@ -1,12 +1,7 @@
 ---
-import { getLiveEntry } from "astro:content";
-import type { HTMLAttributes } from "astro/types";
-import { AstroIconError } from "../src/internal/error.js";
-import { renderTimeError } from "../src/render/error.js";
 import IconBase from "./IconBase.astro";
-import type { SharedIconProps } from "../src/render/props.js";
-import type { LiveCollectionName } from "../typings/names";
-import type { IconEntry } from "../typings/types";
+import type { LiveIconProps } from "../src/render/props.js";
+import { prepareLiveIcon } from "../src/render/prepareIcon.js";
 
 /**
  * Renders one icon from a live collection as an inline `<svg>`, resolved at
@@ -14,7 +9,7 @@ import type { IconEntry } from "../typings/types";
  * names ahead of time, such as a user-driven icon search.
  *
  * Requires a live collection registered in `live.config.ts` (see
- * `liveIconCollections()`); live content
+ * `defineLiveIconCollections()`); live content
  * collections are stable as of Astro 6, no experimental flag needed.
  * If the icon fails to resolve,
  * `<LiveIcon>` logs a warning and renders nothing rather than throwing, so
@@ -29,37 +24,13 @@ import type { IconEntry } from "../typings/types";
  * Use `<Icon>` instead when your icon names are known at build time; it's
  * cheaper since it resolves once, not on every request.
  */
-interface Props extends HTMLAttributes<"svg">, SharedIconProps {
-  /** The live collection to resolve `icon` from; live collections have no default, unlike `<Icon>`. */
-  collection: LiveCollectionName;
-  /**
-   * The icon's name within `collection`. Always a plain `string`: live
-   * collections resolve per-request, so the exact value is often only known
-   * at runtime (e.g. a user-driven search) and can't be checked at sync time.
-   */
-  icon: string;
-}
+interface Props extends LiveIconProps {}
 
 const { collection, icon, ...props } = Astro.props;
 
-if (!collection || !icon) {
-  throw renderTimeError(
-    `Invalid "collection" or "icon" provided!`,
-    `<LiveIcon> requires both a "collection" and an "icon" prop; got collection="${collection}", icon="${icon}".`,
-  );
-}
-
-const { entry, error } = await getLiveEntry(collection, icon);
-
-if (error || !entry) {
-  const hint = error instanceof AstroIconError ? error.hint : undefined;
-  console.warn(
-    `<LiveIcon> failed to load "${collection}:${icon}"${error ? `: ${error.message}` : ""}${hint ? `\nHint: ${hint}` : ""}`,
-  );
-  return;
-}
-
-const data = entry.data as IconEntry;
+const prepared = await prepareLiveIcon(collection, icon);
+if (!prepared) return;
+const { entry, marker } = prepared;
 ---
 
-<IconBase entry={data} dataIcon={`${collection}:${icon}`} {...props} />
+<IconBase entry={entry} dataIcon={marker} {...props} />

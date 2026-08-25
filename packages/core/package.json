@@ -1,6 +1,7 @@
 {
   "name": "astro-icon",
   "version": "2.0.0",
+  "description": "Icon components and content-layer icon collections for Astro - local SVGs and Iconify icon sets, with typed, autocompleted icon names.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "engines": {
@@ -12,13 +13,13 @@
       "default": "./dist/index.js"
     },
     "./components": "./components/index.ts",
-    "./loaders": {
-      "types": "./dist/content/loaders.d.ts",
-      "default": "./dist/content/loaders.js"
+    "./collections": {
+      "types": "./dist/collections.d.ts",
+      "default": "./dist/collections.js"
     },
-    "./loaders/live": {
-      "types": "./dist/content/live.d.ts",
-      "default": "./dist/content/live.js"
+    "./source": {
+      "types": "./dist/source.d.ts",
+      "default": "./dist/source.js"
     },
     "./optimize": {
       "types": "./dist/optimize.d.ts",
@@ -44,14 +45,13 @@
   },
   "keywords": [
     "astro",
-    "astro-integration",
     "astro-component",
-    "image",
-    "images",
+    "withastro",
     "icon",
     "icons",
     "iconify",
-    "optimization"
+    "svg",
+    "content-layer"
   ],
   "repository": {
     "type": "git",

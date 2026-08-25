@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
-import type { TypegenKind, TypegenState } from "./state.js";
+
+export type TypegenKind = "build" | "live" | "packs";
+
+export interface TypegenState {
+  build: Record<string, string[]>;
+  live: Record<string, string[]>;
+  packs: Record<string, string[]>;
+}
 
 // An empty build collection types as `never`; an empty live collection or pack falls back to `string`, since it may just mean the source couldn't list its icons.
 const KIND_CONFIG = {

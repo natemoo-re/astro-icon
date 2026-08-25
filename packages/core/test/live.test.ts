@@ -37,13 +37,16 @@ async function getFreePort(): Promise<number> {
   });
 }
 
-describe("createLiveIconLoader(iconifyLocalSource()) + <LiveIcon> against a real astro server build", () => {
+describe("createLiveIconLoader(iconify()) + <LiveIcon> against a real astro server build", () => {
   let server: ChildProcess;
   let html = "";
 
   beforeAll(async () => {
+    // `cwd` matches `--root`: the fixture's `live.config.ts` runs construction-time typegen
+    // rooted at a `process.cwd()` guess (see `guessProjectRoot`), so a mismatched cwd would
+    // write the fixture's declaration files into this package's own `.astro/` instead.
     await run(astroBin, ["build", "--root", fixtureRoot], {
-      cwd: packageRoot,
+      cwd: fixtureRoot,
     });
 
     const port = await getFreePort();

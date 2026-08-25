@@ -48,12 +48,12 @@ Ordered by how much they matter in practice, not by how interesting they are.
 
 |         | Use case                                                            | Correct behavior                                                                                                         | Where to see it                                                                                                                  |
 | ------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| **UC1** | A handful of local `.svg` files, no options                         | `localSource()` with every default left alone.                                                                           | [site-builder](./site-builder) `src/content.config.ts`                                                                           |
+| **UC1** | A handful of local `.svg` files, no options                         | `localSvg()` with every default left alone.                                                                              | [site-builder](./site-builder) `src/content.config.ts`                                                                           |
 | **UC2** | A design-system-sized Iconify pack, curated down                    | An `allowed: [...]` allowlist, so the collection (and its types) are exactly the icons the app uses, not the whole pack. | [app-builder](./app-builder) `heroicons-solid`/`heroicons-outline`                                                               |
 | **UC3** | Icon names computed from data, drawn from a small known set         | Still a build-time collection - type the field as `IconName` and each value is checked where the data is defined.        | [site-builder](./site-builder) `work` collection's `icon` field (also [platform-builder](./platform-builder) `flat-color-icons`) |
 | **UC4** | Icon names from an open-ended catalog (a user's own pick)           | An unbounded Iconify source, plus an `as IconName` cast at the one point a runtime string meets a typed prop.            | [platform-builder](./platform-builder) `tabler` collection, `/picker`                                                            |
 | **UC5** | Icon names nobody can know before the request (search-as-you-type)  | `<LiveIcon>` against a live collection - a build-time collection can't hold names it can't enumerate.                    | [platform-builder](./platform-builder) `/search`                                                                                 |
-| **UC6** | A library shipping its own icons into a consumer it doesn't control | `localSource(new URL(...))`, anchored to the library's own module, plus a namespaced collection key.                     | [library-author](./library-author)                                                                                               |
+| **UC6** | A library shipping its own icons into a consumer it doesn't control | `localSvg(new URL(...))`, anchored to the library's own module, plus a namespaced collection key.                        | [library-author](./library-author)                                                                                               |
 
 ## Coverage
 
@@ -63,7 +63,7 @@ What each app demonstrates, so a gap is visible rather than assumed.
 | ------------------------------------------------------- | ------------------------------------- | ------------------------------ | -------------------------- | ------------------------------ |
 | Vendored template                                       | Astro Portfolio starter               | Flowbite Astro Admin Dashboard | Astro Blog starter         | AstroWind                      |
 | Rendering mode                                          | static                                | hybrid (SSR + prerendered)     | static                     | hybrid (static + 3 SSR routes) |
-| `localSource()`                                         | ✅                                    | ✅ (brand)                     | ✅ (consumer + library)    |                                |
+| `localSvg()`                                            | ✅                                    | ✅ (brand)                     | ✅ (consumer + library)    |                                |
 | Iconify pack, bounded (`allowed: [...]`)                |                                       | ✅ (3 Heroicons packs)         |                            | ✅ (`flat-color-icons`)        |
 | Iconify pack, unbounded                                 |                                       |                                |                            | ✅ (`tabler`)                  |
 | `<LiveIcon>` / live collections                         |                                       |                                |                            | ✅                             |
@@ -76,7 +76,7 @@ What each app demonstrates, so a gap is visible rather than assumed.
 
 ### Not covered by any example yet
 
-- **Composing several local directories or sources into one collection** (`createIconLoader([localSource("a"), localSource("b")])`, or a local source merged with an Iconify one via `mergeSources`). No persona's story needs this on its own terms, so it stays a listed gap rather than forced into one.
+- **Composing several local directories or sources into one collection** (`createIconLoader([localSvg("a"), localSvg("b")])`, or a local source merged with an Iconify one via `mergeSources`). No persona's story needs this on its own terms, so it stays a listed gap rather than forced into one.
 
 ## Relationship to `demo/`
 
