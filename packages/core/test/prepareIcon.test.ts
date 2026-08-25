@@ -120,20 +120,42 @@ describe("prepareIcon", () => {
 });
 
 describe("prepareLiveIcon", () => {
-  it("throws when collection or icon is missing", async () => {
-    await expect(prepareLiveIcon("", "search")).rejects.toThrow(
-      /Invalid "collection" or "icon" provided/,
-    );
-    await expect(prepareLiveIcon("mdi", "")).rejects.toThrow(
-      /Invalid "collection" or "icon" provided/,
+  it("throws when collection is missing", async () => {
+    await expect(
+      prepareLiveIcon("", "search", undefined),
+    ).rejects.toThrow(/Invalid "collection", "icon", or "entry" provided/);
+  });
+
+  it("throws when neither icon nor entry is provided", async () => {
+    await expect(
+      prepareLiveIcon("mdi", undefined, undefined),
+    ).rejects.toThrow(/Invalid "collection", "icon", or "entry" provided/);
+    await expect(prepareLiveIcon("mdi", "", undefined)).rejects.toThrow(
+      /Invalid "collection", "icon", or "entry" provided/,
     );
   });
 
-  it("resolves an entry, marker always prefixed", async () => {
+  it("throws when both icon and entry are provided", async () => {
+    await expect(
+      prepareLiveIcon("mdi", "search", { id: "search", data: entryData }),
+    ).rejects.toThrow(/Both "icon" and "entry" provided/);
+  });
+
+  it("resolves an entry by icon name, marker always prefixed", async () => {
     getLiveEntry.mockResolvedValueOnce({ entry: { data: entryData } });
 
-    const result = await prepareLiveIcon("mdi", "search");
+    const result = await prepareLiveIcon("mdi", "search", undefined);
 
+    expect(result).toEqual({ entry: entryData, marker: "mdi:search" });
+  });
+
+  it("uses an already-resolved entry directly, without calling getLiveEntry", async () => {
+    const result = await prepareLiveIcon("mdi", undefined, {
+      id: "search",
+      data: entryData,
+    });
+
+    expect(getLiveEntry).not.toHaveBeenCalled();
     expect(result).toEqual({ entry: entryData, marker: "mdi:search" });
   });
 
@@ -142,7 +164,7 @@ describe("prepareLiveIcon", () => {
     try {
       getLiveEntry.mockResolvedValueOnce({ error: new Error("boom") });
 
-      const result = await prepareLiveIcon("mdi", "search");
+      const result = await prepareLiveIcon("mdi", "search", undefined);
 
       expect(result).toBeUndefined();
       expect(warn).toHaveBeenCalledWith(
@@ -158,7 +180,7 @@ describe("prepareLiveIcon", () => {
     try {
       getLiveEntry.mockResolvedValueOnce({});
 
-      const result = await prepareLiveIcon("mdi", "search");
+      const result = await prepareLiveIcon("mdi", "search", undefined);
 
       expect(result).toBeUndefined();
       expect(warn).toHaveBeenCalledOnce();

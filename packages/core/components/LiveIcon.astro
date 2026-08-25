@@ -23,12 +23,17 @@ import { prepareLiveIcon } from "../src/render/prepareIcon.js";
  *
  * Use `<Icon>` instead when your icon names are known at build time; it's
  * cheaper since it resolves once, not on every request.
+ *
+ * Pass `entry` instead of `icon` for one already resolved via
+ * `getLiveCollection(collection, { ids })` - the explicit form of the
+ * batched-render pattern, instead of relying on `<LiveIcon>`'s own cache
+ * happening to have been warmed by that earlier call.
  */
-interface Props extends LiveIconProps {}
+type Props = LiveIconProps;
 
-const { collection, icon, ...props } = Astro.props;
+const { collection, icon, entry: givenEntry, ...props } = Astro.props;
 
-const prepared = await prepareLiveIcon(collection, icon);
+const prepared = await prepareLiveIcon(collection, icon, givenEntry);
 if (!prepared) return;
 const { entry, marker } = prepared;
 ---

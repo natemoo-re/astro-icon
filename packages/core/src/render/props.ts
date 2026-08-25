@@ -1,3 +1,4 @@
+import type { LiveDataEntry } from "astro";
 import type { HTMLAttributes } from "astro/types";
 import { splitEntryAttrs } from "../internal/entryContract.js";
 import type { IconEntry } from "../../typings/types";
@@ -84,16 +85,36 @@ export interface IconProps extends HTMLAttributes<"svg">, SharedIconProps {
   name: IconName;
 }
 
-/** `<LiveIcon>`'s full props - the live counterpart to {@link IconProps}. */
-export interface LiveIconProps extends HTMLAttributes<"svg">, SharedIconProps {
-  /** The live collection to resolve `icon` from; live collections have no default, unlike `<Icon>`. */
-  collection: LiveCollectionName;
+/**
+ * `<LiveIcon>`'s full props - the live counterpart to {@link IconProps}. `collection` is always
+ * required (a fetched `entry` has no collection name of its own to recover it from); exactly one
+ * of `icon`/`entry` says how the icon arrives.
+ */
+export type LiveIconProps = HTMLAttributes<"svg"> &
+  SharedIconProps & {
+    /** The live collection to resolve `icon`/`entry` from; live collections have no default, unlike `<Icon>`. */
+    collection: LiveCollectionName;
+  } & (LiveIconByName | LiveIconByEntry);
+
+interface LiveIconByName {
   /**
-   * The icon's name within `collection`. Always a plain `string`: live
-   * collections resolve per-request, so the exact value is often only known
-   * at runtime (e.g. a user-driven search) and can't be checked at sync time.
+   * The icon's name within `collection`, for `<LiveIcon>` to resolve itself. Always a plain
+   * `string`: live collections resolve per-request, so the exact value is often only known at
+   * runtime (e.g. a user-driven search) and can't be checked at sync time.
    */
   icon: string;
+  entry?: never;
+}
+
+interface LiveIconByEntry {
+  icon?: never;
+  /**
+   * An entry already resolved via `getLiveCollection(collection, { ids })` - the batched-render
+   * counterpart to `icon`. Pass this instead of `icon` when the page already fetched the whole
+   * result set up front, so rendering doesn't re-trigger a lookup `<LiveIcon>` would otherwise
+   * make itself.
+   */
+  entry: LiveDataEntry<IconEntry>;
 }
 
 export interface IconA11yResult {
