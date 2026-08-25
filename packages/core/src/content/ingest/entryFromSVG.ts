@@ -1,6 +1,7 @@
 import { DOCUMENT_NODE, ELEMENT_NODE, TEXT_NODE, parse, renderSync, walkSync } from "ultrahtml";
 import type { DocumentNode, ElementNode, Node } from "ultrahtml";
 import { AstroIconError } from "../../internal/error.js";
+import { rootAttrOwner } from "../../internal/entryContract.js";
 import { sanitizeTree } from "../svgTree.js";
 import type { IconEntry } from "../../../typings/types";
 
@@ -31,39 +32,8 @@ export interface EntryFromSVGResult {
   facts: EntryFacts;
 }
 
-const STRUCTURAL_ROOT_ATTRS = new Set([
-  "xmlns",
-  "xmlns:xlink",
-  "version",
-  "viewbox",
-  "width",
-  "height",
-]);
-const A11Y_ROOT_ATTRS = new Set(["role", "focusable", "tabindex"]);
-
-/**
- * Which part of the system owns a root `<svg>` attribute decides where it goes - this is a
- * partition by ownership, not a skip-list:
- *
- * - `"structure"`: `viewBox`/`width`/`height` are already the entry's typed fields (lifting a
- *   string copy would put the same fact on the entry twice), and `xmlns`/`xmlns:xlink`/`version`
- *   are meaningless on an inline `<svg>` in HTML.
- * - `"component"`: accessibility (`role`, `aria-*`, `focusable`, `tabindex`) is `<Icon>`/
- *   `<LiveIcon>`'s contract - `iconA11yProps` computes it per usage from the caller's `title`/
- *   `desc` props. Entry fields spread *after* those computed props, so lifting a file's
- *   boilerplate copy (e.g. an export tool's blanket `aria-hidden="true"`) would silently defeat
- *   them: a labeled icon would stay invisible to assistive tech.
- * - `"entry"`: everything else is the author's presentation intent (`fill`, `stroke`, `class`,
- *   `style`, ...), lifted onto the entry as defaults the caller's own props override.
- */
-function rootAttrOwner(name: string): "structure" | "component" | "entry" {
-  const lower = name.toLowerCase();
-  if (STRUCTURAL_ROOT_ATTRS.has(lower)) return "structure";
-  if (A11Y_ROOT_ATTRS.has(lower) || lower.startsWith("aria-")) {
-    return "component";
-  }
-  return "entry";
-}
+// `rootAttrOwner`'s ownership partition lives in `src/internal/entryContract.ts` now - shared
+// with `renderableIconProps` on the render side, which needs the same reserved/attribute line.
 
 function getAttrCI(
   attrs: Record<string, string>,

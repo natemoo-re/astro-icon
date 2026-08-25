@@ -1,6 +1,6 @@
 import type { Loader, LoaderContext } from "astro/loaders";
-import { z } from "astro/zod";
 import { AstroIconError } from "../internal/error.js";
+import { iconEntrySchema } from "../internal/entryContract.js";
 import { buildIcon, buildIcons } from "./buildIcons.js";
 import { formatDuration } from "./duration.js";
 import { mergeSources } from "./compositeSource.js";
@@ -11,16 +11,6 @@ import type {
   IconSource,
   IconSourceWatcher,
 } from "./source.js";
-
-/** Default schema for an `IconEntry`, overridable via `defineCollection({ loader, schema })`. */
-const iconEntrySchema = z
-  .object({
-    body: z.string(),
-    viewBox: z.string(),
-    width: z.number(),
-    height: z.number(),
-  })
-  .catchall(z.union([z.string(), z.number()]));
 
 function metaKeyFor(collection: string): string {
   return `astro-icon:version:${collection}`;
