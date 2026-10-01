@@ -21,7 +21,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "pnpm run dev"
+    "start": "pnpm run dev",
+    "test": "node --test"
   },
   "author": {
     "name": "Nate Moore",
